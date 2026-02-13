@@ -47,7 +47,7 @@ const Index = () => {
         <StoriesBar />
       </div>
 
-      <main className="px-3 py-3 space-y-3 pb-24">
+      <main className="px-3 py-4 space-y-4 pb-24">
         {/* Matched links from both partners */}
         {matchedLinks.length > 0 && (
           <div className="space-y-3">
