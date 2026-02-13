@@ -1,10 +1,10 @@
-import { Home, LayoutGrid, Heart, User } from "lucide-react";
+import { Home, Heart, MessageCircle, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const tabs = [
   { id: "home", label: "Home", icon: Home, path: "/" },
-  { id: "admin", label: "Admin", icon: LayoutGrid, path: "/admin" },
-  { id: "connect", label: "Connect", icon: Heart, path: "/connect" },
+  { id: "us", label: "Us", icon: Heart, path: "/us" },
+  { id: "chat", label: "Chat", icon: MessageCircle, path: "/chat" },
   { id: "profile", label: "Profile", icon: User, path: "/profile" },
 ];
 
@@ -22,10 +22,10 @@ const BottomNav = () => {
               key={tab.id}
               onClick={() => navigate(tab.path)}
               className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-colors ${
-                isActive ? "text-us-coral" : "text-muted-foreground"
+                isActive ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              <tab.icon className={`w-5 h-5 ${isActive ? "fill-us-coral/20" : ""}`} />
+              <tab.icon className={`w-5 h-5 ${isActive ? "fill-primary/20" : ""}`} />
               <span className="text-[10px] font-medium">{tab.label}</span>
             </button>
           );
