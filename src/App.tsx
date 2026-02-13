@@ -17,6 +17,7 @@ import ReflectionQuizPlay from "./pages/ReflectionQuizPlay";
 import OurChallenges from "./pages/OurChallenges";
 import OurSexList from "./pages/OurSexList";
 import Auth from "./pages/Auth";
+import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,17 +31,17 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/us" element={<Us />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/kiss-chase" element={<KissChasePage />} />
-              <Route path="/quiz/:quizId" element={<QuizPlay />} />
-              <Route path="/checklist-quiz/:quizId" element={<ChecklistQuizPlay />} />
-              <Route path="/love-languages" element={<LoveLanguageGuide />} />
-              <Route path="/reflection-quiz/:quizId" element={<ReflectionQuizPlay />} />
-              <Route path="/our-challenges" element={<OurChallenges />} />
-              <Route path="/our-sex-list" element={<OurSexList />} />
+              <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+              <Route path="/us" element={<AuthGuard><Us /></AuthGuard>} />
+              <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+              <Route path="/chat" element={<AuthGuard><Chat /></AuthGuard>} />
+              <Route path="/kiss-chase" element={<AuthGuard><KissChasePage /></AuthGuard>} />
+              <Route path="/quiz/:quizId" element={<AuthGuard><QuizPlay /></AuthGuard>} />
+              <Route path="/checklist-quiz/:quizId" element={<AuthGuard><ChecklistQuizPlay /></AuthGuard>} />
+              <Route path="/love-languages" element={<AuthGuard><LoveLanguageGuide /></AuthGuard>} />
+              <Route path="/reflection-quiz/:quizId" element={<AuthGuard><ReflectionQuizPlay /></AuthGuard>} />
+              <Route path="/our-challenges" element={<AuthGuard><OurChallenges /></AuthGuard>} />
+              <Route path="/our-sex-list" element={<AuthGuard><OurSexList /></AuthGuard>} />
               <Route path="/auth" element={<Auth />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

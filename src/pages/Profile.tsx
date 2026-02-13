@@ -22,10 +22,7 @@ const Profile = () => {
     try { return JSON.parse(localStorage.getItem("userLists") || "[]").length; } catch { return 0; }
   }, []);
 
-  if (!loading && !user) {
-    navigate("/auth");
-    return null;
-  }
+  if (loading) return null;
 
   const handleSignOut = async () => {
     await signOut();
