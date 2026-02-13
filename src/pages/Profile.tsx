@@ -1,4 +1,4 @@
-import { Settings, Heart, LinkIcon, LogOut, Copy, Check, UserPlus } from "lucide-react";
+import { Settings, Heart, LinkIcon, LogOut, UserPlus, Mail } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,11 +7,10 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 const Profile = () => {
-  const { user, profile, signOut, linkPartner, loading } = useAuth();
+  const { user, profile, signOut, linkPartnerByEmail, loading } = useAuth();
   const navigate = useNavigate();
-  const [partnerCode, setPartnerCode] = useState("");
+  const [partnerEmail, setPartnerEmail] = useState("");
   const [linking, setLinking] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
 
   const quizCount = useMemo(() => {
@@ -31,25 +30,16 @@ const Profile = () => {
     navigate("/auth");
   };
 
-  const handleCopyCode = () => {
-    if (profile?.partner_code) {
-      navigator.clipboard.writeText(profile.partner_code);
-      setCopied(true);
-      toast.success("Code copied!");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const handleLinkPartner = async () => {
-    if (!partnerCode.trim()) return;
+    if (!partnerEmail.trim()) return;
     setLinking(true);
-    const success = await linkPartner(partnerCode.trim());
+    const success = await linkPartnerByEmail(partnerEmail.trim());
     if (success) {
       toast.success("Partner linked! 🎉");
       setShowLinkInput(false);
-      setPartnerCode("");
+      setPartnerEmail("");
     } else {
-      toast.error("Invalid code or partner not found");
+      toast.error("Partner not found or already linked to someone else");
     }
     setLinking(false);
   };
@@ -81,26 +71,7 @@ const Profile = () => {
           </p>
         </div>
 
-        {/* Partner code */}
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="font-display font-semibold text-foreground mb-3 flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-primary" /> Your Partner Code
-          </h3>
-          <p className="text-xs text-muted-foreground mb-3">Share this code with your partner so they can link with you.</p>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-center text-lg font-mono font-bold text-foreground tracking-widest">
-              {profile?.partner_code || "--------"}
-            </code>
-            <button
-              onClick={handleCopyCode}
-              className="rounded-lg bg-primary/10 p-2.5 text-primary hover:bg-primary/20 transition-colors"
-            >
-              {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Link partner */}
+        {/* Link partner by email */}
         {!profile?.partner_id && (
           <div className="rounded-xl border border-border bg-card p-5">
             {!showLinkInput ? (
@@ -108,24 +79,29 @@ const Profile = () => {
                 onClick={() => setShowLinkInput(true)}
                 className="w-full flex items-center gap-3 text-left"
               >
-                <LinkIcon className="w-5 h-5 text-us-coral" />
+                <UserPlus className="w-5 h-5 text-primary" />
                 <div>
-                  <span className="font-medium text-foreground text-sm">Enter Partner's Code</span>
-                  <p className="text-xs text-muted-foreground">Link with your partner using their code</p>
+                  <span className="font-medium text-foreground text-sm">Link Your Partner</span>
+                  <p className="text-xs text-muted-foreground">Enter their email to connect your accounts</p>
                 </div>
               </button>
             ) : (
               <div className="space-y-3">
-                <p className="text-sm font-medium text-foreground">Enter your partner's code</p>
+                <p className="text-sm font-medium text-foreground">Enter your partner's email</p>
+                <p className="text-xs text-muted-foreground">They must have an account already</p>
                 <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    value={partnerCode}
-                    onChange={(e) => setPartnerCode(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleLinkPartner()}
-                    placeholder="e.g. a1b2c3d4"
-                    className="flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
+                  <div className="flex-1 relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      autoFocus
+                      type="email"
+                      value={partnerEmail}
+                      onChange={(e) => setPartnerEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleLinkPartner()}
+                      placeholder="partner@email.com"
+                      className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
                   <button
                     onClick={handleLinkPartner}
                     disabled={linking}

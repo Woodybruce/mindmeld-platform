@@ -1,119 +1,204 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { Heart, ArrowRight, UserPlus, LogIn } from "lucide-react";
+import { Heart, ArrowRight, Mail, Phone, ChevronLeft } from "lucide-react";
+
+type Step = "choose" | "email-enter" | "email-sent" | "phone-enter" | "phone-verify";
 
 const Auth = () => {
-  const { signIn, signUp } = useAuth();
-  const navigate = useNavigate();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const { signInWithEmail, signInWithPhone, verifyOtp } = useAuth();
+  const [step, setStep] = useState<Step>("choose");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [confirmEmail, setConfirmEmail] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
-    if (isSignUp) {
-      const { error } = await signUp(email, password, username);
-      if (error) {
-        setError(error.message);
-      } else {
-        setConfirmEmail(true);
-      }
-    } else {
-      const { error } = await signIn(email, password);
-      if (error) {
-        setError(error.message);
-      } else {
-        navigate("/");
-      }
-    }
+    const { error } = await signInWithEmail(email);
+    if (error) setError(error.message);
+    else setStep("email-sent");
     setLoading(false);
   };
 
-  if (confirmEmail) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-sm">
-          <Heart className="w-12 h-12 text-primary mx-auto mb-4" />
-          <h2 className="font-display text-xl font-bold text-foreground mb-2">Check your email</h2>
-          <p className="text-sm text-muted-foreground">
-            We've sent a confirmation link to <span className="font-medium text-foreground">{email}</span>. Click it to activate your account.
-          </p>
-          <button onClick={() => { setConfirmEmail(false); setIsSignUp(false); }} className="mt-6 text-sm text-primary font-medium">
-            Back to Sign In
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const { error } = await signInWithPhone(phone);
+    if (error) setError(error.message);
+    else setStep("phone-verify");
+    setLoading(false);
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const { error } = await verifyOtp(phone, otp);
+    if (error) setError(error.message);
+    // On success, onAuthStateChange will redirect
+    setLoading(false);
+  };
+
+  const reset = () => {
+    setStep("choose");
+    setError("");
+    setEmail("");
+    setPhone("");
+    setOtp("");
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-sm"
+      >
         <div className="text-center mb-8">
           <Heart className="w-10 h-10 text-primary mx-auto mb-3" />
           <h1 className="font-display text-2xl font-bold text-foreground">Us</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isSignUp ? "Create your account" : "Welcome back"}
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">Your shared space, together</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignUp && (
-            <input
-              type="text"
-              placeholder="Your name"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
+        <AnimatePresence mode="wait">
+          {step === "choose" && (
+            <motion.div key="choose" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+              <button
+                onClick={() => setStep("phone-enter")}
+                className="w-full flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-4 text-left hover:bg-secondary/50 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Phone className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <span className="font-medium text-sm text-foreground">Continue with Phone</span>
+                  <p className="text-xs text-muted-foreground">We'll text you a code</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto" />
+              </button>
+
+              <button
+                onClick={() => setStep("email-enter")}
+                className="w-full flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-4 text-left hover:bg-secondary/50 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-us-sage/20 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-us-sage" />
+                </div>
+                <div>
+                  <span className="font-medium text-sm text-foreground">Continue with Email</span>
+                  <p className="text-xs text-muted-foreground">We'll send a magic link</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto" />
+              </button>
+            </motion.div>
           )}
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
 
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {step === "email-enter" && (
+            <motion.div key="email-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <button type="button" onClick={reset} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+                <input
+                  type="email"
+                  autoFocus
+                  placeholder="Your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                {error && <p className="text-xs text-destructive">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  <Mail className="w-4 h-4" />
+                  {loading ? "Sending…" : "Send Magic Link"}
+                </button>
+              </form>
+            </motion.div>
+          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
-            {loading ? "Please wait…" : isSignUp ? "Create Account" : "Sign In"}
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
+          {step === "email-sent" && (
+            <motion.div key="email-sent" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-7 h-7 text-primary" />
+              </div>
+              <h2 className="font-display text-lg font-bold text-foreground mb-2">Check your email</h2>
+              <p className="text-sm text-muted-foreground">
+                We sent a magic link to <span className="font-medium text-foreground">{email}</span>. Click it to sign in.
+              </p>
+              <button onClick={reset} className="mt-6 text-sm text-primary font-medium">
+                Try a different method
+              </button>
+            </motion.div>
+          )}
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-          <button onClick={() => { setIsSignUp(!isSignUp); setError(""); }} className="text-primary font-medium">
-            {isSignUp ? "Sign In" : "Sign Up"}
-          </button>
-        </p>
+          {step === "phone-enter" && (
+            <motion.div key="phone-enter" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                <button type="button" onClick={reset} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+                <input
+                  type="tel"
+                  autoFocus
+                  placeholder="+44 7700 900000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                {error && <p className="text-xs text-destructive">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  <Phone className="w-4 h-4" />
+                  {loading ? "Sending…" : "Send Code"}
+                </button>
+              </form>
+            </motion.div>
+          )}
+
+          {step === "phone-verify" && (
+            <motion.div key="phone-verify" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <button type="button" onClick={() => setStep("phone-enter")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+                <p className="text-sm text-muted-foreground">Enter the 6-digit code sent to <span className="font-medium text-foreground">{phone}</span></p>
+                <input
+                  type="text"
+                  autoFocus
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  required
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-center text-2xl font-mono tracking-[0.5em] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                {error && <p className="text-xs text-destructive">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={loading || otp.length < 6}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Verifying…" : "Verify & Sign In"}
+                </button>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

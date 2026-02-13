@@ -229,6 +229,10 @@ export type Database = {
     Functions: {
       is_partner: { Args: { _user_id: string }; Returns: boolean }
       link_partner: { Args: { _partner_code: string }; Returns: boolean }
+      link_partner_by_email: {
+        Args: { _partner_email: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
