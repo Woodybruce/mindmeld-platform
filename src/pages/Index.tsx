@@ -1,12 +1,27 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import AppHeader from "@/components/AppHeader";
+import StoriesBar from "@/components/StoriesBar";
+import BottomNav from "@/components/BottomNav";
+import FeedCard from "@/components/FeedCard";
+import { sampleFeedData } from "@/components/feedData";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background max-w-lg mx-auto relative">
+      <AppHeader />
+
+      {/* Stories navigation */}
+      <div className="border-b border-border/50">
+        <StoriesBar />
       </div>
+
+      {/* Feed */}
+      <main className="px-4 py-4 space-y-4 pb-24">
+        {sampleFeedData.map((item, index) => (
+          <FeedCard key={item.id} item={item} index={index} />
+        ))}
+      </main>
+
+      <BottomNav />
     </div>
   );
 };
