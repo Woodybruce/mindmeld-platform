@@ -29,7 +29,7 @@ const STORAGE_KEY = "our-challenges-data";
 
 const defaultData: ChallengesData = {
   challenges: [
-    { id: "ch1", text: "Historic resentment" },
+    { id: "ch1", text: "Historic" },
     { id: "ch2", text: "Poor Communication" },
     { id: "ch3", text: "Prioritising others over" },
   ],
