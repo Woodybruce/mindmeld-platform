@@ -38,6 +38,7 @@ const quizCards = quizDefinitions.map((q) => ({
 }));
 
 const allPrompts = [
+  // Original prompts
   { category: "Deep", prompt: "What's one thing you've never told me that you wish I knew?", color: "text-us-coral" },
   { category: "Playful", prompt: "If we could teleport anywhere right now, where would you take us?", color: "text-us-gold" },
   { category: "Growth", prompt: "What's one way I've helped you grow as a person?", color: "text-us-sage" },
@@ -46,6 +47,21 @@ const allPrompts = [
   { category: "Intimacy", prompt: "When do you feel most connected to me?", color: "text-us-coral" },
   { category: "Fun", prompt: "What fictional couple reminds you most of us?", color: "text-us-gold" },
   { category: "Gratitude", prompt: "What's something small I do that means a lot to you?", color: "text-us-sage" },
+  // Love Language prompts — everyday ideas to try together
+  { category: "💬 Words", prompt: "Leave a sticky note with a sweet message somewhere they'll find it today", color: "text-us-coral" },
+  { category: "💬 Words", prompt: "Send a midday 'thinking of you' text — be specific about what you appreciate", color: "text-us-coral" },
+  { category: "💬 Words", prompt: "Praise your partner in front of someone else today", color: "text-us-coral" },
+  { category: "⏰ Time", prompt: "Take a tech-free walk together — no phones, just conversation", color: "text-us-sage" },
+  { category: "⏰ Time", prompt: "Cook a new recipe together tonight", color: "text-us-sage" },
+  { category: "⏰ Time", prompt: "Have a 15-minute nightly check-in: how was your day, really?", color: "text-us-sage" },
+  { category: "🎁 Gifts", prompt: "Bring home their favourite snack as a surprise today", color: "text-us-gold" },
+  { category: "🎁 Gifts", prompt: "Gift something tied to an inside joke between you two", color: "text-us-gold" },
+  { category: "🤲 Service", prompt: "Handle their least favourite chore without being asked", color: "text-us-terracotta" },
+  { category: "🤲 Service", prompt: "Make them coffee or tea exactly how they like it", color: "text-us-terracotta" },
+  { category: "🤲 Service", prompt: "Finish a task they've been putting off", color: "text-us-terracotta" },
+  { category: "🫂 Touch", prompt: "Slow dance together at home — no music required", color: "text-primary" },
+  { category: "🫂 Touch", prompt: "Give a 20-second hug. Count it out. Feel the difference", color: "text-primary" },
+  { category: "🫂 Touch", prompt: "Run your fingers through their hair while watching TV tonight", color: "text-primary" },
 ];
 
 const mockFiles = [
