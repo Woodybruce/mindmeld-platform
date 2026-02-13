@@ -1,29 +1,33 @@
 import { Heart, Compass, ListChecks, MessageCircle, BookOpen, Sparkles, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface StoryCircle {
   id: string;
   label: string;
   icon: React.ReactNode;
   gradient: string;
-  isActive?: boolean;
+  action: () => void;
 }
 
-const stories: StoryCircle[] = [
-  { id: "us", label: "Us", icon: <Heart className="w-5 h-5" />, gradient: "from-us-coral to-us-terracotta", isActive: true },
-  { id: "grow", label: "Grow", icon: <TrendingUp className="w-5 h-5" />, gradient: "from-us-sage to-emerald-500" },
-  { id: "lists", label: "Lists", icon: <ListChecks className="w-5 h-5" />, gradient: "from-us-navy to-blue-600" },
-  { id: "quizzes", label: "Quizzes", icon: <Sparkles className="w-5 h-5" />, gradient: "from-us-gold to-amber-500" },
-  { id: "chat", label: "Chat", icon: <MessageCircle className="w-5 h-5" />, gradient: "from-us-blush to-pink-400" },
-  { id: "learn", label: "Learn", icon: <BookOpen className="w-5 h-5" />, gradient: "from-violet-400 to-purple-500" },
-  { id: "explore", label: "Explore", icon: <Compass className="w-5 h-5" />, gradient: "from-cyan-400 to-teal-500" },
-];
-
 const StoriesBar = () => {
+  const navigate = useNavigate();
+
+  const stories: StoryCircle[] = [
+    { id: "us", label: "Us", icon: <Heart className="w-5 h-5" />, gradient: "from-us-coral to-us-terracotta", action: () => navigate("/connect") },
+    { id: "grow", label: "Grow", icon: <TrendingUp className="w-5 h-5" />, gradient: "from-us-sage to-emerald-500", action: () => navigate("/connect") },
+    { id: "lists", label: "Lists", icon: <ListChecks className="w-5 h-5" />, gradient: "from-us-navy to-blue-600", action: () => navigate("/admin") },
+    { id: "quizzes", label: "Quizzes", icon: <Sparkles className="w-5 h-5" />, gradient: "from-us-gold to-amber-500", action: () => navigate("/connect") },
+    { id: "chat", label: "Chat", icon: <MessageCircle className="w-5 h-5" />, gradient: "from-us-blush to-pink-400", action: () => navigate("/chat") },
+    { id: "learn", label: "Learn", icon: <BookOpen className="w-5 h-5" />, gradient: "from-violet-400 to-purple-500", action: () => navigate("/connect") },
+    { id: "explore", label: "Explore", icon: <Compass className="w-5 h-5" />, gradient: "from-cyan-400 to-teal-500", action: () => navigate("/connect") },
+  ];
+
   return (
     <div className="flex gap-4 overflow-x-auto px-4 py-3 scrollbar-hide">
       {stories.map((story) => (
         <button
           key={story.id}
+          onClick={story.action}
           className="flex flex-col items-center gap-1.5 min-w-[60px] group"
         >
           <div className={`relative w-[62px] h-[62px] rounded-full bg-gradient-to-br ${story.gradient} p-[2.5px] transition-transform duration-200 group-active:scale-95`}>
