@@ -1,8 +1,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  ListChecks, Calendar, Bell, FolderOpen, ExternalLink,
+  ListChecks, FolderOpen, ExternalLink,
   FileText, Image, File, Upload, Sparkles, MessageCircle,
-  Gamepad2, RefreshCw, Trophy
+  Gamepad2, RefreshCw, Trophy, Camera, Calendar, Heart,
+  Link2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -14,10 +15,15 @@ import GameCard from "@/components/connect/GameCard";
 import CompletedQuizList from "@/components/connect/CompletedQuizList";
 import SharedLists from "@/components/connect/SharedLists";
 import type { UserList } from "@/components/connect/SharedLists";
+import OurPhotos from "@/components/connect/OurPhotos";
+import OurEvents from "@/components/connect/OurEvents";
+import GratitudeJournal from "@/components/connect/GratitudeJournal";
+import LinksAndMedia from "@/components/connect/LinksAndMedia";
 import { quizDefinitions } from "@/data/quizData";
 import type { CompletedQuiz } from "@/data/quizData";
 import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
 import PartnerQuizBanner from "@/components/connect/PartnerQuizBanner";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const quizCards = quizDefinitions.map((q) => ({
   id: q.id,
@@ -57,6 +63,31 @@ const fileIcon = (type: string) => {
   }
 };
 
+// Pre-populated lists from OneNote wireframe
+const defaultLists: UserList[] = [
+  {
+    id: "onenote-daily-bruce",
+    name: "Bruce Daily Plan",
+    icon: "☀️",
+    template: "daily",
+    createdAt: "2026-01-04T17:45:00.000Z",
+    items: [
+      { id: "d1", text: "Get under layers", done: true },
+      { id: "d2", text: "Size small grey or black get 2 roll necks and 4 others", done: true },
+      { id: "d3", text: "Get shampoo", done: true },
+      { id: "d4", text: "Coco sparks", done: false },
+    ],
+  },
+  {
+    id: "onenote-family-todo",
+    name: "Bruce Family To Do List",
+    icon: "👨‍👩‍👧",
+    template: "actions",
+    createdAt: "2026-01-04T17:45:00.000Z",
+    items: [],
+  },
+];
+
 const Us = () => {
   const navigate = useNavigate();
   const [promptIndex, setPromptIndex] = useState(0);
@@ -66,7 +97,14 @@ const Us = () => {
 
   useEffect(() => {
     setCompletedQuizzes(JSON.parse(localStorage.getItem("completedQuizzes") || "[]"));
-    setUserLists(JSON.parse(localStorage.getItem("userLists") || "[]"));
+    const stored = localStorage.getItem("userLists");
+    if (stored) {
+      setUserLists(JSON.parse(stored));
+    } else {
+      // First visit: seed with OneNote data
+      setUserLists(defaultLists);
+      localStorage.setItem("userLists", JSON.stringify(defaultLists));
+    }
   }, []);
 
   const handleListsUpdate = (updated: UserList[]) => {
@@ -99,24 +137,56 @@ const Us = () => {
         />
       )}
 
-      <Tabs defaultValue="quizzes" className="px-4 pt-3 pb-24">
-        <TabsList className="w-full bg-secondary">
-          <TabsTrigger value="quizzes" className="flex-1 gap-1 text-xs data-[state=active]:bg-card">
-            <Sparkles className="w-3.5 h-3.5" /> Quizzes
-          </TabsTrigger>
-          <TabsTrigger value="prompts" className="flex-1 gap-1 text-xs data-[state=active]:bg-card">
-            <MessageCircle className="w-3.5 h-3.5" /> Prompts
-          </TabsTrigger>
-          <TabsTrigger value="games" className="flex-1 gap-1 text-xs data-[state=active]:bg-card">
-            <Gamepad2 className="w-3.5 h-3.5" /> Games
-          </TabsTrigger>
-          <TabsTrigger value="lists" className="flex-1 gap-1 text-xs data-[state=active]:bg-card">
-            <ListChecks className="w-3.5 h-3.5" /> Lists
-          </TabsTrigger>
-          <TabsTrigger value="files" className="flex-1 gap-1 text-xs data-[state=active]:bg-card">
-            <FolderOpen className="w-3.5 h-3.5" /> Files
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="lists" className="px-4 pt-3 pb-24">
+        <ScrollArea className="w-full">
+          <TabsList className="w-max bg-secondary gap-0.5 px-1">
+            <TabsTrigger value="lists" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <ListChecks className="w-3.5 h-3.5" /> Lists
+            </TabsTrigger>
+            <TabsTrigger value="quizzes" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <Sparkles className="w-3.5 h-3.5" /> Quizzes
+            </TabsTrigger>
+            <TabsTrigger value="prompts" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <MessageCircle className="w-3.5 h-3.5" /> Prompts
+            </TabsTrigger>
+            <TabsTrigger value="games" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <Gamepad2 className="w-3.5 h-3.5" /> Games
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <Camera className="w-3.5 h-3.5" /> Photos
+            </TabsTrigger>
+            <TabsTrigger value="events" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <Calendar className="w-3.5 h-3.5" /> Events
+            </TabsTrigger>
+            <TabsTrigger value="gratitude" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <Heart className="w-3.5 h-3.5" /> Gratitude
+            </TabsTrigger>
+            <TabsTrigger value="links" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <Link2 className="w-3.5 h-3.5" /> Links
+            </TabsTrigger>
+            <TabsTrigger value="files" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+              <FolderOpen className="w-3.5 h-3.5" /> Files
+            </TabsTrigger>
+          </TabsList>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+
+        {/* Lists — default tab, imported from OneNote */}
+        <TabsContent value="lists" className="mt-4 space-y-5">
+          <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
+
+          {completedQuizzes.length > 0 && (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quiz Results</p>
+                <span className="flex items-center gap-1 text-xs text-primary font-medium">
+                  <Trophy className="w-3.5 h-3.5" /> {completedQuizzes.length} done
+                </span>
+              </div>
+              <CompletedQuizList quizzes={completedQuizzes} />
+            </>
+          )}
+        </TabsContent>
 
         {/* Quizzes */}
         <TabsContent value="quizzes" className="mt-4 space-y-3">
@@ -148,21 +218,24 @@ const Us = () => {
           <GameCard title="Photo Challenge" description="Complete fun photo tasks together as a team." emoji="📸" players="2 players · Outdoors" gradient="bg-gradient-to-br from-us-blush/20 to-us-coral/10" delay={0.24} />
         </TabsContent>
 
-        {/* Lists */}
-        <TabsContent value="lists" className="mt-4 space-y-5">
-          <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
+        {/* Photos */}
+        <TabsContent value="photos" className="mt-4">
+          <OurPhotos />
+        </TabsContent>
 
-          {completedQuizzes.length > 0 && (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quiz Results</p>
-                <span className="flex items-center gap-1 text-xs text-primary font-medium">
-                  <Trophy className="w-3.5 h-3.5" /> {completedQuizzes.length} done
-                </span>
-              </div>
-              <CompletedQuizList quizzes={completedQuizzes} />
-            </>
-          )}
+        {/* Events */}
+        <TabsContent value="events" className="mt-4">
+          <OurEvents />
+        </TabsContent>
+
+        {/* Gratitude */}
+        <TabsContent value="gratitude" className="mt-4">
+          <GratitudeJournal />
+        </TabsContent>
+
+        {/* Links */}
+        <TabsContent value="links" className="mt-4">
+          <LinksAndMedia />
         </TabsContent>
 
         {/* Files */}
@@ -173,9 +246,14 @@ const Us = () => {
                 <h3 className="text-sm font-semibold text-foreground">Shared Folder</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Link OneDrive, Dropbox, or Google Drive</p>
               </div>
-              <button className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-                <ExternalLink className="w-3.5 h-3.5" /> Connect
-              </button>
+              <a
+                href="https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Open OneNote
+              </a>
             </div>
           </motion.div>
           <div className="rounded-xl border border-border bg-card overflow-hidden">
