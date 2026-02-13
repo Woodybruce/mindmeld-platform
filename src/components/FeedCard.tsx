@@ -1,4 +1,5 @@
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export type FeedCardType = "prompt" | "reminder" | "update" | "blog" | "quiz" | "milestone";
@@ -15,6 +16,7 @@ export interface FeedItem {
   timeAgo: string;
   liked?: boolean;
   saved?: boolean;
+  link?: string;
 }
 
 const typeStyles: Record<FeedCardType, { bg: string; border: string }> = {
@@ -33,13 +35,19 @@ interface FeedCardProps {
 
 const FeedCard = ({ item, index }: FeedCardProps) => {
   const style = typeStyles[item.type];
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (item.link) navigate(item.link);
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.4, ease: "easeOut" }}
-      className={`${style.bg} border ${style.border} rounded-2xl overflow-hidden`}
+      className={`${style.bg} border ${style.border} rounded-2xl overflow-hidden ${item.link ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
+      onClick={handleClick}
     >
       {item.image && (
         <div className="w-full aspect-[16/9] overflow-hidden">
