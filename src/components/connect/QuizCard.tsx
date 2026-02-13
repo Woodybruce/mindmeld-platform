@@ -9,14 +9,16 @@ interface QuizCardProps {
   questions: number;
   gradient: string;
   delay?: number;
+  onClick?: () => void;
 }
 
-const QuizCard = ({ title, description, emoji, duration, questions, gradient, delay = 0 }: QuizCardProps) => (
+const QuizCard = ({ title, description, emoji, duration, questions, gradient, delay = 0, onClick }: QuizCardProps) => (
   <motion.button
     initial={{ opacity: 0, y: 12 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.3, delay }}
     className={`w-full rounded-2xl p-4 text-left ${gradient} border border-border/30 hover:scale-[1.02] transition-transform`}
+    onClick={onClick}
   >
     <div className="flex items-start justify-between">
       <div className="flex-1">
