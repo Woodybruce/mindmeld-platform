@@ -105,6 +105,16 @@ const defaultLists: UserList[] = [
       { id: "t8", text: "🗺️ Scottish Lakes trip", done: false },
     ],
   },
+  {
+    id: "onenote-dream",
+    name: "Our 1 Long Term Dream",
+    icon: "🌊",
+    template: "long-term",
+    createdAt: "2026-01-04T17:45:00.000Z",
+    items: [
+      { id: "dr1", text: "Spend more time somewhere warm by the sea", done: false },
+    ],
+  },
 ];
 
 const Us = () => {
