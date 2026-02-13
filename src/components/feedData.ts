@@ -13,7 +13,7 @@ export const sampleFeedData: FeedItem[] = [
   {
     id: "0",
     type: "update",
-    size: "full",
+    size: "banner",
     tag: "🔥 Kiss Chase",
     tagColor: "text-us-coral",
     title: "Challenge your partner to Kiss Chase!",
