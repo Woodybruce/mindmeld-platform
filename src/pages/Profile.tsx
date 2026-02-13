@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 const Profile = () => {
@@ -13,6 +13,13 @@ const Profile = () => {
   const [linking, setLinking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
+
+  const quizCount = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("completedQuizzes") || "[]").length; } catch { return 0; }
+  }, []);
+  const listCount = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("userLists") || "[]").length; } catch { return 0; }
+  }, []);
 
   if (!loading && !user) {
     navigate("/auth");
@@ -142,15 +149,15 @@ const Profile = () => {
           </h3>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="rounded-lg bg-secondary p-3">
-              <span className="text-lg font-bold text-foreground">0</span>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Days Together</p>
+              <span className="text-lg font-bold text-foreground">{listCount}</span>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Shared Lists</p>
             </div>
             <div className="rounded-lg bg-secondary p-3">
-              <span className="text-lg font-bold text-foreground">0</span>
+              <span className="text-lg font-bold text-foreground">{quizCount}</span>
               <p className="text-[10px] text-muted-foreground mt-0.5">Quizzes Done</p>
             </div>
             <div className="rounded-lg bg-secondary p-3">
-              <span className="text-lg font-bold text-foreground">0</span>
+              <span className="text-lg font-bold text-foreground">1</span>
               <p className="text-[10px] text-muted-foreground mt-0.5">Games Played</p>
             </div>
           </div>

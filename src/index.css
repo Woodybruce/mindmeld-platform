@@ -124,3 +124,15 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
+/* Smooth tap feedback on mobile */
+@media (hover: none) {
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
