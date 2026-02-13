@@ -1,4 +1,5 @@
-import { Bell, Settings, Heart } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
+import usLogo from "@/assets/us-logo.png";
 
 interface AppHeaderProps {
   subtitle?: string;
@@ -9,9 +10,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-us-coral to-us-terracotta flex items-center justify-center">
-            <Heart className="w-4 h-4 text-primary-foreground fill-primary-foreground" />
-          </div>
+          <img src={usLogo} alt="Us logo" className="w-8 h-8 rounded-full object-cover" />
           <div>
             <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
               US
