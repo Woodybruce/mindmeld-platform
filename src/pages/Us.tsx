@@ -272,16 +272,6 @@ const Us = () => {
               delay={i * 0.08}
             />
           ))}
-          <QuizCard
-            title="Love Language Ideas"
-            description="Understand how you both give and receive love, with real stories and everyday ideas."
-            emoji="💕"
-            duration="Browse"
-            questions={5}
-            gradient="bg-gradient-to-br from-us-blush/30 to-us-coral/10"
-            onClick={() => navigate("/love-languages")}
-            delay={0.1}
-          />
           {reflectionQuizzes.map((rq, i) => (
             <QuizCard
               key={rq.id}
@@ -336,8 +326,23 @@ const Us = () => {
         </TabsContent>
 
         {/* Gratitude */}
-        <TabsContent value="gratitude" className="mt-4">
+        <TabsContent value="gratitude" className="mt-4 space-y-4">
           <GratitudeJournal />
+
+          <motion.button
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            onClick={() => navigate("/love-languages")}
+            className="w-full flex items-center gap-3 rounded-xl border border-border/50 bg-card p-4 text-left hover:bg-muted/50 transition-colors"
+          >
+            <span className="text-xl">💕</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Love Language Ideas</p>
+              <p className="text-xs text-muted-foreground">How you both give and receive love, with everyday ideas</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </motion.button>
         </TabsContent>
 
         {/* Links */}
