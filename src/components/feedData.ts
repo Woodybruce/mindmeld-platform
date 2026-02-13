@@ -1,5 +1,5 @@
 import type { FeedItem } from "./FeedCard";
-import feedKisschase from "@/assets/feed-kisschase.jpg";
+import feedKisschase from "@/assets/kisschase-cartoon.png";
 import feedPrompt from "@/assets/feed-prompt.jpg";
 import feedDatenight from "@/assets/feed-datenight.jpg";
 import feedTravel from "@/assets/feed-travel.jpg";
@@ -19,6 +19,7 @@ export const sampleFeedData: FeedItem[] = [
     title: "Challenge your partner to Kiss Chase!",
     subtitle: "A real-world game of chase with rewards",
     body: "Turn on location, set a time limit, pick a reward — then go find your partner!",
+    image: feedKisschase,
     timeAgo: "New",
     link: "/kiss-chase",
   },

@@ -118,6 +118,14 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
                 {item.body}
               </p>
             )}
+            {item.link && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleClick(); }}
+                className="mt-2 w-full py-2 rounded-xl bg-white/20 backdrop-blur-md text-white text-sm font-semibold tracking-wide hover:bg-white/30 active:scale-[0.97] transition-all border border-white/25"
+              >
+                Play Now →
+              </button>
+            )}
           </div>
         </div>
 
