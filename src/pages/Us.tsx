@@ -20,6 +20,7 @@ import OurEvents from "@/components/connect/OurEvents";
 import GratitudeJournal from "@/components/connect/GratitudeJournal";
 import LinksAndMedia from "@/components/connect/LinksAndMedia";
 import { quizDefinitions } from "@/data/quizData";
+import { checklistQuizzes } from "@/data/checklistQuizData";
 import type { CompletedQuiz } from "@/data/quizData";
 import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
 import PartnerQuizBanner from "@/components/connect/PartnerQuizBanner";
@@ -191,6 +192,22 @@ const Us = () => {
         {/* Quizzes */}
         <TabsContent value="quizzes" className="mt-4 space-y-3">
           <p className="text-sm text-muted-foreground">How well do you really know each other?</p>
+          {checklistQuizzes.map((cq, i) => (
+            <QuizCard
+              key={cq.id}
+              title={cq.title}
+              description={cq.description}
+              emoji={cq.emoji}
+              duration={cq.duration}
+              questions={cq.sections.flatMap((s) => s.items).length}
+              gradient={cq.gradient}
+              onClick={() => navigate(`/checklist-quiz/${cq.id}`)}
+              delay={i * 0.08}
+            />
+          ))}
+          <div className="pt-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
+          </div>
           {quizCards.map((quiz, i) => (
             <QuizCard key={quiz.title} {...quiz} onClick={() => navigate(`/quiz/${quiz.id}`)} delay={i * 0.08} />
           ))}
