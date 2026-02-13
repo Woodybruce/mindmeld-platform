@@ -83,94 +83,9 @@ const fileIcon = (type: string) => {
   }
 };
 
-// Pre-populated lists from OneNote wireframe
-const defaultLists: UserList[] = [
-  {
-    id: "onenote-daily-bruce",
-    name: "Bruce Daily Plan",
-    icon: "☀️",
-    template: "daily",
-    createdAt: "2026-01-04T17:45:00.000Z",
-    items: [
-      { id: "d1", text: "Get under layers", done: true },
-      { id: "d2", text: "Size small grey or black get 2 roll necks and 4 others", done: true },
-      { id: "d3", text: "Get shampoo", done: true },
-      { id: "d4", text: "Coco sparks", done: false },
-    ],
-  },
-  {
-    id: "onenote-family-todo",
-    name: "Bruce Family To Do List",
-    icon: "👨‍👩‍👧",
-    template: "actions",
-    createdAt: "2026-01-04T17:45:00.000Z",
-    items: [
-      { id: "f1", text: "🧒 Coco — New school registration", done: false },
-      { id: "f2", text: "🧒 Coco — New ski boots", done: false },
-      { id: "f3", text: "👧 Freya — New school", done: false },
-      { id: "f4", text: "👧 Freya — Remove her teeth", done: false },
-      { id: "f5", text: "👩 Helen — test", done: false },
-      { id: "f6", text: "🐕 Woody — Sort Neck", done: false },
-      { id: "f7", text: "🏠 House — Boiler", done: false },
-      { id: "f8", text: "💰 Finances — Mortgage application", done: false },
-      { id: "f9", text: "💰 Finances — Tax planning process", done: false },
-      { id: "f10", text: "📋 Special projects — Planning for flat", done: false },
-      { id: "f11", text: "✈️ Holidays — August holiday", done: false },
-    ],
-  },
-  {
-    id: "onenote-together",
-    name: "Our Together List",
-    icon: "💑",
-    template: "long-term",
-    createdAt: "2026-01-04T15:30:00.000Z",
-    items: [
-      { id: "t1", text: "⭐ Go shopping and drink together", done: false },
-      { id: "t2", text: "⭐ More fun stuff together", done: false },
-      { id: "t3", text: "⭐ Planned events over the year", done: false },
-      { id: "t4", text: "Dancing", done: false },
-      { id: "t5", text: "Go see an act", done: false },
-      { id: "t6", text: "Paint / draw each other", done: false },
-      { id: "t7", text: "Go to art Gallery", done: false },
-      { id: "t8", text: "🗺️ Scottish Lakes trip", done: false },
-    ],
-  },
-  {
-    id: "onenote-dream",
-    name: "Our 1 Long Term Dream",
-    icon: "🌊",
-    template: "long-term",
-    createdAt: "2026-01-04T17:45:00.000Z",
-    items: [
-      { id: "dr1", text: "Spend more time somewhere warm by the sea", done: false },
-    ],
-  },
-];
+const defaultLists: UserList[] = [];
 
-const seedCompletedQuizzes = (): CompletedQuiz[] => {
-  const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-  return quizDefinitions.map((quiz) => {
-    const yourAnswers = quiz.questions.map((q) => pick(q.options));
-    const partnerAnswers = quiz.questions.map((q) => pick(q.options));
-    const answers = quiz.questions.map((q, i) => ({
-      question: q.question,
-      yourAnswer: yourAnswers[i],
-      partnerAnswer: partnerAnswers[i],
-      match: yourAnswers[i] === partnerAnswers[i],
-    }));
-    const score = answers.filter((a) => a.match).length;
-    return {
-      quizId: quiz.id,
-      title: quiz.title,
-      emoji: quiz.emoji,
-      score,
-      totalQuestions: quiz.questions.length,
-      completedAt: new Date(Date.now() - Math.random() * 7 * 86400000).toISOString(),
-      answers,
-      actionItems: generateActionItems(quiz.id),
-    };
-  });
-};
+const seedCompletedQuizzes = (): CompletedQuiz[] => [];
 
 const Us = () => {
   const navigate = useNavigate();

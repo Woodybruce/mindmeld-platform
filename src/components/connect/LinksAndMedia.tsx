@@ -11,15 +11,8 @@ interface SharedLink {
   addedAt: string;
 }
 
-const mockLinks: SharedLink[] = [
-  { id: "1", title: "Restaurant we want to try", url: "https://example.com/restaurant", category: "Date Ideas", addedBy: "You", addedAt: "3 days ago" },
-  { id: "2", title: "Holiday apartment", url: "https://example.com/airbnb", category: "Travel", addedBy: "Partner", addedAt: "1 week ago" },
-  { id: "3", title: "Recipe to cook together", url: "https://example.com/recipe", category: "Cooking", addedBy: "You", addedAt: "2 weeks ago" },
-  { id: "4", title: "Couples yoga class", url: "https://example.com/yoga", category: "Wellness", addedBy: "Partner", addedAt: "3 weeks ago" },
-];
-
 const LinksAndMedia = () => {
-  const [links, setLinks] = useState<SharedLink[]>(mockLinks);
+  const [links, setLinks] = useState<SharedLink[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newUrl, setNewUrl] = useState("");
@@ -77,35 +70,45 @@ const LinksAndMedia = () => {
         </motion.div>
       )}
 
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        {links.map((link, i) => (
-          <motion.div
-            key={link.id}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="flex items-center gap-3 px-4 py-3 border-b border-border/30 last:border-0 group"
-          >
-            <Link2 className="w-4 h-4 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{link.title}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[11px] text-us-gold font-medium">{link.category}</span>
-                <span className="text-[11px] text-muted-foreground">· {link.addedBy} · {link.addedAt}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => removeLink(link.id)}
-              className="opacity-0 group-hover:opacity-100 p-1 transition-opacity"
+      {links.length === 0 && !showAdd && (
+        <div className="rounded-xl border border-border bg-card p-6 text-center">
+          <Link2 className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+          <h3 className="font-display text-base font-semibold text-foreground">No links yet</h3>
+          <p className="text-sm text-muted-foreground mt-1">Save restaurants, recipes, holidays & more</p>
+        </div>
+      )}
+
+      {links.length > 0 && (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          {links.map((link, i) => (
+            <motion.div
+              key={link.id}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="flex items-center gap-3 px-4 py-3 border-b border-border/30 last:border-0 group"
             >
-              <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-            </button>
-            <a href={link.url} target="_blank" rel="noopener noreferrer" className="p-1">
-              <ExternalLink className="w-4 h-4 text-muted-foreground/40 hover:text-primary" />
-            </a>
-          </motion.div>
-        ))}
-      </div>
+              <Link2 className="w-4 h-4 text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{link.title}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[11px] text-us-gold font-medium">{link.category}</span>
+                  <span className="text-[11px] text-muted-foreground">· {link.addedBy} · {link.addedAt}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => removeLink(link.id)}
+                className="opacity-0 group-hover:opacity-100 p-1 transition-opacity"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+              </button>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="p-1">
+                <ExternalLink className="w-4 h-4 text-muted-foreground/40 hover:text-primary" />
+              </a>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
