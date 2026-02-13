@@ -16,6 +16,8 @@ import SharedLists from "@/components/connect/SharedLists";
 import type { UserList } from "@/components/connect/SharedLists";
 import { quizDefinitions } from "@/data/quizData";
 import type { CompletedQuiz } from "@/data/quizData";
+import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
+import PartnerQuizBanner from "@/components/connect/PartnerQuizBanner";
 
 const quizCards = quizDefinitions.map((q) => ({
   id: q.id,
@@ -60,6 +62,7 @@ const Us = () => {
   const [promptIndex, setPromptIndex] = useState(0);
   const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]);
   const [userLists, setUserLists] = useState<UserList[]>([]);
+  const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
 
   useEffect(() => {
     setCompletedQuizzes(JSON.parse(localStorage.getItem("completedQuizzes") || "[]"));
@@ -87,6 +90,14 @@ const Us = () => {
           <p className="text-xs text-muted-foreground mt-0.5">Your shared world</p>
         </div>
       </header>
+
+      {partnerActivity && (
+        <PartnerQuizBanner
+          quizTitle={partnerActivity.quizTitle}
+          quizEmoji={partnerActivity.quizEmoji}
+          onDismiss={dismissActivity}
+        />
+      )}
 
       <Tabs defaultValue="quizzes" className="px-4 pt-3 pb-24">
         <TabsList className="w-full bg-secondary">
