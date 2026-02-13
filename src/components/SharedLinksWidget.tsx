@@ -184,31 +184,51 @@ const SharedLinksWidget = ({ links = sampleSharedLinks }: SharedLinksWidgetProps
         </div>
 
         <div className="divide-y divide-border/50">
-          {allLinks.map((link) => (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-start gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors"
-            >
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${detectPlatform(link.url).color} flex items-center justify-center text-primary-foreground shrink-0 mt-0.5`}>
-                {link.icon}
+          {allLinks.map((link) => {
+            const isInstagram = link.url.includes("instagram.com") || link.url.includes("instagr.am");
+            return (
+              <div key={link.id} className="px-4 py-3 hover:bg-secondary/50 transition-colors">
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3"
+                >
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${detectPlatform(link.url).color} flex items-center justify-center text-primary-foreground shrink-0 mt-0.5`}>
+                    {link.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">
+                      {link.title}
+                    </p>
+                    {link.note && (
+                      <p className="text-xs text-muted-foreground mt-0.5 italic">"{link.note}"</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[11px] text-muted-foreground">{link.sender}</span>
+                      <span className="text-[11px] text-muted-foreground">·</span>
+                      <span className="text-[11px] text-muted-foreground">{link.platform}</span>
+                      <span className="text-[11px] text-muted-foreground">·</span>
+                      <span className="text-[11px] text-muted-foreground">{link.timeAgo}</span>
+                    </div>
+                  </div>
+                </a>
+                {/* Instagram embed preview */}
+                {isInstagram && (
+                  <div className="mt-2 ml-13">
+                    <iframe
+                      src={`${link.url.split("?")[0]}embed`}
+                      className="w-full rounded-lg border border-border/30"
+                      style={{ height: 320, maxWidth: 320 }}
+                      scrolling="no"
+                      allowTransparency
+                      title="Instagram embed"
+                    />
+                  </div>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">
-                  {link.title}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[11px] text-muted-foreground">{link.sender}</span>
-                  <span className="text-[11px] text-muted-foreground">·</span>
-                  <span className="text-[11px] text-muted-foreground">{link.platform}</span>
-                  <span className="text-[11px] text-muted-foreground">·</span>
-                  <span className="text-[11px] text-muted-foreground">{link.timeAgo}</span>
-                </div>
-              </div>
-            </a>
-          ))}
+            );
+          })}
         </div>
       </div>
 
