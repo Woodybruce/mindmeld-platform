@@ -11,6 +11,7 @@ import Chat from "./pages/Chat";
 import KissChasePage from "./pages/KissChase";
 import QuizPlay from "./pages/QuizPlay";
 import ChecklistQuizPlay from "./pages/ChecklistQuizPlay";
+import LoveLanguageGuide from "./pages/LoveLanguageGuide";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/kiss-chase" element={<KissChasePage />} />
             <Route path="/quiz/:quizId" element={<QuizPlay />} />
             <Route path="/checklist-quiz/:quizId" element={<ChecklistQuizPlay />} />
+            <Route path="/love-languages" element={<LoveLanguageGuide />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

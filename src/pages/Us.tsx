@@ -205,6 +205,16 @@ const Us = () => {
               delay={i * 0.08}
             />
           ))}
+          <QuizCard
+            title="Love Language Ideas"
+            description="Understand how you both give and receive love, with real stories and everyday ideas."
+            emoji="💕"
+            duration="Browse"
+            questions={5}
+            gradient="bg-gradient-to-br from-us-blush/30 to-us-coral/10"
+            onClick={() => navigate("/love-languages")}
+            delay={0.1}
+          />
           <div className="pt-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
           </div>
