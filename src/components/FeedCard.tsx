@@ -94,7 +94,24 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
             <button className="text-muted-foreground hover:text-foreground transition-colors">
               <Bookmark className={`w-[18px] h-[18px] ${item.saved ? 'fill-foreground' : ''}`} />
             </button>
-            <button className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                const url = item.link
+                  ? `${window.location.origin}${item.link}`
+                  : window.location.href;
+                if (navigator.share) {
+                  navigator.share({
+                    title: item.title,
+                    text: item.body,
+                    url,
+                  }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(url);
+                }
+              }}
+            >
               <Share2 className="w-[18px] h-[18px]" />
             </button>
           </div>
