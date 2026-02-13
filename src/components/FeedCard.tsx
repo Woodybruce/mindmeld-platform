@@ -154,6 +154,14 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
         {size !== "half" && (
           <p className="text-sm text-secondary-foreground leading-relaxed">{item.body}</p>
         )}
+        {item.link && (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleClick(); }}
+            className="mt-3 w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold tracking-wide hover:bg-primary/90 active:scale-[0.97] transition-all"
+          >
+            Play Now →
+          </button>
+        )}
         <div className={`${size === "half" ? "mt-2 pt-2" : "mt-3 pt-3"} border-t border-border/50`}>
           <ActionBar item={item} compact={size === "half"} />
         </div>
