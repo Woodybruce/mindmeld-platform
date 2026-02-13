@@ -6,6 +6,7 @@ import SharedLinksWidget from "@/components/SharedLinksWidget";
 import DailyListsWidget from "@/components/DailyListsWidget";
 import CalendarWidget from "@/components/CalendarWidget";
 import MatchedLinkCard from "@/components/MatchedLinkCard";
+import SetupPrompts from "@/components/SetupPrompts";
 import { useSharedLinks } from "@/hooks/useSharedLinks";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
@@ -48,6 +49,9 @@ const Index = () => {
       </div>
 
       <main className="px-3 py-4 space-y-4 pb-24">
+        {/* Setup prompts for new users */}
+        <SetupPrompts />
+
         {/* Matched links from both partners */}
         {matchedLinks.length > 0 && (
           <div className="space-y-3">

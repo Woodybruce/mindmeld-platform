@@ -71,37 +71,14 @@ const SharedFolderEmbed = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    const seeded: EmbeddedFolder[] = [
-      {
-        id: "onenote-1",
-        label: "Bruce OneNote",
-        url: "https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu",
-        embedUrl: "https://paveam-my.sharepoint.com/_layouts/15/embed.aspx?url=" + encodeURIComponent("https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu"),
-        provider: "OneDrive",
-      },
-      {
-        id: "onedrive-shared-folder",
-        label: "Bruce Shared Folder",
-        url: "https://paveam-my.sharepoint.com/:f:/g/personal/bruce_pave_london/IgAPhXHnpucuQ57vbBszVujSAWxKvVkEsa2CTQwfiD9hLAg?e=xhKrK6",
-        embedUrl: "https://paveam-my.sharepoint.com/_layouts/15/embed.aspx?url=" + encodeURIComponent("https://paveam-my.sharepoint.com/:f:/g/personal/bruce_pave_london/IgAPhXHnpucuQ57vbBszVujSAWxKvVkEsa2CTQwfiD9hLAg?e=xhKrK6"),
-        provider: "OneDrive",
-      },
-    ];
-
     if (stored) {
       const existing: EmbeddedFolder[] = JSON.parse(stored);
-      // Re-generate embed URLs for existing folders to use new format
       const updated = existing.map((f) => ({
         ...f,
         embedUrl: toEmbedUrl(f.url) || f.embedUrl,
       }));
-      const existingIds = new Set(updated.map((f) => f.id));
-      const merged = [...updated, ...seeded.filter((s) => !existingIds.has(s.id))];
-      save(merged);
-      setFolders(merged);
-    } else {
-      setFolders(seeded);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+      save(updated);
+      setFolders(updated);
     }
   }, []);
 
