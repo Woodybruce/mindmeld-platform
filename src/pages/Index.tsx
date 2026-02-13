@@ -4,29 +4,62 @@ import BottomNav from "@/components/BottomNav";
 import FeedCard from "@/components/FeedCard";
 import SharedLinksWidget from "@/components/SharedLinksWidget";
 import { sampleFeedData } from "@/components/feedData";
+import type { FeedItem } from "@/components/FeedCard";
+
+// Groups feed items: consecutive "half" items pair up, others standalone
+const layoutItems = (items: FeedItem[]) => {
+  const rows: (FeedItem | [FeedItem, FeedItem])[] = [];
+  let i = 0;
+  while (i < items.length) {
+    const item = items[i];
+    if (item.size === "half" && i + 1 < items.length && items[i + 1].size === "half") {
+      rows.push([item, items[i + 1]]);
+      i += 2;
+    } else {
+      rows.push(item);
+      i++;
+    }
+  }
+  return rows;
+};
 
 const Index = () => {
+  const rows = layoutItems(sampleFeedData);
+
+  // Insert shared links widget after 3rd row
+  const insertAt = 3;
+
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
       <AppHeader />
 
-      {/* Stories navigation */}
       <div className="border-b border-border/50">
         <StoriesBar />
       </div>
 
-      {/* Feed */}
-      <main className="px-4 py-4 space-y-4 pb-24">
-        {sampleFeedData.slice(0, 3).map((item, index) => (
-          <FeedCard key={item.id} item={item} index={index} />
-        ))}
+      <main className="px-3 py-3 space-y-3 pb-24">
+        {rows.map((row, idx) => {
+          const content = Array.isArray(row) ? (
+            <div key={`pair-${idx}`} className="grid grid-cols-2 gap-3">
+              <FeedCard item={row[0]} index={idx} />
+              <FeedCard item={row[1]} index={idx + 1} />
+            </div>
+          ) : (
+            <FeedCard key={row.id} item={row} index={idx} />
+          );
 
-        {/* Shared links widget between feed items */}
-        <SharedLinksWidget />
+          // Insert SharedLinksWidget after the designated row
+          if (idx === insertAt) {
+            return (
+              <div key={`group-${idx}`} className="space-y-3">
+                {content}
+                <SharedLinksWidget />
+              </div>
+            );
+          }
 
-        {sampleFeedData.slice(3).map((item, index) => (
-          <FeedCard key={item.id} item={item} index={index + 3} />
-        ))}
+          return content;
+        })}
       </main>
 
       <BottomNav />
