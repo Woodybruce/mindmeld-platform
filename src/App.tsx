@@ -8,6 +8,7 @@ import Us from "./pages/Us";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
 import KissChasePage from "./pages/KissChase";
+import QuizPlay from "./pages/QuizPlay";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/kiss-chase" element={<KissChasePage />} />
+          <Route path="/quiz/:quizId" element={<QuizPlay />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -2,22 +2,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ListChecks, Calendar, Bell, FolderOpen, ExternalLink,
   FileText, Image, File, Upload, Sparkles, MessageCircle,
-  Gamepad2, RefreshCw
+  Gamepad2, RefreshCw, Trophy
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
 import QuizCard from "@/components/connect/QuizCard";
 import PromptCard from "@/components/connect/PromptCard";
 import GameCard from "@/components/connect/GameCard";
+import CompletedQuizList from "@/components/connect/CompletedQuizList";
+import { quizDefinitions } from "@/data/quizData";
+import type { CompletedQuiz } from "@/data/quizData";
 
-const quizzes = [
-  { title: "How Well Do You Know Me?", description: "Answer questions about your partner's preferences, memories, and dreams.", emoji: "🧠", duration: "5 min", questions: 10, gradient: "bg-gradient-to-br from-us-blush/40 to-us-cream/60" },
-  { title: "Love Language Check-In", description: "Discover how your love languages have evolved over time.", emoji: "💕", duration: "3 min", questions: 8, gradient: "bg-gradient-to-br from-us-coral/10 to-us-blush/30" },
-  { title: "Dream Life Alignment", description: "Are your future visions in sync? Find out where you align and differ.", emoji: "🌙", duration: "7 min", questions: 12, gradient: "bg-gradient-to-br from-us-sage/20 to-us-cream/40" },
-  { title: "Conflict Style Quiz", description: "Understand how you each handle disagreements.", emoji: "🤝", duration: "4 min", questions: 8, gradient: "bg-gradient-to-br from-us-gold/15 to-us-cream/40" },
-];
+const quizCards = quizDefinitions.map((q) => ({
+  id: q.id,
+  title: q.title,
+  description: q.description,
+  emoji: q.emoji,
+  duration: q.duration,
+  questions: q.questions.length,
+  gradient: q.gradient,
+}));
 
 const allPrompts = [
   { category: "Deep", prompt: "What's one thing you've never told me that you wish I knew?", color: "text-us-coral" },
@@ -50,6 +56,12 @@ const fileIcon = (type: string) => {
 const Us = () => {
   const navigate = useNavigate();
   const [promptIndex, setPromptIndex] = useState(0);
+  const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]);
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("completedQuizzes") || "[]");
+    setCompletedQuizzes(stored);
+  }, []);
 
   const visiblePrompts = [
     allPrompts[promptIndex % allPrompts.length],
@@ -90,8 +102,8 @@ const Us = () => {
         {/* Quizzes */}
         <TabsContent value="quizzes" className="mt-4 space-y-3">
           <p className="text-sm text-muted-foreground">How well do you really know each other?</p>
-          {quizzes.map((quiz, i) => (
-            <QuizCard key={quiz.title} {...quiz} delay={i * 0.08} />
+          {quizCards.map((quiz, i) => (
+            <QuizCard key={quiz.title} {...quiz} onClick={() => navigate(`/quiz/${quiz.id}`)} delay={i * 0.08} />
           ))}
         </TabsContent>
 
@@ -119,11 +131,13 @@ const Us = () => {
 
         {/* Lists */}
         <TabsContent value="lists" className="mt-4 space-y-3">
-          <div className="rounded-xl border border-border bg-card p-6 text-center">
-            <ListChecks className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-            <h2 className="font-display text-lg font-semibold text-foreground">Shared Lists</h2>
-            <p className="text-sm text-muted-foreground mt-1">Groceries, to-dos, bucket lists — all in one place.</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm text-muted-foreground">Completed quiz results</p>
+            <span className="flex items-center gap-1 text-xs text-primary font-medium">
+              <Trophy className="w-3.5 h-3.5" /> {completedQuizzes.length} done
+            </span>
           </div>
+          <CompletedQuizList quizzes={completedQuizzes} />
         </TabsContent>
 
         {/* Files */}
