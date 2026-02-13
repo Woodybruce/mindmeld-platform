@@ -19,7 +19,6 @@ export const sampleFeedData: FeedItem[] = [
     title: "Challenge your partner to Kiss Chase!",
     subtitle: "A real-world game of chase with rewards",
     body: "Turn on location, set a time limit, pick a reward — then go find your partner!",
-    image: feedKisschase,
     timeAgo: "New",
     link: "/kiss-chase",
   },
@@ -77,7 +76,6 @@ export const sampleFeedData: FeedItem[] = [
     tagColor: "text-us-terracotta",
     title: "Woody completed 3 tasks ✓",
     body: "Groceries, dentist, emergency contacts",
-    image: feedHands,
     timeAgo: "1h ago",
   },
   {
@@ -101,7 +99,6 @@ export const sampleFeedData: FeedItem[] = [
     tagColor: "text-us-coral",
     title: "3 things I appreciate about you…",
     body: "Your partner left a note ✨",
-    image: feedSurprise,
     timeAgo: "8h ago",
     liked: true,
   },
