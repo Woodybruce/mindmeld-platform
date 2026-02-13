@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, ImagePlus, X, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ interface Message {
   sender_id: string;
   receiver_id: string;
   content: string;
+  image_url: string | null;
   read: boolean;
   created_at: string;
 }
@@ -23,7 +24,11 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [partnerName, setPartnerName] = useState("Partner");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const partnerId = profile?.partner_id;
 
@@ -77,13 +82,8 @@ const Chat = () => {
             (msg.sender_id === partnerId && msg.receiver_id === user.id)
           ) {
             setMessages((prev) => [...prev, msg]);
-            // Mark as read if we received it
             if (msg.receiver_id === user.id) {
-              supabase
-                .from("messages")
-                .update({ read: true })
-                .eq("id", msg.id)
-                .then();
+              supabase.from("messages").update({ read: true }).eq("id", msg.id).then();
             }
           }
         }
@@ -93,22 +93,52 @@ const Chat = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user, partnerId]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("chat-images").upload(path, file);
+    if (error) {
+      console.error("Upload error:", error);
+      return null;
+    }
+    const { data } = supabase.storage.from("chat-images").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || !user || !partnerId || sending) return;
+    if ((!input.trim() && !imageFile) || !user || !partnerId || sending) return;
     const content = input.trim();
     setInput("");
     setSending(true);
+    setUploading(!!imageFile);
+
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      imageUrl = await uploadImage(imageFile);
+      setImageFile(null);
+      setImagePreview(null);
+      setUploading(false);
+    }
 
     await supabase.from("messages").insert({
       sender_id: user.id,
       receiver_id: partnerId,
-      content,
-    });
+      content: content || (imageUrl ? "📷 Photo" : ""),
+      image_url: imageUrl,
+    } as any);
 
     setSending(false);
   };
@@ -186,7 +216,7 @@ const Chat = () => {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 overflow-y-auto pb-20 space-y-1">
+      <main className="flex-1 px-4 py-4 overflow-y-auto pb-24 space-y-1">
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center pt-20">
             <div className="text-center">
@@ -214,14 +244,27 @@ const Chat = () => {
                     className={`flex mb-1.5 ${isMine ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[75%] rounded-2xl px-3.5 py-2 ${
+                      className={`max-w-[75%] rounded-2xl overflow-hidden ${
                         isMine
                           ? "bg-primary text-primary-foreground rounded-br-md"
                           : "bg-secondary text-foreground rounded-bl-md"
                       }`}
                     >
-                      <p className="text-sm leading-relaxed break-words">{msg.content}</p>
-                      <p className={`text-[9px] mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                      {msg.image_url && (
+                        <img
+                          src={msg.image_url}
+                          alt="Shared photo"
+                          className="w-full max-h-60 object-cover"
+                          loading="lazy"
+                        />
+                      )}
+                      {msg.content && msg.content !== "📷 Photo" && (
+                        <p className="text-sm leading-relaxed break-words px-3.5 py-2">{msg.content}</p>
+                      )}
+                      {(!msg.content || msg.content === "📷 Photo") && msg.image_url && (
+                        <div className="px-3.5 py-1" />
+                      )}
+                      <p className={`text-[9px] px-3.5 pb-1.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                         {time}
                       </p>
                     </div>
@@ -234,8 +277,38 @@ const Chat = () => {
         <div ref={bottomRef} />
       </main>
 
+      {/* Image preview */}
+      {imagePreview && (
+        <div className="fixed bottom-16 left-0 right-0 z-50 px-4 pb-2">
+          <div className="max-w-lg mx-auto relative">
+            <div className="rounded-xl overflow-hidden border border-border bg-card shadow-lg inline-block">
+              <img src={imagePreview} alt="Preview" className="max-h-32 object-cover" />
+              <button
+                onClick={() => { setImageFile(null); setImagePreview(null); }}
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/50 p-3 z-40">
         <div className="flex items-center gap-2 max-w-lg mx-auto">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageSelect}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+          >
+            <ImagePlus className="w-4 h-4" />
+          </button>
           <input
             type="text"
             value={input}
@@ -246,10 +319,10 @@ const Chat = () => {
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || sending}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-us-terracotta flex items-center justify-center text-primary-foreground disabled:opacity-40 transition-opacity"
+            disabled={(!input.trim() && !imageFile) || sending}
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-us-terracotta flex items-center justify-center text-primary-foreground disabled:opacity-40 transition-opacity flex-shrink-0"
           >
-            <Send className="w-4 h-4" />
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
       </div>

@@ -1,13 +1,15 @@
-import { Settings, Heart, LinkIcon, LogOut, UserPlus, Mail } from "lucide-react";
+import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 const Profile = () => {
   const { user, profile, signOut, linkPartnerByEmail, loading } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [partnerEmail, setPartnerEmail] = useState("");
   const [linking, setLinking] = useState(false);
@@ -45,6 +47,12 @@ const Profile = () => {
   };
 
   const initials = profile?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U";
+
+  const themeOptions = [
+    { value: "light" as const, icon: Sun, label: "Light" },
+    { value: "dark" as const, icon: Moon, label: "Dark" },
+    { value: "system" as const, icon: Monitor, label: "Auto" },
+  ];
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
@@ -117,6 +125,27 @@ const Profile = () => {
             )}
           </div>
         )}
+
+        {/* Theme selector */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-display font-semibold text-foreground mb-3">Appearance</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {themeOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setTheme(opt.value)}
+                className={`flex flex-col items-center gap-1.5 rounded-xl p-3 transition-all ${
+                  theme === opt.value
+                    ? "bg-primary/10 border-2 border-primary text-primary"
+                    : "bg-secondary border-2 border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <opt.icon className="w-5 h-5" />
+                <span className="text-[11px] font-medium">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Relationship stats */}
         <div className="rounded-xl border border-border bg-card p-5">

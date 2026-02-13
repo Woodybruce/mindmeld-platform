@@ -1,3 +1,4 @@
+import { useState } from "react";
 import AppHeader from "@/components/AppHeader";
 import StoriesBar from "@/components/StoriesBar";
 import BottomNav from "@/components/BottomNav";
@@ -7,7 +8,9 @@ import DailyListsWidget from "@/components/DailyListsWidget";
 import CalendarWidget from "@/components/CalendarWidget";
 import MatchedLinkCard from "@/components/MatchedLinkCard";
 import SetupPrompts from "@/components/SetupPrompts";
+import Onboarding from "@/components/Onboarding";
 import { useSharedLinks } from "@/hooks/useSharedLinks";
+import { useAuth } from "@/contexts/AuthContext";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 import {
@@ -39,6 +42,22 @@ const layoutItems = (items: FeedItem[]) => {
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
   const { myLinks, partnerLinks, matchedLinks, addLink } = useSharedLinks();
+  const { user, profile } = useAuth();
+
+  // Show onboarding for new users who haven't completed it
+  const [onboardingDone, setOnboardingDone] = useState(() => {
+    return localStorage.getItem("us-onboarding-done") === "true";
+  });
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem("us-onboarding-done", "true");
+    setOnboardingDone(true);
+  };
+
+  // Show onboarding if user is logged in but hasn't completed it and has no username set
+  if (user && !onboardingDone && (!profile?.username || profile.username === user.email)) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
