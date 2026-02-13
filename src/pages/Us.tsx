@@ -6,7 +6,7 @@ import {
   Link2, ChevronRight
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
 import QuizCard from "@/components/connect/QuizCard";
@@ -173,6 +173,8 @@ const seedCompletedQuizzes = (): CompletedQuiz[] => {
 
 const Us = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "lists";
   const [promptIndex, setPromptIndex] = useState(0);
   const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]);
   const [userLists, setUserLists] = useState<UserList[]>([]);
@@ -227,7 +229,7 @@ const Us = () => {
         />
       )}
 
-      <Tabs defaultValue="lists" className="px-4 pt-3 pb-24">
+      <Tabs defaultValue={defaultTab} className="px-4 pt-3 pb-24">
         <TabsList className="flex flex-wrap h-auto bg-secondary gap-1 p-1">
             <TabsTrigger value="lists" className="gap-1 text-xs data-[state=active]:bg-card">
               <ListChecks className="w-3.5 h-3.5" /> Lists

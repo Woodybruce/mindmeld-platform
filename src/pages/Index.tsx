@@ -9,6 +9,14 @@ import MatchedLinkCard from "@/components/MatchedLinkCard";
 import { useSharedLinks } from "@/hooks/useSharedLinks";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
+import {
+  QuizzesPreview,
+  PromptsPreview,
+  GamesPreview,
+  PhotosPreview,
+  GratitudePreview,
+  FilesPreview,
+} from "@/components/UsSectionPreviews";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -29,10 +37,7 @@ const layoutItems = (items: FeedItem[]) => {
 
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
-  const { myLinks, partnerLinks, matchedLinks, addLink, loading } = useSharedLinks();
-
-  // Insert shared links widget after 3rd row
-  const insertAt = 3;
+  const { myLinks, partnerLinks, matchedLinks, addLink } = useSharedLinks();
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
@@ -51,6 +56,7 @@ const Index = () => {
             ))}
           </div>
         )}
+
         {rows.map((row, idx) => {
           const content = Array.isArray(row) ? (
             <div key={`pair-${idx}`} className="grid grid-cols-2 gap-3">
@@ -61,22 +67,56 @@ const Index = () => {
             <FeedCard key={row.id} item={row} index={idx} />
           );
 
-          // Insert SharedLinksWidget after the designated row
+          // After row 0: Prompts preview
+          if (idx === 0) {
+            return (
+              <div key={`group-${idx}`} className="space-y-3">
+                {content}
+                <PromptsPreview />
+              </div>
+            );
+          }
+
+          // After row 1: Daily Lists + Quizzes
           if (idx === 1) {
             return (
               <div key={`group-${idx}`} className="space-y-3">
                 {content}
                 <DailyListsWidget />
+                <QuizzesPreview />
               </div>
             );
           }
 
-          if (idx === insertAt) {
+          // After row 2: Games + Photos
+          if (idx === 2) {
+            return (
+              <div key={`group-${idx}`} className="space-y-3">
+                {content}
+                <GamesPreview />
+                <PhotosPreview />
+              </div>
+            );
+          }
+
+          // After row 3: Calendar + Shared Links + Gratitude
+          if (idx === 3) {
             return (
               <div key={`group-${idx}`} className="space-y-3">
                 {content}
                 <CalendarWidget />
                 <SharedLinksWidget dbLinks={[...myLinks, ...partnerLinks]} onSendLink={addLink} />
+                <GratitudePreview />
+              </div>
+            );
+          }
+
+          // After row 4: Files
+          if (idx === 4) {
+            return (
+              <div key={`group-${idx}`} className="space-y-3">
+                {content}
+                <FilesPreview />
               </div>
             );
           }
