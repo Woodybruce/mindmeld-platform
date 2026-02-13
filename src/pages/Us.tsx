@@ -256,6 +256,16 @@ const Us = () => {
             onClick={() => navigate("/our-challenges")}
             delay={0.25}
           />
+          <QuizCard
+            title="Our Sex List"
+            description="Values, motivations, preferences, and things to explore together."
+            emoji="🔥"
+            duration="Ongoing"
+            questions={6}
+            gradient="bg-gradient-to-br from-us-coral/20 to-us-blush/15"
+            onClick={() => navigate("/our-sex-list")}
+            delay={0.3}
+          />
           <div className="pt-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
           </div>
