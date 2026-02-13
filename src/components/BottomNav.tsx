@@ -21,12 +21,15 @@ const BottomNav = () => {
             <button
               key={tab.id}
               onClick={() => navigate(tab.path)}
-              className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-colors ${
+              className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-95 ${
                 isActive ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              <tab.icon className={`w-5 h-5 ${isActive ? "fill-primary/20" : ""}`} />
+              <tab.icon className={`w-5 h-5 transition-transform ${isActive ? "fill-primary/20 scale-110" : ""}`} />
               <span className="text-[10px] font-medium">{tab.label}</span>
+              {isActive && (
+                <span className="w-1 h-1 rounded-full bg-primary -mt-0.5" />
+              )}
             </button>
           );
         })}
