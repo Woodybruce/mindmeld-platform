@@ -19,6 +19,7 @@ import OurPhotos from "@/components/connect/OurPhotos";
 import OurEvents from "@/components/connect/OurEvents";
 import GratitudeJournal from "@/components/connect/GratitudeJournal";
 import LinksAndMedia from "@/components/connect/LinksAndMedia";
+import SharedFolderEmbed from "@/components/connect/SharedFolderEmbed";
 import { quizDefinitions, generateActionItems } from "@/data/quizData";
 import { checklistQuizzes } from "@/data/checklistQuizData";
 import { reflectionQuizzes } from "@/data/reflectionQuizData";
@@ -400,40 +401,7 @@ const Us = () => {
 
         {/* Files */}
         <TabsContent value="files" className="mt-4 space-y-3">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-xl border border-dashed border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Shared Folder</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Link OneDrive, Dropbox, or Google Drive</p>
-              </div>
-              <a
-                href="https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-              >
-                <ExternalLink className="w-3.5 h-3.5" /> Open OneNote
-              </a>
-            </div>
-          </motion.div>
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recent Files</span>
-              <button className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
-                <Upload className="w-3.5 h-3.5" /> Upload
-              </button>
-            </div>
-            {mockFiles.map((file, i) => (
-              <motion.button key={file.name} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25, delay: i * 0.06 }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/30 last:border-0 text-left">
-                {fileIcon(file.type)}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{file.updated}</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-              </motion.button>
-            ))}
-          </div>
+          <SharedFolderEmbed />
         </TabsContent>
       </Tabs>
 
