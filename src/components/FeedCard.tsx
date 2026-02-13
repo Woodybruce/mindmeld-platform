@@ -106,8 +106,8 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
           </div>
 
           {/* Text overlay */}
-          <div className={`absolute bottom-0 left-0 right-0 p-3 text-primary-foreground ${size === "half" ? "p-2.5" : ""}`}>
-            <h3 className={`font-display font-bold leading-tight drop-shadow-lg ${size === "half" ? "text-sm" : size === "banner" ? "text-base" : "text-xl"} ${size === "half" ? "line-clamp-2" : ""}`}>
+          <div className={`absolute bottom-0 left-0 right-0 p-3 text-primary-foreground ${size === "half" ? "p-2.5" : ""} ${size === "banner" ? "text-center" : ""}`}>
+            <h3 className={`font-display font-bold leading-tight drop-shadow-lg ${size === "half" ? "text-sm" : size === "banner" ? "text-xl uppercase tracking-wide" : "text-xl"} ${size === "half" ? "line-clamp-2" : ""}`}>
               {item.title}
             </h3>
             {size === "full" && item.subtitle && (
