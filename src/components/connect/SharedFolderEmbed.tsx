@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, ExternalLink, Trash2, FolderOpen, Link2, Check, X } from "lucide-react";
+import { Plus, ExternalLink, Trash2, FolderOpen, Link2, X, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface EmbeddedFolder {
@@ -29,16 +29,14 @@ function toEmbedUrl(url: string): string | null {
       return url.replace(/\/edit.*/, "/preview").replace(/\/view.*/, "/preview");
     }
 
-    // OneDrive / SharePoint embed
+    // OneDrive / SharePoint — use the _layouts/15/embed.aspx endpoint
     if (u.hostname.includes("sharepoint.com") || u.hostname.includes("onedrive.live.com") || u.hostname.includes("1drv.ms")) {
-      // SharePoint share links can be embedded by adding &action=embedview or using the embed format
-      if (url.includes("?")) {
-        return url + "&action=embedview";
-      }
-      return url + "?action=embedview";
+      // For SharePoint personal (OneDrive for Business), use embed.aspx with the original URL
+      const host = u.origin;
+      return `${host}/_layouts/15/embed.aspx?url=${encodeURIComponent(url)}`;
     }
 
-    // Dropbox — change dl=0 to raw=1 won't give folder view, but we can try
+    // Dropbox
     if (u.hostname.includes("dropbox.com")) {
       return url.replace("www.dropbox.com", "www.dropbox.com");
     }
@@ -48,7 +46,7 @@ function toEmbedUrl(url: string): string | null {
       return url;
     }
 
-    // Generic — try embedding directly
+    // Generic
     return url;
   } catch {
     return null;
@@ -69,7 +67,7 @@ const SharedFolderEmbed = () => {
   const [adding, setAdding] = useState(false);
   const [newUrl, setNewUrl] = useState("");
   const [newLabel, setNewLabel] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -78,29 +76,29 @@ const SharedFolderEmbed = () => {
         id: "onenote-1",
         label: "Bruce OneNote",
         url: "https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu",
-        embedUrl: "https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu&action=embedview",
+        embedUrl: "https://paveam-my.sharepoint.com/_layouts/15/embed.aspx?url=" + encodeURIComponent("https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu"),
         provider: "OneDrive",
       },
       {
         id: "onedrive-shared-folder",
         label: "Bruce Shared Folder",
         url: "https://paveam-my.sharepoint.com/:f:/g/personal/bruce_pave_london/IgAPhXHnpucuQ57vbBszVujSAWxKvVkEsa2CTQwfiD9hLAg?e=xhKrK6",
-        embedUrl: "https://paveam-my.sharepoint.com/:f:/g/personal/bruce_pave_london/IgAPhXHnpucuQ57vbBszVujSAWxKvVkEsa2CTQwfiD9hLAg?e=xhKrK6&action=embedview",
+        embedUrl: "https://paveam-my.sharepoint.com/_layouts/15/embed.aspx?url=" + encodeURIComponent("https://paveam-my.sharepoint.com/:f:/g/personal/bruce_pave_london/IgAPhXHnpucuQ57vbBszVujSAWxKvVkEsa2CTQwfiD9hLAg?e=xhKrK6"),
         provider: "OneDrive",
       },
     ];
 
     if (stored) {
       const existing: EmbeddedFolder[] = JSON.parse(stored);
-      // Merge any seeded folders that aren't already present
-      const existingIds = new Set(existing.map((f) => f.id));
-      const merged = [...existing, ...seeded.filter((s) => !existingIds.has(s.id))];
-      if (merged.length > existing.length) {
-        save(merged);
-        setFolders(merged);
-      } else {
-        setFolders(existing);
-      }
+      // Re-generate embed URLs for existing folders to use new format
+      const updated = existing.map((f) => ({
+        ...f,
+        embedUrl: toEmbedUrl(f.url) || f.embedUrl,
+      }));
+      const existingIds = new Set(updated.map((f) => f.id));
+      const merged = [...updated, ...seeded.filter((s) => !existingIds.has(s.id))];
+      save(merged);
+      setFolders(merged);
     } else {
       setFolders(seeded);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
@@ -138,75 +136,78 @@ const SharedFolderEmbed = () => {
     setNewUrl("");
     setNewLabel("");
     setAdding(false);
-    setExpandedId(folder.id);
     toast({ title: `${provider} folder added ✓` });
   };
 
   const removeFolder = (id: string) => {
     save(folders.filter((f) => f.id !== id));
-    if (expandedId === id) setExpandedId(null);
+  };
+
+  const toggleCollapse = (id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <p className="text-sm text-muted-foreground">Embed shared folders from OneDrive, Google Drive, Dropbox, or Notion</p>
 
-      {/* Folder list */}
+      {/* Folder embeds — always visible */}
       {folders.map((folder, i) => {
-        const isExpanded = expandedId === folder.id;
+        const isCollapsed = collapsedIds.has(folder.id);
         return (
           <motion.div
             key={folder.id}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="rounded-xl border border-border/50 bg-card overflow-hidden"
+            className="rounded-2xl border border-border/50 bg-card overflow-hidden"
           >
-            <button
-              onClick={() => setExpandedId(isExpanded ? null : folder.id)}
-              className="w-full flex items-center gap-3 p-4 text-left"
-            >
+            {/* Header */}
+            <div className="flex items-center gap-3 px-4 py-3">
               <FolderOpen className="w-5 h-5 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">{folder.label}</p>
                 <p className="text-[11px] text-muted-foreground">{folder.provider}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={folder.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                </a>
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeFolder(folder.id); }}
-                  className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                </button>
-              </div>
-            </button>
-
-            {isExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                transition={{ duration: 0.25 }}
-                className="border-t border-border/30"
+              <button
+                onClick={() => toggleCollapse(folder.id)}
+                className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <div className="p-2">
-                  <iframe
-                    src={folder.embedUrl}
-                    className="w-full rounded-lg border border-border/30"
-                    style={{ height: 400 }}
-                    title={folder.label}
-                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                  />
-                </div>
-              </motion.div>
+                {isCollapsed ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
+              </button>
+              <a
+                href={folder.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+              </a>
+              <button
+                onClick={() => removeFolder(folder.id)}
+                className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+              </button>
+            </div>
+
+            {/* Embedded iframe — shown by default */}
+            {!isCollapsed && (
+              <div className="border-t border-border/30 p-2">
+                <iframe
+                  src={folder.embedUrl}
+                  className="w-full rounded-lg"
+                  style={{ height: 500, border: "none" }}
+                  title={folder.label}
+                  allow="autoplay; fullscreen"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation"
+                />
+              </div>
             )}
           </motion.div>
         );
