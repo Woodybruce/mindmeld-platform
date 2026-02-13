@@ -12,6 +12,8 @@ import QuizCard from "@/components/connect/QuizCard";
 import PromptCard from "@/components/connect/PromptCard";
 import GameCard from "@/components/connect/GameCard";
 import CompletedQuizList from "@/components/connect/CompletedQuizList";
+import SharedLists from "@/components/connect/SharedLists";
+import type { UserList } from "@/components/connect/SharedLists";
 import { quizDefinitions } from "@/data/quizData";
 import type { CompletedQuiz } from "@/data/quizData";
 
@@ -57,11 +59,17 @@ const Us = () => {
   const navigate = useNavigate();
   const [promptIndex, setPromptIndex] = useState(0);
   const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]);
+  const [userLists, setUserLists] = useState<UserList[]>([]);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("completedQuizzes") || "[]");
-    setCompletedQuizzes(stored);
+    setCompletedQuizzes(JSON.parse(localStorage.getItem("completedQuizzes") || "[]"));
+    setUserLists(JSON.parse(localStorage.getItem("userLists") || "[]"));
   }, []);
+
+  const handleListsUpdate = (updated: UserList[]) => {
+    setUserLists(updated);
+    localStorage.setItem("userLists", JSON.stringify(updated));
+  };
 
   const visiblePrompts = [
     allPrompts[promptIndex % allPrompts.length],
@@ -130,14 +138,20 @@ const Us = () => {
         </TabsContent>
 
         {/* Lists */}
-        <TabsContent value="lists" className="mt-4 space-y-3">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm text-muted-foreground">Completed quiz results</p>
-            <span className="flex items-center gap-1 text-xs text-primary font-medium">
-              <Trophy className="w-3.5 h-3.5" /> {completedQuizzes.length} done
-            </span>
-          </div>
-          <CompletedQuizList quizzes={completedQuizzes} />
+        <TabsContent value="lists" className="mt-4 space-y-5">
+          <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
+
+          {completedQuizzes.length > 0 && (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quiz Results</p>
+                <span className="flex items-center gap-1 text-xs text-primary font-medium">
+                  <Trophy className="w-3.5 h-3.5" /> {completedQuizzes.length} done
+                </span>
+              </div>
+              <CompletedQuizList quizzes={completedQuizzes} />
+            </>
+          )}
         </TabsContent>
 
         {/* Files */}
