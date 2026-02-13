@@ -73,17 +73,35 @@ const SharedFolderEmbed = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setFolders(JSON.parse(stored));
-    } else {
-      // Seed with existing OneNote link
-      const seeded: EmbeddedFolder[] = [{
+    const seeded: EmbeddedFolder[] = [
+      {
         id: "onenote-1",
         label: "Bruce OneNote",
         url: "https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu",
         embedUrl: "https://paveam-my.sharepoint.com/:o:/g/personal/bruce_pave_london/IgDoxZBcATJaTr_DusAtrAgDAfjEuDrohCYxTKB6RFZdkmU?e=rVCfyu&action=embedview",
         provider: "OneDrive",
-      }];
+      },
+      {
+        id: "onedrive-shared-folder",
+        label: "Bruce Shared Folder",
+        url: "https://paveam-my.sharepoint.com/:f:/g/personal/bruce_pave_london/IgAPhXHnpucuQ57vbBszVujSAWxKvVkEsa2CTQwfiD9hLAg?e=xhKrK6",
+        embedUrl: "https://paveam-my.sharepoint.com/:f:/g/personal/bruce_pave_london/IgAPhXHnpucuQ57vbBszVujSAWxKvVkEsa2CTQwfiD9hLAg?e=xhKrK6&action=embedview",
+        provider: "OneDrive",
+      },
+    ];
+
+    if (stored) {
+      const existing: EmbeddedFolder[] = JSON.parse(stored);
+      // Merge any seeded folders that aren't already present
+      const existingIds = new Set(existing.map((f) => f.id));
+      const merged = [...existing, ...seeded.filter((s) => !existingIds.has(s.id))];
+      if (merged.length > existing.length) {
+        save(merged);
+        setFolders(merged);
+      } else {
+        setFolders(existing);
+      }
+    } else {
       setFolders(seeded);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
     }
