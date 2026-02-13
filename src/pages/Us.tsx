@@ -228,6 +228,21 @@ const Us = () => {
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </motion.button>
 
+          <motion.button
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            onClick={() => navigate("/our-challenges")}
+            className="w-full flex items-center gap-3 rounded-xl border border-border/50 bg-card p-4 text-left hover:bg-muted/50 transition-colors"
+          >
+            <span className="text-xl">⚡</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Our Challenges</p>
+              <p className="text-xs text-muted-foreground">Challenges, commitments & wins together</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </motion.button>
+
           {completedQuizzes.length > 0 && (
             <>
               <div className="flex items-center justify-between">
@@ -280,16 +295,6 @@ const Us = () => {
               delay={0.15 + i * 0.08}
             />
           ))}
-          <QuizCard
-            title="Our Challenges"
-            description="Track your relationship challenges, commitments, and wins together."
-            emoji="⚡"
-            duration="Ongoing"
-            questions={3}
-            gradient="bg-gradient-to-br from-us-terracotta/20 to-us-gold/10"
-            onClick={() => navigate("/our-challenges")}
-            delay={0.25}
-          />
           <div className="pt-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
           </div>
