@@ -19,7 +19,7 @@ import OurPhotos from "@/components/connect/OurPhotos";
 import OurEvents from "@/components/connect/OurEvents";
 import GratitudeJournal from "@/components/connect/GratitudeJournal";
 import LinksAndMedia from "@/components/connect/LinksAndMedia";
-import { quizDefinitions } from "@/data/quizData";
+import { quizDefinitions, generateActionItems } from "@/data/quizData";
 import { checklistQuizzes } from "@/data/checklistQuizData";
 import { reflectionQuizzes } from "@/data/reflectionQuizData";
 import type { CompletedQuiz } from "@/data/quizData";
@@ -129,6 +129,31 @@ const defaultLists: UserList[] = [
   },
 ];
 
+const seedCompletedQuizzes = (): CompletedQuiz[] => {
+  const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+  return quizDefinitions.map((quiz) => {
+    const yourAnswers = quiz.questions.map((q) => pick(q.options));
+    const partnerAnswers = quiz.questions.map((q) => pick(q.options));
+    const answers = quiz.questions.map((q, i) => ({
+      question: q.question,
+      yourAnswer: yourAnswers[i],
+      partnerAnswer: partnerAnswers[i],
+      match: yourAnswers[i] === partnerAnswers[i],
+    }));
+    const score = answers.filter((a) => a.match).length;
+    return {
+      quizId: quiz.id,
+      title: quiz.title,
+      emoji: quiz.emoji,
+      score,
+      totalQuestions: quiz.questions.length,
+      completedAt: new Date(Date.now() - Math.random() * 7 * 86400000).toISOString(),
+      answers,
+      actionItems: generateActionItems(quiz.id),
+    };
+  });
+};
+
 const Us = () => {
   const navigate = useNavigate();
   const [promptIndex, setPromptIndex] = useState(0);
@@ -137,12 +162,19 @@ const Us = () => {
   const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
 
   useEffect(() => {
-    setCompletedQuizzes(JSON.parse(localStorage.getItem("completedQuizzes") || "[]"));
+    const storedQuizzes = localStorage.getItem("completedQuizzes");
+    if (storedQuizzes && JSON.parse(storedQuizzes).length > 0) {
+      setCompletedQuizzes(JSON.parse(storedQuizzes));
+    } else {
+      // Seed with simulated quiz completions
+      const seeded = seedCompletedQuizzes();
+      setCompletedQuizzes(seeded);
+      localStorage.setItem("completedQuizzes", JSON.stringify(seeded));
+    }
     const stored = localStorage.getItem("userLists");
     if (stored) {
       setUserLists(JSON.parse(stored));
     } else {
-      // First visit: seed with OneNote data
       setUserLists(defaultLists);
       localStorage.setItem("userLists", JSON.stringify(defaultLists));
     }
