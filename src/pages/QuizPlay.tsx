@@ -1,73 +1,103 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronRight, Check } from "lucide-react";
+import { ArrowLeft, ChevronRight, Check, Users } from "lucide-react";
 import { quizDefinitions, generateActionItems } from "@/data/quizData";
-import type { CompletedQuiz } from "@/data/quizData";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  createQuizSession,
+  saveQuizAnswer,
+  completeQuizSession,
+  getPartnerAnswers,
+} from "@/lib/quizService";
+import type { PartnerAnswerMap } from "@/lib/quizService";
 
 const QuizPlay = () => {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const quiz = quizDefinitions.find((q) => q.id === quizId);
 
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [finished, setFinished] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [partnerAnswers, setPartnerAnswers] = useState<PartnerAnswerMap>({});
+  const [score, setScore] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!quiz || !user) return;
+    // Start session and fetch partner answers
+    const init = async () => {
+      try {
+        const session = await createQuizSession(quiz.id, quiz.questions.length);
+        setSessionId(session.id);
+        const pa = await getPartnerAnswers(quiz.id, user.id);
+        setPartnerAnswers(pa);
+      } catch (e) {
+        console.error("Failed to init quiz session:", e);
+      }
+    };
+    init();
+  }, [quiz, user]);
 
   if (!quiz) {
     navigate("/us");
     return null;
   }
 
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
+
   const question = quiz.questions[currentQ];
   const progress = ((currentQ + (finished ? 1 : 0)) / quiz.questions.length) * 100;
+  const hasPartner = Object.keys(partnerAnswers).length > 0;
 
-  const handleSelect = (option: string) => {
-    setSelected(option);
-  };
+  const handleSelect = (option: string) => setSelected(option);
 
-  const handleNext = () => {
-    if (!selected) return;
+  const handleNext = async () => {
+    if (!selected || !sessionId) return;
+    setLoading(true);
+
     const newAnswers = [...answers, selected];
     setAnswers(newAnswers);
+
+    // Save answer to DB
+    try {
+      await saveQuizAnswer(sessionId, currentQ, question.question, selected);
+    } catch (e) {
+      console.error("Failed to save answer:", e);
+    }
+
     setSelected(null);
 
     if (currentQ + 1 >= quiz.questions.length) {
-      // Quiz complete — simulate partner answers & save
-      const partnerOptions = quiz.questions.map((q) => q.options[Math.floor(Math.random() * q.options.length)]);
-      const resultAnswers = quiz.questions.map((q, i) => ({
-        question: q.question,
-        yourAnswer: newAnswers[i],
-        partnerAnswer: partnerOptions[i],
-        match: newAnswers[i] === partnerOptions[i],
-      }));
-      const score = resultAnswers.filter((a) => a.match).length;
+      // Calculate score against partner
+      let matchCount = 0;
+      newAnswers.forEach((a, i) => {
+        if (partnerAnswers[i] && partnerAnswers[i] === a) matchCount++;
+      });
+      setScore(matchCount);
 
-      const completed: CompletedQuiz = {
-        quizId: quiz.id,
-        title: quiz.title,
-        emoji: quiz.emoji,
-        score,
-        totalQuestions: quiz.questions.length,
-        completedAt: new Date().toISOString(),
-        answers: resultAnswers,
-        actionItems: generateActionItems(quiz.id),
-      };
-
-      // Save to localStorage
-      const existing = JSON.parse(localStorage.getItem("completedQuizzes") || "[]");
-      existing.unshift(completed);
-      localStorage.setItem("completedQuizzes", JSON.stringify(existing));
+      try {
+        await completeQuizSession(sessionId, hasPartner ? matchCount : 0);
+      } catch (e) {
+        console.error("Failed to complete session:", e);
+      }
       setFinished(true);
     } else {
       setCurrentQ((prev) => prev + 1);
     }
+    setLoading(false);
   };
 
   if (finished) {
-    const completed: CompletedQuiz = JSON.parse(localStorage.getItem("completedQuizzes") || "[]")[0];
+    const actionItems = generateActionItems(quiz.id);
     return (
       <div className="min-h-screen bg-background max-w-lg mx-auto">
         <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
@@ -88,24 +118,31 @@ const QuizPlay = () => {
           >
             <span className="text-4xl">{quiz.emoji}</span>
             <h2 className="font-display text-xl font-bold text-foreground mt-3">{quiz.title}</h2>
-            <div className="mt-4">
-              <span className="text-4xl font-bold text-primary">{completed.score}</span>
-              <span className="text-lg text-muted-foreground">/{completed.totalQuestions}</span>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {completed.score >= completed.totalQuestions * 0.8
-                ? "Amazing! You really know each other! 🎉"
-                : completed.score >= completed.totalQuestions * 0.5
-                ? "Pretty good! Keep learning about each other 💛"
-                : "Time to discover more about each other! 🌱"}
-            </p>
+            {hasPartner ? (
+              <>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold text-primary">{score}</span>
+                  <span className="text-lg text-muted-foreground">/{quiz.questions.length}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {score >= quiz.questions.length * 0.8 ? "Amazing! You really know each other! 🎉"
+                    : score >= quiz.questions.length * 0.5 ? "Pretty good! Keep learning about each other 💛"
+                    : "Time to discover more about each other! 🌱"}
+                </p>
+              </>
+            ) : (
+              <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
+                <Users className="w-4 h-4" />
+                <p className="text-sm">Waiting for your partner to take this quiz to compare answers!</p>
+              </div>
+            )}
           </motion.div>
 
           {/* Answer insights */}
           <div>
-            <h3 className="font-display text-base font-semibold text-foreground mb-3">Answer Insights</h3>
+            <h3 className="font-display text-base font-semibold text-foreground mb-3">Your Answers</h3>
             <div className="space-y-2">
-              {completed.answers.map((a, i) => (
+              {answers.map((answer, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 8 }}
@@ -113,15 +150,23 @@ const QuizPlay = () => {
                   transition={{ delay: i * 0.05 }}
                   className="rounded-xl border border-border/50 bg-card p-3"
                 >
-                  <p className="text-xs font-medium text-muted-foreground mb-2">{a.question}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{quiz.questions[i].question}</p>
                   <div className="flex items-center gap-2">
                     <span className="flex-1 text-xs rounded-lg bg-secondary px-2.5 py-1.5">
-                      You: <span className="font-medium text-foreground">{a.yourAnswer}</span>
+                      You: <span className="font-medium text-foreground">{answer}</span>
                     </span>
-                    <span className="flex-1 text-xs rounded-lg bg-secondary px-2.5 py-1.5">
-                      Partner: <span className="font-medium text-foreground">{a.partnerAnswer}</span>
-                    </span>
-                    {a.match && <Check className="w-4 h-4 text-us-sage flex-shrink-0" />}
+                    {hasPartner && partnerAnswers[i] ? (
+                      <span className="flex-1 text-xs rounded-lg bg-secondary px-2.5 py-1.5">
+                        Partner: <span className="font-medium text-foreground">{partnerAnswers[i]}</span>
+                      </span>
+                    ) : (
+                      <span className="flex-1 text-xs rounded-lg bg-muted px-2.5 py-1.5 text-muted-foreground italic">
+                        Partner hasn't answered yet
+                      </span>
+                    )}
+                    {hasPartner && partnerAnswers[i] === answer && (
+                      <Check className="w-4 h-4 text-us-sage flex-shrink-0" />
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -132,7 +177,7 @@ const QuizPlay = () => {
           <div>
             <h3 className="font-display text-base font-semibold text-foreground mb-3">Suggested Actions</h3>
             <div className="space-y-2">
-              {completed.actionItems.map((item, i) => (
+              {actionItems.map((item, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, x: -8 }}
@@ -171,6 +216,11 @@ const QuizPlay = () => {
               Question {currentQ + 1} of {quiz.questions.length}
             </p>
           </div>
+          {hasPartner && (
+            <span className="flex items-center gap-1 text-[11px] text-us-sage font-medium">
+              <Check className="w-3 h-3" /> Partner answered
+            </span>
+          )}
         </div>
         <Progress value={progress} className="h-1 rounded-none" />
       </header>
@@ -208,10 +258,10 @@ const QuizPlay = () => {
 
             <button
               onClick={handleNext}
-              disabled={!selected}
+              disabled={!selected || loading}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {currentQ + 1 >= quiz.questions.length ? "See Results" : "Next"}
+              {loading ? "Saving…" : currentQ + 1 >= quiz.questions.length ? "See Results" : "Next"}
               <ChevronRight className="w-4 h-4" />
             </button>
           </motion.div>
