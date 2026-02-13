@@ -3,7 +3,7 @@ import {
   ListChecks, FolderOpen, ExternalLink,
   FileText, Image, File, Upload, Sparkles, MessageCircle,
   Gamepad2, RefreshCw, Trophy, Camera, Calendar, Heart,
-  Link2
+  Link2, ChevronRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -213,6 +213,21 @@ const Us = () => {
         <TabsContent value="lists" className="mt-4 space-y-5">
           <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
 
+          <motion.button
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            onClick={() => navigate("/our-sex-list")}
+            className="w-full flex items-center gap-3 rounded-xl border border-border/50 bg-card p-4 text-left hover:bg-muted/50 transition-colors"
+          >
+            <span className="text-xl">🔥</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Our Sex List</p>
+              <p className="text-xs text-muted-foreground">Values, motivations, preferences & things to explore</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </motion.button>
+
           {completedQuizzes.length > 0 && (
             <>
               <div className="flex items-center justify-between">
@@ -274,16 +289,6 @@ const Us = () => {
             gradient="bg-gradient-to-br from-us-terracotta/20 to-us-gold/10"
             onClick={() => navigate("/our-challenges")}
             delay={0.25}
-          />
-          <QuizCard
-            title="Our Sex List"
-            description="Values, motivations, preferences, and things to explore together."
-            emoji="🔥"
-            duration="Ongoing"
-            questions={6}
-            gradient="bg-gradient-to-br from-us-coral/20 to-us-blush/15"
-            onClick={() => navigate("/our-sex-list")}
-            delay={0.3}
           />
           <div className="pt-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
