@@ -1,4 +1,10 @@
 import type { FeedItem } from "./FeedCard";
+import feedKisschase from "@/assets/feed-kisschase.jpg";
+import feedPrompt from "@/assets/feed-prompt.jpg";
+import feedDatenight from "@/assets/feed-datenight.jpg";
+import feedTravel from "@/assets/feed-travel.jpg";
+import feedMilestone from "@/assets/feed-milestone.jpg";
+import feedJournal from "@/assets/feed-journal.jpg";
 
 export const sampleFeedData: FeedItem[] = [
   {
@@ -8,7 +14,8 @@ export const sampleFeedData: FeedItem[] = [
     tagColor: "text-us-coral",
     title: "Challenge your partner to Kiss Chase!",
     subtitle: "A real-world game of chase with rewards",
-    body: "Turn on location, set a time limit, pick a reward — then go find your partner! The thrill of the chase meets the joy of connection.",
+    body: "Turn on location, set a time limit, pick a reward — then go find your partner!",
+    image: feedKisschase,
     timeAgo: "New",
     link: "/kiss-chase",
   },
@@ -20,6 +27,7 @@ export const sampleFeedData: FeedItem[] = [
     title: "What made you smile today?",
     subtitle: "Take a moment to share something positive",
     body: "Sharing small joys strengthens your bond. Tap to answer today's connection prompt and see what your partner said.",
+    image: feedPrompt,
     timeAgo: "Just now",
     liked: false,
   },
@@ -30,6 +38,7 @@ export const sampleFeedData: FeedItem[] = [
     tagColor: "text-us-gold",
     title: "How well do you know their favourites?",
     body: "A new 5-question quiz is ready. Answer before your partner to trigger the 'Blind Reveal' moment. Your streak: 12 days 🔥",
+    image: feedDatenight,
     timeAgo: "2h ago",
     liked: true,
   },
@@ -50,6 +59,7 @@ export const sampleFeedData: FeedItem[] = [
     tagColor: "text-us-sage",
     title: "🎉 3 months of daily check-ins!",
     body: "You and your partner have completed 90 consecutive daily prompts. Research shows consistent emotional check-ins improve relationship satisfaction by 34%.",
+    image: feedMilestone,
     timeAgo: "Today",
     liked: true,
     saved: true,
@@ -62,6 +72,7 @@ export const sampleFeedData: FeedItem[] = [
     title: "The 5-minute ritual that transformed our mornings",
     subtitle: "From the US Journal",
     body: "Couples who share a brief morning ritual report feeling 40% more connected throughout the day. Here's a simple framework to try this week.",
+    image: feedJournal,
     timeAgo: "6h ago",
   },
   {
@@ -80,6 +91,7 @@ export const sampleFeedData: FeedItem[] = [
     tagColor: "text-us-coral",
     title: "3 things I appreciate about you…",
     body: "Your partner left you a gratitude note this morning. Tap to read it — it'll be revealed with a little surprise ✨",
+    image: feedTravel,
     timeAgo: "8h ago",
     liked: true,
   },
