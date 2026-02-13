@@ -29,7 +29,7 @@ const layoutItems = (items: FeedItem[]) => {
 
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
-  const { matchedLinks } = useSharedLinks();
+  const { myLinks, partnerLinks, matchedLinks, addLink, loading } = useSharedLinks();
 
   // Insert shared links widget after 3rd row
   const insertAt = 3;
@@ -76,7 +76,7 @@ const Index = () => {
               <div key={`group-${idx}`} className="space-y-3">
                 {content}
                 <CalendarWidget />
-                <SharedLinksWidget />
+                <SharedLinksWidget dbLinks={[...myLinks, ...partnerLinks]} onSendLink={addLink} />
               </div>
             );
           }
