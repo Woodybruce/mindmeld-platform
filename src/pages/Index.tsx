@@ -3,6 +3,8 @@ import StoriesBar from "@/components/StoriesBar";
 import BottomNav from "@/components/BottomNav";
 import FeedCard from "@/components/FeedCard";
 import SharedLinksWidget from "@/components/SharedLinksWidget";
+import DailyListsWidget from "@/components/DailyListsWidget";
+import CalendarWidget from "@/components/CalendarWidget";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 
@@ -49,10 +51,20 @@ const Index = () => {
           );
 
           // Insert SharedLinksWidget after the designated row
+          if (idx === 1) {
+            return (
+              <div key={`group-${idx}`} className="space-y-3">
+                {content}
+                <DailyListsWidget />
+              </div>
+            );
+          }
+
           if (idx === insertAt) {
             return (
               <div key={`group-${idx}`} className="space-y-3">
                 {content}
+                <CalendarWidget />
                 <SharedLinksWidget />
               </div>
             );
