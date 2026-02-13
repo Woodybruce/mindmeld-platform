@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link2, Send, X, Instagram, Globe, Youtube, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSharedLinks } from "@/hooks/useSharedLinks";
 
 interface SharedLink {
   id: string;
@@ -151,6 +152,7 @@ interface SharedLinksWidgetProps {
 const SharedLinksWidget = ({ links = sampleSharedLinks }: SharedLinksWidgetProps) => {
   const [composerOpen, setComposerOpen] = useState(false);
   const [allLinks, setAllLinks] = useState(links);
+  const { addLink: addLinkToDB } = useSharedLinks();
 
   const handleSend = (url: string, note: string) => {
     const detected = detectPlatform(url);
@@ -164,6 +166,8 @@ const SharedLinksWidget = ({ links = sampleSharedLinks }: SharedLinksWidgetProps
       sender: "You",
     };
     setAllLinks([newLink, ...allLinks]);
+    // Also persist to DB for partner matching
+    addLinkToDB(url, note, note || url);
   };
 
   return (

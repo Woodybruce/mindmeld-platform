@@ -5,6 +5,8 @@ import FeedCard from "@/components/FeedCard";
 import SharedLinksWidget from "@/components/SharedLinksWidget";
 import DailyListsWidget from "@/components/DailyListsWidget";
 import CalendarWidget from "@/components/CalendarWidget";
+import MatchedLinkCard from "@/components/MatchedLinkCard";
+import { useSharedLinks } from "@/hooks/useSharedLinks";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 
@@ -27,6 +29,7 @@ const layoutItems = (items: FeedItem[]) => {
 
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
+  const { matchedLinks } = useSharedLinks();
 
   // Insert shared links widget after 3rd row
   const insertAt = 3;
@@ -40,6 +43,14 @@ const Index = () => {
       </div>
 
       <main className="px-3 py-3 space-y-3 pb-24">
+        {/* Matched links from both partners */}
+        {matchedLinks.length > 0 && (
+          <div className="space-y-3">
+            {matchedLinks.map((match) => (
+              <MatchedLinkCard key={match.url} match={match} />
+            ))}
+          </div>
+        )}
         {rows.map((row, idx) => {
           const content = Array.isArray(row) ? (
             <div key={`pair-${idx}`} className="grid grid-cols-2 gap-3">
