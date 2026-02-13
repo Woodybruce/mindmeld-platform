@@ -13,6 +13,7 @@ import QuizPlay from "./pages/QuizPlay";
 import ChecklistQuizPlay from "./pages/ChecklistQuizPlay";
 import LoveLanguageGuide from "./pages/LoveLanguageGuide";
 import ReflectionQuizPlay from "./pages/ReflectionQuizPlay";
+import OurChallenges from "./pages/OurChallenges";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/checklist-quiz/:quizId" element={<ChecklistQuizPlay />} />
             <Route path="/love-languages" element={<LoveLanguageGuide />} />
             <Route path="/reflection-quiz/:quizId" element={<ReflectionQuizPlay />} />
+            <Route path="/our-challenges" element={<OurChallenges />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

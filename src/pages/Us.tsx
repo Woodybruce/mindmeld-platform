@@ -229,6 +229,16 @@ const Us = () => {
               delay={0.15 + i * 0.08}
             />
           ))}
+          <QuizCard
+            title="Our Challenges"
+            description="Track your relationship challenges, commitments, and wins together."
+            emoji="⚡"
+            duration="Ongoing"
+            questions={3}
+            gradient="bg-gradient-to-br from-us-terracotta/20 to-us-gold/10"
+            onClick={() => navigate("/our-challenges")}
+            delay={0.25}
+          />
           <div className="pt-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
           </div>
