@@ -216,7 +216,7 @@ const Chat = () => {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 overflow-y-auto pb-24 space-y-1">
+      <main className="flex-1 px-4 py-4 overflow-y-auto pb-36 space-y-1">
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center pt-20">
             <div className="text-center">
@@ -294,7 +294,7 @@ const Chat = () => {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/50 p-3 z-40">
+      <div className="fixed bottom-14 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/50 p-3 z-40">
         <div className="flex items-center gap-2 max-w-lg mx-auto">
           <input
             type="file"
@@ -326,6 +326,8 @@ const Chat = () => {
           </button>
         </div>
       </div>
+
+      <BottomNav />
     </div>
   );
 };
