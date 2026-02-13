@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
-import { Check, ChevronRight, Trophy, Lightbulb } from "lucide-react";
+import { Check, ChevronRight, Trophy, Lightbulb, ListPlus } from "lucide-react";
 import type { CompletedQuiz } from "@/data/quizData";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
+import type { UserList } from "@/components/connect/SharedLists";
 
 interface CompletedQuizListProps {
   quizzes: CompletedQuiz[];
@@ -9,6 +11,19 @@ interface CompletedQuizListProps {
 
 const CompletedQuizList = ({ quizzes }: CompletedQuizListProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const addToList = (text: string) => {
+    const stored = localStorage.getItem("userLists");
+    const lists: UserList[] = stored ? JSON.parse(stored) : [];
+    const together = lists.find((l) => l.id === "onenote-together");
+    if (together) {
+      together.items.push({ id: Date.now().toString(), text, done: false });
+    } else {
+      lists.push({ id: "onenote-together", name: "Our Together List", icon: "💑", createdAt: new Date().toISOString(), items: [{ id: Date.now().toString(), text, done: false }] });
+    }
+    localStorage.setItem("userLists", JSON.stringify(lists));
+    toast({ title: "Added to Together List ✓", description: text });
+  };
 
   if (quizzes.length === 0) {
     return (
@@ -81,7 +96,15 @@ const CompletedQuizList = ({ quizzes }: CompletedQuizListProps) => {
                     <Lightbulb className="w-3 h-3" /> Suggested Actions
                   </p>
                   {quiz.actionItems.map((item, j) => (
-                    <p key={j} className="text-xs text-foreground pl-4">• {item}</p>
+                    <div key={j} className="flex items-start gap-2 text-xs">
+                      <p className="text-foreground pl-4 flex-1">• {item}</p>
+                      <button
+                        onClick={() => addToList(item)}
+                        className="flex items-center gap-1 text-[11px] text-primary font-medium hover:text-primary/80 transition-colors flex-shrink-0"
+                      >
+                        <ListPlus className="w-3 h-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </motion.div>

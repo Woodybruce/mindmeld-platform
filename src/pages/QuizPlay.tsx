@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronRight, Check, Users } from "lucide-react";
+import { ArrowLeft, ChevronRight, Check, Users, ListPlus } from "lucide-react";
 import { quizDefinitions, generateActionItems } from "@/data/quizData";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,8 @@ import {
   getPartnerAnswers,
 } from "@/lib/quizService";
 import type { PartnerAnswerMap } from "@/lib/quizService";
+import { toast } from "@/hooks/use-toast";
+import type { UserList } from "@/components/connect/SharedLists";
 
 const QuizPlay = () => {
   const { quizId } = useParams<{ quizId: string }>();
@@ -94,6 +96,19 @@ const QuizPlay = () => {
       setCurrentQ((prev) => prev + 1);
     }
     setLoading(false);
+  };
+
+  const addToList = (text: string) => {
+    const stored = localStorage.getItem("userLists");
+    const lists: UserList[] = stored ? JSON.parse(stored) : [];
+    const together = lists.find((l) => l.id === "onenote-together");
+    if (together) {
+      together.items.push({ id: Date.now().toString(), text, done: false });
+    } else {
+      lists.push({ id: "onenote-together", name: "Our Together List", icon: "💑", createdAt: new Date().toISOString(), items: [{ id: Date.now().toString(), text, done: false }] });
+    }
+    localStorage.setItem("userLists", JSON.stringify(lists));
+    toast({ title: "Added to Together List ✓", description: text });
   };
 
   if (finished) {
@@ -186,7 +201,13 @@ const QuizPlay = () => {
                   className="flex items-start gap-3 rounded-xl border border-border/50 bg-card p-3"
                 >
                   <span className="text-sm mt-0.5">💡</span>
-                  <p className="text-sm text-foreground">{item}</p>
+                  <p className="text-sm text-foreground flex-1">{item}</p>
+                  <button
+                    onClick={() => addToList(item)}
+                    className="flex items-center gap-1 text-[11px] text-primary font-medium hover:text-primary/80 transition-colors flex-shrink-0"
+                  >
+                    <ListPlus className="w-3.5 h-3.5" /> Add
+                  </button>
                 </motion.div>
               ))}
             </div>
