@@ -14,10 +14,11 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, username: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithEmail: (email: string) => Promise<{ error: any }>;
+  signInWithPhone: (phone: string) => Promise<{ error: any }>;
+  verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  linkPartner: (code: string) => Promise<boolean>;
+  linkPartnerByEmail: (email: string) => Promise<boolean>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -37,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
-      .from("profiles" as any)
+      .from("profiles")
       .select("id, username, partner_id, partner_code")
       .eq("id", userId)
       .single();
@@ -72,20 +73,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, username: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signInWithEmail = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { username },
-      },
+      options: { emailRedirectTo: window.location.origin },
     });
     return { error };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const signInWithPhone = async (phone: string) => {
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    return { error };
+  };
+
+  const verifyOtp = async (phone: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
     return { error };
   };
 
@@ -94,15 +96,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfile(null);
   };
 
-  const linkPartner = async (code: string): Promise<boolean> => {
-    const { data, error } = await supabase.rpc("link_partner" as any, { _partner_code: code });
+  const linkPartnerByEmail = async (email: string): Promise<boolean> => {
+    const { data, error } = await supabase.rpc("link_partner_by_email" as any, { _partner_email: email });
     if (error || !data) return false;
     await refreshProfile();
     return true;
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signOut, linkPartner, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signInWithEmail, signInWithPhone, verifyOtp, signOut, linkPartnerByEmail, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
