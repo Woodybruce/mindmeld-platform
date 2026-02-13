@@ -88,6 +88,23 @@ const defaultLists: UserList[] = [
     createdAt: "2026-01-04T17:45:00.000Z",
     items: [],
   },
+  {
+    id: "onenote-together",
+    name: "Our Together List",
+    icon: "💑",
+    template: "long-term",
+    createdAt: "2026-01-04T15:30:00.000Z",
+    items: [
+      { id: "t1", text: "⭐ Go shopping and drink together", done: false },
+      { id: "t2", text: "⭐ More fun stuff together", done: false },
+      { id: "t3", text: "⭐ Planned events over the year", done: false },
+      { id: "t4", text: "Dancing", done: false },
+      { id: "t5", text: "Go see an act", done: false },
+      { id: "t6", text: "Paint / draw each other", done: false },
+      { id: "t7", text: "Go to art Gallery", done: false },
+      { id: "t8", text: "🗺️ Scottish Lakes trip", done: false },
+    ],
+  },
 ];
 
 const Us = () => {
