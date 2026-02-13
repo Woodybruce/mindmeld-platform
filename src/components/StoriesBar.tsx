@@ -13,13 +13,13 @@ const StoriesBar = () => {
   const navigate = useNavigate();
 
   const stories: StoryCircle[] = [
-    { id: "us", label: "Us", icon: <Heart className="w-5 h-5" />, gradient: "from-us-coral to-us-terracotta", action: () => navigate("/us") },
-    { id: "grow", label: "Grow", icon: <TrendingUp className="w-5 h-5" />, gradient: "from-us-sage to-emerald-500", action: () => navigate("/us") },
-    { id: "lists", label: "Lists", icon: <ListChecks className="w-5 h-5" />, gradient: "from-us-navy to-blue-600", action: () => navigate("/us") },
-    { id: "quizzes", label: "Quizzes", icon: <Sparkles className="w-5 h-5" />, gradient: "from-us-gold to-amber-500", action: () => navigate("/us") },
+    { id: "us", label: "Us", icon: <Heart className="w-5 h-5" />, gradient: "from-us-coral to-us-terracotta", action: () => navigate("/us?tab=lists") },
+    { id: "grow", label: "Grow", icon: <TrendingUp className="w-5 h-5" />, gradient: "from-us-sage to-emerald-500", action: () => navigate("/us?tab=gratitude") },
+    { id: "lists", label: "Lists", icon: <ListChecks className="w-5 h-5" />, gradient: "from-us-navy to-blue-600", action: () => navigate("/us?tab=lists") },
+    { id: "quizzes", label: "Quizzes", icon: <Sparkles className="w-5 h-5" />, gradient: "from-us-gold to-amber-500", action: () => navigate("/us?tab=quizzes") },
     { id: "chat", label: "Chat", icon: <MessageCircle className="w-5 h-5" />, gradient: "from-us-blush to-pink-400", action: () => navigate("/chat") },
-    { id: "learn", label: "Learn", icon: <BookOpen className="w-5 h-5" />, gradient: "from-violet-400 to-purple-500", action: () => navigate("/us") },
-    { id: "explore", label: "Explore", icon: <Compass className="w-5 h-5" />, gradient: "from-cyan-400 to-teal-500", action: () => navigate("/us") },
+    { id: "learn", label: "Learn", icon: <BookOpen className="w-5 h-5" />, gradient: "from-violet-400 to-purple-500", action: () => navigate("/us?tab=prompts") },
+    { id: "explore", label: "Explore", icon: <Compass className="w-5 h-5" />, gradient: "from-cyan-400 to-teal-500", action: () => navigate("/us?tab=games") },
   ];
 
   return (
