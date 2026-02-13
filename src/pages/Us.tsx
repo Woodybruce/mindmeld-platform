@@ -167,38 +167,35 @@ const Us = () => {
       )}
 
       <Tabs defaultValue="lists" className="px-4 pt-3 pb-24">
-        <ScrollArea className="w-full">
-          <TabsList className="w-max bg-secondary gap-0.5 px-1">
-            <TabsTrigger value="lists" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+        <TabsList className="flex flex-wrap h-auto bg-secondary gap-1 p-1">
+            <TabsTrigger value="lists" className="gap-1 text-xs data-[state=active]:bg-card">
               <ListChecks className="w-3.5 h-3.5" /> Lists
             </TabsTrigger>
-            <TabsTrigger value="quizzes" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+            <TabsTrigger value="quizzes" className="gap-1 text-xs data-[state=active]:bg-card">
               <Sparkles className="w-3.5 h-3.5" /> Quizzes
             </TabsTrigger>
-            <TabsTrigger value="prompts" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+            <TabsTrigger value="prompts" className="gap-1 text-xs data-[state=active]:bg-card">
               <MessageCircle className="w-3.5 h-3.5" /> Prompts
             </TabsTrigger>
-            <TabsTrigger value="games" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+            <TabsTrigger value="games" className="gap-1 text-xs data-[state=active]:bg-card">
               <Gamepad2 className="w-3.5 h-3.5" /> Games
             </TabsTrigger>
-            <TabsTrigger value="photos" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+            <TabsTrigger value="photos" className="gap-1 text-xs data-[state=active]:bg-card">
               <Camera className="w-3.5 h-3.5" /> Photos
             </TabsTrigger>
-            <TabsTrigger value="events" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+            <TabsTrigger value="events" className="gap-1 text-xs data-[state=active]:bg-card">
               <Calendar className="w-3.5 h-3.5" /> Events
             </TabsTrigger>
-            <TabsTrigger value="gratitude" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+            <TabsTrigger value="gratitude" className="gap-1 text-xs data-[state=active]:bg-card">
               <Heart className="w-3.5 h-3.5" /> Gratitude
             </TabsTrigger>
-            <TabsTrigger value="links" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+            <TabsTrigger value="links" className="gap-1 text-xs data-[state=active]:bg-card">
               <Link2 className="w-3.5 h-3.5" /> Links
             </TabsTrigger>
-            <TabsTrigger value="files" className="gap-1 text-xs data-[state=active]:bg-card whitespace-nowrap">
+            <TabsTrigger value="files" className="gap-1 text-xs data-[state=active]:bg-card">
               <FolderOpen className="w-3.5 h-3.5" /> Files
             </TabsTrigger>
           </TabsList>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
 
         {/* Lists — default tab, imported from OneNote */}
         <TabsContent value="lists" className="mt-4 space-y-5">
