@@ -21,6 +21,7 @@ import GratitudeJournal from "@/components/connect/GratitudeJournal";
 import LinksAndMedia from "@/components/connect/LinksAndMedia";
 import { quizDefinitions } from "@/data/quizData";
 import { checklistQuizzes } from "@/data/checklistQuizData";
+import { reflectionQuizzes } from "@/data/reflectionQuizData";
 import type { CompletedQuiz } from "@/data/quizData";
 import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
 import PartnerQuizBanner from "@/components/connect/PartnerQuizBanner";
@@ -215,6 +216,19 @@ const Us = () => {
             onClick={() => navigate("/love-languages")}
             delay={0.1}
           />
+          {reflectionQuizzes.map((rq, i) => (
+            <QuizCard
+              key={rq.id}
+              title={rq.title}
+              description={rq.description}
+              emoji={rq.emoji}
+              duration={rq.duration}
+              questions={rq.questions.length}
+              gradient={rq.gradient}
+              onClick={() => navigate(`/reflection-quiz/${rq.id}`)}
+              delay={0.15 + i * 0.08}
+            />
+          ))}
           <div className="pt-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
           </div>
