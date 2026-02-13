@@ -13,6 +13,7 @@ import { useSharedLinks } from "@/hooks/useSharedLinks";
 import { useAuth } from "@/contexts/AuthContext";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
+import SuggestedProducts from "@/components/SuggestedProducts";
 import {
   QuizzesPreview,
   PromptsPreview,
@@ -111,12 +112,13 @@ const Index = () => {
             );
           }
 
-          // After row 2: Games + Photos
+          // After row 2: Games + Products + Photos
           if (idx === 2) {
             return (
               <div key={`group-${idx}`} className="space-y-3">
                 {content}
                 <GamesPreview />
+                <SuggestedProducts />
                 <PhotosPreview />
               </div>
             );
