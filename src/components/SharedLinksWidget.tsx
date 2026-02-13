@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link2, Send, X, Instagram, Globe, Youtube, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSharedLinks } from "@/hooks/useSharedLinks";
+import type { SharedLinkRow } from "@/hooks/useSharedLinks";
 
 interface SharedLink {
   id: string;
@@ -146,28 +146,34 @@ const ShareLinkComposer = ({ open, onClose, onSend }: ShareLinkComposerProps) =>
 };
 
 interface SharedLinksWidgetProps {
-  links?: SharedLink[];
+  dbLinks?: SharedLinkRow[];
+  onSendLink?: (url: string, note?: string, title?: string) => Promise<void>;
 }
 
-const SharedLinksWidget = ({ links = sampleSharedLinks }: SharedLinksWidgetProps) => {
+const SharedLinksWidget = ({ dbLinks, onSendLink }: SharedLinksWidgetProps) => {
   const [composerOpen, setComposerOpen] = useState(false);
-  const [allLinks, setAllLinks] = useState(links);
-  const { addLink: addLinkToDB } = useSharedLinks();
+
+  // Merge DB links into display format, fall back to samples if no DB data
+  const displayLinks: SharedLink[] = dbLinks && dbLinks.length > 0
+    ? dbLinks.map((l) => {
+        const detected = detectPlatform(l.url);
+        return {
+          id: l.id,
+          url: l.url,
+          platform: detected.platform,
+          icon: detected.icon,
+          title: l.title || l.note || l.url,
+          note: l.note || undefined,
+          timeAgo: new Date(l.created_at).toLocaleDateString(),
+          sender: "You",
+        };
+      })
+    : sampleSharedLinks;
 
   const handleSend = (url: string, note: string) => {
-    const detected = detectPlatform(url);
-    const newLink: SharedLink = {
-      id: Date.now().toString(),
-      url,
-      platform: detected.platform,
-      icon: detected.icon,
-      title: note || url,
-      timeAgo: "Just now",
-      sender: "You",
-    };
-    setAllLinks([newLink, ...allLinks]);
-    // Also persist to DB for partner matching
-    addLinkToDB(url, note, note || url);
+    if (onSendLink) {
+      onSendLink(url, note, note || url);
+    }
   };
 
   return (
@@ -188,7 +194,7 @@ const SharedLinksWidget = ({ links = sampleSharedLinks }: SharedLinksWidgetProps
         </div>
 
         <div className="divide-y divide-border/50">
-          {allLinks.map((link) => {
+          {displayLinks.map((link) => {
             const isInstagram = link.url.includes("instagram.com") || link.url.includes("instagr.am");
             return (
               <div key={link.id} className="px-4 py-3 hover:bg-secondary/50 transition-colors">
