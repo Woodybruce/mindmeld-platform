@@ -132,12 +132,13 @@ const SetupPrompts = () => {
                 <p className="text-sm font-semibold text-foreground">{item.title}</p>
                 <p className="text-[11px] text-muted-foreground">{item.description}</p>
               </div>
-              <button
+              <span
+                role="button"
                 onClick={(e) => { e.stopPropagation(); dismissItem(item.id); }}
-                className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
               >
                 <X className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
+              </span>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </motion.button>
           ))}

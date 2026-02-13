@@ -150,13 +150,8 @@ const Chat = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Sign in to chat</p>
-      </div>
-    );
-  }
+  // Auth guard handles redirect, this is a safety fallback
+  if (!user) return null;
 
   if (!partnerId) {
     return (
