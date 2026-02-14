@@ -2,8 +2,8 @@ import AppHeader from "@/components/AppHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ListChecks, FolderOpen, ExternalLink,
-  FileText, Image, File, Upload, Sparkles, MessageCircle,
-  Gamepad2, RefreshCw, Trophy, Camera, Calendar, Heart,
+  FileText, Image, File, Upload, Sparkles,
+  Gamepad2, Trophy, Camera, Calendar, Heart,
   Link2, ChevronRight
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -11,7 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
 import QuizCard from "@/components/connect/QuizCard";
-import PromptCard from "@/components/connect/PromptCard";
+
 import GameCard from "@/components/connect/GameCard";
 import CompletedQuizList from "@/components/connect/CompletedQuizList";
 import SharedLists from "@/components/connect/SharedLists";
@@ -39,32 +39,6 @@ const quizCards = quizDefinitions.map((q) => ({
   gradient: q.gradient,
 }));
 
-const allPrompts = [
-  // Original prompts
-  { category: "Deep", prompt: "What's one thing you've never told me that you wish I knew?", color: "text-us-coral" },
-  { category: "Playful", prompt: "If we could teleport anywhere right now, where would you take us?", color: "text-us-gold" },
-  { category: "Growth", prompt: "What's one way I've helped you grow as a person?", color: "text-us-sage" },
-  { category: "Memory", prompt: "What's your favourite memory of us from the last month?", color: "text-us-terracotta" },
-  { category: "Dreams", prompt: "What's something you want us to experience together before the year ends?", color: "text-primary" },
-  { category: "Intimacy", prompt: "When do you feel most connected to me?", color: "text-us-coral" },
-  { category: "Fun", prompt: "What fictional couple reminds you most of us?", color: "text-us-gold" },
-  { category: "Gratitude", prompt: "What's something small I do that means a lot to you?", color: "text-us-sage" },
-  // Love Language prompts — everyday ideas to try together
-  { category: "💬 Words", prompt: "Leave a sticky note with a sweet message somewhere they'll find it today", color: "text-us-coral" },
-  { category: "💬 Words", prompt: "Send a midday 'thinking of you' text — be specific about what you appreciate", color: "text-us-coral" },
-  { category: "💬 Words", prompt: "Praise your partner in front of someone else today", color: "text-us-coral" },
-  { category: "⏰ Time", prompt: "Take a tech-free walk together — no phones, just conversation", color: "text-us-sage" },
-  { category: "⏰ Time", prompt: "Cook a new recipe together tonight", color: "text-us-sage" },
-  { category: "⏰ Time", prompt: "Have a 15-minute nightly check-in: how was your day, really?", color: "text-us-sage" },
-  { category: "🎁 Gifts", prompt: "Bring home their favourite snack as a surprise today", color: "text-us-gold" },
-  { category: "🎁 Gifts", prompt: "Gift something tied to an inside joke between you two", color: "text-us-gold" },
-  { category: "🤲 Service", prompt: "Handle their least favourite chore without being asked", color: "text-us-terracotta" },
-  { category: "🤲 Service", prompt: "Make them coffee or tea exactly how they like it", color: "text-us-terracotta" },
-  { category: "🤲 Service", prompt: "Finish a task they've been putting off", color: "text-us-terracotta" },
-  { category: "🫂 Touch", prompt: "Slow dance together at home — no music required", color: "text-primary" },
-  { category: "🫂 Touch", prompt: "Give a 20-second hug. Count it out. Feel the difference", color: "text-primary" },
-  { category: "🫂 Touch", prompt: "Run your fingers through their hair while watching TV tonight", color: "text-primary" },
-];
 
 const mockFiles = [
   { name: "Holiday Itinerary.pdf", type: "pdf", updated: "2 days ago" },
@@ -91,7 +65,7 @@ const Us = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "lists";
-  const [promptIndex, setPromptIndex] = useState(0);
+  
   const [completedQuizzes, setCompletedQuizzes] = useState<CompletedQuiz[]>([]);
   const [userLists, setUserLists] = useState<UserList[]>([]);
   const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
@@ -120,13 +94,6 @@ const Us = () => {
     localStorage.setItem("userLists", JSON.stringify(updated));
   };
 
-  const visiblePrompts = [
-    allPrompts[promptIndex % allPrompts.length],
-    allPrompts[(promptIndex + 1) % allPrompts.length],
-    allPrompts[(promptIndex + 2) % allPrompts.length],
-  ];
-
-  const shufflePrompts = () => setPromptIndex((prev) => (prev + 3) % allPrompts.length);
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
@@ -147,9 +114,6 @@ const Us = () => {
             </TabsTrigger>
             <TabsTrigger value="quizzes" className="gap-1 text-xs data-[state=active]:bg-card">
               <Sparkles className="w-3.5 h-3.5" /> Quizzes
-            </TabsTrigger>
-            <TabsTrigger value="prompts" className="gap-1 text-xs data-[state=active]:bg-card">
-              <MessageCircle className="w-3.5 h-3.5" /> Prompts
             </TabsTrigger>
             <TabsTrigger value="games" className="gap-1 text-xs data-[state=active]:bg-card">
               <Gamepad2 className="w-3.5 h-3.5" /> Games
@@ -255,18 +219,6 @@ const Us = () => {
           ))}
         </TabsContent>
 
-        {/* Prompts */}
-        <TabsContent value="prompts" className="mt-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Spark a meaningful conversation</p>
-            <button onClick={shufflePrompts} className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
-              <RefreshCw className="w-3.5 h-3.5" /> Shuffle
-            </button>
-          </div>
-          {visiblePrompts.map((p, i) => (
-            <PromptCard key={`${promptIndex}-${i}`} category={p.category} prompt={p.prompt} categoryColor={p.color} delay={i * 0.08} />
-          ))}
-        </TabsContent>
 
         {/* Games */}
         <TabsContent value="games" className="mt-4 space-y-3">

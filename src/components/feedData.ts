@@ -1,6 +1,6 @@
 import type { FeedItem } from "./FeedCard";
 import feedKisschase from "@/assets/kisschase-cartoon.png";
-import feedPrompt from "@/assets/feed-prompt.jpg";
+
 import feedDatenight from "@/assets/feed-datenight.jpg";
 import feedTravel from "@/assets/feed-travel.jpg";
 import feedMilestone from "@/assets/feed-milestone.jpg";
@@ -22,17 +22,6 @@ export const sampleFeedData: FeedItem[] = [
     image: feedKisschase,
     timeAgo: "New",
     link: "/kiss-chase",
-  },
-  {
-    id: "1a",
-    type: "prompt",
-    size: "half",
-    tag: "Daily Prompt",
-    tagColor: "text-us-coral",
-    title: "What made you smile today?",
-    body: "Share something positive with your partner",
-    image: feedPrompt,
-    timeAgo: "Just now",
   },
   {
     id: "1b",
