@@ -8,23 +8,23 @@ interface AppHeaderProps {
 const AppHeader = ({ subtitle }: AppHeaderProps) => {
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <img src={usLogo} alt="Us logo" className="w-8 h-8 rounded-full object-cover" />
+      <div className="flex items-center justify-between px-4 py-4">
+        <div className="flex items-center gap-3">
+          <img src={usLogo} alt="Us logo" className="w-10 h-10 rounded-full object-cover" />
           <div>
-            <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               US
             </h1>
-            {subtitle && <p className="text-[10px] text-muted-foreground -mt-0.5">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-muted-foreground -mt-0.5">{subtitle}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative">
-            <Bell className="w-[18px] h-[18px]" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-us-coral" />
+        <div className="flex items-center gap-3">
+          <button className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-us-coral" />
           </button>
-          <button className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-            <Settings className="w-[18px] h-[18px]" />
+          <button className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <Settings className="w-5 h-5" />
           </button>
         </div>
       </div>
