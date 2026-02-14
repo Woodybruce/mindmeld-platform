@@ -65,6 +65,13 @@ const Auth = () => {
     setOtp("");
   };
 
+  const isPreview = window.location.hostname.includes("lovable.app") && window.location.hostname.includes("preview");
+
+  const handleDevBypass = () => {
+    localStorage.setItem("dev-auth-bypass", "true");
+    window.location.href = "/";
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
       <motion.div
@@ -212,6 +219,15 @@ const Auth = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {isPreview && (
+          <button
+            onClick={handleDevBypass}
+            className="mt-8 w-full text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors py-2"
+          >
+            Skip login (preview only)
+          </button>
+        )}
       </motion.div>
     </div>
   );
