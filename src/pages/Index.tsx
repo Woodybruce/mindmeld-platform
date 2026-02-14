@@ -11,12 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 import {
-  PromptsPreview,
   QuizzesPreview,
-  GamesPreview,
-  PhotosPreview,
-  GratitudePreview,
-  FilesPreview,
 } from "@/components/UsSectionPreviews";
 import QuickLinks from "@/components/QuickLinks";
 
@@ -77,8 +72,7 @@ const Index = () => {
           )
         )}
 
-        {/* Daily prompt */}
-        <PromptsPreview />
+        {/* Half cards */}
 
         {/* Half cards */}
         {rows[1] && (
