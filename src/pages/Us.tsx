@@ -59,7 +59,90 @@ const fileIcon = (type: string) => {
 
 const defaultLists: UserList[] = [];
 
-const seedCompletedQuizzes = (): CompletedQuiz[] => [];
+const seedCompletedQuizzes = (): CompletedQuiz[] => [
+  {
+    quizId: "know-me",
+    title: "How Well Do You Know Me?",
+    emoji: "🧠",
+    score: 7,
+    totalQuestions: 10,
+    completedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+    answers: [
+      { question: "What's my favourite comfort food?", yourAnswer: "Pizza", partnerAnswer: "Pizza", match: true },
+      { question: "What do I do first thing in the morning?", yourAnswer: "Check phone", partnerAnswer: "Make coffee", match: false },
+      { question: "What's my biggest fear?", yourAnswer: "Failure", partnerAnswer: "Failure", match: true },
+      { question: "Where would I most want to travel?", yourAnswer: "Japan", partnerAnswer: "Japan", match: true },
+      { question: "What's my love language?", yourAnswer: "Quality time", partnerAnswer: "Quality time", match: true },
+      { question: "What makes me laugh the hardest?", yourAnswer: "Dry humour", partnerAnswer: "Memes", match: false },
+      { question: "What's my dream job?", yourAnswer: "Entrepreneur", partnerAnswer: "Entrepreneur", match: true },
+      { question: "How do I relax after a hard day?", yourAnswer: "TV show", partnerAnswer: "TV show", match: true },
+      { question: "What song always puts me in a good mood?", yourAnswer: "A throwback", partnerAnswer: "Something chill", match: false },
+      { question: "What am I most proud of?", yourAnswer: "Personal growth", partnerAnswer: "Personal growth", match: true },
+    ],
+    actionItems: ["Plan a surprise comfort-food night", "Share your morning routines for a week"],
+  },
+  {
+    quizId: "love-language",
+    title: "Love Language Check-In",
+    emoji: "💕",
+    score: 6,
+    totalQuestions: 8,
+    completedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+    answers: [
+      { question: "I feel most loved when my partner…", yourAnswer: "Plans quality time", partnerAnswer: "Plans quality time", match: true },
+      { question: "After a tough week, I need…", yourAnswer: "A cosy night in", partnerAnswer: "A heartfelt conversation", match: false },
+      { question: "The best surprise would be…", yourAnswer: "A weekend trip", partnerAnswer: "A weekend trip", match: true },
+      { question: "I feel disconnected when…", yourAnswer: "We're always busy", partnerAnswer: "We're always busy", match: true },
+      { question: "My ideal date night is…", yourAnswer: "Deep conversation over dinner", partnerAnswer: "Deep conversation over dinner", match: true },
+      { question: "I show love by…", yourAnswer: "Making plans together", partnerAnswer: "Doing helpful things", match: false },
+      { question: "A small gesture that means a lot:", yourAnswer: "Undivided attention", partnerAnswer: "Undivided attention", match: true },
+      { question: "When I'm stressed, I want you to…", yourAnswer: "Talk it through", partnerAnswer: "Talk it through", match: true },
+    ],
+    actionItems: ["Schedule a weekly date night", "Write each other a love note this week"],
+  },
+  {
+    quizId: "dream-life",
+    title: "Dream Life Alignment",
+    emoji: "🌙",
+    score: 5,
+    totalQuestions: 10,
+    completedAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+    answers: [
+      { question: "In 5 years, where do we live?", yourAnswer: "Suburbs", partnerAnswer: "City centre", match: false },
+      { question: "How many kids (if any)?", yourAnswer: "Two", partnerAnswer: "Two", match: true },
+      { question: "Our ideal home has…", yourAnswer: "Big garden", partnerAnswer: "Cosy kitchen", match: false },
+      { question: "We retire and…", yourAnswer: "Travel the world", partnerAnswer: "Travel the world", match: true },
+      { question: "Our next big purchase should be…", yourAnswer: "Property", partnerAnswer: "Property", match: true },
+      { question: "Work-life balance means…", yourAnswer: "Weekends sacred", partnerAnswer: "Flexible hours", match: false },
+      { question: "Our holiday style is…", yourAnswer: "Adventure", partnerAnswer: "Adventure", match: true },
+      { question: "What's most important for our home?", yourAnswer: "Near family", partnerAnswer: "Near nature", match: false },
+      { question: "How do we handle finances?", yourAnswer: "Joint account", partnerAnswer: "Joint account", match: true },
+      { question: "Pets?", yourAnswer: "Dog", partnerAnswer: "Both", match: false },
+    ],
+    actionItems: ["Discuss where you'd both love to live", "Create a shared vision board for your dream home"],
+  },
+  {
+    quizId: "challenges",
+    title: "Our Challenges Quiz",
+    emoji: "⚡",
+    score: 8,
+    totalQuestions: 10,
+    completedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+    answers: [
+      { question: "What's our biggest strength as a couple?", yourAnswer: "Communication", partnerAnswer: "Communication", match: true },
+      { question: "Where do we clash the most?", yourAnswer: "Tidiness", partnerAnswer: "Tidiness", match: true },
+      { question: "How do we handle disagreements?", yourAnswer: "Talk it out", partnerAnswer: "Talk it out", match: true },
+      { question: "What should we do more of?", yourAnswer: "Adventures", partnerAnswer: "Date nights", match: false },
+      { question: "Our biggest win this year?", yourAnswer: "Moving in together", partnerAnswer: "Moving in together", match: true },
+      { question: "Who apologises first?", yourAnswer: "Me", partnerAnswer: "Me", match: true },
+      { question: "What habit do you wish I'd change?", yourAnswer: "Phone usage", partnerAnswer: "Phone usage", match: true },
+      { question: "How do we recharge together?", yourAnswer: "Walking", partnerAnswer: "Cooking", match: false },
+      { question: "What are we most excited about?", yourAnswer: "The future", partnerAnswer: "The future", match: true },
+      { question: "How do we show gratitude?", yourAnswer: "Saying thank you", partnerAnswer: "Saying thank you", match: true },
+    ],
+    actionItems: ["Plan one adventure together this month", "Set a phone-free evening once a week"],
+  },
+];
 
 const Us = () => {
   const navigate = useNavigate();
