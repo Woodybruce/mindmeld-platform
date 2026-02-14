@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Gamepad2, Camera, Calendar, Heart, Link2, FolderOpen, ChevronRight,
+  Gamepad2, Camera, Calendar, Heart, FolderOpen, ChevronRight,
 } from "lucide-react";
 
 const links = [
@@ -9,7 +9,6 @@ const links = [
   { label: "Photos", icon: Camera, tab: "photos", gradient: "from-us-blush to-pink-400" },
   { label: "Events", icon: Calendar, tab: "events", gradient: "from-us-gold to-amber-500" },
   { label: "Gratitude", icon: Heart, tab: "gratitude", gradient: "from-us-coral to-us-blush" },
-  { label: "Links", icon: Link2, tab: "links", gradient: "from-us-terracotta to-us-coral" },
   { label: "Files", icon: FolderOpen, tab: "files", gradient: "from-us-navy to-blue-600" },
 ];
 

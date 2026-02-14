@@ -1,6 +1,6 @@
 import {
-  ListChecks, Sparkles, MessageCircle, Gamepad2,
-  Camera, Calendar, Heart, Link2, FolderOpen,
+  ListChecks, Sparkles, Gamepad2,
+  Camera, Calendar, Heart, FolderOpen,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -23,7 +23,7 @@ const StoriesBar = () => {
     { id: "photos", label: "Photos", icon: <Camera className="w-5 h-5" />, gradient: "from-us-blush to-pink-400", path: "/us?tab=photos" },
     { id: "events", label: "Events", icon: <Calendar className="w-5 h-5" />, gradient: "from-us-gold to-amber-500", path: "/us?tab=events" },
     { id: "gratitude", label: "Gratitude", icon: <Heart className="w-5 h-5" />, gradient: "from-us-coral to-us-blush", path: "/us?tab=gratitude" },
-    { id: "links", label: "Links", icon: <Link2 className="w-5 h-5" />, gradient: "from-us-terracotta to-us-coral", path: "/us?tab=links" },
+    
     { id: "files", label: "Files", icon: <FolderOpen className="w-5 h-5" />, gradient: "from-us-navy to-blue-600", path: "/us?tab=files" },
   ];
 

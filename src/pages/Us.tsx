@@ -4,7 +4,7 @@ import {
   ListChecks, FolderOpen, ExternalLink,
   FileText, Image, File, Upload, Sparkles,
   Gamepad2, Trophy, Camera, Calendar, Heart,
-  Link2, ChevronRight
+  ChevronRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -19,7 +19,7 @@ import type { UserList } from "@/components/connect/SharedLists";
 import OurPhotos from "@/components/connect/OurPhotos";
 import OurEvents from "@/components/connect/OurEvents";
 import GratitudeJournal from "@/components/connect/GratitudeJournal";
-import LinksAndMedia from "@/components/connect/LinksAndMedia";
+
 import SharedFolderEmbed from "@/components/connect/SharedFolderEmbed";
 import { quizDefinitions, generateActionItems } from "@/data/quizData";
 import { checklistQuizzes } from "@/data/checklistQuizData";
@@ -126,9 +126,6 @@ const Us = () => {
             </TabsTrigger>
             <TabsTrigger value="gratitude" className="gap-1 text-xs data-[state=active]:bg-card">
               <Heart className="w-3.5 h-3.5" /> Gratitude
-            </TabsTrigger>
-            <TabsTrigger value="links" className="gap-1 text-xs data-[state=active]:bg-card">
-              <Link2 className="w-3.5 h-3.5" /> Links
             </TabsTrigger>
             <TabsTrigger value="files" className="gap-1 text-xs data-[state=active]:bg-card">
               <FolderOpen className="w-3.5 h-3.5" /> Files
@@ -259,10 +256,6 @@ const Us = () => {
           </motion.button>
         </TabsContent>
 
-        {/* Links */}
-        <TabsContent value="links" className="mt-4">
-          <LinksAndMedia />
-        </TabsContent>
 
         {/* Files */}
         <TabsContent value="files" className="mt-4 space-y-3">
