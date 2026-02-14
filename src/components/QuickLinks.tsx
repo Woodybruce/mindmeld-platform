@@ -1,14 +1,13 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Gamepad2, Camera, Calendar, Heart, FolderOpen, ChevronRight,
+  Gamepad2, Camera, Calendar, FolderOpen, ChevronRight,
 } from "lucide-react";
 
 const links = [
   { label: "Games", icon: Gamepad2, tab: "games", gradient: "from-us-sage to-emerald-500" },
   { label: "Photos", icon: Camera, tab: "photos", gradient: "from-us-blush to-pink-400" },
   { label: "Events", icon: Calendar, tab: "events", gradient: "from-us-gold to-amber-500" },
-  { label: "Gratitude", icon: Heart, tab: "gratitude", gradient: "from-us-coral to-us-blush" },
   { label: "Files", icon: FolderOpen, tab: "files", gradient: "from-us-navy to-blue-600" },
 ];
 
