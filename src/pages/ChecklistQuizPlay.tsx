@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronRight, ChevronLeft, Check, Flame } from "lucide-react";
+import { ArrowLeft, ChevronRight, ChevronLeft, Check, Flame, ListPlus } from "lucide-react";
 import { checklistQuizzes } from "@/data/checklistQuizData";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/hooks/use-toast";
+import type { UserList } from "@/components/connect/SharedLists";
 import { Slider } from "@/components/ui/slider";
 
 type Answers = Record<string, boolean | number | string>;
@@ -177,8 +179,35 @@ const ChecklistQuizPlay = () => {
           </p>
 
           <button
+            onClick={() => {
+              const checkedTexts = filteredSections.flatMap((s) =>
+                s.items.filter((i) => i.type === "checkbox" && answers[i.id] === true).map((i) => i.text)
+              );
+              if (checkedTexts.length === 0) {
+                toast({ title: "No items selected", description: "Tick some items first!" });
+                return;
+              }
+              const stored = localStorage.getItem("userLists");
+              const lists: UserList[] = stored ? JSON.parse(stored) : [];
+              const newList: UserList = {
+                id: `checklist-${quiz.id}-${Date.now()}`,
+                name: `${quiz.emoji} ${quiz.title} List`,
+                icon: quiz.emoji,
+                createdAt: new Date().toISOString(),
+                items: checkedTexts.map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false })),
+              };
+              localStorage.setItem("userLists", JSON.stringify([newList, ...lists]));
+              toast({ title: "List created ✓", description: `${checkedTexts.length} items added to your Lists tab` });
+              navigate("/us?tab=lists");
+            }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <ListPlus className="w-4 h-4" /> Create Exploration List
+          </button>
+
+          <button
             onClick={() => navigate("/us")}
-            className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="w-full rounded-xl bg-secondary py-3 text-sm font-semibold text-foreground hover:bg-secondary/80 transition-colors"
           >
             Back to Us
           </button>

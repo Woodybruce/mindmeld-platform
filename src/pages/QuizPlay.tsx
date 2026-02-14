@@ -111,6 +111,24 @@ const QuizPlay = () => {
     toast({ title: "Added to Together List ✓", description: text });
   };
 
+  const createListFromQuiz = (actionItems: string[]) => {
+    const stored = localStorage.getItem("userLists");
+    const lists: UserList[] = stored ? JSON.parse(stored) : [];
+    const listId = `quiz-${quiz!.id}-${Date.now()}`;
+    const newList: UserList = {
+      id: listId,
+      name: `${quiz!.emoji} ${quiz!.title} Actions`,
+      icon: quiz!.emoji,
+      createdAt: new Date().toISOString(),
+      items: actionItems.map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false })),
+    };
+    const updated = [newList, ...lists];
+    localStorage.setItem("userLists", JSON.stringify(updated));
+    // Trigger update in Us page when navigating back
+    toast({ title: "Action list created ✓", description: `${actionItems.length} items added to your Lists tab` });
+    navigate("/us?tab=lists");
+  };
+
   if (finished) {
     const actionItems = generateActionItems(quiz.id);
     return (
@@ -214,8 +232,15 @@ const QuizPlay = () => {
           </div>
 
           <button
+            onClick={() => createListFromQuiz(actionItems)}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <ListPlus className="w-4 h-4" /> Create Action List
+          </button>
+
+          <button
             onClick={() => navigate("/us")}
-            className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="w-full rounded-xl bg-secondary py-3 text-sm font-semibold text-foreground hover:bg-secondary/80 transition-colors"
           >
             Back to Us
           </button>
