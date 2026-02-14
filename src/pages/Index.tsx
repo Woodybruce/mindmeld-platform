@@ -10,7 +10,15 @@ import Onboarding from "@/components/Onboarding";
 import { useAuth } from "@/contexts/AuthContext";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
-import { PromptsPreview, QuizzesPreview } from "@/components/UsSectionPreviews";
+import {
+  PromptsPreview,
+  QuizzesPreview,
+  GamesPreview,
+  PhotosPreview,
+  GratitudePreview,
+  FilesPreview,
+} from "@/components/UsSectionPreviews";
+import QuickLinks from "@/components/QuickLinks";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -88,7 +96,7 @@ const Index = () => {
         <DailyListsWidget />
         <QuizzesPreview />
 
-        {/* Remaining cards */}
+        {/* Remaining feed cards */}
         {rows.slice(2).map((row, idx) => (
           Array.isArray(row) ? (
             <div key={`pair-${idx + 2}`} className="grid grid-cols-2 gap-3">
@@ -100,7 +108,10 @@ const Index = () => {
           )
         ))}
 
-        {/* Calendar at the bottom */}
+        {/* Quick links to all remaining Us sections */}
+        <QuickLinks />
+
+        {/* Calendar */}
         <CalendarWidget />
       </main>
 
