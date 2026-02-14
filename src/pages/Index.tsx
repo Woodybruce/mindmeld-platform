@@ -56,7 +56,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
-      <AppHeader />
+      <AppHeader subtitle="Your shared world" />
 
       <div className="border-b border-border/50">
         <StoriesBar />
