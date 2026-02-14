@@ -16,6 +16,9 @@ import LoveLanguageGuide from "./pages/LoveLanguageGuide";
 import ReflectionQuizPlay from "./pages/ReflectionQuizPlay";
 import OurChallenges from "./pages/OurChallenges";
 import OurSexList from "./pages/OurSexList";
+import TruthOrDare from "./pages/TruthOrDare";
+import WouldYouRather from "./pages/WouldYouRather";
+import PhotoChallenge from "./pages/PhotoChallenge";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
@@ -42,6 +45,9 @@ const App = () => (
               <Route path="/reflection-quiz/:quizId" element={<AuthGuard><ReflectionQuizPlay /></AuthGuard>} />
               <Route path="/our-challenges" element={<AuthGuard><OurChallenges /></AuthGuard>} />
               <Route path="/our-sex-list" element={<AuthGuard><OurSexList /></AuthGuard>} />
+              <Route path="/truth-or-dare" element={<AuthGuard><TruthOrDare /></AuthGuard>} />
+              <Route path="/would-you-rather" element={<AuthGuard><WouldYouRather /></AuthGuard>} />
+              <Route path="/photo-challenge" element={<AuthGuard><PhotoChallenge /></AuthGuard>} />
               <Route path="/auth" element={<Auth />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
