@@ -3,25 +3,14 @@ import AppHeader from "@/components/AppHeader";
 import StoriesBar from "@/components/StoriesBar";
 import BottomNav from "@/components/BottomNav";
 import FeedCard from "@/components/FeedCard";
-import SharedLinksWidget from "@/components/SharedLinksWidget";
 import DailyListsWidget from "@/components/DailyListsWidget";
 import CalendarWidget from "@/components/CalendarWidget";
-import MatchedLinkCard from "@/components/MatchedLinkCard";
 import SetupPrompts from "@/components/SetupPrompts";
 import Onboarding from "@/components/Onboarding";
-import { useSharedLinks } from "@/hooks/useSharedLinks";
 import { useAuth } from "@/contexts/AuthContext";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
-import SuggestedProducts from "@/components/SuggestedProducts";
-import {
-  QuizzesPreview,
-  PromptsPreview,
-  GamesPreview,
-  PhotosPreview,
-  GratitudePreview,
-  FilesPreview,
-} from "@/components/UsSectionPreviews";
+import { PromptsPreview, QuizzesPreview } from "@/components/UsSectionPreviews";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -42,10 +31,8 @@ const layoutItems = (items: FeedItem[]) => {
 
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
-  const { myLinks, partnerLinks, matchedLinks, addLink } = useSharedLinks();
   const { user, profile } = useAuth();
 
-  // Show onboarding for new users who haven't completed it
   const [onboardingDone, setOnboardingDone] = useState(() => {
     return localStorage.getItem("us-onboarding-done") === "true";
   });
@@ -55,7 +42,6 @@ const Index = () => {
     setOnboardingDone(true);
   };
 
-  // Show onboarding if user is logged in but hasn't completed it and has no username set
   if (user && !onboardingDone && (!profile?.username || profile.username === user.email)) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
@@ -69,85 +55,53 @@ const Index = () => {
       </div>
 
       <main className="px-3 py-4 space-y-4 pb-24">
-        {/* Setup prompts for new users */}
         <SetupPrompts />
 
-        {/* Matched links from both partners */}
-        {matchedLinks.length > 0 && (
-          <div className="space-y-3">
-            {matchedLinks.map((match) => (
-              <MatchedLinkCard key={match.url} match={match} />
-            ))}
-          </div>
-        )}
-
-        {rows.map((row, idx) => {
-          const content = Array.isArray(row) ? (
-            <div key={`pair-${idx}`} className="grid grid-cols-2 gap-3">
-              <FeedCard item={row[0]} index={idx} />
-              <FeedCard item={row[1]} index={idx + 1} />
+        {/* Banner card */}
+        {rows[0] && (
+          Array.isArray(rows[0]) ? (
+            <div className="grid grid-cols-2 gap-3">
+              <FeedCard item={rows[0][0]} index={0} />
+              <FeedCard item={rows[0][1]} index={1} />
             </div>
           ) : (
-            <FeedCard key={row.id} item={row} index={idx} />
-          );
+            <FeedCard item={rows[0]} index={0} />
+          )
+        )}
 
-          // After row 0: Prompts preview
-          if (idx === 0) {
-            return (
-              <div key={`group-${idx}`} className="space-y-3">
-                {content}
-                <PromptsPreview />
-              </div>
-            );
-          }
+        {/* Daily prompt */}
+        <PromptsPreview />
 
-          // After row 1: Daily Lists + Quizzes
-          if (idx === 1) {
-            return (
-              <div key={`group-${idx}`} className="space-y-3">
-                {content}
-                <DailyListsWidget />
-                <QuizzesPreview />
-              </div>
-            );
-          }
+        {/* Half cards */}
+        {rows[1] && (
+          Array.isArray(rows[1]) ? (
+            <div className="grid grid-cols-2 gap-3">
+              <FeedCard item={rows[1][0]} index={2} />
+              <FeedCard item={rows[1][1]} index={3} />
+            </div>
+          ) : (
+            <FeedCard item={rows[1]} index={2} />
+          )
+        )}
 
-          // After row 2: Games + Products + Photos
-          if (idx === 2) {
-            return (
-              <div key={`group-${idx}`} className="space-y-3">
-                {content}
-                <GamesPreview />
-                <SuggestedProducts />
-                <PhotosPreview />
-              </div>
-            );
-          }
+        {/* Lists + Quizzes */}
+        <DailyListsWidget />
+        <QuizzesPreview />
 
-          // After row 3: Calendar + Shared Links + Gratitude
-          if (idx === 3) {
-            return (
-              <div key={`group-${idx}`} className="space-y-3">
-                {content}
-                <CalendarWidget />
-                <SharedLinksWidget dbLinks={[...myLinks, ...partnerLinks]} onSendLink={addLink} />
-                <GratitudePreview />
-              </div>
-            );
-          }
+        {/* Remaining cards */}
+        {rows.slice(2).map((row, idx) => (
+          Array.isArray(row) ? (
+            <div key={`pair-${idx + 2}`} className="grid grid-cols-2 gap-3">
+              <FeedCard item={row[0]} index={idx + 4} />
+              <FeedCard item={row[1]} index={idx + 5} />
+            </div>
+          ) : (
+            <FeedCard key={row.id} item={row} index={idx + 4} />
+          )
+        ))}
 
-          // After row 4: Files
-          if (idx === 4) {
-            return (
-              <div key={`group-${idx}`} className="space-y-3">
-                {content}
-                <FilesPreview />
-              </div>
-            );
-          }
-
-          return content;
-        })}
+        {/* Calendar at the bottom */}
+        <CalendarWidget />
       </main>
 
       <BottomNav />
