@@ -130,35 +130,8 @@ const Us = () => {
         <TabsContent value="lists" className="mt-4 space-y-5">
           <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
 
-          <motion.button
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            onClick={() => navigate("/our-sex-list")}
-            className="w-full flex items-center gap-3 rounded-xl border border-border/50 bg-card p-4 text-left hover:bg-muted/50 transition-colors"
-          >
-            <span className="text-xl">🔥</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">Our Sex List</p>
-              <p className="text-xs text-muted-foreground">Values, motivations, preferences & things to explore</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </motion.button>
 
-          <motion.button
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            onClick={() => navigate("/our-challenges")}
-            className="w-full flex items-center gap-3 rounded-xl border border-border/50 bg-card p-4 text-left hover:bg-muted/50 transition-colors"
-          >
-            <span className="text-xl">⚡</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">Our Challenges</p>
-              <p className="text-xs text-muted-foreground">Challenges, commitments & wins together</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </motion.button>
+
 
           {completedQuizzes.length > 0 && (
             <>
