@@ -150,11 +150,25 @@ const Chat = () => {
     }
   };
 
-  // Auth guard handles redirect, this is a safety fallback
+  // When auth is bypassed for dev, show the chat UI with empty state
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background max-w-lg mx-auto relative flex flex-col">
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-[18px] h-[18px]" />
+            </button>
+            <h1 className="font-body text-sm font-semibold text-foreground">Chat</h1>
+          </div>
+        </header>
+        <main className="flex-1 px-4 py-12 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <p className="text-lg font-display font-semibold text-foreground">Sign in to chat</p>
+            <p className="text-sm text-muted-foreground">Log in to start messaging your partner</p>
+          </div>
+        </main>
+        <BottomNav />
       </div>
     );
   }
