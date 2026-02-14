@@ -121,11 +121,8 @@ const Us = () => {
             <TabsTrigger value="photos" className="gap-1 text-xs data-[state=active]:bg-card">
               <Camera className="w-3.5 h-3.5" /> Photos
             </TabsTrigger>
-            <TabsTrigger value="events" className="gap-1 text-xs data-[state=active]:bg-card">
-              <Calendar className="w-3.5 h-3.5" /> Events
-            </TabsTrigger>
-            <TabsTrigger value="files" className="gap-1 text-xs data-[state=active]:bg-card">
-              <FolderOpen className="w-3.5 h-3.5" /> Files
+            <TabsTrigger value="admin" className="gap-1 text-xs data-[state=active]:bg-card">
+              <FolderOpen className="w-3.5 h-3.5" /> Admin
             </TabsTrigger>
           </TabsList>
 
@@ -250,16 +247,23 @@ const Us = () => {
           <OurPhotos />
         </TabsContent>
 
-        {/* Events */}
-        <TabsContent value="events" className="mt-4">
-          <OurEvents />
-        </TabsContent>
+        {/* Admin — Events & Files */}
+        <TabsContent value="admin" className="mt-4 space-y-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-us-gold" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Events & Calendar</p>
+            </div>
+            <OurEvents />
+          </div>
 
-
-
-        {/* Files */}
-        <TabsContent value="files" className="mt-4 space-y-3">
-          <SharedFolderEmbed />
+          <div className="border-t border-border/50 pt-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <FolderOpen className="w-4 h-4 text-us-navy" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Shared Files</p>
+            </div>
+            <SharedFolderEmbed />
+          </div>
         </TabsContent>
       </Tabs>
 
