@@ -1,47 +1,60 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import { Heart, ArrowRight, Mail, Phone, ChevronLeft } from "lucide-react";
 
 type Step = "choose" | "email-enter" | "email-sent" | "phone-enter" | "phone-verify";
 
 const Auth = () => {
-  const { signInWithEmail, signInWithPhone, verifyOtp } = useAuth();
+  const { user, loading: authLoading, signInWithEmail, signInWithPhone, verifyOtp } = useAuth();
   const [step, setStep] = useState<Step>("choose");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await signInWithEmail(email);
     if (error) setError(error.message);
     else setStep("email-sent");
-    setLoading(false);
+    setSubmitting(false);
   };
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await signInWithPhone(phone);
     if (error) setError(error.message);
     else setStep("phone-verify");
-    setLoading(false);
+    setSubmitting(false);
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await verifyOtp(phone, otp);
     if (error) setError(error.message);
     // On success, onAuthStateChange will redirect
-    setLoading(false);
+    setSubmitting(false);
   };
 
   const reset = () => {
@@ -116,11 +129,11 @@ const Auth = () => {
                 {error && <p className="text-xs text-destructive">{error}</p>}
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={submitting}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   <Mail className="w-4 h-4" />
-                  {loading ? "Sending…" : "Send Magic Link"}
+                  {submitting ? "Sending…" : "Send Magic Link"}
                 </button>
               </form>
             </motion.div>
@@ -159,11 +172,11 @@ const Auth = () => {
                 {error && <p className="text-xs text-destructive">{error}</p>}
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={submitting}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   <Phone className="w-4 h-4" />
-                  {loading ? "Sending…" : "Send Code"}
+                  {submitting ? "Sending…" : "Send Code"}
                 </button>
               </form>
             </motion.div>
@@ -190,10 +203,10 @@ const Auth = () => {
                 {error && <p className="text-xs text-destructive">{error}</p>}
                 <button
                   type="submit"
-                  disabled={loading || otp.length < 6}
+                  disabled={submitting || otp.length < 6}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {loading ? "Verifying…" : "Verify & Sign In"}
+                  {submitting ? "Verifying…" : "Verify & Sign In"}
                 </button>
               </form>
             </motion.div>
