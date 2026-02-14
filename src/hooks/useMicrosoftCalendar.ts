@@ -53,7 +53,7 @@ export function useMicrosoftCalendar() {
 
   // Start OAuth flow
   const connect = useCallback(() => {
-    const redirectUri = `${window.location.origin}/us?tab=events&ms_callback=true`;
+    const redirectUri = `${window.location.origin}/us?tab=admin&ms_callback=true`;
     callApi("auth-url", { redirect_uri: redirectUri })
       .then((d) => { window.location.href = d.url; })
       .catch((e) => console.error("Failed to get auth URL:", e));
@@ -61,7 +61,7 @@ export function useMicrosoftCalendar() {
 
   // Handle OAuth callback
   const handleCallback = useCallback(async (code: string) => {
-    const redirectUri = `${window.location.origin}/us?tab=events&ms_callback=true`;
+    const redirectUri = `${window.location.origin}/us?tab=admin&ms_callback=true`;
     await callApi("callback", { code, redirect_uri: redirectUri });
     setConnected(true);
   }, []);
