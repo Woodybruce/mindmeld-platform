@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FolderOpen, Link2, Camera, Heart, X, ChevronRight, Sparkles } from "lucide-react";
+import { FolderOpen, Camera, Heart, X, ChevronRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SetupItem {
@@ -31,15 +31,6 @@ const setupItems: SetupItem[] = [
     description: "OneDrive, Google Drive, Dropbox or Notion",
     action: "/us?tab=files",
     checkKey: "shared-folder-embeds",
-  },
-  {
-    id: "links",
-    icon: <Link2 className="w-4 h-4" />,
-    emoji: "🔗",
-    title: "Share a link",
-    description: "Instagram, YouTube, recipes, travel ideas",
-    action: "/us?tab=links",
-    checkKey: "shared-links-setup",
   },
   {
     id: "quiz",
