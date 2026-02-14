@@ -72,10 +72,10 @@ const Auth = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm"
       >
-        <div className="text-center mb-8">
-          <Heart className="w-10 h-10 text-primary mx-auto mb-3" />
-          <h1 className="font-display text-2xl font-bold text-foreground">Us</h1>
-          <p className="text-sm text-muted-foreground mt-1">Your shared space, together</p>
+        <div className="text-center mb-10">
+          <Heart className="w-14 h-14 text-primary mx-auto mb-4" />
+          <h1 className="font-display text-3xl font-bold text-foreground">Us</h1>
+          <p className="text-base text-muted-foreground mt-2">Your shared space, together</p>
         </div>
 
         <AnimatePresence mode="wait">
@@ -83,30 +83,30 @@ const Auth = () => {
             <motion.div key="choose" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
               <button
                 onClick={() => setStep("phone-enter")}
-                className="w-full flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-4 text-left hover:bg-secondary/50 transition-colors"
+                className="w-full flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-5 text-left hover:bg-secondary/50 transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Phone className="w-5 h-5 text-primary" />
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Phone className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <span className="font-medium text-sm text-foreground">Continue with Phone</span>
-                  <p className="text-xs text-muted-foreground">We'll text you a code</p>
+                  <span className="font-medium text-base text-foreground">Continue with Phone</span>
+                  <p className="text-sm text-muted-foreground">We'll text you a code</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto" />
               </button>
 
               <button
                 onClick={() => setStep("email-enter")}
-                className="w-full flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-4 text-left hover:bg-secondary/50 transition-colors"
+                className="w-full flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-5 text-left hover:bg-secondary/50 transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-us-sage/20 flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-us-sage" />
+                <div className="w-12 h-12 rounded-full bg-us-sage/20 flex items-center justify-center">
+                  <Mail className="w-6 h-6 text-us-sage" />
                 </div>
                 <div>
-                  <span className="font-medium text-sm text-foreground">Continue with Email</span>
-                  <p className="text-xs text-muted-foreground">We'll send a magic link</p>
+                  <span className="font-medium text-base text-foreground">Continue with Email</span>
+                  <p className="text-sm text-muted-foreground">We'll send a magic link</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto" />
               </button>
             </motion.div>
           )}
@@ -124,13 +124,13 @@ const Auth = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-2xl border border-border bg-card px-5 py-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
-                {error && <p className="text-xs text-destructive">{error}</p>}
+                {error && <p className="text-sm text-destructive">{error}</p>}
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   <Mail className="w-4 h-4" />
                   {submitting ? "Sending…" : "Send Magic Link"}
@@ -167,13 +167,13 @@ const Auth = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-2xl border border-border bg-card px-5 py-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
-                {error && <p className="text-xs text-destructive">{error}</p>}
+                {error && <p className="text-sm text-destructive">{error}</p>}
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   <Phone className="w-4 h-4" />
                   {submitting ? "Sending…" : "Send Code"}

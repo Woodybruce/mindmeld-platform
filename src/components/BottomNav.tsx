@@ -16,7 +16,7 @@ const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border/50 safe-area-bottom">
-      <div className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto">
+      <div className="flex items-center justify-around px-2 py-3 max-w-lg mx-auto">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path;
           const showBadge = tab.id === "chat" && unreadCount > 0;
@@ -37,7 +37,7 @@ const BottomNav = () => {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-xs font-medium">{tab.label}</span>
               {isActive && (
                 <span className="w-1 h-1 rounded-full bg-primary -mt-0.5" />
               )}
