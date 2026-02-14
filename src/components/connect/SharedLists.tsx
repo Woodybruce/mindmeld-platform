@@ -261,7 +261,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                       >
                         {item.done && <Check className="w-3 h-3 text-primary-foreground" />}
                       </button>
-                      <span className={`flex-1 text-sm ${item.done ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                      <span className={`flex-1 text-sm text-foreground`}>
                         {item.text}
                       </span>
                       <button
