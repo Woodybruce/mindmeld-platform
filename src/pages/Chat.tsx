@@ -114,7 +114,7 @@ const Chat = () => {
     });
   };
 
-  const handleSend = async (content: string, imageFile?: File | null, audioBlob?: Blob | null) => {
+  const handleSend = async (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => {
     if (!user || !partnerId || sending) return;
     setSending(true);
 
@@ -122,14 +122,16 @@ const Chat = () => {
     let audioUrl: string | null = null;
     let messageType = "text";
 
-    if (imageFile) {
+    if (galleryImageUrl) {
+      imageUrl = galleryImageUrl;
+      messageType = "image";
+    } else if (imageFile) {
       const ext = imageFile.name.split(".").pop();
       const storagePath = `${user.id}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("chat-images").upload(storagePath, imageFile);
       if (!error) {
         imageUrl = supabase.storage.from("chat-images").getPublicUrl(storagePath).data.publicUrl;
         messageType = "image";
-        // Also save to couple-photos bucket for gallery
         const galleryPath = `${user.id}/${Date.now()}-gallery.${ext}`;
         const { error: gpErr } = await supabase.storage.from("couple-photos").upload(galleryPath, imageFile);
         if (!gpErr) {
