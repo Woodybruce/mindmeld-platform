@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
-import BottomNav from "@/components/BottomNav";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -225,7 +224,6 @@ const Chat = () => {
             <p className="text-sm text-muted-foreground">Log in to start messaging your partner</p>
           </div>
         </main>
-        <BottomNav />
       </div>
     );
   }
@@ -243,7 +241,6 @@ const Chat = () => {
             </button>
           </div>
         </main>
-        <BottomNav />
       </div>
     );
   }
@@ -329,8 +326,6 @@ const Chat = () => {
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
       />
-
-      <BottomNav />
     </div>
   );
 };
