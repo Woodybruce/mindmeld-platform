@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          is_all_day: boolean
+          location: string | null
+          source: string
+          start_time: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          is_all_day?: boolean
+          location?: string | null
+          source?: string
+          start_time: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_all_day?: boolean
+          location?: string | null
+          source?: string
+          start_time?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       couple_photos: {
         Row: {
           caption: string | null
