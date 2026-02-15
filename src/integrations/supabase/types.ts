@@ -278,6 +278,68 @@ export type Database = {
           },
         ]
       }
+      shared_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number
+          folder_id: string | null
+          id: string
+          mime_type: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number
+          folder_id?: string | null
+          id?: string
+          mime_type?: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          folder_id?: string | null
+          id?: string
+          mime_type?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_files_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "shared_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_folders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shared_links: {
         Row: {
           created_at: string
