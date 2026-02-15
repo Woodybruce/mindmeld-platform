@@ -5,9 +5,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 interface ChatHeaderProps {
   partnerName: string;
   isOnline?: boolean;
+  onStartCall?: (type: "audio" | "video") => void;
 }
 
-const ChatHeader = ({ partnerName, isOnline }: ChatHeaderProps) => {
+const ChatHeader = ({ partnerName, isOnline, onStartCall }: ChatHeaderProps) => {
   const navigate = useNavigate();
   const initial = partnerName.charAt(0).toUpperCase();
 
@@ -32,10 +33,16 @@ const ChatHeader = ({ partnerName, isOnline }: ChatHeaderProps) => {
           </p>
         </div>
         <div className="flex items-center gap-1">
-          <button className="w-9 h-9 rounded-full flex items-center justify-center text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+          <button
+            onClick={() => onStartCall?.("video")}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+          >
             <Video className="w-[18px] h-[18px]" />
           </button>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+          <button
+            onClick={() => onStartCall?.("audio")}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+          >
             <Phone className="w-[17px] h-[17px]" />
           </button>
           <button className="w-9 h-9 rounded-full flex items-center justify-center text-primary-foreground/70 hover:text-primary-foreground transition-colors">
