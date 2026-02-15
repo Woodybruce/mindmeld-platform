@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { Send, ImagePlus, X, Loader2, Mic, Square, Reply, Images } from "lucide-react";
+import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Images, Paperclip } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import GalleryPicker from "./GalleryPicker";
 
 interface ChatInputProps {
@@ -15,9 +16,11 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -28,6 +31,7 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
     setGalleryUrl(null);
+    setAttachOpen(false);
   };
 
   const clearImage = () => {
@@ -40,6 +44,7 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
     setGalleryUrl(url);
     setImagePreview(url);
     setImageFile(null);
+    setAttachOpen(false);
   };
 
   const handleSend = async () => {
@@ -88,8 +93,55 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
+  const attachActions = [
+    { icon: Camera, label: "Camera", color: "bg-[hsl(var(--us-rose))]", onClick: () => cameraInputRef.current?.click() },
+    { icon: Images, label: "Our Photos", color: "bg-[hsl(var(--us-sage))]", onClick: () => { setAttachOpen(false); setGalleryOpen(true); } },
+    { icon: Paperclip, label: "File", color: "bg-[hsl(var(--us-navy))]", onClick: () => fileInputRef.current?.click() },
+  ];
+
   return (
     <div className="fixed bottom-14 left-0 right-0 z-40">
+      {/* Attachment menu backdrop */}
+      <AnimatePresence>
+        {attachOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-30"
+            onClick={() => setAttachOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Attachment menu */}
+      <AnimatePresence>
+        {attachOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="bg-card border border-border/50 rounded-2xl shadow-xl mx-3 mb-2 p-4 max-w-lg sm:mx-auto"
+          >
+            <div className="flex justify-center gap-8">
+              {attachActions.map((action) => (
+                <button
+                  key={action.label}
+                  onClick={action.onClick}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center text-white shadow-md`}>
+                    <action.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] text-muted-foreground font-medium">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Image preview */}
       {imagePreview && (
         <div className="bg-background/95 backdrop-blur-xl border-t border-border/50 px-4 py-2">
@@ -123,9 +175,11 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
         </div>
       )}
 
-      <div className="bg-background/95 backdrop-blur-xl border-t border-border/50 p-2.5">
-        <div className="flex items-center gap-2 max-w-lg mx-auto">
+      {/* Input bar */}
+      <div className="bg-background/95 backdrop-blur-xl border-t border-border/50 px-2 py-1.5">
+        <div className="flex items-end gap-1.5 max-w-lg mx-auto">
           <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageSelect} />
+          <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
 
           {recording ? (
             <>
@@ -135,47 +189,46 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
               </div>
               <button
                 onClick={stopRecording}
-                className="w-10 h-10 rounded-full bg-destructive flex items-center justify-center text-destructive-foreground flex-shrink-0"
+                className="w-11 h-11 rounded-full bg-destructive flex items-center justify-center text-destructive-foreground flex-shrink-0"
               >
                 <Square className="w-4 h-4" />
               </button>
             </>
           ) : (
             <>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-              >
-                <ImagePlus className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setGalleryOpen(true)}
-                className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-              >
-                <Images className="w-4 h-4" />
-              </button>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a message..."
-                className="flex-1 rounded-full bg-secondary px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
-              />
+              <div className="flex-1 flex items-center gap-0 rounded-full bg-secondary overflow-hidden">
+                {/* Plus / attach button */}
+                <button
+                  onClick={() => setAttachOpen((v) => !v)}
+                  className="p-2.5 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                >
+                  <Plus className={`w-5 h-5 transition-transform ${attachOpen ? "rotate-45" : ""}`} />
+                </button>
+
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Message"
+                  className="flex-1 bg-transparent py-2.5 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                />
+              </div>
+
               {input.trim() || imageFile || galleryUrl ? (
                 <button
                   onClick={handleSend}
                   disabled={sending}
-                  className="w-10 h-10 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground disabled:opacity-40 transition-opacity flex-shrink-0"
+                  className="w-11 h-11 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground disabled:opacity-40 transition-opacity flex-shrink-0"
                 >
                   {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
               ) : (
                 <button
                   onClick={startRecording}
-                  className="w-10 h-10 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground flex-shrink-0"
+                  className="w-11 h-11 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground flex-shrink-0"
                 >
-                  <Mic className="w-4 h-4" />
+                  <Mic className="w-5 h-5" />
                 </button>
               )}
             </>
