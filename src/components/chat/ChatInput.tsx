@@ -94,9 +94,9 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   const attachActions = [
-    { icon: Camera, label: "Camera", gradient: "from-[hsl(var(--us-coral))] to-[hsl(var(--us-terracotta))]", onClick: () => cameraInputRef.current?.click() },
-    { icon: Images, label: "Gallery", gradient: "from-[hsl(var(--us-sage))] to-[hsl(145,30%,45%)]", onClick: () => { setAttachOpen(false); setGalleryOpen(true); } },
-    { icon: Paperclip, label: "Document", gradient: "from-[hsl(var(--us-navy))] to-[hsl(220,40%,35%)]", onClick: () => fileInputRef.current?.click() },
+    { icon: Camera, label: "Camera", gradient: "from-[hsl(var(--us-coral))] to-[hsl(var(--us-terracotta))]", onClick: () => { setAttachOpen(false); setTimeout(() => cameraInputRef.current?.click(), 100); } },
+    { icon: Images, label: "Gallery", gradient: "from-[hsl(var(--us-sage))] to-[hsl(145,30%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setGalleryOpen(true), 100); } },
+    { icon: Paperclip, label: "Photo", gradient: "from-[hsl(var(--us-navy))] to-[hsl(220,40%,35%)]", onClick: () => { setAttachOpen(false); setTimeout(() => fileInputRef.current?.click(), 100); } },
   ];
 
   return (
@@ -108,7 +108,7 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 bg-foreground/20 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-[2px]"
             onClick={() => setAttachOpen(false)}
           />
         )}
@@ -122,7 +122,7 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 60, scale: 0.85 }}
             transition={{ type: "spring", damping: 22, stiffness: 280 }}
-            className="relative z-40 bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl mx-4 mb-3 px-6 py-5 max-w-lg sm:mx-auto"
+            className="relative z-50 bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl mx-4 mb-3 px-6 py-5 max-w-lg sm:mx-auto"
           >
             <div className="flex justify-around">
               {attachActions.map((action, i) => (
