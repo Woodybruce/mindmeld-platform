@@ -1,22 +1,29 @@
 import { useState, useRef } from "react";
-import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Images, Paperclip } from "lucide-react";
+import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Images, Paperclip, MapPin, BarChart3, CalendarPlus } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import GalleryPicker from "./GalleryPicker";
+import LocationComposer from "./LocationComposer";
+import PollComposer from "./PollComposer";
+import EventComposer from "./EventComposer";
 
 interface ChatInputProps {
   onSend: (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => Promise<void>;
+  onSendSpecial?: (type: string, data: any) => Promise<void>;
   sending: boolean;
   replyingTo?: { id: string; content: string; senderName: string } | null;
   onCancelReply?: () => void;
 }
 
-const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProps) => {
+const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }: ChatInputProps) => {
   const [input, setInput] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [pollOpen, setPollOpen] = useState(false);
+  const [eventOpen, setEventOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -97,6 +104,9 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
     { icon: Camera, label: "Camera", gradient: "from-[hsl(var(--us-coral))] to-[hsl(var(--us-terracotta))]", onClick: () => { setAttachOpen(false); setTimeout(() => cameraInputRef.current?.click(), 100); } },
     { icon: Images, label: "Gallery", gradient: "from-[hsl(var(--us-sage))] to-[hsl(145,30%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setGalleryOpen(true), 100); } },
     { icon: Paperclip, label: "Photo", gradient: "from-[hsl(var(--us-navy))] to-[hsl(220,40%,35%)]", onClick: () => { setAttachOpen(false); setTimeout(() => fileInputRef.current?.click(), 100); } },
+    { icon: MapPin, label: "Location", gradient: "from-[hsl(var(--us-coral))] to-[hsl(0,60%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setLocationOpen(true), 100); } },
+    { icon: BarChart3, label: "Poll", gradient: "from-[hsl(var(--us-gold))] to-[hsl(30,70%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setPollOpen(true), 100); } },
+    { icon: CalendarPlus, label: "Event", gradient: "from-[hsl(var(--us-blush))] to-[hsl(350,50%,55%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setEventOpen(true), 100); } },
   ];
 
   return (
@@ -122,20 +132,20 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 60, scale: 0.85 }}
             transition={{ type: "spring", damping: 22, stiffness: 280 }}
-            className="relative z-50 bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl mx-4 mb-3 px-6 py-5 max-w-lg sm:mx-auto"
+            className="relative z-50 bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl mx-4 mb-3 px-4 py-5 max-w-lg sm:mx-auto"
           >
-            <div className="flex justify-around">
+            <div className="grid grid-cols-3 gap-y-5 gap-x-2 justify-items-center">
               {attachActions.map((action, i) => (
                 <motion.button
                   key={action.label}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
+                  transition={{ delay: i * 0.04 }}
                   onClick={action.onClick}
                   className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
                 >
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white shadow-lg`}>
-                    <action.icon className="w-6 h-6" />
+                  <div className={`w-13 h-13 rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white shadow-lg`}>
+                    <action.icon className="w-5.5 h-5.5" />
                   </div>
                   <span className="text-[11px] text-muted-foreground font-medium">{action.label}</span>
                 </motion.button>
@@ -214,7 +224,6 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
             </>
           ) : (
             <>
-              {/* Text input with + button inside */}
               <div className="flex-1 flex items-center rounded-full bg-secondary border border-border/30 overflow-hidden min-h-[48px]">
                 <button
                   onClick={() => setAttachOpen((v) => !v)}
@@ -222,7 +231,6 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
                 >
                   <Plus className={`w-5 h-5 transition-transform duration-200 ${attachOpen ? "rotate-45 text-[hsl(var(--us-coral))]" : ""}`} />
                 </button>
-
                 <input
                   type="text"
                   value={input}
@@ -233,7 +241,6 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
                 />
               </div>
 
-              {/* Send / Mic button */}
               {input.trim() || imageFile || galleryUrl ? (
                 <button
                   onClick={handleSend}
@@ -255,11 +262,10 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
         </div>
       </div>
 
-      <GalleryPicker
-        open={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
-        onSelect={handleGallerySelect}
-      />
+      <GalleryPicker open={galleryOpen} onClose={() => setGalleryOpen(false)} onSelect={handleGallerySelect} />
+      <LocationComposer open={locationOpen} onClose={() => setLocationOpen(false)} onSend={(data) => onSendSpecial?.("location", data)} />
+      <PollComposer open={pollOpen} onClose={() => setPollOpen(false)} onSend={(data) => onSendSpecial?.("poll", data)} />
+      <EventComposer open={eventOpen} onClose={() => setEventOpen(false)} onSend={(data) => onSendSpecial?.("event", data)} />
     </div>
   );
 };

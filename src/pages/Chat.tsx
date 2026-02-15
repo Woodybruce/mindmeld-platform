@@ -135,6 +135,36 @@ const Chat = () => {
     setSending(false);
   };
 
+  const handleSendSpecial = async (type: string, data: any) => {
+    if (!user || !partnerId) return;
+    // For polls, initialize votes object
+    const payload = type === "poll" ? { ...data, votes: {} } : data;
+    await supabase.from("messages").insert({
+      sender_id: user.id,
+      receiver_id: partnerId,
+      content: JSON.stringify(payload),
+      message_type: type,
+    } as any);
+  };
+
+  const handlePollVote = async (msgId: string, optionIdx: number) => {
+    if (!user) return;
+    const msg = messages.find((m) => m.id === msgId);
+    if (!msg) return;
+    try {
+      const parsed = JSON.parse(msg.content);
+      const votes: Record<number, string[]> = parsed.votes || {};
+      // Check if already voted
+      const alreadyVoted = Object.values(votes).flat().includes(user.id);
+      if (alreadyVoted) return;
+      votes[optionIdx] = [...(votes[optionIdx] || []), user.id];
+      const updatedContent = JSON.stringify({ ...parsed, votes });
+      await supabase.from("messages").update({ content: updatedContent } as any).eq("id", msgId);
+      // Optimistic update
+      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, content: updatedContent } : m));
+    } catch { /* ignore parse errors */ }
+  };
+
   const handleReply = (msgId: string) => {
     const msg = messages.find((m) => m.id === msgId);
     if (!msg) return;
@@ -244,8 +274,11 @@ const Chat = () => {
                     isMine={isMine}
                     time={time}
                     read={msg.read}
+                    messageType={msg.message_type}
                     replyTo={replyTo}
                     onSwipeReply={handleReply}
+                    onPollVote={handlePollVote}
+                    userId={user.id}
                   />
                 );
               })}
@@ -257,6 +290,7 @@ const Chat = () => {
 
       <ChatInput
         onSend={handleSend}
+        onSendSpecial={handleSendSpecial}
         sending={sending}
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
