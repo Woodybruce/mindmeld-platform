@@ -44,15 +44,23 @@ const Chat = () => {
     partnerName,
   });
 
-  // Fetch partner name & phone
+  // Fetch partner name
   useEffect(() => {
     if (!partnerId) return;
     supabase.from("profiles").select("*").eq("id", partnerId).single()
       .then(({ data }) => {
         if (data?.username) setPartnerName(data.username);
-        if ((data as any)?.phone_number) setPartnerPhone((data as any).phone_number);
       });
   }, [partnerId]);
+
+  // Fetch partner phone from current user's profile (user stores their partner's number)
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("*").eq("id", user.id).single()
+      .then(({ data }) => {
+        if ((data as any)?.phone_number) setPartnerPhone((data as any).phone_number);
+      });
+  }, [user]);
 
   // Track partner online presence
   useEffect(() => {

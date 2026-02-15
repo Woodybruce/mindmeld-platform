@@ -179,9 +179,9 @@ const Profile = () => {
         {/* Phone number */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="font-display font-semibold text-foreground mb-1 flex items-center gap-2">
-            <Phone className="w-4 h-4 text-[hsl(var(--us-sage))]" /> Phone Number
+            <Phone className="w-4 h-4 text-[hsl(var(--us-sage))]" /> Partner's Phone Number
           </h3>
-          <p className="text-xs text-muted-foreground mb-3">Used for call fallback when partner is offline</p>
+          <p className="text-xs text-muted-foreground mb-3">Used to call your partner when they're offline</p>
           <div className="flex gap-2">
             <input
               type="tel"
