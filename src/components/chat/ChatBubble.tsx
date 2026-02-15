@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink } from "lucide-react";
+import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink, ListPlus, CalendarCheck } from "lucide-react";
+import { toast } from "sonner";
 
 interface ChatBubbleProps {
   id: string;
@@ -14,6 +15,8 @@ interface ChatBubbleProps {
   replyTo?: { content: string; senderName: string } | null;
   onSwipeReply?: (id: string) => void;
   onPollVote?: (msgId: string, optionIdx: number) => void;
+  onSavePollToList?: (question: string, options: string[]) => void;
+  onSaveEventToCalendar?: (event: { title: string; date: string; time?: string; location?: string }) => void;
   userId?: string;
 }
 
@@ -38,7 +41,7 @@ const tryParseJSON = (str: string) => {
 
 const ChatBubble = ({
   id, content, imageUrl, audioUrl, isMine, time, read,
-  messageType, replyTo, onSwipeReply, onPollVote, userId,
+  messageType, replyTo, onSwipeReply, onPollVote, onSavePollToList, onSaveEventToCalendar, userId,
 }: ChatBubbleProps) => {
   const isPhotoOnly = (!content || content === "📷 Photo") && imageUrl;
   const isSpecial = messageType === "location" || messageType === "poll" || messageType === "event";
@@ -106,7 +109,7 @@ const ChatBubble = ({
 
         {/* Poll card */}
         {messageType === "poll" && parsed && (
-          <PollCard parsed={parsed} isMine={isMine} msgId={id} onPollVote={onPollVote} userId={userId} />
+          <PollCard parsed={parsed} isMine={isMine} msgId={id} onPollVote={onPollVote} userId={userId} onSaveToList={onSavePollToList} />
         )}
 
         {/* Event card */}
@@ -139,6 +142,17 @@ const ChatBubble = ({
                 </div>
               )}
             </div>
+            {onSaveEventToCalendar && (
+              <button
+                onClick={() => {
+                  onSaveEventToCalendar({ title: parsed.title, date: parsed.date, time: parsed.time, location: parsed.location });
+                  toast.success("Event saved to calendar");
+                }}
+                className={`flex items-center gap-1.5 mt-2 text-[12px] font-medium ${isMine ? "text-white/60 hover:text-white/80" : "text-primary hover:text-primary/80"} transition-colors`}
+              >
+                <CalendarCheck className="w-3.5 h-3.5" /> Save to Calendar
+              </button>
+            )}
           </div>
         )}
 
@@ -178,7 +192,7 @@ const ChatBubble = ({
 };
 
 // Poll sub-component
-const PollCard = ({ parsed, isMine, msgId, onPollVote, userId }: { parsed: any; isMine: boolean; msgId: string; onPollVote?: (msgId: string, idx: number) => void; userId?: string }) => {
+const PollCard = ({ parsed, isMine, msgId, onPollVote, userId, onSaveToList }: { parsed: any; isMine: boolean; msgId: string; onPollVote?: (msgId: string, idx: number) => void; userId?: string; onSaveToList?: (question: string, options: string[]) => void }) => {
   const votes: Record<number, string[]> = parsed.votes || {};
   const totalVotes = Object.values(votes).flat().length;
   const myVote = userId ? Object.entries(votes).find(([, voters]) => (voters as string[]).includes(userId))?.[0] : undefined;
@@ -224,9 +238,22 @@ const PollCard = ({ parsed, isMine, msgId, onPollVote, userId }: { parsed: any; 
           );
         })}
       </div>
-      <p className={`text-[10px] mt-2 ${isMine ? "text-white/30" : "text-muted-foreground/50"}`}>
-        {totalVotes} vote{totalVotes !== 1 ? "s" : ""}
-      </p>
+      <div className="flex items-center justify-between mt-2">
+        <p className={`text-[10px] ${isMine ? "text-white/30" : "text-muted-foreground/50"}`}>
+          {totalVotes} vote{totalVotes !== 1 ? "s" : ""}
+        </p>
+        {onSaveToList && (
+          <button
+            onClick={() => {
+              onSaveToList(parsed.question, parsed.options as string[]);
+              toast.success("Poll saved to lists");
+            }}
+            className={`flex items-center gap-1 text-[11px] font-medium ${isMine ? "text-white/50 hover:text-white/70" : "text-primary/70 hover:text-primary"} transition-colors`}
+          >
+            <ListPlus className="w-3.5 h-3.5" /> Save to List
+          </button>
+        )}
+      </div>
     </div>
   );
 };
