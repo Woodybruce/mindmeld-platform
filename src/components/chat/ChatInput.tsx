@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
-import { Send, ImagePlus, X, Loader2, Mic, Square, Reply } from "lucide-react";
+import { Send, ImagePlus, X, Loader2, Mic, Square, Reply, Images } from "lucide-react";
+import GalleryPicker from "./GalleryPicker";
 
 interface ChatInputProps {
-  onSend: (content: string, imageFile?: File | null, audioBlob?: Blob | null) => Promise<void>;
+  onSend: (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => Promise<void>;
   sending: boolean;
   replyingTo?: { id: string; content: string; senderName: string } | null;
   onCancelReply?: () => void;
@@ -12,6 +13,8 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
   const [input, setInput] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,19 +27,28 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+    setGalleryUrl(null);
   };
 
   const clearImage = () => {
     setImageFile(null);
     setImagePreview(null);
+    setGalleryUrl(null);
+  };
+
+  const handleGallerySelect = (url: string) => {
+    setGalleryUrl(url);
+    setImagePreview(url);
+    setImageFile(null);
   };
 
   const handleSend = async () => {
-    if ((!input.trim() && !imageFile) || sending) return;
+    if ((!input.trim() && !imageFile && !galleryUrl) || sending) return;
     const content = input.trim();
     setInput("");
+    const currentGalleryUrl = galleryUrl;
     clearImage();
-    await onSend(content, imageFile);
+    await onSend(content, imageFile, null, currentGalleryUrl);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -132,9 +144,15 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
             <>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
               >
                 <ImagePlus className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setGalleryOpen(true)}
+                className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+              >
+                <Images className="w-4 h-4" />
               </button>
               <input
                 type="text"
@@ -144,7 +162,7 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
                 placeholder="Type a message..."
                 className="flex-1 rounded-full bg-secondary px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
               />
-              {input.trim() || imageFile ? (
+              {input.trim() || imageFile || galleryUrl ? (
                 <button
                   onClick={handleSend}
                   disabled={sending}
@@ -164,6 +182,12 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
           )}
         </div>
       </div>
+
+      <GalleryPicker
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        onSelect={handleGallerySelect}
+      />
     </div>
   );
 };
