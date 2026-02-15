@@ -222,23 +222,29 @@ const Chat = () => {
   const msgMap = new Map(messages.map((m) => [m.id, m]));
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--us-cream))] dark:bg-background max-w-lg mx-auto relative flex flex-col">
+    <div className="min-h-screen max-w-lg mx-auto relative flex flex-col" style={{ background: 'linear-gradient(135deg, hsl(var(--us-cream)) 0%, hsl(30 20% 93%) 100%)' }}>
+      {/* Subtle wallpaper pattern */}
+      <div className="fixed inset-0 max-w-lg mx-auto pointer-events-none opacity-[0.03] dark:opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
+      
       <ChatHeader partnerName={partnerName} />
 
-      <main className="flex-1 px-3 py-3 overflow-y-auto pb-36 space-y-0.5">
+      <main className="flex-1 px-3 py-3 overflow-y-auto pb-36 space-y-0.5 relative z-10">
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center pt-20">
             <div className="text-center">
-              <p className="text-muted-foreground text-sm">No messages yet</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Say something lovely 💕</p>
+              <div className="w-16 h-16 rounded-full bg-secondary/80 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">💬</span>
+              </div>
+              <p className="text-muted-foreground text-sm font-medium">No messages yet</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">Say something lovely 💕</p>
             </div>
           </div>
         )}
 
         {grouped.map((group) => (
           <div key={group.date}>
-            <div className="flex justify-center my-3">
-              <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-border/30">
+            <div className="flex justify-center my-4">
+              <span className="text-[11px] font-medium text-muted-foreground bg-card/90 backdrop-blur-md px-4 py-1.5 rounded-lg shadow-sm border border-border/20">
                 {group.date}
               </span>
             </div>

@@ -49,40 +49,41 @@ const ChatBubble = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex mb-1 group ${isMine ? "justify-end" : "justify-start"}`}
+      initial={{ opacity: 0, y: 8, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: "spring", damping: 20, stiffness: 300 }}
+      className={`flex mb-[3px] group ${isMine ? "justify-end" : "justify-start"}`}
     >
-      {/* Reply swipe hint */}
+      {/* Reply button - left side for partner messages */}
       {!isMine && onSwipeReply && (
         <button
           onClick={() => onSwipeReply(id)}
-          className="self-center mr-1 opacity-0 group-hover:opacity-60 transition-opacity"
+          className="self-center mr-1 opacity-0 group-hover:opacity-50 active:opacity-80 transition-opacity"
         >
           <Reply className="w-3.5 h-3.5 text-muted-foreground" />
         </button>
       )}
 
       <div
-        className={`max-w-[78%] rounded-xl overflow-hidden shadow-sm ${
+        className={`relative max-w-[80%] rounded-[18px] overflow-hidden shadow-sm ${
           isMine
-            ? "bg-[hsl(var(--us-navy))] text-primary-foreground rounded-br-sm"
-            : "bg-card text-foreground border border-border/50 rounded-bl-sm"
+            ? "bg-[hsl(var(--us-navy))] text-primary-foreground rounded-br-[4px]"
+            : "bg-card text-foreground border border-border/40 rounded-bl-[4px]"
         }`}
       >
-        {/* Quoted message */}
+        {/* Quoted reply */}
         {replyTo && (
           <div
-            className={`mx-1.5 mt-1.5 px-2.5 py-1.5 rounded-lg border-l-[3px] ${
+            className={`mx-2 mt-2 px-3 py-2 rounded-xl border-l-[3px] ${
               isMine
-                ? "bg-primary-foreground/10 border-l-primary-foreground/40"
-                : "bg-secondary border-l-primary"
+                ? "bg-white/10 border-l-white/40"
+                : "bg-secondary/80 border-l-[hsl(var(--us-coral))]"
             }`}
           >
-            <p className={`text-[10px] font-semibold ${isMine ? "text-primary-foreground/70" : "text-primary"}`}>
+            <p className={`text-[11px] font-semibold mb-0.5 ${isMine ? "text-white/70" : "text-[hsl(var(--us-coral))]"}`}>
               {replyTo.senderName}
             </p>
-            <p className={`text-[11px] line-clamp-2 ${isMine ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
+            <p className={`text-[11px] line-clamp-2 ${isMine ? "text-white/45" : "text-muted-foreground"}`}>
               {replyTo.content}
             </p>
           </div>
@@ -92,43 +93,45 @@ const ChatBubble = ({
           <img
             src={imageUrl}
             alt="Shared photo"
-            className="w-full max-h-64 object-cover"
+            className="w-full max-h-72 object-cover"
             loading="lazy"
           />
         )}
 
         {audioUrl && (
-          <div className="px-3 py-2">
-            <audio controls src={audioUrl} className="w-full h-8" style={{ maxWidth: 220 }} />
+          <div className="px-3 py-2.5">
+            <audio controls src={audioUrl} className="w-full h-8" style={{ maxWidth: 240 }} />
           </div>
         )}
 
         {content && content !== "📷 Photo" && (
-          <p className="text-[14px] leading-relaxed break-words px-3 py-1.5">
+          <p className="text-[14.5px] leading-[1.35] break-words px-3 pt-1.5 pb-0">
             {renderContentWithLinks(content)}
           </p>
         )}
 
         {isPhotoOnly && !content && <div className="px-3 py-0.5" />}
 
-        <div className={`flex items-center justify-end gap-1 px-3 pb-1.5 ${!content && imageUrl ? "pt-0" : ""}`}>
-          <span className={`text-[10px] ${isMine ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
+        {/* Time + ticks row */}
+        <div className={`flex items-center justify-end gap-1 px-3 pb-[6px] pt-[2px]`}>
+          <span className={`text-[10px] leading-none ${isMine ? "text-white/40" : "text-muted-foreground/70"}`}>
             {time}
           </span>
           {isMine && (
             read ? (
-              <CheckCheck className="w-3.5 h-3.5 text-[hsl(var(--us-sage))]" />
+              <CheckCheck className="w-[15px] h-[15px] text-[hsl(var(--us-sage))]" />
             ) : (
-              <Check className="w-3.5 h-3.5 text-primary-foreground/40" />
+              <Check className="w-[15px] h-[15px] text-white/35" />
             )
           )}
         </div>
       </div>
 
+      {/* Reply button - right side for own messages */}
       {isMine && onSwipeReply && (
         <button
           onClick={() => onSwipeReply(id)}
-          className="self-center ml-1 opacity-0 group-hover:opacity-60 transition-opacity"
+          className="self-center ml-1 opacity-0 group-hover:opacity-50 active:opacity-80 transition-opacity"
         >
           <Reply className="w-3.5 h-3.5 text-muted-foreground" />
         </button>

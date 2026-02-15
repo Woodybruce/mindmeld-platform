@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { X, ImageIcon } from "lucide-react";
+import { X, ImageIcon, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -39,50 +40,62 @@ const GalleryPicker = ({ open, onClose, onSelect }: GalleryPickerProps) => {
     }
   }, [open, user]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h2 className="text-sm font-semibold text-foreground">Our Photos</h2>
-        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-secondary">
-          <X className="w-5 h-5 text-muted-foreground" />
-        </button>
-      </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 28, stiffness: 300 }}
+          className="fixed inset-0 z-50 bg-background flex flex-col"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3 px-3 py-3 border-b border-border/50 bg-card/80 backdrop-blur-xl">
+            <button onClick={onClose} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+              <ArrowLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <h2 className="text-[15px] font-semibold text-foreground font-body">Our Photos</h2>
+            <span className="text-[12px] text-muted-foreground">{photos.length} photos</span>
+          </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          {/* Grid */}
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-24">
+                <div className="w-8 h-8 border-[3px] border-[hsl(var(--us-coral))] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : photos.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-muted-foreground px-6">
+                <ImageIcon className="w-12 h-12 mb-3 opacity-30" />
+                <p className="text-sm font-medium">No photos yet</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Photos you share will appear here</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-[2px] p-[2px]">
+                {photos.map((photo) => (
+                  <button
+                    key={photo.id}
+                    onClick={() => {
+                      onSelect(photo.url);
+                      onClose();
+                    }}
+                    className="relative aspect-square overflow-hidden bg-secondary active:opacity-70 transition-opacity"
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.caption || "Photo"}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        ) : photos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <ImageIcon className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-sm">No photos in your gallery yet</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-1.5 max-w-lg mx-auto">
-            {photos.map((photo) => (
-              <button
-                key={photo.id}
-                onClick={() => {
-                  onSelect(photo.url);
-                  onClose();
-                }}
-                className="relative aspect-square rounded-lg overflow-hidden bg-secondary hover:opacity-80 transition-opacity"
-              >
-                <img
-                  src={photo.url}
-                  alt={photo.caption || "Photo"}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

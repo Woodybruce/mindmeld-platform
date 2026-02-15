@@ -94,21 +94,21 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   const attachActions = [
-    { icon: Camera, label: "Camera", color: "bg-[hsl(var(--us-rose))]", onClick: () => cameraInputRef.current?.click() },
-    { icon: Images, label: "Our Photos", color: "bg-[hsl(var(--us-sage))]", onClick: () => { setAttachOpen(false); setGalleryOpen(true); } },
-    { icon: Paperclip, label: "File", color: "bg-[hsl(var(--us-navy))]", onClick: () => fileInputRef.current?.click() },
+    { icon: Camera, label: "Camera", gradient: "from-[hsl(var(--us-coral))] to-[hsl(var(--us-terracotta))]", onClick: () => cameraInputRef.current?.click() },
+    { icon: Images, label: "Gallery", gradient: "from-[hsl(var(--us-sage))] to-[hsl(145,30%,45%)]", onClick: () => { setAttachOpen(false); setGalleryOpen(true); } },
+    { icon: Paperclip, label: "Document", gradient: "from-[hsl(var(--us-navy))] to-[hsl(220,40%,35%)]", onClick: () => fileInputRef.current?.click() },
   ];
 
   return (
     <div className="fixed bottom-14 left-0 right-0 z-40">
-      {/* Attachment menu backdrop */}
+      {/* Attachment backdrop */}
       <AnimatePresence>
         {attachOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30"
+            className="fixed inset-0 z-30 bg-foreground/20 backdrop-blur-[2px]"
             onClick={() => setAttachOpen(false)}
           />
         )}
@@ -118,24 +118,27 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
       <AnimatePresence>
         {attachOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="bg-card border border-border/50 rounded-2xl shadow-xl mx-3 mb-2 p-4 max-w-lg sm:mx-auto"
+            initial={{ opacity: 0, y: 60, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 60, scale: 0.85 }}
+            transition={{ type: "spring", damping: 22, stiffness: 280 }}
+            className="relative z-40 bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl mx-4 mb-3 px-6 py-5 max-w-lg sm:mx-auto"
           >
-            <div className="flex justify-center gap-8">
-              {attachActions.map((action) => (
-                <button
+            <div className="flex justify-around">
+              {attachActions.map((action, i) => (
+                <motion.button
                   key={action.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
                   onClick={action.onClick}
-                  className="flex flex-col items-center gap-1.5"
+                  className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
                 >
-                  <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center text-white shadow-md`}>
-                    <action.icon className="w-5 h-5" />
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white shadow-lg`}>
+                    <action.icon className="w-6 h-6" />
                   </div>
                   <span className="text-[11px] text-muted-foreground font-medium">{action.label}</span>
-                </button>
+                </motion.button>
               ))}
             </div>
           </motion.div>
@@ -143,66 +146,81 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
       </AnimatePresence>
 
       {/* Image preview */}
-      {imagePreview && (
-        <div className="bg-background/95 backdrop-blur-xl border-t border-border/50 px-4 py-2">
-          <div className="max-w-lg mx-auto relative inline-block">
-            <div className="rounded-xl overflow-hidden border border-border bg-card shadow-lg">
-              <img src={imagePreview} alt="Preview" className="max-h-28 object-cover" />
+      <AnimatePresence>
+        {imagePreview && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-card/95 backdrop-blur-xl border-t border-border/30 px-4 py-2"
+          >
+            <div className="max-w-lg mx-auto relative inline-block">
+              <div className="rounded-2xl overflow-hidden border border-border/30 bg-secondary shadow-lg">
+                <img src={imagePreview} alt="Preview" className="max-h-32 object-cover" />
+              </div>
+              <button
+                onClick={clearImage}
+                className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-lg"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <button
-              onClick={clearImage}
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Reply preview */}
-      {replyingTo && (
-        <div className="bg-background/95 backdrop-blur-xl border-t border-border/50 px-4 py-2">
-          <div className="max-w-lg mx-auto flex items-center gap-2">
-            <Reply className="w-4 h-4 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0 border-l-2 border-primary pl-2">
-              <p className="text-[11px] font-semibold text-primary">{replyingTo.senderName}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{replyingTo.content}</p>
+      <AnimatePresence>
+        {replyingTo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-card/95 backdrop-blur-xl border-t border-border/30 px-4 py-2"
+          >
+            <div className="max-w-lg mx-auto flex items-center gap-2">
+              <Reply className="w-4 h-4 text-[hsl(var(--us-coral))] flex-shrink-0" />
+              <div className="flex-1 min-w-0 border-l-[3px] border-[hsl(var(--us-coral))] pl-2.5 py-0.5">
+                <p className="text-[11px] font-semibold text-[hsl(var(--us-coral))]">{replyingTo.senderName}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{replyingTo.content}</p>
+              </div>
+              <button onClick={onCancelReply} className="p-1.5 rounded-full hover:bg-secondary transition-colors">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
             </div>
-            <button onClick={onCancelReply} className="p-1">
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input bar */}
-      <div className="bg-background/95 backdrop-blur-xl border-t border-border/50 px-2 py-1.5">
+      <div className="bg-background/95 backdrop-blur-xl border-t border-border/30 px-2 py-1.5">
         <div className="flex items-end gap-1.5 max-w-lg mx-auto">
           <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageSelect} />
           <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
 
           {recording ? (
             <>
-              <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-full bg-destructive/10">
-                <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                <span className="text-sm font-medium text-destructive">{formatTime(recordingTime)}</span>
+              <div className="flex-1 h-12 flex items-center gap-3 px-4 rounded-full bg-destructive/10 border border-destructive/20">
+                <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+                <span className="text-sm font-semibold text-destructive font-body">{formatTime(recordingTime)}</span>
+                <span className="text-xs text-destructive/60">Recording…</span>
               </div>
               <button
                 onClick={stopRecording}
-                className="w-11 h-11 rounded-full bg-destructive flex items-center justify-center text-destructive-foreground flex-shrink-0"
+                className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center text-destructive-foreground shadow-lg flex-shrink-0 active:scale-95 transition-transform"
               >
-                <Square className="w-4 h-4" />
+                <Square className="w-5 h-5" />
               </button>
             </>
           ) : (
             <>
-              <div className="flex-1 flex items-center gap-0 rounded-full bg-secondary overflow-hidden">
-                {/* Plus / attach button */}
+              {/* Text input with + button inside */}
+              <div className="flex-1 flex items-center rounded-full bg-secondary border border-border/30 overflow-hidden min-h-[48px]">
                 <button
                   onClick={() => setAttachOpen((v) => !v)}
-                  className="p-2.5 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                  className="pl-3 pr-1 py-3 text-muted-foreground hover:text-foreground transition-all flex-shrink-0"
                 >
-                  <Plus className={`w-5 h-5 transition-transform ${attachOpen ? "rotate-45" : ""}`} />
+                  <Plus className={`w-5 h-5 transition-transform duration-200 ${attachOpen ? "rotate-45 text-[hsl(var(--us-coral))]" : ""}`} />
                 </button>
 
                 <input
@@ -211,22 +229,23 @@ const ChatInput = ({ onSend, sending, replyingTo, onCancelReply }: ChatInputProp
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Message"
-                  className="flex-1 bg-transparent py-2.5 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                  className="flex-1 bg-transparent py-3 px-2 text-[15px] text-foreground placeholder:text-muted-foreground/60 outline-none font-body"
                 />
               </div>
 
+              {/* Send / Mic button */}
               {input.trim() || imageFile || galleryUrl ? (
                 <button
                   onClick={handleSend}
                   disabled={sending}
-                  className="w-11 h-11 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground disabled:opacity-40 transition-opacity flex-shrink-0"
+                  className="w-12 h-12 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground disabled:opacity-40 shadow-lg flex-shrink-0 active:scale-95 transition-transform"
                 >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 </button>
               ) : (
                 <button
                   onClick={startRecording}
-                  className="w-11 h-11 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground flex-shrink-0"
+                  className="w-12 h-12 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground shadow-lg flex-shrink-0 active:scale-95 transition-transform"
                 >
                   <Mic className="w-5 h-5" />
                 </button>
