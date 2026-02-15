@@ -47,7 +47,7 @@ const Chat = () => {
   // Fetch partner name & phone
   useEffect(() => {
     if (!partnerId) return;
-    supabase.from("profiles").select("username, phone_number").eq("id", partnerId).single()
+    supabase.from("profiles").select("*").eq("id", partnerId).single()
       .then(({ data }) => {
         if (data?.username) setPartnerName(data.username);
         if ((data as any)?.phone_number) setPartnerPhone((data as any).phone_number);
