@@ -25,18 +25,26 @@ const Profile = () => {
     try { return JSON.parse(localStorage.getItem("userLists") || "[]").length; } catch { return 0; }
   }, []);
 
-  // Load phone number
+  // Load phone number directly from DB (not from typed profile)
   useEffect(() => {
-    if (profile) {
-      setPhoneNumber((profile as any).phone_number || "");
-    }
-  }, [profile]);
+    if (!user) return;
+    supabase.from("profiles").select("*").eq("id", user.id).single()
+      .then(({ data }) => {
+        if (data && (data as any).phone_number) {
+          setPhoneNumber((data as any).phone_number);
+        }
+      });
+  }, [user]);
 
   const savePhoneNumber = async () => {
     if (!user) return;
     setSavingPhone(true);
-    await supabase.from("profiles").update({ phone_number: phoneNumber.trim() || null } as any).eq("id", user.id);
-    toast.success("Phone number saved");
+    const { error } = await supabase.from("profiles").update({ phone_number: phoneNumber.trim() || null } as any).eq("id", user.id);
+    if (error) {
+      toast.error("Failed to save phone number");
+    } else {
+      toast.success("Phone number saved ✓");
+    }
     setSavingPhone(false);
   };
 
