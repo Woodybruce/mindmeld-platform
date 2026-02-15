@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import BottomNav from "@/components/BottomNav";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatBubble from "@/components/chat/ChatBubble";
@@ -24,6 +25,7 @@ interface Message {
 const Chat = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { addEvent } = useCalendarEvents();
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
   const [partnerName, setPartnerName] = useState("Partner");
@@ -175,6 +177,36 @@ const Chat = () => {
     });
   };
 
+  const handleSavePollToList = useCallback((question: string, options: string[]) => {
+    const stored = localStorage.getItem("us-shared-lists");
+    const lists = stored ? JSON.parse(stored) : [];
+    const newList = {
+      id: Date.now().toString(),
+      name: question,
+      icon: "📊",
+      createdAt: new Date().toISOString(),
+      items: options.map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false })),
+    };
+    const updated = [newList, ...lists];
+    localStorage.setItem("us-shared-lists", JSON.stringify(updated));
+  }, []);
+
+  const handleSaveEventToCalendar = useCallback(async (event: { title: string; date: string; time?: string; location?: string }) => {
+    const startTime = event.time
+      ? new Date(`${event.date}T${event.time}`).toISOString()
+      : new Date(`${event.date}T00:00`).toISOString();
+    const endTime = event.time
+      ? new Date(new Date(`${event.date}T${event.time}`).getTime() + 3600000).toISOString()
+      : new Date(`${event.date}T23:59`).toISOString();
+    await addEvent({
+      subject: event.title,
+      start_time: startTime,
+      end_time: endTime,
+      is_all_day: !event.time,
+      location: event.location,
+    });
+  }, [addEvent]);
+
   // Empty states
   if (!user) {
     return (
@@ -278,6 +310,8 @@ const Chat = () => {
                     replyTo={replyTo}
                     onSwipeReply={handleReply}
                     onPollVote={handlePollVote}
+                    onSavePollToList={handleSavePollToList}
+                    onSaveEventToCalendar={handleSaveEventToCalendar}
                     userId={user.id}
                   />
                 );
