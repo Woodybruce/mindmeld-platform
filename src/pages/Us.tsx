@@ -20,7 +20,7 @@ import OurPhotos from "@/components/connect/OurPhotos";
 import OurEvents from "@/components/connect/OurEvents";
 import GratitudeJournal from "@/components/connect/GratitudeJournal";
 
-import SharedFolderEmbed from "@/components/connect/SharedFolderEmbed";
+import SharedFileManager from "@/components/connect/SharedFileManager";
 import { quizDefinitions, generateActionItems } from "@/data/quizData";
 import { checklistQuizzes } from "@/data/checklistQuizData";
 import { reflectionQuizzes } from "@/data/reflectionQuizData";
@@ -318,7 +318,7 @@ const Us = () => {
               <FolderOpen className="w-4 h-4 text-us-navy" />
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Shared Files</p>
             </div>
-            <SharedFolderEmbed />
+            <SharedFileManager />
           </div>
         </TabsContent>
       </Tabs>
