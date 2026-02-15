@@ -31,6 +31,8 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
   const [partnerName, setPartnerName] = useState("Partner");
+  const [partnerPhone, setPartnerPhone] = useState<string | null>(null);
+  const [partnerOnline, setPartnerOnline] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; content: string; senderName: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -42,12 +44,36 @@ const Chat = () => {
     partnerName,
   });
 
-  // Fetch partner name
+  // Fetch partner name & phone
   useEffect(() => {
     if (!partnerId) return;
-    supabase.from("profiles").select("username").eq("id", partnerId).single()
-      .then(({ data }) => { if (data?.username) setPartnerName(data.username); });
+    supabase.from("profiles").select("username, phone_number").eq("id", partnerId).single()
+      .then(({ data }) => {
+        if (data?.username) setPartnerName(data.username);
+        if ((data as any)?.phone_number) setPartnerPhone((data as any).phone_number);
+      });
   }, [partnerId]);
+
+  // Track partner online presence
+  useEffect(() => {
+    if (!user || !partnerId) return;
+    const presenceChannel = supabase.channel(`presence-chat-${[user.id, partnerId].sort().join("-")}`, {
+      config: { presence: { key: user.id } },
+    });
+
+    presenceChannel
+      .on("presence", { event: "sync" }, () => {
+        const state = presenceChannel.presenceState();
+        setPartnerOnline(!!state[partnerId]);
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await presenceChannel.track({ user_id: user.id, online_at: new Date().toISOString() });
+        }
+      });
+
+    return () => { supabase.removeChannel(presenceChannel); };
+  }, [user, partnerId]);
 
   // Fetch messages
   useEffect(() => {
@@ -271,7 +297,12 @@ const Chat = () => {
       {/* Subtle wallpaper pattern */}
       <div className="fixed inset-0 max-w-lg mx-auto pointer-events-none opacity-[0.03] dark:opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
       
-      <ChatHeader partnerName={partnerName} onStartCall={webrtc.startCall} />
+      <ChatHeader
+        partnerName={partnerName}
+        isOnline={partnerOnline}
+        partnerPhone={partnerPhone}
+        onStartCall={webrtc.startCall}
+      />
 
       {/* Call overlays */}
       <AnimatePresence>
