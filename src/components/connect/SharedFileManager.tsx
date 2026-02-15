@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FolderOpen, Plus, Upload, Trash2, FileText, Image, File, Music,
-  Video, X, ChevronRight, ArrowLeft, Download,
+  Video, X, ChevronRight, ArrowLeft, Download, FolderPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ interface Folder {
   name: string;
   user_id: string;
   created_at: string;
+  parent_id: string | null;
 }
 
 interface SharedFile {
@@ -45,10 +46,13 @@ const SharedFileManager = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [files, setFiles] = useState<SharedFile[]>([]);
-  const [activeFolder, setActiveFolder] = useState<Folder | null>(null);
+  const [folderStack, setFolderStack] = useState<Folder[]>([]); // breadcrumb path
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [uploading, setUploading] = useState(false);
+
+  const activeFolder = folderStack.length > 0 ? folderStack[folderStack.length - 1] : null;
+  const currentParentId = activeFolder?.id || null;
 
   useEffect(() => {
     if (user) {
@@ -78,6 +82,7 @@ const SharedFileManager = () => {
     const { error } = await supabase.from("shared_folders").insert({
       name: newFolderName.trim(),
       user_id: user.id,
+      parent_id: currentParentId,
     } as any);
     if (error) {
       toast({ title: "Failed to create folder", variant: "destructive" });
@@ -90,9 +95,8 @@ const SharedFileManager = () => {
   };
 
   const deleteFolder = async (id: string) => {
-    // Files cascade-delete via FK
     await supabase.from("shared_folders").delete().eq("id", id);
-    if (activeFolder?.id === id) setActiveFolder(null);
+    setFolderStack((prev) => prev.filter((f) => f.id !== id));
     fetchFolders();
     fetchFiles();
     toast({ title: "Folder deleted" });
@@ -143,35 +147,147 @@ const SharedFileManager = () => {
     }
   };
 
+  const navigateToFolder = (folder: Folder) => {
+    setFolderStack((prev) => [...prev, folder]);
+    setShowNewFolder(false);
+  };
+
+  const navigateBack = () => {
+    setFolderStack((prev) => prev.slice(0, -1));
+    setShowNewFolder(false);
+  };
+
+  const navigateToBreadcrumb = (index: number) => {
+    if (index < 0) {
+      setFolderStack([]);
+    } else {
+      setFolderStack((prev) => prev.slice(0, index + 1));
+    }
+    setShowNewFolder(false);
+  };
+
+  // Current level items
+  const currentFolders = folders.filter((f) => f.parent_id === currentParentId);
   const folderFiles = activeFolder ? files.filter((f) => f.folder_id === activeFolder.id) : [];
 
-  // Folder view
+  // Inside a folder view
   if (activeFolder) {
     return (
       <div className="space-y-3">
-        <button
-          onClick={() => setActiveFolder(null)}
-          className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to folders
-        </button>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1 text-sm flex-wrap">
+          <button
+            onClick={() => navigateToBreadcrumb(-1)}
+            className="font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            Files
+          </button>
+          {folderStack.map((f, i) => (
+            <span key={f.id} className="flex items-center gap-1">
+              <ChevronRight className="w-3 h-3 text-muted-foreground" />
+              {i === folderStack.length - 1 ? (
+                <span className="font-semibold text-foreground">{f.name}</span>
+              ) : (
+                <button
+                  onClick={() => navigateToBreadcrumb(i)}
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  {f.name}
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FolderOpen className="w-5 h-5 text-primary" />
-            <h3 className="font-display text-base font-semibold text-foreground">{activeFolder.name}</h3>
-          </div>
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-40"
+            onClick={navigateBack}
+            className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            <Upload className="w-3.5 h-3.5" /> {uploading ? "Uploading…" : "Upload"}
+            <ArrowLeft className="w-4 h-4" /> Back
           </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowNewFolder(true)}
+              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              <FolderPlus className="w-3.5 h-3.5" /> Subfolder
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-40"
+            >
+              <Upload className="w-3.5 h-3.5" /> {uploading ? "Uploading…" : "Upload"}
+            </button>
+          </div>
           <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleUpload} />
         </div>
 
-        {folderFiles.length === 0 ? (
+        {/* New subfolder input */}
+        <AnimatePresence>
+          {showNewFolder && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && createFolder()}
+                  placeholder="Subfolder name…"
+                  className="flex-1 rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <button onClick={createFolder} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground">
+                  Create
+                </button>
+                <button onClick={() => { setShowNewFolder(false); setNewFolderName(""); }} className="p-2.5">
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Subfolders */}
+        {currentFolders.length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {currentFolders.map((folder, i) => {
+              const count = files.filter((f) => f.folder_id === folder.id).length;
+              const subCount = folders.filter((f) => f.parent_id === folder.id).length;
+              return (
+                <motion.button
+                  key={folder.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => navigateToFolder(folder)}
+                  className="relative flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-4 text-left hover:bg-secondary/50 transition-colors group"
+                >
+                  <FolderOpen className="w-7 h-7 text-[hsl(var(--us-gold))]" />
+                  <p className="text-sm font-semibold text-foreground truncate w-full">{folder.name}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {count} file{count !== 1 ? "s" : ""}{subCount > 0 ? ` · ${subCount} folder${subCount !== 1 ? "s" : ""}` : ""}
+                  </p>
+                  <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/40" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }}
+                    className="absolute bottom-3 right-3 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </motion.button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Files */}
+        {folderFiles.length === 0 && currentFolders.length === 0 ? (
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
@@ -180,7 +296,7 @@ const SharedFileManager = () => {
             <Upload className="w-6 h-6" />
             <span>{uploading ? "Uploading…" : "Upload your first file"}</span>
           </button>
-        ) : (
+        ) : folderFiles.length > 0 ? (
           <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border/40">
             {folderFiles.map((f, i) => (
               <motion.div
@@ -206,12 +322,14 @@ const SharedFileManager = () => {
               </motion.div>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
     );
   }
 
-  // Folder list view
+  // Root folder list view
+  const rootFolders = folders.filter((f) => !f.parent_id);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -254,7 +372,7 @@ const SharedFileManager = () => {
       </AnimatePresence>
 
       {/* Folders grid */}
-      {folders.length === 0 && !showNewFolder ? (
+      {rootFolders.length === 0 && !showNewFolder ? (
         <button
           onClick={() => setShowNewFolder(true)}
           className="w-full flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card p-8 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
@@ -264,20 +382,23 @@ const SharedFileManager = () => {
         </button>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {folders.map((folder, i) => {
+          {rootFolders.map((folder, i) => {
             const count = files.filter((f) => f.folder_id === folder.id).length;
+            const subCount = folders.filter((f) => f.parent_id === folder.id).length;
             return (
               <motion.button
                 key={folder.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => setActiveFolder(folder)}
+                onClick={() => navigateToFolder(folder)}
                 className="relative flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-4 text-left hover:bg-secondary/50 transition-colors group"
               >
                 <FolderOpen className="w-8 h-8 text-[hsl(var(--us-gold))]" />
                 <p className="text-sm font-semibold text-foreground truncate w-full">{folder.name}</p>
-                <p className="text-[11px] text-muted-foreground">{count} file{count !== 1 ? "s" : ""}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {count} file{count !== 1 ? "s" : ""}{subCount > 0 ? ` · ${subCount} folder${subCount !== 1 ? "s" : ""}` : ""}
+                </p>
                 <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/40" />
                 <button
                   onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }}
