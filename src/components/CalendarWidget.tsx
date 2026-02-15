@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useMicrosoftCalendar, type OutlookEvent } from "@/hooks/useMicrosoftCalendar";
+import { useLocalCalendar } from "@/hooks/useLocalCalendar";
 
 const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -12,8 +11,7 @@ const eventColors = [
 ];
 
 const CalendarWidget = () => {
-  const navigate = useNavigate();
-  const { connected, events, fetchEvents } = useMicrosoftCalendar();
+  const { getEventsForMonth, getUpcomingEvents } = useLocalCalendar();
   const [viewDate, setViewDate] = useState(new Date());
 
   const year = viewDate.getFullYear();
@@ -31,31 +29,17 @@ const CalendarWidget = () => {
   for (let i = 0; i < startOffset; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
-  // Fetch Outlook events when connected and month changes
-  useEffect(() => {
-    if (!connected) return;
-    const start = new Date(year, month, 1).toISOString();
-    const end = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
-    fetchEvents(start, end);
-  }, [connected, year, month, fetchEvents]);
+  const monthEvents = getEventsForMonth(year, month);
+  const upcoming = getUpcomingEvents(4);
 
   // Map events to days
-  const dayEventsMap = new Map<number, OutlookEvent[]>();
-  events.forEach((e) => {
-    const date = new Date(e.start.dateTime);
-    if (date.getFullYear() === year && date.getMonth() === month) {
-      const day = date.getDate();
-      const existing = dayEventsMap.get(day) || [];
-      existing.push(e);
-      dayEventsMap.set(day, existing);
-    }
+  const dayEventsMap = new Map<number, typeof monthEvents>();
+  monthEvents.forEach((e) => {
+    const day = new Date(e.start).getDate();
+    const existing = dayEventsMap.get(day) || [];
+    existing.push(e);
+    dayEventsMap.set(day, existing);
   });
-
-  // Upcoming events (from today forward)
-  const upcoming = events
-    .filter((e) => new Date(e.start.dateTime) >= new Date(today.toDateString()))
-    .sort((a, b) => new Date(a.start.dateTime).getTime() - new Date(b.start.dateTime).getTime())
-    .slice(0, 4);
 
   const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
   const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
@@ -81,18 +65,6 @@ const CalendarWidget = () => {
           </button>
         </div>
       </div>
-
-      {/* Connect prompt */}
-      {!connected && (
-        <div className="px-4 pb-3">
-          <button
-            onClick={() => navigate("/us?tab=events")}
-            className="w-full rounded-lg bg-gradient-to-r from-primary/10 to-us-blush/20 px-3 py-2.5 text-xs text-center text-primary font-medium hover:from-primary/15 transition-colors"
-          >
-            🔗 Connect Outlook to see your events
-          </button>
-        </div>
-      )}
 
       {/* Day headers */}
       <div className="px-4 grid grid-cols-7 gap-0">
@@ -139,7 +111,7 @@ const CalendarWidget = () => {
         <div className="px-4 pb-4 space-y-2 border-t border-border/50 pt-3">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Upcoming</p>
           {upcoming.map((event, idx) => {
-            const startDate = new Date(event.start.dateTime);
+            const startDate = new Date(event.start);
             const dayStr = startDate.toLocaleDateString("default", { month: "short", day: "numeric" });
             const isEventToday = startDate.toDateString() === today.toDateString();
             return (
@@ -155,8 +127,8 @@ const CalendarWidget = () => {
         </div>
       )}
 
-      {/* No events fallback when connected */}
-      {connected && events.length === 0 && (
+      {/* No events fallback */}
+      {monthEvents.length === 0 && (
         <div className="px-4 pb-4 text-center">
           <p className="text-xs text-muted-foreground">No events this month</p>
         </div>
