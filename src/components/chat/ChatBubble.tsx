@@ -145,9 +145,13 @@ const ChatBubble = ({
             </div>
             {onSaveEventToCalendar && (
               <button
-                onClick={() => {
-                  onSaveEventToCalendar({ title: parsed.title, date: parsed.date, time: parsed.time, location: parsed.location });
-                  toast.success("Event saved to calendar");
+                onClick={async () => {
+                  try {
+                    await onSaveEventToCalendar({ title: parsed.title, date: parsed.date, time: parsed.time, location: parsed.location });
+                    toast.success("Event saved to calendar");
+                  } catch {
+                    toast.error("Failed to save event");
+                  }
                 }}
                 className={`flex items-center gap-1.5 mt-2 text-[12px] font-medium ${isMine ? "text-white/60 hover:text-white/80" : "text-primary hover:text-primary/80"} transition-colors`}
               >
