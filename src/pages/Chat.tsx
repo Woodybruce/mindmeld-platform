@@ -26,13 +26,12 @@ interface Message {
 
 const Chat = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, partnerOnline } = useAuth();
   const { addEvent } = useCalendarEvents();
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
   const [partnerName, setPartnerName] = useState("Partner");
   const [partnerPhone, setPartnerPhone] = useState<string | null>(null);
-  const [partnerOnline, setPartnerOnline] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; content: string; senderName: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -61,27 +60,6 @@ const Chat = () => {
         if ((data as any)?.phone_number) setPartnerPhone((data as any).phone_number);
       });
   }, [user]);
-
-  // Track partner online presence
-  useEffect(() => {
-    if (!user || !partnerId) return;
-    const presenceChannel = supabase.channel(`presence-chat-${[user.id, partnerId].sort().join("-")}`, {
-      config: { presence: { key: user.id } },
-    });
-
-    presenceChannel
-      .on("presence", { event: "sync" }, () => {
-        const state = presenceChannel.presenceState();
-        setPartnerOnline(!!state[partnerId]);
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await presenceChannel.track({ user_id: user.id, online_at: new Date().toISOString() });
-        }
-      });
-
-    return () => { supabase.removeChannel(presenceChannel); };
-  }, [user, partnerId]);
 
   // Fetch messages
   useEffect(() => {
