@@ -14,6 +14,7 @@ import {
   QuizzesPreview,
 } from "@/components/UsSectionPreviews";
 import QuickLinks from "@/components/QuickLinks";
+import RecentChatLinksWidget from "@/components/chat/RecentChatLinksWidget";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -104,6 +105,9 @@ const Index = () => {
 
         {/* Quick links to all remaining Us sections */}
         <QuickLinks />
+
+        {/* Recent chat links */}
+        <RecentChatLinksWidget />
 
         {/* Calendar */}
         <CalendarWidget />

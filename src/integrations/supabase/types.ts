@@ -80,8 +80,10 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          message_type: string
           read: boolean
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
@@ -89,8 +91,10 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          message_type?: string
           read?: boolean
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
@@ -98,8 +102,10 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          message_type?: string
           read?: boolean
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -108,6 +114,13 @@ export type Database = {
             columns: ["receiver_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
