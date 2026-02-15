@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink, ListPlus, CalendarCheck } from "lucide-react";
+import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink, ListPlus, CalendarCheck, Navigation, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 interface ChatBubbleProps {
@@ -77,34 +77,7 @@ const ChatBubble = ({
 
         {/* Location card */}
         {messageType === "location" && parsed && (
-          <div className="p-3">
-            <div className={`flex items-center gap-2 mb-2 ${isMine ? "text-white/70" : "text-muted-foreground"}`}>
-              <MapPin className="w-4 h-4 text-[hsl(var(--us-coral))]" />
-              <span className="text-[11px] font-semibold uppercase tracking-wide">Location</span>
-            </div>
-            <div className={`rounded-xl overflow-hidden border ${isMine ? "border-white/10" : "border-border/30"}`}>
-              <img
-                src={`https://maps.googleapis.com/maps/api/staticmap?center=${parsed.lat},${parsed.lng}&zoom=15&size=300x150&markers=color:red%7C${parsed.lat},${parsed.lng}&key=NO_KEY`}
-                alt="Map"
-                className="w-full h-28 object-cover bg-secondary"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-              <div className="p-2.5 bg-secondary/30">
-                <p className={`text-[13px] font-semibold ${isMine ? "text-white" : "text-foreground"}`}>{parsed.name}</p>
-                <p className={`text-[11px] mt-0.5 ${isMine ? "text-white/50" : "text-muted-foreground"}`}>
-                  {parsed.lat.toFixed(4)}, {parsed.lng.toFixed(4)}
-                </p>
-              </div>
-            </div>
-            <a
-              href={`https://www.google.com/maps?q=${parsed.lat},${parsed.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center gap-1.5 mt-2 text-[12px] font-medium ${isMine ? "text-white/60 hover:text-white/80" : "text-primary hover:text-primary/80"}`}
-            >
-              <ExternalLink className="w-3 h-3" /> Open in Maps
-            </a>
-          </div>
+          <LocationCard parsed={parsed} isMine={isMine} />
         )}
 
         {/* Poll card */}
@@ -254,6 +227,67 @@ const PollCard = ({ parsed, isMine, msgId, onPollVote, userId, onSaveToList }: {
           </button>
         )}
       </div>
+    </div>
+  );
+};
+
+// Location sub-component
+const LocationCard = ({ parsed, isMine }: { parsed: any; isMine: boolean }) => {
+  const isLive = parsed.live === true;
+  const expiresAt = isLive && parsed.duration ? new Date(new Date(parsed.sentAt || Date.now()).getTime() + parsed.duration * 60000) : null;
+  const isExpired = expiresAt ? new Date() > expiresAt : false;
+  const durationLabel = parsed.duration === 15 ? "15 min" : parsed.duration === 60 ? "1 hour" : parsed.duration === 480 ? "8 hours" : `${parsed.duration} min`;
+
+  return (
+    <div className="p-3">
+      <div className={`flex items-center gap-2 mb-2 ${isMine ? "text-white/70" : "text-muted-foreground"}`}>
+        {isLive ? (
+          <>
+            <Navigation className={`w-4 h-4 ${isExpired ? "text-muted-foreground" : "text-[hsl(var(--us-sage))]"}`} />
+            <span className="text-[11px] font-semibold uppercase tracking-wide">Live Location</span>
+            {!isExpired && <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--us-sage))] animate-pulse" />}
+          </>
+        ) : (
+          <>
+            <MapPin className="w-4 h-4 text-[hsl(var(--us-coral))]" />
+            <span className="text-[11px] font-semibold uppercase tracking-wide">Location</span>
+          </>
+        )}
+      </div>
+
+      <div className={`rounded-xl overflow-hidden border ${isMine ? "border-white/10" : "border-border/30"}`}>
+        {/* Map placeholder with pin */}
+        <div className="w-full h-28 bg-secondary/80 flex items-center justify-center relative">
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 19px, hsl(var(--border)) 19px, hsl(var(--border)) 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, hsl(var(--border)) 19px, hsl(var(--border)) 20px)'
+          }} />
+          <div className="flex flex-col items-center gap-1 relative z-10">
+            <MapPin className={`w-8 h-8 ${isLive && !isExpired ? "text-[hsl(var(--us-sage))]" : "text-[hsl(var(--us-coral))]"} drop-shadow-md`} />
+            <span className={`text-[10px] font-medium ${isMine ? "text-white/40" : "text-muted-foreground/60"}`}>
+              {parsed.lat.toFixed(4)}, {parsed.lng.toFixed(4)}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-2.5 bg-secondary/30">
+          <p className={`text-[13px] font-semibold ${isMine ? "text-white" : "text-foreground"}`}>{parsed.name}</p>
+          {isLive && (
+            <p className={`text-[11px] mt-0.5 flex items-center gap-1 ${isExpired ? (isMine ? "text-white/30" : "text-muted-foreground/50") : (isMine ? "text-white/60" : "text-muted-foreground")}`}>
+              <Clock className="w-3 h-3" />
+              {isExpired ? `Expired · ${durationLabel}` : `Sharing for ${durationLabel}`}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <a
+        href={`https://www.google.com/maps?q=${parsed.lat},${parsed.lng}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`flex items-center gap-1.5 mt-2 text-[12px] font-medium ${isMine ? "text-white/60 hover:text-white/80" : "text-primary hover:text-primary/80"}`}
+      >
+        <ExternalLink className="w-3 h-3" /> Open in Maps
+      </a>
     </div>
   );
 };

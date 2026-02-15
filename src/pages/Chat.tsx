@@ -181,8 +181,10 @@ const Chat = () => {
 
   const handleSendSpecial = async (type: string, data: any) => {
     if (!user || !partnerId) return;
-    // For polls, initialize votes object
-    const payload = type === "poll" ? { ...data, votes: {} } : data;
+    // For polls, initialize votes object; for locations, add sentAt timestamp
+    let payload = data;
+    if (type === "poll") payload = { ...data, votes: {} };
+    if (type === "location") payload = { ...data, sentAt: new Date().toISOString() };
     await supabase.from("messages").insert({
       sender_id: user.id,
       receiver_id: partnerId,
