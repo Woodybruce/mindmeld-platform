@@ -45,7 +45,9 @@ const ChatBubble = ({
 }: ChatBubbleProps) => {
   const isPhotoOnly = (!content || content === "📷 Photo") && imageUrl;
   const isSpecial = messageType === "location" || messageType === "poll" || messageType === "event";
-  const parsed = isSpecial ? tryParseJSON(content) : null;
+  const isSticker = messageType === "sticker";
+  const isGif = messageType === "gif";
+  const parsed = (isSpecial || isSticker || isGif) ? tryParseJSON(content) : null;
 
   return (
     <motion.div
@@ -60,6 +62,32 @@ const ChatBubble = ({
         </button>
       )}
 
+      {/* Sticker - rendered without bubble background */}
+      {isSticker && parsed ? (
+        <div className="px-1 py-1">
+          <span className="text-7xl leading-none">{parsed.emoji}</span>
+          <div className="flex items-center justify-end gap-1 px-1 pb-1 pt-0.5">
+            <span className={`text-[10px] leading-none text-muted-foreground/70`}>{time}</span>
+            {isMine && (
+              read ? <CheckCheck className="w-[15px] h-[15px] text-[hsl(var(--us-sage))]" /> : <Check className="w-[15px] h-[15px] text-muted-foreground/40" />
+            )}
+          </div>
+        </div>
+      ) : isGif && parsed ? (
+        <div className={`relative max-w-[80%] rounded-[18px] overflow-hidden shadow-sm ${
+          isMine
+            ? "bg-[hsl(var(--us-navy))] rounded-br-[4px]"
+            : "bg-card border border-border/40 rounded-bl-[4px]"
+        }`}>
+          <img src={parsed.url} alt="GIF" className="w-full max-h-60 object-cover" loading="lazy" />
+          <div className="flex items-center justify-end gap-1 px-3 pb-[6px] pt-[2px]">
+            <span className={`text-[10px] leading-none ${isMine ? "text-white/40" : "text-muted-foreground/70"}`}>{time}</span>
+            {isMine && (
+              read ? <CheckCheck className="w-[15px] h-[15px] text-[hsl(var(--us-sage))]" /> : <Check className="w-[15px] h-[15px] text-white/35" />
+            )}
+          </div>
+        </div>
+      ) : (
       <div className={`relative max-w-[80%] rounded-[18px] overflow-hidden shadow-sm ${
         isMine
           ? "bg-[hsl(var(--us-navy))] text-primary-foreground rounded-br-[4px]"
@@ -139,7 +167,7 @@ const ChatBubble = ({
           </div>
         )}
 
-        {content && content !== "📷 Photo" && !isSpecial && (
+        {content && content !== "📷 Photo" && !isSpecial && !isSticker && !isGif && (
           <p className="text-[14.5px] leading-[1.35] break-words px-3 pt-1.5 pb-0">
             {renderContentWithLinks(content)}
           </p>
@@ -154,6 +182,7 @@ const ChatBubble = ({
           )}
         </div>
       </div>
+      )}
 
       {isMine && onSwipeReply && (
         <button onClick={() => onSwipeReply(id)} className="self-center ml-1 opacity-0 group-hover:opacity-50 active:opacity-80 transition-opacity">

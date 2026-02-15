@@ -1,10 +1,12 @@
 import { useState, useRef } from "react";
-import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Images, Paperclip, MapPin, BarChart3, CalendarPlus } from "lucide-react";
+import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Images, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Film } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import GalleryPicker from "./GalleryPicker";
 import LocationComposer from "./LocationComposer";
 import PollComposer from "./PollComposer";
 import EventComposer from "./EventComposer";
+import StickerPicker from "./StickerPicker";
+import GifPicker from "./GifPicker";
 
 interface ChatInputProps {
   onSend: (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => Promise<void>;
@@ -24,6 +26,8 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
   const [locationOpen, setLocationOpen] = useState(false);
   const [pollOpen, setPollOpen] = useState(false);
   const [eventOpen, setEventOpen] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
+  const [gifOpen, setGifOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +111,8 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
     { icon: MapPin, label: "Location", gradient: "from-[hsl(var(--us-coral))] to-[hsl(0,60%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setLocationOpen(true), 100); } },
     { icon: BarChart3, label: "Poll", gradient: "from-[hsl(var(--us-gold))] to-[hsl(30,70%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setPollOpen(true), 100); } },
     { icon: CalendarPlus, label: "Event", gradient: "from-[hsl(var(--us-blush))] to-[hsl(350,50%,55%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setEventOpen(true), 100); } },
+    { icon: Smile, label: "Stickers", gradient: "from-[hsl(40,80%,55%)] to-[hsl(30,90%,50%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setStickerOpen(true), 100); } },
+    { icon: Film, label: "GIF", gradient: "from-[hsl(270,60%,55%)] to-[hsl(290,50%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setGifOpen(true), 100); } },
   ];
 
   return (
@@ -134,7 +140,7 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
             transition={{ type: "spring", damping: 22, stiffness: 280 }}
             className="relative z-50 bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl mx-4 mb-3 px-4 py-5 max-w-lg sm:mx-auto"
           >
-            <div className="grid grid-cols-3 gap-y-5 gap-x-2 justify-items-center">
+            <div className="grid grid-cols-4 gap-y-5 gap-x-2 justify-items-center">
               {attachActions.map((action, i) => (
                 <motion.button
                   key={action.label}
@@ -266,6 +272,8 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
       <LocationComposer open={locationOpen} onClose={() => setLocationOpen(false)} onSend={(data) => onSendSpecial?.("location", data)} />
       <PollComposer open={pollOpen} onClose={() => setPollOpen(false)} onSend={(data) => onSendSpecial?.("poll", data)} />
       <EventComposer open={eventOpen} onClose={() => setEventOpen(false)} onSend={(data) => onSendSpecial?.("event", data)} />
+      <StickerPicker open={stickerOpen} onClose={() => setStickerOpen(false)} onSelect={(sticker) => onSendSpecial?.("sticker", { emoji: sticker })} />
+      <GifPicker open={gifOpen} onClose={() => setGifOpen(false)} onSelect={(url) => onSendSpecial?.("gif", { url })} />
     </div>
   );
 };
