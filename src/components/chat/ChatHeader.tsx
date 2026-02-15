@@ -1,4 +1,5 @@
-import { ArrowLeft, Phone, Video, MoreVertical } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Phone, Video, MoreVertical, PhoneOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -13,21 +14,34 @@ interface ChatHeaderProps {
 const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHeaderProps) => {
   const navigate = useNavigate();
   const initial = partnerName.charAt(0).toUpperCase();
+  const [showFallback, setShowFallback] = useState<"audio" | "video" | null>(null);
 
   const handleCall = (type: "audio" | "video") => {
-    if (isOnline) {
-      // Partner is on the chat page — use WebRTC
-      onStartCall?.(type);
-    } else if (partnerPhone) {
-      // Partner offline — fallback to native call
-      if (type === "video") {
-        // Try FaceTime on iOS, otherwise tel:
-        window.open(`facetime:${partnerPhone}`, "_self");
+    // Always try in-app WebRTC call first
+    onStartCall?.(type);
+
+    // If partner isn't online, show a toast with phone fallback option
+    if (!isOnline) {
+      if (partnerPhone) {
+        setShowFallback(type);
+        toast(
+          `Partner may not be online. Try calling their phone instead?`,
+          {
+            action: {
+              label: type === "video" ? "FaceTime" : "Call Phone",
+              onClick: () => {
+                const protocol = type === "video" ? "facetime:" : "tel:";
+                window.open(`${protocol}${partnerPhone}`, "_self");
+              },
+            },
+            duration: 8000,
+          }
+        );
       } else {
-        window.open(`tel:${partnerPhone}`, "_self");
+        toast("Calling partner… If they don't answer, add their phone number in Profile for fallback.", {
+          duration: 5000,
+        });
       }
-    } else {
-      toast.error("Partner is offline. Add their phone number in Profile for call fallback.");
     }
   };
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePresence } from "@/hooks/usePresence";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface Profile {
@@ -14,6 +15,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  partnerOnline: boolean;
   signInWithEmail: (email: string) => Promise<{ error: any }>;
   signInWithPhone: (phone: string) => Promise<{ error: any }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
@@ -103,8 +105,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
+  // App-wide presence tracking
+  const partnerOnline = usePresence(user?.id, profile?.partner_id ?? undefined);
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signInWithEmail, signInWithPhone, verifyOtp, signOut, linkPartnerByEmail, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, partnerOnline, signInWithEmail, signInWithPhone, verifyOtp, signOut, linkPartnerByEmail, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
