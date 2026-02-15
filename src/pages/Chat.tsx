@@ -87,15 +87,6 @@ const Chat = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const uploadImage = async (file: File): Promise<string | null> => {
-    if (!user) return null;
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("chat-images").upload(path, file);
-    if (error) return null;
-    return supabase.storage.from("chat-images").getPublicUrl(path).data.publicUrl;
-  };
-
   const uploadAudio = async (blob: Blob): Promise<string | null> => {
     if (!user) return null;
     const path = `${user.id}/${Date.now()}.webm`;
@@ -104,15 +95,6 @@ const Chat = () => {
     return supabase.storage.from("voice-notes").getPublicUrl(path).data.publicUrl;
   };
 
-  // Auto-save photo to couple_photos gallery
-  const autoSavePhoto = async (imageUrl: string, storagePath: string) => {
-    if (!user) return;
-    await supabase.from("couple_photos").insert({
-      user_id: user.id,
-      storage_path: storagePath,
-      caption: "Shared in chat",
-    });
-  };
 
   const handleSend = async (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => {
     if (!user || !partnerId || sending) return;
@@ -132,11 +114,6 @@ const Chat = () => {
       if (!error) {
         imageUrl = supabase.storage.from("chat-images").getPublicUrl(storagePath).data.publicUrl;
         messageType = "image";
-        const galleryPath = `${user.id}/${Date.now()}-gallery.${ext}`;
-        const { error: gpErr } = await supabase.storage.from("couple-photos").upload(galleryPath, imageFile);
-        if (!gpErr) {
-          autoSavePhoto(imageUrl, galleryPath);
-        }
       }
     }
 
