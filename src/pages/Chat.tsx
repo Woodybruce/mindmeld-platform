@@ -214,19 +214,23 @@ const Chat = () => {
   }, []);
 
   const handleSaveEventToCalendar = useCallback(async (event: { title: string; date: string; time?: string; location?: string }) => {
-    const startTime = event.time
-      ? new Date(`${event.date}T${event.time}`).toISOString()
-      : new Date(`${event.date}T00:00`).toISOString();
-    const endTime = event.time
-      ? new Date(new Date(`${event.date}T${event.time}`).getTime() + 3600000).toISOString()
-      : new Date(`${event.date}T23:59`).toISOString();
-    await addEvent({
-      subject: event.title,
-      start_time: startTime,
-      end_time: endTime,
-      is_all_day: !event.time,
-      location: event.location,
-    });
+    try {
+      const startTime = event.time
+        ? new Date(`${event.date}T${event.time}`).toISOString()
+        : new Date(`${event.date}T00:00`).toISOString();
+      const endTime = event.time
+        ? new Date(new Date(`${event.date}T${event.time}`).getTime() + 3600000).toISOString()
+        : new Date(`${event.date}T23:59`).toISOString();
+      await addEvent({
+        subject: event.title,
+        start_time: startTime,
+        end_time: endTime,
+        is_all_day: !event.time,
+        location: event.location,
+      });
+    } catch (err) {
+      console.error("Failed to save event to calendar:", err);
+    }
   }, [addEvent]);
 
   // Empty states

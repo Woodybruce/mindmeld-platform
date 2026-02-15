@@ -78,7 +78,11 @@ export function useCalendarEvents() {
       location: event.location || null,
       source: "manual",
     } as any);
-    if (!error) await fetchEvents();
+    if (error) {
+      console.error("Calendar insert error:", error);
+      throw error;
+    }
+    await fetchEvents();
   }, [user, fetchEvents]);
 
   // Delete event
