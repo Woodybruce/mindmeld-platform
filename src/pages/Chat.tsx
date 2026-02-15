@@ -5,9 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
+import { useWebRTC } from "@/hooks/useWebRTC";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
+import CallScreen from "@/components/chat/CallScreen";
+import IncomingCall from "@/components/chat/IncomingCall";
 
 interface Message {
   id: string;
@@ -32,6 +35,12 @@ const Chat = () => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const partnerId = profile?.partner_id;
+
+  const webrtc = useWebRTC({
+    userId: user?.id,
+    partnerId: partnerId || undefined,
+    partnerName,
+  });
 
   // Fetch partner name
   useEffect(() => {
@@ -262,7 +271,34 @@ const Chat = () => {
       {/* Subtle wallpaper pattern */}
       <div className="fixed inset-0 max-w-lg mx-auto pointer-events-none opacity-[0.03] dark:opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
       
-      <ChatHeader partnerName={partnerName} />
+      <ChatHeader partnerName={partnerName} onStartCall={webrtc.startCall} />
+
+      {/* Call overlays */}
+      <AnimatePresence>
+        {webrtc.incomingCall && webrtc.callState === "ringing" && (
+          <IncomingCall
+            callerName={webrtc.incomingCall.from}
+            callType={webrtc.incomingCall.type}
+            onAccept={webrtc.acceptCall}
+            onReject={webrtc.rejectCall}
+          />
+        )}
+        {(webrtc.callState === "calling" || webrtc.callState === "connected") && (
+          <CallScreen
+            callState={webrtc.callState}
+            callType={webrtc.callType}
+            partnerName={partnerName}
+            isMuted={webrtc.isMuted}
+            isVideoOff={webrtc.isVideoOff}
+            callDuration={webrtc.callDuration}
+            localVideoRef={webrtc.localVideoRef}
+            remoteVideoRef={webrtc.remoteVideoRef}
+            onEndCall={webrtc.endCall}
+            onToggleMute={webrtc.toggleMute}
+            onToggleVideo={webrtc.toggleVideo}
+          />
+        )}
+      </AnimatePresence>
 
       <main className="flex-1 px-3 py-3 overflow-y-auto pb-36 space-y-0.5 relative z-10">
         {messages.length === 0 && (
