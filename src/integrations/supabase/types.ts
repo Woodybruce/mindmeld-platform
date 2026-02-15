@@ -176,6 +176,7 @@ export type Database = {
           id: string
           partner_code: string | null
           partner_id: string | null
+          phone_number: string | null
           updated_at: string
           username: string | null
         }
@@ -184,6 +185,7 @@ export type Database = {
           id: string
           partner_code?: string | null
           partner_id?: string | null
+          phone_number?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -192,6 +194,7 @@ export type Database = {
           id?: string
           partner_code?: string | null
           partner_id?: string | null
+          phone_number?: string | null
           updated_at?: string
           username?: string | null
         }

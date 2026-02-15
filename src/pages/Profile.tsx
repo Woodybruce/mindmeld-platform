@@ -1,11 +1,12 @@
-import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor } from "lucide-react";
+import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const { user, profile, signOut, linkPartnerByEmail, loading } = useAuth();
@@ -14,6 +15,8 @@ const Profile = () => {
   const [partnerEmail, setPartnerEmail] = useState("");
   const [linking, setLinking] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
 
   const quizCount = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("completedQuizzes") || "[]").length; } catch { return 0; }
@@ -21,6 +24,21 @@ const Profile = () => {
   const listCount = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("userLists") || "[]").length; } catch { return 0; }
   }, []);
+
+  // Load phone number
+  useEffect(() => {
+    if (profile) {
+      setPhoneNumber((profile as any).phone_number || "");
+    }
+  }, [profile]);
+
+  const savePhoneNumber = async () => {
+    if (!user) return;
+    setSavingPhone(true);
+    await supabase.from("profiles").update({ phone_number: phoneNumber.trim() || null } as any).eq("id", user.id);
+    toast.success("Phone number saved");
+    setSavingPhone(false);
+  };
 
   if (loading) {
     return (
@@ -150,7 +168,29 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Relationship stats */}
+        {/* Phone number */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-display font-semibold text-foreground mb-1 flex items-center gap-2">
+            <Phone className="w-4 h-4 text-[hsl(var(--us-sage))]" /> Phone Number
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">Used for call fallback when partner is offline</p>
+          <div className="flex gap-2">
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+44 7700 900000"
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <button
+              onClick={savePhoneNumber}
+              disabled={savingPhone}
+              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+            >
+              {savingPhone ? "…" : "Save"}
+            </button>
+          </div>
+        </div>
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="font-display font-semibold text-foreground mb-3 flex items-center gap-2">
             <Heart className="w-4 h-4 text-us-coral" /> Relationship Stats
