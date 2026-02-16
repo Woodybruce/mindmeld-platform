@@ -37,7 +37,15 @@ export const useGeolocation = (enabled: boolean = false) => {
         });
       },
       (err) => {
-        setState((s) => ({ ...s, error: err.message, loading: false }));
+        // Fallback to a default location so the game is still playable
+        console.warn("Geolocation error, using fallback location:", err.message);
+        setState({
+          latitude: 51.4545,
+          longitude: -0.1081,
+          accuracy: 100,
+          error: null,
+          loading: false,
+        });
       },
       { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
     );
