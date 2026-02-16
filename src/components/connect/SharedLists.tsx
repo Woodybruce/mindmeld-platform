@@ -69,10 +69,9 @@ const templates = [
 interface SharedListsProps {
   lists: UserList[];
   onUpdate: (lists: UserList[]) => void;
-  onCreateEvent?: (taskText: string) => void;
 }
 
-const SharedLists = ({ lists, onUpdate, onCreateEvent }: SharedListsProps) => {
+const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
@@ -401,15 +400,6 @@ const SharedLists = ({ lists, onUpdate, onCreateEvent }: SharedListsProps) => {
                         >
                           <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
                         </button>
-                        {onCreateEvent && (
-                          <button
-                            onClick={() => onCreateEvent(item.text)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                            title="Create event from task"
-                          >
-                            <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                          </button>
-                        )}
                         <button
                           onClick={() => removeItem(list.id, item.id)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity p-1"

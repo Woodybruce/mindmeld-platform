@@ -7,7 +7,6 @@ import OutlookEventPicker from "@/components/OutlookEventPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { useSearchParams } from "react-router-dom";
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -15,7 +14,6 @@ const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const OurEvents = () => {
   const { user } = useAuth();
   const { events, addEvent, deleteEvent, fetchEvents } = useCalendarEvents();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const [showAdd, setShowAdd] = useState(false);
   const [newSubject, setNewSubject] = useState("");
@@ -24,18 +22,6 @@ const OurEvents = () => {
   const [newLocation, setNewLocation] = useState("");
   const [showOutlookPicker, setShowOutlookPicker] = useState(false);
   const [outlookConnected, setOutlookConnected] = useState<boolean | null>(null);
-
-  // Pre-fill from query param (e.g. from list task)
-  useEffect(() => {
-    const eventParam = searchParams.get("event");
-    if (eventParam) {
-      setNewSubject(decodeURIComponent(eventParam));
-      setShowAdd(true);
-      // Clean up the param
-      searchParams.delete("event");
-      setSearchParams(searchParams, { replace: true });
-    }
-  }, []);
 
   // Calendar state
   const today = new Date();

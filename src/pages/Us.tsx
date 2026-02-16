@@ -209,7 +209,7 @@ const Us = () => {
 
         {/* Lists — default tab, imported from OneNote */}
         <TabsContent value="lists" className="mt-4 space-y-5">
-          <SharedLists lists={userLists} onUpdate={handleListsUpdate} onCreateEvent={(taskText) => navigate(`/us?tab=admin&event=${encodeURIComponent(taskText)}`)} />
+          <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
 
 
 
