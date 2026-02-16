@@ -44,7 +44,7 @@ const OutlookCallback = () => {
             },
             body: JSON.stringify({
               code,
-              redirect_uri: `https://mindmeld-platform.lovable.app/outlook-callback`,
+              redirect_uri: `${window.location.origin}/outlook-callback`,
             }),
           }
         );

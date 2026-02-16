@@ -45,8 +45,7 @@ const Profile = () => {
   }, [user]);
 
   const connectOutlook = async () => {
-    const publishedOrigin = "https://mindmeld-platform.lovable.app";
-    const redirectUri = `${publishedOrigin}/outlook-callback`;
+    const redirectUri = `${window.location.origin}/outlook-callback`;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
@@ -60,7 +59,7 @@ const Profile = () => {
       );
       const result = await res.json();
       if (result.url) {
-        window.open(result.url, "_blank");
+        window.top ? (window.top.location.href = result.url) : (window.location.href = result.url);
       } else {
         toast.error("Failed to get Outlook login URL");
       }
