@@ -1,5 +1,5 @@
 import {
-  ListChecks, Sparkles, Gamepad2,
+  ListChecks, Sparkles,
   Camera, FolderOpen,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ const StoriesBar = () => {
   const stories: StoryCircle[] = [
     { id: "lists", label: "Lists", icon: <ListChecks className="w-5 h-5" />, gradient: "from-us-navy to-blue-600", path: "/us?tab=lists" },
     { id: "quizzes", label: "Quizzes", icon: <Sparkles className="w-5 h-5" />, gradient: "from-us-gold to-amber-500", path: "/us?tab=quizzes" },
-    { id: "games", label: "Games", icon: <Gamepad2 className="w-5 h-5" />, gradient: "from-us-sage to-emerald-500", path: "/us?tab=games" },
+    { id: "games", label: "Games", icon: <span className="text-xl">💋</span>, gradient: "from-us-sage to-emerald-500", path: "/us?tab=games" },
     { id: "photos", label: "Photos", icon: <Camera className="w-5 h-5" />, gradient: "from-us-blush to-pink-400", path: "/us?tab=photos" },
     { id: "admin", label: "Admin", icon: <FolderOpen className="w-5 h-5" />, gradient: "from-us-navy to-blue-600", path: "/us?tab=admin" },
   ];
