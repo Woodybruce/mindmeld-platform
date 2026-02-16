@@ -61,6 +61,14 @@ const setupItems: SetupItem[] = [
     action: "/chat",
     checkKey: "us-chat-started",
   },
+  {
+    id: "files",
+    emoji: "📁",
+    title: "Upload your first file",
+    description: "Share documents, photos, or files together",
+    action: "/us?tab=admin",
+    checkKey: "us-files-started",
+  },
 ];
 
 const DISMISSED_KEY = "setup-prompts-dismissed";
