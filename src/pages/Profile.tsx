@@ -350,8 +350,28 @@ const Profile = () => {
 
         {/* Reset App Data */}
         <button
-          onClick={() => {
-            if (!window.confirm("This will clear all local data (lists, quizzes, onboarding) and sign you out. Continue?")) return;
+          onClick={async () => {
+            if (!window.confirm("This will DELETE all your messages, photos, quizzes, links, files and clear local data. This cannot be undone. Continue?")) return;
+            try {
+              const { data: { user: currentUser } } = await supabase.auth.getUser();
+              if (currentUser) {
+                const uid = currentUser.id;
+                await Promise.all([
+                  supabase.from("messages").delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`),
+                  supabase.from("couple_photos").delete().eq("user_id", uid),
+                  supabase.from("quiz_answers").delete().in("session_id",
+                    (await supabase.from("quiz_sessions").select("id").eq("user_id", uid)).data?.map(s => s.id) || []
+                  ),
+                  supabase.from("quiz_sessions").delete().eq("user_id", uid),
+                  supabase.from("shared_links").delete().eq("user_id", uid),
+                  supabase.from("shared_files").delete().eq("user_id", uid),
+                  supabase.from("shared_folders").delete().eq("user_id", uid),
+                  supabase.from("calendar_events").delete().eq("user_id", uid),
+                ]);
+              }
+            } catch (e) {
+              console.error("Reset error:", e);
+            }
             localStorage.clear();
             signOut().then(() => navigate("/auth"));
           }}
