@@ -235,21 +235,6 @@ const Us = () => {
         {/* Lists — default tab, imported from OneNote */}
         <TabsContent value="lists" className="mt-4 space-y-5">
           <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
-
-
-
-
-          {completedQuizzes.length > 0 && (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-foreground uppercase tracking-wider">Quiz Results</p>
-                <span className="flex items-center gap-1 text-xs text-primary font-medium">
-                  <Trophy className="w-3.5 h-3.5" /> {completedQuizzes.length} done
-                </span>
-              </div>
-              <CompletedQuizList quizzes={completedQuizzes} />
-            </>
-          )}
         </TabsContent>
 
         {/* Quizzes */}
@@ -289,7 +274,18 @@ const Us = () => {
           ))}
 
 
-          {/* Gratitude & Love Languages */}
+          {completedQuizzes.length > 0 && (
+            <div className="pt-4 border-t border-border/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-foreground uppercase tracking-wider">Quiz Results</p>
+                <span className="flex items-center gap-1 text-xs text-primary font-medium">
+                  <Trophy className="w-3.5 h-3.5" /> {completedQuizzes.length} done
+                </span>
+              </div>
+              <CompletedQuizList quizzes={completedQuizzes} />
+            </div>
+          )}
+
           <div className="pt-4 border-t border-border/50 space-y-3">
             <p className="text-sm font-bold text-foreground uppercase tracking-wider">Gratitude & Connection</p>
             <GratitudeJournal />
