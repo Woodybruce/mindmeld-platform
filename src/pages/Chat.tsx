@@ -339,7 +339,7 @@ const Chat = () => {
         {grouped.map((group) => (
           <div key={group.date}>
             <div className="flex justify-center my-4">
-              <span className="text-[11px] font-medium text-muted-foreground bg-card/90 backdrop-blur-md px-4 py-1.5 rounded-lg shadow-sm border border-border/20">
+              <span className="text-[11px] font-medium text-white bg-[hsl(var(--us-navy)/0.7)] backdrop-blur-md px-4 py-1.5 rounded-lg shadow-sm">
                 {group.date}
               </span>
             </div>
