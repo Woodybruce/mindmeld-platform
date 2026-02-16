@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ImageIcon, X, MessageCircle, Upload, ExternalLink, Loader2 } from "lucide-react";
+import { ImageIcon, X, MessageCircle, Upload, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -137,15 +137,14 @@ const OurPhotos = () => {
           <p className="text-xs text-muted-foreground/50 mt-0.5">{photos.length} photos</p>
         </div>
         <div className="flex items-center gap-2">
-          <a
-            href="https://www.icloud.com/photos/"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
             className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors px-2.5 py-1.5 rounded-full bg-secondary/60"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span>iCloud</span>
-          </a>
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span>Photos</span>
+          </button>
           <input
             ref={fileInputRef}
             type="file"
