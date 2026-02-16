@@ -100,7 +100,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
 
   const attachActions = [
     { icon: Camera, label: "Camera", gradient: "from-[hsl(var(--us-coral))] to-[hsl(var(--us-terracotta))]", onClick: () => { setAttachOpen(false); setTimeout(() => cameraInputRef.current?.click(), 100); } },
-    { icon: Paperclip, label: "Photo", gradient: "from-[hsl(var(--us-navy))] to-[hsl(220,40%,35%)]", onClick: () => { setAttachOpen(false); setTimeout(() => fileInputRef.current?.click(), 100); } },
+    { icon: Paperclip, label: "Media", gradient: "from-[hsl(var(--us-navy))] to-[hsl(220,40%,35%)]", onClick: () => { setAttachOpen(false); setTimeout(() => fileInputRef.current?.click(), 100); } },
     { icon: MapPin, label: "Location", gradient: "from-[hsl(var(--us-coral))] to-[hsl(0,60%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setLocationOpen(true), 100); } },
     { icon: BarChart3, label: "Poll", gradient: "from-[hsl(var(--us-gold))] to-[hsl(30,70%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setPollOpen(true), 100); } },
     { icon: CalendarPlus, label: "Event", gradient: "from-[hsl(var(--us-blush))] to-[hsl(350,50%,55%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setEventOpen(true), 100); } },
