@@ -292,7 +292,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">Browse Instagram, copy a link, then paste it here to save</p>
+              <p className="text-xs text-muted-foreground">Browse Instagram, copy a link, then paste it here to share</p>
               
               <a
                 href="https://www.instagram.com"
@@ -309,7 +309,9 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                 onChange={(e) => setInstagramUrl(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && instagramUrl.trim()) {
-                    onSaveInstagramLink?.(instagramUrl.trim());
+                    const url = instagramUrl.trim();
+                    onSend(url);
+                    onSaveInstagramLink?.(url);
                     setInstagramUrl("");
                     setInstagramOpen(false);
                   }
@@ -320,14 +322,16 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
               <button
                 onClick={() => {
                   if (!instagramUrl.trim()) return;
-                  onSaveInstagramLink?.(instagramUrl.trim());
+                  const url = instagramUrl.trim();
+                  onSend(url);
+                  onSaveInstagramLink?.(url);
                   setInstagramUrl("");
                   setInstagramOpen(false);
                 }}
                 disabled={!instagramUrl.trim()}
                 className="w-full rounded-xl bg-gradient-to-r from-[hsl(330,70%,55%)] to-[hsl(30,90%,55%)] py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
-                Save to Shared Links
+                Share & Save
               </button>
             </motion.div>
           </motion.div>
