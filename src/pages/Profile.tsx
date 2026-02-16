@@ -59,7 +59,11 @@ const Profile = () => {
       );
       const result = await res.json();
       if (result.url) {
-        window.top ? (window.top.location.href = result.url) : (window.location.href = result.url);
+        const popup = window.open(result.url, "outlook-auth", "width=600,height=700,popup=yes");
+        if (!popup) {
+          // Popup blocked — fallback to same-window redirect
+          window.location.href = result.url;
+        }
       } else {
         toast.error("Failed to get Outlook login URL");
       }
