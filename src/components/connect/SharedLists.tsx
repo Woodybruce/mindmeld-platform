@@ -1,11 +1,25 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp } from "lucide-react";
+
+export interface ListItemAttachment {
+  type: "photo" | "file" | "event";
+  url?: string;
+  name?: string;
+  date?: string;
+}
 
 export interface ListItem {
   id: string;
   text: string;
   done: boolean;
+  attachments?: ListItemAttachment[];
+}
+
+export interface ScoreSnapshot {
+  takenAt: string;
+  answers: Record<string, number | string>;
+  milestone: number; // 0, 25, 50, 75, 100
 }
 
 export interface UserList {
@@ -15,6 +29,11 @@ export interface UserList {
   items: ListItem[];
   createdAt: string;
   template?: string;
+  /** For checklist quizzes: score sections stored separately */
+  scoreData?: {
+    sections: { title: string; items: { id: string; text: string; type: string; choices?: string[] }[] }[];
+    snapshots: ScoreSnapshot[];
+  };
 }
 
 const templates = [
@@ -58,6 +77,10 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   const [showTemplates, setShowTemplates] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [creatingBlank, setCreatingBlank] = useState(false);
+
+  const [showCompleted, setShowCompleted] = useState<Record<string, boolean>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachingItemId, setAttachingItemId] = useState<{ listId: string; itemId: string } | null>(null);
 
   const createFromTemplate = (templateId: string) => {
     const t = templates.find((t) => t.id === templateId)!;
@@ -117,6 +140,48 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   const deleteList = (listId: string) => {
     onUpdate(lists.filter((l) => l.id !== listId));
     if (expandedId === listId) setExpandedId(null);
+  };
+
+  const addAttachment = (listId: string, itemId: string, attachment: ListItemAttachment) => {
+    const updated = lists.map((l) =>
+      l.id === listId
+        ? {
+            ...l,
+            items: l.items.map((i) =>
+              i.id === itemId
+                ? { ...i, attachments: [...(i.attachments || []), attachment] }
+                : i
+            ),
+          }
+        : l
+    );
+    onUpdate(updated);
+  };
+
+  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!attachingItemId || !e.target.files?.[0]) return;
+    const file = e.target.files[0];
+    const isImage = file.type.startsWith("image/");
+    const url = URL.createObjectURL(file);
+    addAttachment(attachingItemId.listId, attachingItemId.itemId, {
+      type: isImage ? "photo" : "file",
+      url,
+      name: file.name,
+    });
+    setAttachingItemId(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const getCompletionPercent = (list: UserList) => {
+    if (list.items.length === 0) return 0;
+    return Math.round((list.items.filter((i) => i.done).length / list.items.length) * 100);
+  };
+
+  const getNextMilestone = (list: UserList) => {
+    const pct = getCompletionPercent(list);
+    const milestones = [25, 50, 75, 100];
+    const completedMilestones = (list.scoreData?.snapshots || []).map((s) => s.milestone);
+    return milestones.find((m) => pct >= m && !completedMilestones.includes(m)) ?? null;
   };
 
   return (
@@ -217,9 +282,23 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
         </div>
       )}
 
+      {/* Hidden file input for attachments */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf,.doc,.docx,.txt"
+        className="hidden"
+        onChange={handleFileAttach}
+      />
+
       {lists.map((list, i) => {
         const isExpanded = expandedId === list.id;
         const doneCount = list.items.filter((i) => i.done).length;
+        const activeItems = list.items.filter((i) => !i.done);
+        const completedItems = list.items.filter((i) => i.done);
+        const isShowingCompleted = showCompleted[list.id] ?? false;
+        const completionPct = getCompletionPercent(list);
+        const nextMilestone = list.scoreData ? getNextMilestone(list) : null;
 
         return (
           <motion.div
@@ -238,6 +317,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                 <p className="text-sm font-semibold text-foreground truncate">{list.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {doneCount}/{list.items.length} done
+                  {list.scoreData && ` · ${completionPct}%`}
                 </p>
               </div>
               <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
@@ -250,28 +330,106 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                 transition={{ duration: 0.2 }}
                 className="border-t border-border/30"
               >
+                {/* Score summary card for checklist quiz lists */}
+                {list.scoreData && (
+                  <div className="px-4 py-3 border-b border-border/30 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" /> Score Summary
+                      </p>
+                      {nextMilestone && (
+                        <button
+                          onClick={() => {
+                            // Navigate to retest - store current list context
+                            const quizId = list.id.replace(/^checklist-/, "").replace(/-\d+$/, "");
+                            localStorage.setItem("retestListId", list.id);
+                            localStorage.setItem("retestMilestone", String(nextMilestone));
+                            window.location.href = `/checklist-quiz/${quizId}?retest=true`;
+                          }}
+                          className="flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <RefreshCw className="w-3 h-3" /> Retest ({nextMilestone}% milestone)
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Latest snapshot */}
+                    {list.scoreData.snapshots.length > 0 && (
+                      <div className="space-y-1.5">
+                        {list.scoreData.snapshots.map((snap, si) => (
+                          <div key={si} className="rounded-lg bg-secondary/50 p-2.5 space-y-1">
+                            <p className="text-[11px] font-medium text-muted-foreground">
+                              {snap.milestone === 0 ? "Initial" : `${snap.milestone}% milestone`} · {new Date(snap.takenAt).toLocaleDateString()}
+                            </p>
+                            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                              {Object.entries(snap.answers).map(([key, val]) => {
+                                const item = list.scoreData!.sections.flatMap(s => s.items).find(i => i.id === key);
+                                return (
+                                  <div key={key} className="flex items-center gap-1.5 text-xs">
+                                    <span className="text-muted-foreground truncate max-w-[120px]">{item?.text?.replace(/ \(1–10\)/, "") || key}</span>
+                                    <span className="font-bold text-primary">{typeof val === "number" ? `${val}/10` : val}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Active items */}
                 <div className="px-4 py-3 space-y-1.5">
-                  {list.items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2.5 group">
-                      <button
-                        onClick={() => toggleItem(list.id, item.id)}
-                        className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${
-                          item.done ? "bg-primary border-primary" : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        {item.done && <Check className="w-3 h-3 text-primary-foreground" />}
-                      </button>
-                      <span className={`flex-1 text-sm text-foreground`}>
-                        {item.text}
-                      </span>
-                      <button
-                        onClick={() => removeItem(list.id, item.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                      </button>
+                  {activeItems.map((item) => (
+                    <div key={item.id} className="group">
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          onClick={() => toggleItem(list.id, item.id)}
+                          className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors border-border hover:border-primary/50"
+                        >
+                        </button>
+                        <span className="flex-1 text-sm text-foreground">{item.text}</span>
+                        <button
+                          onClick={() => {
+                            setAttachingItemId({ listId: list.id, itemId: item.id });
+                            fileInputRef.current?.click();
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                          title="Attach photo/file"
+                        >
+                          <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                        </button>
+                        <button
+                          onClick={() => removeItem(list.id, item.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </div>
+                      {/* Attachments */}
+                      {item.attachments && item.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pl-7 mt-1">
+                          {item.attachments.map((att, ai) => (
+                            <a
+                              key={ai}
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
+                              {att.name || "Attachment"}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
+
+                  {activeItems.length === 0 && completedItems.length > 0 && (
+                    <p className="text-xs text-center text-muted-foreground py-2">All items completed! 🎉</p>
+                  )}
 
                   {/* Add item */}
                   <div className="flex gap-2 pt-2">
@@ -290,6 +448,49 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                     </button>
                   </div>
                 </div>
+
+                {/* Completed items toggle */}
+                {completedItems.length > 0 && (
+                  <div className="border-t border-border/30">
+                    <button
+                      onClick={() => setShowCompleted((prev) => ({ ...prev, [list.id]: !prev[list.id] }))}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {isShowingCompleted ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {isShowingCompleted ? "Hide" : "Show"} {completedItems.length} completed
+                    </button>
+                    <AnimatePresence>
+                      {isShowingCompleted && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-3 space-y-1.5">
+                            {completedItems.map((item) => (
+                              <div key={item.id} className="flex items-center gap-2.5 group">
+                                <button
+                                  onClick={() => toggleItem(list.id, item.id)}
+                                  className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 bg-primary border-primary"
+                                >
+                                  <Check className="w-3 h-3 text-primary-foreground" />
+                                </button>
+                                <span className="flex-1 text-sm text-muted-foreground line-through">{item.text}</span>
+                                <button
+                                  onClick={() => removeItem(list.id, item.id)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
                 {/* Delete list */}
                 <div className="px-4 py-2 border-t border-border/30">

@@ -1,17 +1,22 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ChevronRight, ChevronLeft, Check, Flame, ListPlus } from "lucide-react";
 import { checklistQuizzes } from "@/data/checklistQuizData";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import type { UserList } from "@/components/connect/SharedLists";
+import type { UserList, ScoreSnapshot } from "@/components/connect/SharedLists";
 import { Slider } from "@/components/ui/slider";
+
+/** First N sections are "score" sections (summary/reflection), rest are exploration items */
+const SCORE_SECTION_COUNT = 2;
 
 type Answers = Record<string, boolean | number | string>;
 
 const ChecklistQuizPlay = () => {
   const { quizId } = useParams<{ quizId: string }>();
+  const [searchParams] = useSearchParams();
+  const isRetest = searchParams.get("retest") === "true";
   const navigate = useNavigate();
   const quiz = checklistQuizzes.find((q) => q.id === quizId);
 
@@ -20,14 +25,26 @@ const ChecklistQuizPlay = () => {
   const [answers, setAnswers] = useState<Answers>({});
   const [finished, setFinished] = useState(false);
 
+  // In retest mode, only show score sections
+  const retestListId = isRetest ? localStorage.getItem("retestListId") : null;
+  const retestMilestone = isRetest ? Number(localStorage.getItem("retestMilestone") || "0") : 0;
+
   if (!quiz) {
     navigate("/us");
     return null;
   }
 
-  const filteredSections = quiz.sections.filter(
+  const allFilteredSections = quiz.sections.filter(
     (s) => !s.forGender || s.forGender === gender
   );
+
+  // In retest mode, only show score sections
+  const filteredSections = isRetest
+    ? allFilteredSections.slice(0, SCORE_SECTION_COUNT)
+    : allFilteredSections;
+
+  const scoreSections = allFilteredSections.slice(0, SCORE_SECTION_COUNT);
+  const listSections = allFilteredSections.slice(SCORE_SECTION_COUNT);
 
   const totalSections = filteredSections.length;
   const section = filteredSections[sectionIdx];
@@ -91,12 +108,45 @@ const ChecklistQuizPlay = () => {
 
   // Results screen
   if (finished) {
-    const checkedItems = Object.entries(answers).filter(
-      ([, v]) => v === true
-    ).length;
-    const totalCheckboxes = filteredSections.flatMap((s) =>
+    // Build score snapshot from first 2 sections
+    const scoreAnswers: Record<string, number | string> = {};
+    scoreSections.forEach((sec) => {
+      sec.items.forEach((item) => {
+        if ((item.type === "rating" || item.type === "choice") && answers[item.id] !== undefined) {
+          scoreAnswers[item.id] = answers[item.id] as number | string;
+        }
+      });
+    });
+
+    // Exploration items from remaining sections
+    const checkedTexts = listSections.flatMap((s) =>
+      s.items.filter((i) => i.type === "checkbox" && answers[i.id] === true).map((i) => i.text)
+    );
+
+    const totalCheckboxes = listSections.flatMap((s) =>
       s.items.filter((i) => i.type === "checkbox")
     ).length;
+
+    // Handle retest: update existing list's score data
+    if (isRetest && retestListId) {
+      const stored = localStorage.getItem("userLists");
+      const lists: UserList[] = stored ? JSON.parse(stored) : [];
+      const listIdx = lists.findIndex((l) => l.id === retestListId);
+      if (listIdx >= 0 && lists[listIdx].scoreData) {
+        const newSnapshot: ScoreSnapshot = {
+          takenAt: new Date().toISOString(),
+          answers: scoreAnswers,
+          milestone: retestMilestone,
+        };
+        lists[listIdx].scoreData!.snapshots.push(newSnapshot);
+        localStorage.setItem("userLists", JSON.stringify(lists));
+        localStorage.removeItem("retestListId");
+        localStorage.removeItem("retestMilestone");
+        toast({ title: "Score updated ✓", description: `${retestMilestone}% milestone recorded!` });
+        navigate("/us?tab=lists");
+        return null;
+      }
+    }
 
     return (
       <div className="min-h-screen bg-background max-w-lg mx-auto">
@@ -118,26 +168,61 @@ const ChecklistQuizPlay = () => {
             <span className="text-4xl">{quiz.emoji}</span>
             <h2 className="font-display text-xl font-bold text-foreground mt-3">{quiz.title}</h2>
             <div className="mt-4">
-              <span className="text-4xl font-bold text-primary">{checkedItems}</span>
+              <span className="text-4xl font-bold text-primary">{checkedTexts.length}</span>
               <span className="text-lg text-muted-foreground">/{totalCheckboxes}</span>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">items you want to explore</p>
+            <p className="text-sm text-muted-foreground mt-1">things to explore together</p>
           </motion.div>
 
-          {/* Summary by section */}
-          {filteredSections.map((sec, si) => {
+          {/* Score summary (first 2 sections) */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-primary uppercase tracking-wider">📊 Your Score Snapshot</h3>
+            {scoreSections.map((sec) => {
+              const sectionRatings = sec.items.filter(
+                (i) => i.type === "rating" && typeof answers[i.id] === "number"
+              );
+              const sectionChoices = sec.items.filter(
+                (i) => i.type === "choice" && typeof answers[i.id] === "string"
+              );
+              const sectionChecked = sec.items.filter(
+                (i) => i.type === "checkbox" && answers[i.id] === true
+              );
+              if (sectionRatings.length === 0 && sectionChoices.length === 0 && sectionChecked.length === 0) return null;
+              return (
+                <div key={sec.title}>
+                  <p className="text-xs font-medium text-foreground mb-1">{sec.title}</p>
+                  <div className="space-y-1">
+                    {sectionRatings.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{item.text}</span>
+                        <span className="font-bold text-primary">{answers[item.id] as number}/10</span>
+                      </div>
+                    ))}
+                    {sectionChoices.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{item.text}</span>
+                        <span className="font-medium text-foreground">{answers[item.id] as string}</span>
+                      </div>
+                    ))}
+                    {sectionChecked.map((item) => (
+                      <div key={item.id} className="flex items-center gap-1 text-xs">
+                        <Check className="w-3 h-3 text-primary" />
+                        <span className="text-foreground">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            <p className="text-[10px] text-muted-foreground">This score will be saved with your list. Retest at 25%, 50%, 75% and 100% to track improvement.</p>
+          </div>
+
+          {/* Exploration items by section */}
+          {listSections.map((sec, si) => {
             const sectionChecked = sec.items.filter(
               (i) => i.type === "checkbox" && answers[i.id] === true
             );
-            const sectionRatings = sec.items.filter(
-              (i) => i.type === "rating" && typeof answers[i.id] === "number"
-            );
-            const sectionChoices = sec.items.filter(
-              (i) => i.type === "choice" && typeof answers[i.id] === "string"
-            );
-
-            if (sectionChecked.length === 0 && sectionRatings.length === 0 && sectionChoices.length === 0) return null;
-
+            if (sectionChecked.length === 0) return null;
             return (
               <motion.div
                 key={sec.title}
@@ -147,28 +232,12 @@ const ChecklistQuizPlay = () => {
                 className="rounded-xl border border-border/50 bg-card p-4"
               >
                 <h3 className="text-sm font-semibold text-foreground mb-2">{sec.title}</h3>
-                <div className="space-y-1.5">
-                  {sectionRatings.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">{item.text}</span>
-                      <span className="font-bold text-primary">{answers[item.id] as number}/10</span>
-                    </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {sectionChecked.map((item) => (
+                    <span key={item.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                      <Flame className="w-3 h-3" /> {item.text}
+                    </span>
                   ))}
-                  {sectionChoices.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">{item.text}</span>
-                      <span className="font-medium text-foreground">{answers[item.id] as string}</span>
-                    </div>
-                  ))}
-                  {sectionChecked.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {sectionChecked.map((item) => (
-                        <span key={item.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-                          <Flame className="w-3 h-3" /> {item.text}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </motion.div>
             );
@@ -180,24 +249,33 @@ const ChecklistQuizPlay = () => {
 
           <button
             onClick={() => {
-              const checkedTexts = filteredSections.flatMap((s) =>
-                s.items.filter((i) => i.type === "checkbox" && answers[i.id] === true).map((i) => i.text)
-              );
               if (checkedTexts.length === 0) {
                 toast({ title: "No items selected", description: "Tick some items first!" });
                 return;
               }
               const stored = localStorage.getItem("userLists");
               const lists: UserList[] = stored ? JSON.parse(stored) : [];
+              const initialSnapshot: ScoreSnapshot = {
+                takenAt: new Date().toISOString(),
+                answers: scoreAnswers,
+                milestone: 0,
+              };
               const newList: UserList = {
                 id: `checklist-${quiz.id}-${Date.now()}`,
                 name: `${quiz.emoji} ${quiz.title} List`,
                 icon: quiz.emoji,
                 createdAt: new Date().toISOString(),
                 items: checkedTexts.map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false })),
+                scoreData: {
+                  sections: scoreSections.map((s) => ({
+                    title: s.title,
+                    items: s.items.map((it) => ({ id: it.id, text: it.text, type: it.type, choices: it.choices })),
+                  })),
+                  snapshots: [initialSnapshot],
+                },
               };
               localStorage.setItem("userLists", JSON.stringify([newList, ...lists]));
-              toast({ title: "List created ✓", description: `${checkedTexts.length} items added to your Lists tab` });
+              toast({ title: "List created ✓", description: `${checkedTexts.length} items added with score tracking` });
               navigate("/us?tab=lists");
             }}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
