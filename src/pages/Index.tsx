@@ -46,7 +46,7 @@ const Index = () => {
     setOnboardingDone(true);
   };
 
-  if (user && !onboardingDone && (!profile?.username || profile.username === user.email)) {
+  if (user && !onboardingDone) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
