@@ -27,7 +27,7 @@ export interface ChecklistQuizDefinition {
 export const checklistQuizzes: ChecklistQuizDefinition[] = [
   {
     id: "together-list",
-    title: "Our Together List",
+    title: "Us Together",
     description: "Prioritise what matters, pick activities, and plan trips you both want to do.",
     emoji: "💑",
     duration: "5 min",
@@ -136,7 +136,7 @@ export const checklistQuizzes: ChecklistQuizDefinition[] = [
   },
   {
     id: "sex-bucket-list",
-    title: "Sex Bucket List",
+    title: "Sex Bucket",
     description: "Explore desires, rate satisfaction, and discover what you both want to try.",
     emoji: "🔥",
     duration: "10 min",
