@@ -13,6 +13,7 @@ export interface FeedItem {
   subtitle?: string;
   body: string;
   image?: string;
+  emoji?: string;
   tag: string;
   tagColor: string;
   timeAgo: string;
@@ -153,14 +154,27 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
           </span>
           <span className="text-[10px] text-muted-foreground">{item.timeAgo}</span>
         </div>
-        <h3 className={`font-display font-semibold text-foreground leading-snug mb-1 ${size === "half" ? "text-sm line-clamp-2" : "text-lg"}`}>
-          {item.title}
-        </h3>
-        {size !== "half" && item.subtitle && (
+        {item.emoji && (
+          <div className="text-center py-4">
+            <span className="text-6xl">{item.emoji}</span>
+            <h3 className="font-display text-3xl font-bold text-foreground mt-3 uppercase tracking-wide">
+              {item.title}
+            </h3>
+          </div>
+        )}
+        {!item.emoji && (
+          <h3 className={`font-display font-semibold text-foreground leading-snug mb-1 ${size === "half" ? "text-sm line-clamp-2" : "text-lg"}`}>
+            {item.title}
+          </h3>
+        )}
+        {size !== "half" && item.subtitle && !item.emoji && (
           <p className="text-xs text-muted-foreground mb-1.5">{item.subtitle}</p>
         )}
-        {size !== "half" && (
+        {size !== "half" && !item.emoji && (
           <p className="text-sm text-secondary-foreground leading-relaxed">{item.body}</p>
+        )}
+        {item.emoji && (
+          <p className="text-sm text-center text-secondary-foreground leading-relaxed">{item.body}</p>
         )}
         {item.link && (
           <button
