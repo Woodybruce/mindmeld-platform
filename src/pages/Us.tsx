@@ -194,16 +194,16 @@ const Us = () => {
       <Tabs defaultValue={defaultTab} className="px-4 pt-3 pb-24">
         <TabsList className="flex flex-wrap h-auto bg-secondary gap-1 p-1.5 rounded-2xl">
             <TabsTrigger value="lists" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
-              <ListChecks className="w-4 h-4" /> Lists
+              <ListChecks className="w-4 h-4 text-blue-500" /> Lists
             </TabsTrigger>
             <TabsTrigger value="quizzes" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
-              <Sparkles className="w-4 h-4" /> Quizzes
+              <Sparkles className="w-4 h-4 text-amber-500" /> Quizzes
             </TabsTrigger>
             <TabsTrigger value="games" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
               <span className="text-base">💋</span> Games
             </TabsTrigger>
             <TabsTrigger value="photos" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
-              <Camera className="w-4 h-4" /> Photos
+              <Camera className="w-4 h-4 text-pink-500" /> Photos
             </TabsTrigger>
           </TabsList>
 
