@@ -20,7 +20,7 @@ const StoriesBar = () => {
     { id: "quizzes", label: "Quizzes", icon: <Sparkles className="w-5 h-5" />, gradient: "from-us-gold to-amber-500", path: "/us?tab=quizzes" },
     { id: "games", label: "Games", icon: <Gamepad2 className="w-5 h-5" />, gradient: "from-us-sage to-emerald-500", path: "/us?tab=games" },
     { id: "photos", label: "Photos", icon: <Camera className="w-5 h-5" />, gradient: "from-us-blush to-pink-400", path: "/us?tab=photos" },
-    
+    { id: "admin", label: "Admin", icon: <FolderOpen className="w-5 h-5" />, gradient: "from-us-navy to-blue-600", path: "/us?tab=admin" },
   ];
 
   return (
