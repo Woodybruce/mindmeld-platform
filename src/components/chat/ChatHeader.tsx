@@ -61,7 +61,7 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
     <header className="sticky top-0 z-50 bg-[hsl(var(--us-navy))] text-white shadow-lg">
       <div className="flex items-center gap-2 px-2 py-2 max-w-lg mx-auto">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
           className="w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white transition-colors flex-shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />
