@@ -1,4 +1,4 @@
-import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw } from "lucide-react";
+import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
@@ -325,6 +325,22 @@ const Profile = () => {
             </div>
           </div>
         </div>
+
+        {/* Reset App Data */}
+        <button
+          onClick={() => {
+            if (!window.confirm("This will clear all local data (lists, quizzes, onboarding) and sign you out. Continue?")) return;
+            localStorage.clear();
+            signOut().then(() => navigate("/auth"));
+          }}
+          className="w-full rounded-xl border border-border bg-card p-4 text-left flex items-center gap-3 hover:bg-secondary/50 transition-colors"
+        >
+          <RotateCcw className="w-5 h-5 text-muted-foreground" />
+          <div>
+            <span className="font-medium text-foreground text-sm">Reset App Data</span>
+            <p className="text-xs text-muted-foreground">Clear all local data and start fresh</p>
+          </div>
+        </button>
 
         {/* Sign out */}
         <button
