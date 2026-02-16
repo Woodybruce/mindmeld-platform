@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export interface ListItemAttachment {
   type: "photo" | "file" | "event";
@@ -29,6 +31,8 @@ export interface UserList {
   items: ListItem[];
   createdAt: string;
   template?: string;
+  /** Maximum number of items allowed */
+  maxItems?: number;
   /** For checklist quizzes: score sections stored separately */
   scoreData?: {
     sections: { title: string; items: { id: string; text: string; type: string; choices?: string[] }[] }[];
@@ -77,6 +81,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   const [showTemplates, setShowTemplates] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [creatingBlank, setCreatingBlank] = useState(false);
+  const [suggestingFor, setSuggestingFor] = useState<string | null>(null);
 
   const [showCompleted, setShowCompleted] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -125,11 +130,49 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
 
   const addItem = (listId: string) => {
     if (!newItemText.trim()) return;
+    const list = lists.find((l) => l.id === listId);
+    if (list?.maxItems && list.items.length >= list.maxItems) {
+      toast({ title: `Max ${list.maxItems} items`, description: "Remove an item first to add a new one." });
+      return;
+    }
     const updated = lists.map((l) =>
       l.id === listId ? { ...l, items: [...l.items, { id: Date.now().toString(), text: newItemText.trim(), done: false }] } : l
     );
     onUpdate(updated);
     setNewItemText("");
+  };
+
+  const suggestDreams = async (listId: string) => {
+    setSuggestingFor(listId);
+    try {
+      const list = lists.find((l) => l.id === listId);
+      const existingDreams = list?.items.map((i) => i.text) || [];
+      const existingLists = lists.filter((l) => l.id !== listId).map((l) => l.name);
+
+      const { data, error } = await supabase.functions.invoke("suggest-dreams", {
+        body: { existingDreams, existingLists },
+      });
+
+      if (error) throw error;
+      if (data?.dreams) {
+        const maxSlots = (list?.maxItems || 5) - (list?.items.length || 0);
+        const newItems = data.dreams.slice(0, maxSlots).map((d: { text: string }, i: number) => ({
+          id: `dream-${Date.now()}-${i}`,
+          text: d.text,
+          done: false,
+        }));
+        const updated = lists.map((l) =>
+          l.id === listId ? { ...l, items: [...l.items, ...newItems] } : l
+        );
+        onUpdate(updated);
+        toast({ title: "Dreams suggested ✨", description: `${newItems.length} dreams added` });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Couldn't generate suggestions", description: "Please try again shortly.", variant: "destructive" });
+    } finally {
+      setSuggestingFor(null);
+    }
   };
 
   const removeItem = (listId: string, itemId: string) => {
@@ -479,21 +522,41 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                   )}
 
                   {/* Add item */}
-                  <div className="flex gap-2 pt-2">
-                    <input
-                      value={expandedId === list.id ? newItemText : ""}
-                      onChange={(e) => setNewItemText(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addItem(list.id)}
-                      placeholder="Add item…"
-                      className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
+                  {(!list.maxItems || list.items.length < list.maxItems) && (
+                    <div className="flex gap-2 pt-2">
+                      <input
+                        value={expandedId === list.id ? newItemText : ""}
+                        onChange={(e) => setNewItemText(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addItem(list.id)}
+                        placeholder={list.maxItems ? `Add item… (${list.items.length}/${list.maxItems})` : "Add item…"}
+                        className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <button
+                        onClick={() => addItem(list.id)}
+                        className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  {list.maxItems && list.items.length >= list.maxItems && (
+                    <p className="text-[11px] text-muted-foreground text-center pt-2">Max {list.maxItems} dreams — remove one to add another</p>
+                  )}
+
+                  {/* AI Suggest button for dream lists */}
+                  {list.maxItems && list.items.length < list.maxItems && (
                     <button
-                      onClick={() => addItem(list.id)}
-                      className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                      onClick={() => suggestDreams(list.id)}
+                      disabled={suggestingFor === list.id}
+                      className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent/50 py-2 mt-2 text-xs font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      {suggestingFor === list.id ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
+                      ) : (
+                        <><Sparkles className="w-3.5 h-3.5" /> Suggest dreams with AI</>
+                      )}
                     </button>
-                  </div>
+                  )}
                 </div>
 
                 {/* Completed items toggle */}
