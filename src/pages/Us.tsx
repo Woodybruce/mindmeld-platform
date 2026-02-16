@@ -200,7 +200,7 @@ const Us = () => {
               <Sparkles className="w-4 h-4" /> Quizzes
             </TabsTrigger>
             <TabsTrigger value="games" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
-              <Gamepad2 className="w-4 h-4" /> Games
+              <span className="text-base">💋</span> Games
             </TabsTrigger>
             <TabsTrigger value="photos" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
               <Camera className="w-4 h-4" /> Photos
