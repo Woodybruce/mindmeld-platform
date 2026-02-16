@@ -89,7 +89,7 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                 {[
                   { icon: "💬", label: "Chat" },
                   { icon: "📅", label: "Plan" },
-                  { icon: "🏃‍♂️💨💋🏃‍♀️", label: "Play" },
+                  { icon: "🏃‍♂️💋🏃‍♀️", label: "Play" },
                 ].map((f) => (
                   <div key={f.label} className="rounded-xl bg-card border border-border/50 p-3 text-center">
                     <span className="text-2xl">{f.icon}</span>
