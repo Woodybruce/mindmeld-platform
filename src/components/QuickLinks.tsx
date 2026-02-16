@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Gamepad2, Camera, ChevronRight,
+  Camera, ChevronRight,
 } from "lucide-react";
 
 const links = [
-  { label: "Games", icon: Gamepad2, tab: "games", gradient: "from-us-sage to-emerald-500" },
+  { label: "Games", emoji: "💋", tab: "games", gradient: "from-us-sage to-emerald-500" },
   { label: "Photos", icon: Camera, tab: "photos", gradient: "from-us-blush to-pink-400" },
 ];
 
@@ -31,7 +31,7 @@ const QuickLinks = () => {
             className="flex flex-col items-center gap-2 rounded-xl bg-secondary/50 hover:bg-secondary py-3 px-2 transition-colors"
           >
             <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${link.gradient} flex items-center justify-center text-primary-foreground`}>
-              <link.icon className="w-5 h-5" />
+              {link.emoji ? <span className="text-lg">{link.emoji}</span> : link.icon && <link.icon className="w-5 h-5" />}
             </div>
             <span className="text-xs font-medium text-foreground">{link.label}</span>
           </button>
