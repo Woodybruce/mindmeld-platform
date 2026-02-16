@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink, ListPlus, CalendarCheck, Navigation, Clock } from "lucide-react";
+import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink, ListPlus, CalendarCheck, Navigation, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ChatBubbleProps {
@@ -17,6 +17,7 @@ interface ChatBubbleProps {
   onPollVote?: (msgId: string, optionIdx: number) => void;
   onSavePollToList?: (question: string, options: string[]) => void;
   onSaveEventToCalendar?: (event: { title: string; date: string; time?: string; location?: string }) => void;
+  onDelete?: (id: string) => void;
   userId?: string;
 }
 
@@ -41,8 +42,9 @@ const tryParseJSON = (str: string) => {
 
 const ChatBubble = ({
   id, content, imageUrl, audioUrl, isMine, time, read,
-  messageType, replyTo, onSwipeReply, onPollVote, onSavePollToList, onSaveEventToCalendar, userId,
+  messageType, replyTo, onSwipeReply, onPollVote, onSavePollToList, onSaveEventToCalendar, onDelete, userId,
 }: ChatBubbleProps) => {
+  const [showDelete, setShowDelete] = useState(false);
   const isPhotoOnly = (!content || content === "📷 Photo") && imageUrl;
   const isSpecial = messageType === "location" || messageType === "poll" || messageType === "event";
   const isSticker = messageType === "sticker";
@@ -54,7 +56,14 @@ const ChatBubble = ({
       initial={{ opacity: 0, y: 8, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", damping: 20, stiffness: 300 }}
-      className={`flex mb-[3px] group ${isMine ? "justify-end" : "justify-start"}`}
+      className={`flex mb-[3px] group relative ${isMine ? "justify-end" : "justify-start"}`}
+      onContextMenu={(e) => {
+        if (isMine && onDelete) {
+          e.preventDefault();
+          setShowDelete((v) => !v);
+        }
+      }}
+      onClick={() => showDelete && setShowDelete(false)}
     >
       {!isMine && onSwipeReply && (
         <button onClick={() => onSwipeReply(id)} className="self-center mr-1 opacity-0 group-hover:opacity-50 active:opacity-80 transition-opacity">
@@ -192,6 +201,26 @@ const ChatBubble = ({
         <button onClick={() => onSwipeReply(id)} className="self-center ml-1 opacity-0 group-hover:opacity-50 active:opacity-80 transition-opacity">
           <Reply className="w-3.5 h-3.5 text-muted-foreground" />
         </button>
+      )}
+
+      {/* Delete confirmation */}
+      {showDelete && isMine && onDelete && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute top-0 right-0 z-20 -mt-8"
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(id);
+              setShowDelete(false);
+            }}
+            className="flex items-center gap-1.5 rounded-xl bg-destructive text-destructive-foreground px-3 py-1.5 text-xs font-semibold shadow-lg"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Delete
+          </button>
+        </motion.div>
       )}
     </motion.div>
   );
