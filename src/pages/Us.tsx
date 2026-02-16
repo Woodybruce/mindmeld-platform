@@ -205,9 +205,6 @@ const Us = () => {
             <TabsTrigger value="photos" className="gap-1 text-xs data-[state=active]:bg-card">
               <Camera className="w-3.5 h-3.5" /> Photos
             </TabsTrigger>
-            <TabsTrigger value="admin" className="gap-1 text-xs data-[state=active]:bg-card">
-              <FolderOpen className="w-3.5 h-3.5" /> Admin
-            </TabsTrigger>
           </TabsList>
 
         {/* Lists — default tab, imported from OneNote */}
