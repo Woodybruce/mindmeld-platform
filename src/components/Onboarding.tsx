@@ -80,8 +80,8 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                 <Heart className="w-10 h-10 text-primary" />
               </motion.div>
               <div>
-                <h1 className="font-display text-3xl font-bold text-foreground">Welcome to Us</h1>
-                <p className="text-muted-foreground mt-2 leading-relaxed">
+                <h1 className="font-display text-5xl font-bold text-foreground">Welcome to Us</h1>
+                <p className="text-muted-foreground mt-3 text-lg leading-relaxed">
                   Your private space to connect, plan, and grow together as a couple.
                 </p>
               </div>
