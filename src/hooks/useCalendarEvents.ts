@@ -35,16 +35,18 @@ export function useCalendarEvents() {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  // Get forward token from profile
+  // Get forward token from profile (column may not exist yet)
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("calendar_forward_token")
+      .select("*")
       .eq("id", user.id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
-        if (data) setForwardToken((data as any).calendar_forward_token);
+        if (data && (data as any).calendar_forward_token) {
+          setForwardToken((data as any).calendar_forward_token);
+        }
       });
   }, [user]);
 
