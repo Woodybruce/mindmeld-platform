@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, Clock, Users, X, Check, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, MapPin, Clock, Users, X, Check, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface OutlookEvent {
   subject: string;
@@ -21,16 +22,23 @@ interface Props {
   onImported: () => void;
 }
 
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
 const OutlookEventPicker = ({ onClose, onImported }: Props) => {
   const [events, setEvents] = useState<OutlookEvent[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState("");
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  // Calendar navigation
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+
+  useEffect(() => { fetchEvents(); }, []);
 
   const fetchEvents = async () => {
     try {
@@ -55,7 +63,6 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
         setError(result.error);
       } else {
         setEvents(result.events || []);
-        // Auto-select partner events and not-yet-imported events
         const autoSelect = new Set<number>();
         (result.events || []).forEach((e: OutlookEvent, i: number) => {
           if (e.partner_invited && !e.already_imported) autoSelect.add(i);
@@ -69,6 +76,41 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
     }
   };
 
+  // Build a map of dateKey -> event indices
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, number[]>();
+    events.forEach((e, i) => {
+      const key = new Date(e.start_time).toISOString().slice(0, 10);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(i);
+    });
+    return map;
+  }, [events]);
+
+  // Calendar grid for current view month
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    let startDow = firstDay.getDay(); // 0=Sun
+    startDow = startDow === 0 ? 6 : startDow - 1; // convert to Mon=0
+
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const cells: (number | null)[] = [];
+    for (let i = 0; i < startDow; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }, [viewMonth, viewYear]);
+
+  const dateKey = (day: number) =>
+    `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  const todayKey = today.toISOString().slice(0, 10);
+
+  const eventsForSelectedDate = useMemo(() => {
+    if (!selectedDate) return [];
+    return (eventsByDate.get(selectedDate) || []).map((i) => ({ index: i, event: events[i] }));
+  }, [selectedDate, eventsByDate, events]);
+
   const toggleEvent = (index: number) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -78,14 +120,14 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
     });
   };
 
-  const selectAll = () => {
-    const importable = events
-      .map((e, i) => (!e.already_imported ? i : -1))
-      .filter((i) => i >= 0);
-    setSelected(new Set(importable));
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
+    else setViewMonth(viewMonth - 1);
   };
-
-  const selectNone = () => setSelected(new Set());
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
+    else setViewMonth(viewMonth + 1);
+  };
 
   const handleImport = async () => {
     if (selected.size === 0) return;
@@ -95,7 +137,6 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
       if (!session) return;
 
       const eventsToImport = Array.from(selected).map((i) => events[i]);
-
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
         {
@@ -124,8 +165,6 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
     }
   };
 
-  const importableCount = events.filter((e) => !e.already_imported).length;
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -139,14 +178,14 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
         animate={{ y: 0 }}
         exit={{ y: 100 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
+        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/50">
           <div>
-            <h2 className="font-display font-bold text-foreground">Outlook Events</h2>
+            <h2 className="font-display font-bold text-foreground">Outlook Calendar</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Choose which events to add to your shared calendar
+              Tap a day to see events, then select which to add
             </p>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary transition-colors">
@@ -155,107 +194,183 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div className="flex-1 overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-              <p className="text-sm text-muted-foreground">Fetching your Outlook events…</p>
+              <p className="text-sm text-muted-foreground">Fetching 6 months of events…</p>
             </div>
           )}
 
           {error && (
-            <div className="rounded-xl bg-destructive/10 p-4 text-center">
+            <div className="rounded-xl bg-destructive/10 p-4 text-center m-4">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          {!loading && !error && events.length === 0 && (
-            <div className="text-center py-12">
-              <Calendar className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No upcoming Outlook events found</p>
-            </div>
-          )}
-
-          {!loading && events.length > 0 && (
-            <>
-              <div className="flex items-center gap-2 mb-1">
-                <button onClick={selectAll} className="text-xs text-primary font-medium hover:underline">
-                  Select all ({importableCount})
+          {!loading && !error && (
+            <div className="p-4 space-y-3">
+              {/* Month navigation */}
+              <div className="flex items-center justify-between">
+                <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                  <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                 </button>
-                <span className="text-muted-foreground text-xs">·</span>
-                <button onClick={selectNone} className="text-xs text-muted-foreground hover:underline">
-                  Clear
+                <span className="font-display font-semibold text-foreground">
+                  {MONTH_NAMES[viewMonth]} {viewYear}
+                </span>
+                <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
               </div>
 
-              {events.map((event, i) => {
-                const startDate = new Date(event.start_time);
-                const dateStr = startDate.toLocaleDateString("default", {
-                  weekday: "short", day: "numeric", month: "short",
-                });
-                const timeStr = event.is_all_day
-                  ? "All day"
-                  : startDate.toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
+              {/* Day labels */}
+              <div className="grid grid-cols-7 gap-0.5 text-center">
+                {DAY_LABELS.map((d) => (
+                  <span key={d} className="text-[10px] font-medium text-muted-foreground py-1">{d}</span>
+                ))}
+              </div>
 
-                return (
-                  <motion.div
-                    key={`${event.subject}-${event.start_time}`}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    className={`rounded-xl border p-3.5 flex items-start gap-3 transition-colors ${
-                      event.already_imported
-                        ? "border-border/30 bg-secondary/50 opacity-60"
-                        : selected.has(i)
-                        ? "border-primary/50 bg-primary/5"
-                        : "border-border/50 bg-card hover:bg-secondary/30"
-                    }`}
-                  >
-                    <div className="pt-0.5">
-                      {event.already_imported ? (
-                        <div className="w-4 h-4 rounded-sm bg-muted flex items-center justify-center">
-                          <Check className="w-3 h-3 text-muted-foreground" />
-                        </div>
-                      ) : (
-                        <Checkbox
-                          checked={selected.has(i)}
-                          onCheckedChange={() => toggleEvent(i)}
-                        />
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-0.5">
+                {calendarDays.map((day, idx) => {
+                  if (day === null) return <div key={idx} />;
+                  const dk = dateKey(day);
+                  const dayEvents = eventsByDate.get(dk);
+                  const hasEvents = !!dayEvents && dayEvents.length > 0;
+                  const hasPartnerEvent = hasEvents && dayEvents.some((i) => events[i].partner_invited);
+                  const isToday = dk === todayKey;
+                  const isSelected = dk === selectedDate;
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedDate(isSelected ? null : dk)}
+                      className={cn(
+                        "relative flex flex-col items-center justify-center rounded-lg py-2 text-sm transition-all",
+                        isSelected
+                          ? "bg-primary text-primary-foreground font-semibold"
+                          : isToday
+                          ? "bg-accent text-accent-foreground font-medium"
+                          : hasEvents
+                          ? "hover:bg-secondary/80 text-foreground"
+                          : "text-muted-foreground/60"
                       )}
-                    </div>
-                    <div
-                      className="flex-1 min-w-0 cursor-pointer"
-                      onClick={() => !event.already_imported && toggleEvent(i)}
                     >
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-foreground truncate">{event.subject}</p>
-                        {event.partner_invited && (
-                          <span className="shrink-0 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                            <Users className="w-3 h-3" /> Both invited
-                          </span>
-                        )}
-                        {event.already_imported && (
-                          <span className="shrink-0 text-[10px] text-muted-foreground">Already added</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Calendar className="w-3 h-3" /> {dateStr}
-                        </span>
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Clock className="w-3 h-3" /> {timeStr}
-                        </span>
-                      </div>
-                      {event.location && (
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
-                          <MapPin className="w-3 h-3" /> {event.location}
+                      {day}
+                      {hasEvents && (
+                        <span className="flex gap-0.5 mt-0.5">
+                          <span className={cn(
+                            "w-1.5 h-1.5 rounded-full",
+                            isSelected ? "bg-primary-foreground" : "bg-primary"
+                          )} />
+                          {hasPartnerEvent && (
+                            <span className={cn(
+                              "w-1.5 h-1.5 rounded-full",
+                              isSelected ? "bg-primary-foreground/70" : "bg-us-coral"
+                            )} />
+                          )}
                         </span>
                       )}
-                    </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center gap-4 text-[10px] text-muted-foreground pt-1">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-primary" /> Has events
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-us-coral" /> Both invited
+                </span>
+              </div>
+
+              {/* Selected day events */}
+              <AnimatePresence mode="wait">
+                {selectedDate && (
+                  <motion.div
+                    key={selectedDate}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-2 overflow-hidden"
+                  >
+                    <p className="text-xs font-semibold text-foreground pt-2">
+                      {new Date(selectedDate + "T00:00:00").toLocaleDateString("default", {
+                        weekday: "long", day: "numeric", month: "long",
+                      })}
+                    </p>
+
+                    {eventsForSelectedDate.length === 0 ? (
+                      <p className="text-xs text-muted-foreground py-3 text-center">No Outlook events on this day</p>
+                    ) : (
+                      eventsForSelectedDate.map(({ index, event }) => {
+                        const startDate = new Date(event.start_time);
+                        const timeStr = event.is_all_day
+                          ? "All day"
+                          : startDate.toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
+
+                        return (
+                          <motion.div
+                            key={`${event.subject}-${event.start_time}`}
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={cn(
+                              "rounded-xl border p-3 flex items-start gap-3 transition-colors",
+                              event.already_imported
+                                ? "border-border/30 bg-secondary/50 opacity-60"
+                                : selected.has(index)
+                                ? "border-primary/50 bg-primary/5"
+                                : "border-border/50 bg-card hover:bg-secondary/30"
+                            )}
+                          >
+                            <div className="pt-0.5">
+                              {event.already_imported ? (
+                                <div className="w-4 h-4 rounded-sm bg-muted flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-muted-foreground" />
+                                </div>
+                              ) : (
+                                <Checkbox
+                                  checked={selected.has(index)}
+                                  onCheckedChange={() => toggleEvent(index)}
+                                />
+                              )}
+                            </div>
+                            <div
+                              className="flex-1 min-w-0 cursor-pointer"
+                              onClick={() => !event.already_imported && toggleEvent(index)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-foreground truncate">{event.subject}</p>
+                                {event.partner_invited && (
+                                  <span className="shrink-0 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                                    <Users className="w-3 h-3" /> Both
+                                  </span>
+                                )}
+                                {event.already_imported && (
+                                  <span className="shrink-0 text-[10px] text-muted-foreground">Added</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <Clock className="w-3 h-3" /> {timeStr}
+                                </span>
+                                {event.location && (
+                                  <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                    <MapPin className="w-3 h-3" /> {event.location}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })
+                    )}
                   </motion.div>
-                );
-              })}
-            </>
+                )}
+              </AnimatePresence>
+            </div>
           )}
         </div>
 
@@ -270,7 +385,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
               {importing ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Calendar className="w-4 h-4" />
+                <CalendarIcon className="w-4 h-4" />
               )}
               {importing
                 ? "Adding…"

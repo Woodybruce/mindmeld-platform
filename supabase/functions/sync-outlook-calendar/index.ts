@@ -124,10 +124,10 @@ Deno.serve(async (req) => {
 
     // ── PREVIEW MODE: fetch and return events ──
     const now = new Date();
-    const future = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const future = new Date(now.getTime() + 183 * 24 * 60 * 60 * 1000); // ~6 months
 
     const graphRes = await fetch(
-      `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${now.toISOString()}&endDateTime=${future.toISOString()}&$top=50&$orderby=start/dateTime&$select=subject,start,end,isAllDay,location,attendees`,
+      `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${now.toISOString()}&endDateTime=${future.toISOString()}&$top=200&$orderby=start/dateTime&$select=subject,start,end,isAllDay,location,attendees`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
