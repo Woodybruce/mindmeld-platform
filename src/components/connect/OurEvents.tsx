@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Plus, MapPin, Clock, Trash2 } from "lucide-react";
-import { useLocalCalendar, type LocalEvent } from "@/hooks/useLocalCalendar";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import LocationAutocomplete from "@/components/ui/LocationAutocomplete";
 
 const OurEvents = () => {
-  const { events, addEvent, deleteEvent } = useLocalCalendar();
+  const { events, addEvent, deleteEvent } = useCalendarEvents();
 
   const [showAdd, setShowAdd] = useState(false);
   const [newSubject, setNewSubject] = useState("");
@@ -13,7 +13,7 @@ const OurEvents = () => {
   const [newTime, setNewTime] = useState("");
   const [newLocation, setNewLocation] = useState("");
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newSubject.trim() || !newDate) return;
     const startDt = newTime
       ? new Date(`${newDate}T${newTime}:00`).toISOString()
@@ -22,24 +22,28 @@ const OurEvents = () => {
       ? new Date(new Date(`${newDate}T${newTime}:00`).getTime() + 3600000).toISOString()
       : new Date(`${newDate}T23:59:59`).toISOString();
 
-    addEvent({
-      subject: newSubject.trim(),
-      start: startDt,
-      end: endDt,
-      isAllDay: !newTime,
-      location: newLocation.trim() || undefined,
-    });
+    try {
+      await addEvent({
+        subject: newSubject.trim(),
+        start_time: startDt,
+        end_time: endDt,
+        is_all_day: !newTime,
+        location: newLocation.trim() || undefined,
+      });
 
-    setNewSubject("");
-    setNewDate("");
-    setNewTime("");
-    setNewLocation("");
-    setShowAdd(false);
+      setNewSubject("");
+      setNewDate("");
+      setNewTime("");
+      setNewLocation("");
+      setShowAdd(false);
+    } catch (err) {
+      console.error("Failed to create event:", err);
+    }
   };
 
   const upcoming = events
-    .filter((e) => e.start >= new Date().toISOString())
-    .sort((a, b) => a.start.localeCompare(b.start));
+    .filter((e) => e.start_time >= new Date().toISOString())
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   return (
     <div className="space-y-3">
@@ -117,9 +121,9 @@ const OurEvents = () => {
       )}
 
       {upcoming.map((event, i) => {
-        const startDate = new Date(event.start);
+        const startDate = new Date(event.start_time);
         const dateStr = startDate.toLocaleDateString("default", { weekday: "short", day: "numeric", month: "short" });
-        const timeStr = event.isAllDay
+        const timeStr = event.is_all_day
           ? "All day"
           : startDate.toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
 
