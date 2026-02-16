@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import kissChaseLogo from "@/assets/kisschase-cartoon.png";
 import { Heart, ArrowRight, Sparkles, Users, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,16 +87,12 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
               </div>
               <div className="grid grid-cols-3 gap-3 pt-2">
                 {[
-                  { icon: "💬", label: "Chat", isImage: false },
-                  { icon: "📅", label: "Plan", isImage: false },
-                  { icon: kissChaseLogo, label: "Play", isImage: true },
+                  { icon: "💬", label: "Chat" },
+                  { icon: "📅", label: "Plan" },
+                  { icon: "🏃‍♀️💋🏃‍♂️", label: "Play" },
                 ].map((f) => (
                   <div key={f.label} className="rounded-xl bg-card border border-border/50 p-3 text-center">
-                    {f.isImage ? (
-                      <img src={f.icon} alt={f.label} className="w-8 h-8 mx-auto object-contain" />
-                    ) : (
-                      <span className="text-2xl">{f.icon}</span>
-                    )}
+                    <span className="text-2xl">{f.icon}</span>
                     <p className="text-[10px] text-muted-foreground mt-1 font-medium">{f.label}</p>
                   </div>
                 ))}
