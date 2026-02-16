@@ -90,33 +90,34 @@ const OurPhotos = () => {
   }, [user, partnerId]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
+    const files = e.target.files;
+    if (!files || files.length === 0 || !user) return;
     setUploading(true);
 
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/${Date.now()}.${ext}`;
+    for (const file of Array.from(files)) {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("couple-photos")
-      .upload(path, file);
+      const { error: uploadError } = await supabase.storage
+        .from("couple-photos")
+        .upload(path, file);
 
-    if (uploadError) {
-      toast.error("Upload failed");
-      setUploading(false);
-      return;
+      if (uploadError) {
+        toast.error(`Upload failed: ${file.name}`);
+        continue;
+      }
+
+      const { error: dbError } = await supabase
+        .from("couple_photos")
+        .insert({ user_id: user.id, storage_path: path });
+
+      if (dbError) {
+        toast.error(`Failed to save: ${file.name}`);
+      }
     }
 
-    const { error: dbError } = await supabase
-      .from("couple_photos")
-      .insert({ user_id: user.id, storage_path: path });
-
-    if (dbError) {
-      toast.error("Failed to save photo");
-    } else {
-      toast.success("Photo uploaded!");
-      fetchPhotos();
-    }
+    toast.success(`${files.length} photo${files.length > 1 ? "s" : ""} uploaded!`);
+    fetchPhotos();
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -141,6 +142,7 @@ const OurPhotos = () => {
             ref={fileInputRef}
             type="file"
             accept="image/*"
+            multiple
             className="hidden"
             onChange={handleUpload}
           />
@@ -149,8 +151,8 @@ const OurPhotos = () => {
             disabled={uploading}
             className="flex items-center gap-1.5 text-xs font-medium text-primary-foreground px-3 py-1.5 rounded-full bg-[hsl(var(--us-coral))] hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            <span>Upload</span>
+            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+            <span>{uploading ? "Uploading…" : "Add Photos"}</span>
           </button>
         </div>
       </div>
