@@ -91,6 +91,14 @@ const defaultLists: UserList[] = [
     maxItems: 5,
     items: [],
   },
+  {
+    id: "daily-todo",
+    name: "Daily To-Do",
+    icon: "☀️",
+    createdAt: "2026-01-04T15:30:00.000Z",
+    items: [],
+    aiSuggestable: true,
+  },
 ];
 
 const seedCompletedQuizzes = (): CompletedQuiz[] => [
