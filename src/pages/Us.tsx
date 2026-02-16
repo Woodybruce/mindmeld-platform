@@ -205,8 +205,8 @@ const Us = () => {
             <TabsTrigger value="photos" className="gap-1 text-xs data-[state=active]:bg-card">
               <Camera className="w-3.5 h-3.5" /> Photos
             </TabsTrigger>
-            <TabsTrigger value="admin" className="gap-1 text-xs data-[state=active]:bg-card">
-              <FolderOpen className="w-3.5 h-3.5" /> Admin
+            <TabsTrigger value="files" className="gap-1 text-xs data-[state=active]:bg-card">
+              <FolderOpen className="w-3.5 h-3.5" /> Files
             </TabsTrigger>
           </TabsList>
 
@@ -304,10 +304,10 @@ const Us = () => {
           <OurPhotos />
         </TabsContent>
 
-        {/* Admin — Events, Photos & Files */}
-        <TabsContent value="admin" className="mt-4 space-y-6">
+        {/* Files — Events & Shared Files */}
+        <TabsContent value="files" className="mt-4 space-y-6">
 
-          <div className="border-t border-border/50 pt-4 space-y-3">
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-us-gold" />
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Events & Calendar</p>
