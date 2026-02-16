@@ -26,6 +26,56 @@ export interface ChecklistQuizDefinition {
 
 export const checklistQuizzes: ChecklistQuizDefinition[] = [
   {
+    id: "together-list",
+    title: "Our Together List",
+    description: "Prioritise what matters, pick activities, and plan trips you both want to do.",
+    emoji: "💑",
+    duration: "5 min",
+    gradient: "bg-gradient-to-br from-us-sage/20 to-us-gold/20",
+    hasGenderPerspective: false,
+    sections: [
+      {
+        title: "Our Top Priorities",
+        items: [
+          { id: "top-datenight", text: "Date night every week", type: "checkbox" },
+          { id: "top-getaway", text: "Go away once every month together", type: "checkbox" },
+          { id: "top-custom1", text: "Cook a new recipe together weekly", type: "checkbox" },
+          { id: "top-custom2", text: "Have a daily check-in conversation", type: "checkbox" },
+          { id: "top-custom3", text: "Exercise or walk together regularly", type: "checkbox" },
+        ],
+      },
+      {
+        title: "Things We'd Like to Do Together",
+        items: [
+          { id: "act-dancing", text: "Dancing", type: "checkbox" },
+          { id: "act-show", text: "Go see an act", type: "checkbox" },
+          { id: "act-paint", text: "Paint / draw each other", type: "checkbox" },
+          { id: "act-pottery", text: "Pottery class together", type: "checkbox" },
+          { id: "act-gallery", text: "Go to 2 art Galleries", type: "checkbox" },
+          { id: "act-concert", text: "Attend a live concert", type: "checkbox" },
+          { id: "act-wine", text: "Wine or cocktail tasting", type: "checkbox" },
+          { id: "act-spa", text: "Couples spa day", type: "checkbox" },
+          { id: "act-volunteer", text: "Volunteer together", type: "checkbox" },
+          { id: "act-stargazing", text: "Go stargazing", type: "checkbox" },
+        ],
+      },
+      {
+        title: "Trips We Want to Do",
+        items: [
+          { id: "trip-scottish-lakes", text: "Scottish Lakes", type: "checkbox" },
+          { id: "trip-amalfi", text: "Amalfi coast", type: "checkbox" },
+          { id: "trip-colondor", text: "Colondor hotel", type: "checkbox" },
+          { id: "trip-amsterdam", text: "Amsterdam", type: "checkbox" },
+          { id: "trip-scotland-lake", text: "Scotland lake house", type: "checkbox" },
+          { id: "trip-comporta", text: "Comporta Portugal", type: "checkbox" },
+          { id: "trip-paris", text: "Paris weekend", type: "checkbox" },
+          { id: "trip-iceland", text: "Iceland Northern Lights", type: "checkbox" },
+          { id: "trip-japan", text: "Japan", type: "checkbox" },
+        ],
+      },
+    ],
+  },
+  {
     id: "sex-bucket-list",
     title: "Sex Bucket List",
     description: "Explore desires, rate satisfaction, and discover what you both want to try.",
