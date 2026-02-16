@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Phone, Video, MoreVertical, PhoneOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ChatHeaderProps {
   partnerName: string;
@@ -13,8 +15,18 @@ interface ChatHeaderProps {
 
 const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHeaderProps) => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const initial = partnerName.charAt(0).toUpperCase();
   const [showFallback, setShowFallback] = useState<"audio" | "video" | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!profile?.partner_id) return;
+    supabase.from("profiles").select("avatar_url").eq("id", profile.partner_id).single()
+      .then(({ data }) => {
+        if ((data as any)?.avatar_url) setAvatarUrl((data as any).avatar_url);
+      });
+  }, [profile?.partner_id]);
 
   const handleCall = (type: "audio" | "video") => {
     // Always try in-app WebRTC call first
@@ -55,6 +67,7 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
           <ArrowLeft className="w-5 h-5" />
         </button>
         <Avatar className="w-10 h-10 flex-shrink-0">
+          {avatarUrl && <AvatarImage src={avatarUrl} alt={partnerName} />}
           <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--us-blush))] to-[hsl(var(--us-coral))] text-primary-foreground text-sm font-display font-semibold">
             {initial}
           </AvatarFallback>
