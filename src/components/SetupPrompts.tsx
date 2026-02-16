@@ -1,22 +1,20 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FolderOpen, Camera, Heart, X, ChevronRight, Sparkles } from "lucide-react";
+import { X, ChevronRight, Sparkles, Heart, Link, Calendar, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SetupItem {
   id: string;
-  icon: React.ReactNode;
   emoji: string;
   title: string;
   description: string;
-  action: string; // route or tab
-  checkKey: string; // localStorage key to check completion
+  action: string;
+  checkKey: string;
 }
 
 const setupItems: SetupItem[] = [
   {
     id: "lists",
-    icon: <Sparkles className="w-4 h-4" />,
     emoji: "📝",
     title: "Create your first list",
     description: "Daily to-dos, goals, or shared action items",
@@ -24,22 +22,36 @@ const setupItems: SetupItem[] = [
     checkKey: "userLists",
   },
   {
-    id: "folders",
-    icon: <FolderOpen className="w-4 h-4" />,
-    emoji: "📁",
-    title: "Link a shared folder",
-    description: "OneDrive, Google Drive, Dropbox or Notion",
-    action: "/us?tab=files",
-    checkKey: "shared-folder-embeds",
-  },
-  {
     id: "quiz",
-    icon: <Heart className="w-4 h-4" />,
     emoji: "💕",
     title: "Take your first quiz",
     description: "Discover how well you know each other",
     action: "/us?tab=quizzes",
     checkKey: "completedQuizzes",
+  },
+  {
+    id: "link",
+    emoji: "🔗",
+    title: "Share your first link",
+    description: "Save Instagram, YouTube or articles together",
+    action: "/chat",
+    checkKey: "us-shared-links-started",
+  },
+  {
+    id: "calendar",
+    emoji: "📅",
+    title: "Add a calendar event",
+    description: "Plan dates, trips, and milestones together",
+    action: "/us?tab=admin",
+    checkKey: "us-calendar-started",
+  },
+  {
+    id: "avatar",
+    emoji: "📸",
+    title: "Choose your partner's avatar",
+    description: "Pick the photo they'll see in chat",
+    action: "/profile",
+    checkKey: "us-avatar-set",
   },
 ];
 
