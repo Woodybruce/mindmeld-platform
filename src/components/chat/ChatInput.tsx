@@ -1,12 +1,10 @@
 import { useState, useRef } from "react";
-import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Images, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Film } from "lucide-react";
+import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import GalleryPicker from "./GalleryPicker";
 import LocationComposer from "./LocationComposer";
 import PollComposer from "./PollComposer";
 import EventComposer from "./EventComposer";
 import StickerPicker from "./StickerPicker";
-import GifPicker from "./GifPicker";
 
 interface ChatInputProps {
   onSend: (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => Promise<void>;
@@ -21,13 +19,12 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
-  const [galleryOpen, setGalleryOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [pollOpen, setPollOpen] = useState(false);
   const [eventOpen, setEventOpen] = useState(false);
   const [stickerOpen, setStickerOpen] = useState(false);
-  const [gifOpen, setGifOpen] = useState(false);
+  
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,12 +48,6 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
     setGalleryUrl(null);
   };
 
-  const handleGallerySelect = (url: string) => {
-    setGalleryUrl(url);
-    setImagePreview(url);
-    setImageFile(null);
-    setAttachOpen(false);
-  };
 
   const handleSend = async () => {
     if ((!input.trim() && !imageFile && !galleryUrl) || sending) return;
@@ -106,13 +97,11 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
 
   const attachActions = [
     { icon: Camera, label: "Camera", gradient: "from-[hsl(var(--us-coral))] to-[hsl(var(--us-terracotta))]", onClick: () => { setAttachOpen(false); setTimeout(() => cameraInputRef.current?.click(), 100); } },
-    { icon: Images, label: "Gallery", gradient: "from-[hsl(var(--us-sage))] to-[hsl(145,30%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setGalleryOpen(true), 100); } },
     { icon: Paperclip, label: "Photo", gradient: "from-[hsl(var(--us-navy))] to-[hsl(220,40%,35%)]", onClick: () => { setAttachOpen(false); setTimeout(() => fileInputRef.current?.click(), 100); } },
     { icon: MapPin, label: "Location", gradient: "from-[hsl(var(--us-coral))] to-[hsl(0,60%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setLocationOpen(true), 100); } },
     { icon: BarChart3, label: "Poll", gradient: "from-[hsl(var(--us-gold))] to-[hsl(30,70%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setPollOpen(true), 100); } },
     { icon: CalendarPlus, label: "Event", gradient: "from-[hsl(var(--us-blush))] to-[hsl(350,50%,55%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setEventOpen(true), 100); } },
     { icon: Smile, label: "Stickers", gradient: "from-[hsl(40,80%,55%)] to-[hsl(30,90%,50%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setStickerOpen(true), 100); } },
-    { icon: Film, label: "GIF", gradient: "from-[hsl(270,60%,55%)] to-[hsl(290,50%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setGifOpen(true), 100); } },
   ];
 
   return (
@@ -268,12 +257,10 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
         </div>
       </div>
 
-      <GalleryPicker open={galleryOpen} onClose={() => setGalleryOpen(false)} onSelect={handleGallerySelect} />
       <LocationComposer open={locationOpen} onClose={() => setLocationOpen(false)} onSend={(data) => onSendSpecial?.("location", data)} />
       <PollComposer open={pollOpen} onClose={() => setPollOpen(false)} onSend={(data) => onSendSpecial?.("poll", data)} />
       <EventComposer open={eventOpen} onClose={() => setEventOpen(false)} onSend={(data) => onSendSpecial?.("event", data)} />
       <StickerPicker open={stickerOpen} onClose={() => setStickerOpen(false)} onSelect={(sticker) => onSendSpecial?.("sticker", { emoji: sticker })} />
-      <GifPicker open={gifOpen} onClose={() => setGifOpen(false)} onSelect={(url) => onSendSpecial?.("gif", { url })} />
     </div>
   );
 };
