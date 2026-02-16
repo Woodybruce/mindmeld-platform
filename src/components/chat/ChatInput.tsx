@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile } from "lucide-react";
+import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Instagram } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import LocationComposer from "./LocationComposer";
 import PollComposer from "./PollComposer";
@@ -9,12 +9,13 @@ import StickerPicker from "./StickerPicker";
 interface ChatInputProps {
   onSend: (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => Promise<void>;
   onSendSpecial?: (type: string, data: any) => Promise<void>;
+  onSaveInstagramLink?: (url: string) => void;
   sending: boolean;
   replyingTo?: { id: string; content: string; senderName: string } | null;
   onCancelReply?: () => void;
 }
 
-const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }: ChatInputProps) => {
+const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyingTo, onCancelReply }: ChatInputProps) => {
   const [input, setInput] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -24,6 +25,8 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
   const [pollOpen, setPollOpen] = useState(false);
   const [eventOpen, setEventOpen] = useState(false);
   const [stickerOpen, setStickerOpen] = useState(false);
+  const [instagramOpen, setInstagramOpen] = useState(false);
+  const [instagramUrl, setInstagramUrl] = useState("");
   
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -102,6 +105,7 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
     { icon: BarChart3, label: "Poll", gradient: "from-[hsl(var(--us-gold))] to-[hsl(30,70%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setPollOpen(true), 100); } },
     { icon: CalendarPlus, label: "Event", gradient: "from-[hsl(var(--us-blush))] to-[hsl(350,50%,55%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setEventOpen(true), 100); } },
     { icon: Smile, label: "Stickers", gradient: "from-[hsl(40,80%,55%)] to-[hsl(30,90%,50%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setStickerOpen(true), 100); } },
+    { icon: Instagram, label: "Instagram", gradient: "from-[hsl(330,70%,55%)] to-[hsl(30,90%,55%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setInstagramOpen(true), 100); } },
   ];
 
   return (
@@ -261,6 +265,65 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
       <PollComposer open={pollOpen} onClose={() => setPollOpen(false)} onSend={(data) => onSendSpecial?.("poll", data)} />
       <EventComposer open={eventOpen} onClose={() => setEventOpen(false)} onSend={(data) => onSendSpecial?.("event", data)} />
       <StickerPicker open={stickerOpen} onClose={() => setStickerOpen(false)} onSelect={(sticker) => onSendSpecial?.("sticker", { emoji: sticker })} />
+
+      {/* Instagram link composer */}
+      <AnimatePresence>
+        {instagramOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm flex items-end justify-center"
+            onClick={() => setInstagramOpen(false)}
+          >
+            <motion.div
+              initial={{ y: 200 }}
+              animate={{ y: 0 }}
+              exit={{ y: 200 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full max-w-lg bg-card rounded-t-3xl border border-border/50 p-5 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-semibold text-foreground flex items-center gap-2">
+                  <Instagram className="w-5 h-5 text-[hsl(330,70%,55%)]" /> Save Instagram Link
+                </h3>
+                <button onClick={() => setInstagramOpen(false)} className="p-1.5 rounded-full hover:bg-secondary">
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">Paste an Instagram post or reel URL to save it to your shared links</p>
+              <input
+                autoFocus
+                type="url"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && instagramUrl.trim()) {
+                    onSaveInstagramLink?.(instagramUrl.trim());
+                    setInstagramUrl("");
+                    setInstagramOpen(false);
+                  }
+                }}
+                placeholder="https://www.instagram.com/p/..."
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <button
+                onClick={() => {
+                  if (!instagramUrl.trim()) return;
+                  onSaveInstagramLink?.(instagramUrl.trim());
+                  setInstagramUrl("");
+                  setInstagramOpen(false);
+                }}
+                disabled={!instagramUrl.trim()}
+                className="w-full rounded-xl bg-gradient-to-r from-[hsl(330,70%,55%)] to-[hsl(30,90%,55%)] py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Save to Shared Links
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
