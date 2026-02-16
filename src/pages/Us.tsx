@@ -192,18 +192,18 @@ const Us = () => {
       )}
 
       <Tabs defaultValue={defaultTab} className="px-4 pt-3 pb-24">
-        <TabsList className="flex flex-wrap h-auto bg-secondary gap-1 p-1">
-            <TabsTrigger value="lists" className="gap-1 text-xs data-[state=active]:bg-card">
-              <ListChecks className="w-3.5 h-3.5" /> Lists
+        <TabsList className="flex flex-wrap h-auto bg-secondary gap-1 p-1.5 rounded-2xl">
+            <TabsTrigger value="lists" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
+              <ListChecks className="w-4 h-4" /> Lists
             </TabsTrigger>
-            <TabsTrigger value="quizzes" className="gap-1 text-xs data-[state=active]:bg-card">
-              <Sparkles className="w-3.5 h-3.5" /> Quizzes
+            <TabsTrigger value="quizzes" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
+              <Sparkles className="w-4 h-4" /> Quizzes
             </TabsTrigger>
-            <TabsTrigger value="games" className="gap-1 text-xs data-[state=active]:bg-card">
-              <Gamepad2 className="w-3.5 h-3.5" /> Games
+            <TabsTrigger value="games" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
+              <Gamepad2 className="w-4 h-4" /> Games
             </TabsTrigger>
-            <TabsTrigger value="photos" className="gap-1 text-xs data-[state=active]:bg-card">
-              <Camera className="w-3.5 h-3.5" /> Photos
+            <TabsTrigger value="photos" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
+              <Camera className="w-4 h-4" /> Photos
             </TabsTrigger>
           </TabsList>
 
