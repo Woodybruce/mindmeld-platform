@@ -19,7 +19,7 @@ import type { UserList } from "@/components/connect/SharedLists";
 import OurPhotos from "@/components/connect/OurPhotos";
 import OurEvents from "@/components/connect/OurEvents";
 import GratitudeJournal from "@/components/connect/GratitudeJournal";
-import PartnerAvatarUpload from "@/components/connect/PartnerAvatarUpload";
+
 
 import SharedFileManager from "@/components/connect/SharedFileManager";
 import { quizDefinitions, generateActionItems } from "@/data/quizData";
@@ -306,14 +306,6 @@ const Us = () => {
 
         {/* Admin — Events, Photos & Files */}
         <TabsContent value="admin" className="mt-4 space-y-6">
-          {/* Partner Avatar */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Camera className="w-4 h-4 text-us-coral" />
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Partner Photo</p>
-            </div>
-            <PartnerAvatarUpload />
-          </div>
 
           <div className="border-t border-border/50 pt-4 space-y-3">
             <div className="flex items-center gap-2">
