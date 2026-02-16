@@ -33,6 +33,8 @@ export interface UserList {
   template?: string;
   /** Maximum number of items allowed */
   maxItems?: number;
+  /** Whether AI suggestions are available */
+  aiSuggestable?: boolean;
   /** For checklist quizzes: score sections stored separately */
   scoreData?: {
     sections: { title: string; items: { id: string; text: string; type: string; choices?: string[] }[] }[];
@@ -166,6 +168,37 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
         );
         onUpdate(updated);
         toast({ title: "Dreams suggested ✨", description: `${newItems.length} dreams added` });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Couldn't generate suggestions", description: "Please try again shortly.", variant: "destructive" });
+    } finally {
+      setSuggestingFor(null);
+    }
+  };
+
+  const suggestTasks = async (listId: string) => {
+    setSuggestingFor(listId);
+    try {
+      const list = lists.find((l) => l.id === listId);
+      const existingItems = list?.items.map((i) => i.text) || [];
+
+      const { data, error } = await supabase.functions.invoke("suggest-tasks", {
+        body: { existingItems, listName: list?.name || "Daily To-Do" },
+      });
+
+      if (error) throw error;
+      if (data?.tasks) {
+        const newItems = data.tasks.map((t: { text: string }, i: number) => ({
+          id: `task-${Date.now()}-${i}`,
+          text: t.text,
+          done: false,
+        }));
+        const updated = lists.map((l) =>
+          l.id === listId ? { ...l, items: [...l.items, ...newItems] } : l
+        );
+        onUpdate(updated);
+        toast({ title: "Tasks suggested ✨", description: `${newItems.length} items added` });
       }
     } catch (e) {
       console.error(e);
@@ -554,6 +587,21 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
                       ) : (
                         <><Sparkles className="w-3.5 h-3.5" /> Suggest dreams with AI</>
+                      )}
+                    </button>
+                  )}
+
+                  {/* AI Suggest button for suggestable lists (e.g. daily to-do) */}
+                  {list.aiSuggestable && !list.maxItems && (
+                    <button
+                      onClick={() => suggestTasks(list.id)}
+                      disabled={suggestingFor === list.id}
+                      className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent/50 py-2 mt-2 text-xs font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                    >
+                      {suggestingFor === list.id ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
+                      ) : (
+                        <><Sparkles className="w-3.5 h-3.5" /> Suggest tasks with AI</>
                       )}
                     </button>
                   )}
