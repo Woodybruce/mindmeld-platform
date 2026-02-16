@@ -39,7 +39,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get user from JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Unauthorized" }, 401);
 
@@ -49,6 +48,12 @@ Deno.serve(async (req) => {
 
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) return json({ error: "Unauthorized" }, 401);
+
+    // Parse body for mode and selected events
+    let body: any = {};
+    try { body = await req.json(); } catch { /* empty body is fine for preview */ }
+
+    const mode = body.mode || "preview"; // "preview" or "import"
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -63,7 +68,7 @@ Deno.serve(async (req) => {
       return json({ error: "no_microsoft_token" }, 400);
     }
 
-    // Refresh the access token
+    // Refresh the access token if expired
     let accessToken = tokenRow.access_token;
     const expiresAt = new Date(tokenRow.expires_at);
 
@@ -74,7 +79,6 @@ Deno.serve(async (req) => {
       }
       accessToken = refreshResult.access_token;
 
-      // Update stored tokens
       await admin.from("microsoft_tokens").update({
         access_token: refreshResult.access_token,
         refresh_token: refreshResult.refresh_token || tokenRow.refresh_token,
@@ -83,12 +87,47 @@ Deno.serve(async (req) => {
       }).eq("user_id", user.id);
     }
 
-    // Fetch calendar events from Microsoft Graph (next 30 days)
+    // ── IMPORT MODE: insert selected events ──
+    if (mode === "import" && Array.isArray(body.events)) {
+      const rows = body.events.map((e: any) => ({
+        user_id: user.id,
+        subject: e.subject || "Untitled",
+        start_time: e.start_time,
+        end_time: e.end_time,
+        is_all_day: e.is_all_day || false,
+        location: e.location || null,
+        source: "outlook",
+      }));
+
+      // Dedupe against existing
+      const { data: existing } = await admin
+        .from("calendar_events")
+        .select("subject, start_time")
+        .eq("user_id", user.id)
+        .eq("source", "outlook");
+
+      const existingSet = new Set(
+        (existing || []).map((e: any) => `${e.subject}|${e.start_time}`)
+      );
+
+      const newRows = rows.filter(
+        (r: any) => !existingSet.has(`${r.subject}|${r.start_time}`)
+      );
+
+      if (newRows.length > 0) {
+        const { error: insertError } = await admin.from("calendar_events").insert(newRows);
+        if (insertError) throw insertError;
+      }
+
+      return json({ success: true, count: newRows.length });
+    }
+
+    // ── PREVIEW MODE: fetch and return events ──
     const now = new Date();
     const future = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const graphRes = await fetch(
-      `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${now.toISOString()}&endDateTime=${future.toISOString()}&$top=50&$orderby=start/dateTime`,
+      `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${now.toISOString()}&endDateTime=${future.toISOString()}&$top=50&$orderby=start/dateTime&$select=subject,start,end,isAllDay,location,attendees`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
@@ -103,22 +142,22 @@ Deno.serve(async (req) => {
     const graphData = await graphRes.json();
     const outlookEvents = graphData.value || [];
 
-    if (outlookEvents.length === 0) {
-      return json({ success: true, count: 0, message: "No upcoming events found" });
+    // Get partner's email to flag shared events
+    let partnerEmail: string | null = null;
+    const { data: profileData } = await admin
+      .from("profiles")
+      .select("partner_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileData?.partner_id) {
+      // Get partner's email from auth.users via admin
+      const { data: { users } } = await admin.auth.admin.listUsers();
+      const partner = users?.find((u: any) => u.id === profileData.partner_id);
+      if (partner?.email) partnerEmail = partner.email.toLowerCase();
     }
 
-    // Map to our calendar_events format
-    const rows = outlookEvents.map((e: any) => ({
-      user_id: user.id,
-      subject: e.subject || "Untitled",
-      start_time: e.start?.dateTime ? new Date(e.start.dateTime + "Z").toISOString() : now.toISOString(),
-      end_time: e.end?.dateTime ? new Date(e.end.dateTime + "Z").toISOString() : now.toISOString(),
-      is_all_day: e.isAllDay || false,
-      location: e.location?.displayName || null,
-      source: "outlook",
-    }));
-
-    // Upsert — avoid duplicates by checking existing events with same subject + start_time + source
+    // Check which events are already imported
     const { data: existing } = await admin
       .from("calendar_events")
       .select("subject, start_time")
@@ -129,16 +168,26 @@ Deno.serve(async (req) => {
       (existing || []).map((e: any) => `${e.subject}|${e.start_time}`)
     );
 
-    const newRows = rows.filter(
-      (r: any) => !existingSet.has(`${r.subject}|${r.start_time}`)
-    );
+    const events = outlookEvents.map((e: any) => {
+      const startTime = e.start?.dateTime ? new Date(e.start.dateTime + "Z").toISOString() : now.toISOString();
+      const endTime = e.end?.dateTime ? new Date(e.end.dateTime + "Z").toISOString() : now.toISOString();
+      const attendees = (e.attendees || []).map((a: any) => a.emailAddress?.address?.toLowerCase()).filter(Boolean);
+      const partnerInvited = partnerEmail ? attendees.includes(partnerEmail) : false;
+      const alreadyImported = existingSet.has(`${e.subject || "Untitled"}|${startTime}`);
 
-    if (newRows.length > 0) {
-      const { error: insertError } = await admin.from("calendar_events").insert(newRows);
-      if (insertError) throw insertError;
-    }
+      return {
+        subject: e.subject || "Untitled",
+        start_time: startTime,
+        end_time: endTime,
+        is_all_day: e.isAllDay || false,
+        location: e.location?.displayName || null,
+        partner_invited: partnerInvited,
+        already_imported: alreadyImported,
+        attendees,
+      };
+    });
 
-    return json({ success: true, count: newRows.length, total: outlookEvents.length });
+    return json({ events, partner_email: partnerEmail ? "found" : null });
   } catch (err) {
     console.error("Outlook sync error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
