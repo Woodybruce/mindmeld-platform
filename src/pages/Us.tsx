@@ -58,7 +58,32 @@ const fileIcon = (type: string) => {
   }
 };
 
-const defaultLists: UserList[] = [];
+const defaultLists: UserList[] = [
+  {
+    id: "onenote-together",
+    name: "Our Together List",
+    icon: "💑",
+    createdAt: "2026-01-04T15:30:00.000Z",
+    items: [
+      // Our top 3 things we should do together
+      { id: "top-1", text: "Date night every week", done: false },
+      { id: "top-2", text: "Go away once every month together", done: false },
+      // Things we would like to do together
+      { id: "act-1", text: "Dancing", done: false },
+      { id: "act-2", text: "Go see an act", done: false },
+      { id: "act-3", text: "Paint / draw each other", done: false },
+      { id: "act-4", text: "Pottery class together", done: false },
+      { id: "act-5", text: "Go to 2 art Galleries", done: false },
+      // Trips we want to do
+      { id: "trip-1", text: "Scottish Lakes", done: false },
+      { id: "trip-2", text: "Amalfi coast", done: false },
+      { id: "trip-3", text: "Colondor hotel", done: false },
+      { id: "trip-4", text: "Amsterdam", done: false },
+      { id: "trip-5", text: "Scotland lake house", done: false },
+      { id: "trip-6", text: "Comporta Portugal", done: false },
+    ],
+  },
+];
 
 const seedCompletedQuizzes = (): CompletedQuiz[] => [
   {
