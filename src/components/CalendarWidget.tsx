@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useLocalCalendar } from "@/hooks/useLocalCalendar";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 
 const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -11,7 +11,7 @@ const eventColors = [
 ];
 
 const CalendarWidget = () => {
-  const { getEventsForMonth, getUpcomingEvents } = useLocalCalendar();
+  const { getEventsForMonth, getUpcomingEvents } = useCalendarEvents();
   const [viewDate, setViewDate] = useState(new Date());
 
   const year = viewDate.getFullYear();
@@ -35,7 +35,7 @@ const CalendarWidget = () => {
   // Map events to days
   const dayEventsMap = new Map<number, typeof monthEvents>();
   monthEvents.forEach((e) => {
-    const day = new Date(e.start).getDate();
+    const day = new Date(e.start_time).getDate();
     const existing = dayEventsMap.get(day) || [];
     existing.push(e);
     dayEventsMap.set(day, existing);
@@ -111,7 +111,7 @@ const CalendarWidget = () => {
         <div className="px-4 pb-4 space-y-2 border-t border-border/50 pt-3">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Upcoming</p>
           {upcoming.map((event, idx) => {
-            const startDate = new Date(event.start);
+            const startDate = new Date(event.start_time);
             const dayStr = startDate.toLocaleDateString("default", { month: "short", day: "numeric" });
             const isEventToday = startDate.toDateString() === today.toDateString();
             return (
