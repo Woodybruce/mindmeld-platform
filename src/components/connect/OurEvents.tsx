@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Plus, MapPin, Clock, Trash2 } from "lucide-react";
 import { useLocalCalendar, type LocalEvent } from "@/hooks/useLocalCalendar";
+import LocationAutocomplete from "@/components/ui/LocationAutocomplete";
 
 const OurEvents = () => {
   const { events, addEvent, deleteEvent } = useLocalCalendar();
@@ -83,11 +84,11 @@ const OurEvents = () => {
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <input
+          <LocationAutocomplete
             value={newLocation}
-            onChange={(e) => setNewLocation(e.target.value)}
-            placeholder="Location (optional)"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            onChange={setNewLocation}
+            placeholder="Search location (optional)"
+            className="rounded-lg border border-border bg-background pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <div className="flex gap-2">
             <button

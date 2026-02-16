@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, CalendarPlus } from "lucide-react";
 import { motion } from "framer-motion";
+import LocationAutocomplete from "@/components/ui/LocationAutocomplete";
 
 interface EventComposerProps {
   open: boolean;
@@ -83,12 +84,11 @@ const EventComposer = ({ open, onClose, onSend }: EventComposerProps) => {
           </div>
         </div>
 
-        <input
-          type="text"
+        <LocationAutocomplete
           value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Location (optional)"
-          className="w-full bg-secondary/60 border border-border/30 rounded-2xl px-4 py-3 text-[14px] text-foreground outline-none placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20"
+          onChange={setLocation}
+          placeholder="Search location (optional)"
+          className="bg-secondary/60 border border-border/30 rounded-2xl pr-4 py-3 text-[14px] text-foreground outline-none placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20"
         />
 
         <button
