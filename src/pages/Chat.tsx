@@ -118,6 +118,15 @@ const Chat = () => {
     return supabase.storage.from("voice-notes").getPublicUrl(path).data.publicUrl;
   };
 
+  const handleDelete = useCallback(async (msgId: string) => {
+    const { error } = await supabase.from("messages").delete().eq("id", msgId);
+    if (error) {
+      toast.error("Failed to delete message");
+    } else {
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    }
+  }, []);
+
 
   const handleSend = async (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => {
     if (!user || !partnerId || sending) return;
@@ -369,6 +378,7 @@ const Chat = () => {
                     onPollVote={handlePollVote}
                     onSavePollToList={handleSavePollToList}
                     onSaveEventToCalendar={handleSaveEventToCalendar}
+                    onDelete={handleDelete}
                     userId={user.id}
                   />
                 );
