@@ -1,13 +1,12 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Gamepad2, Camera, FolderOpen, ChevronRight,
+  Gamepad2, Camera, ChevronRight,
 } from "lucide-react";
 
 const links = [
   { label: "Games", icon: Gamepad2, tab: "games", gradient: "from-us-sage to-emerald-500" },
   { label: "Photos", icon: Camera, tab: "photos", gradient: "from-us-blush to-pink-400" },
-  { label: "Admin", icon: FolderOpen, tab: "admin", gradient: "from-us-navy to-blue-600" },
 ];
 
 const QuickLinks = () => {
@@ -24,7 +23,7 @@ const QuickLinks = () => {
         <p className="text-xs text-muted-foreground mt-0.5">Quick access to all your shared sections</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 px-3 pb-3">
+      <div className="grid grid-cols-2 gap-2 px-3 pb-3">
         {links.map((link, i) => (
           <button
             key={link.tab}
