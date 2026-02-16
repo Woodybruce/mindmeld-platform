@@ -256,6 +256,15 @@ const Us = () => {
         {/* Quizzes */}
         <TabsContent value="quizzes" className="mt-4 space-y-3">
           <p className="text-sm font-bold text-foreground">How well do you really know each other?</p>
+          <QuizCard
+            title="Family Quiz"
+            description="Enter your children's names & ages, pick categories, and AI builds your family to-do list."
+            emoji="👨‍👩‍👧‍👦"
+            duration="5 min"
+            questions={6}
+            gradient="bg-gradient-to-br from-us-sage/20 to-us-gold/15"
+            onClick={() => navigate("/family-quiz")}
+          />
           {checklistQuizzes.map((cq, i) => (
             <QuizCard
               key={cq.id}
