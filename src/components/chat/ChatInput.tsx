@@ -105,7 +105,7 @@ const ChatInput = ({ onSend, onSendSpecial, sending, replyingTo, onCancelReply }
   ];
 
   return (
-    <div className="fixed bottom-[60px] left-0 right-0 z-40">
+    <div className="fixed bottom-0 left-0 right-0 z-40">
       {/* Attachment backdrop */}
       <AnimatePresence>
         {attachOpen && (
