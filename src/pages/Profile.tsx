@@ -22,6 +22,7 @@ const Profile = () => {
   const [copied, setCopied] = useState(false);
   const [generatingToken, setGeneratingToken] = useState(false);
   const [syncingOutlook, setSyncingOutlook] = useState(false);
+  const [outlookConnected, setOutlookConnected] = useState<boolean | null>(null);
 
   const quizCount = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("completedQuizzes") || "[]").length; } catch { return 0; }
@@ -30,7 +31,6 @@ const Profile = () => {
     try { return JSON.parse(localStorage.getItem("userLists") || "[]").length; } catch { return 0; }
   }, []);
 
-  // Load phone number directly from DB (not from typed profile)
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("*").eq("id", user.id).single()
@@ -39,7 +39,34 @@ const Profile = () => {
           setPhoneNumber((data as any).phone_number);
         }
       });
+    // Check if Outlook is connected
+    supabase.from("microsoft_tokens").select("id").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setOutlookConnected(!!data));
   }, [user]);
+
+  const connectOutlook = async () => {
+    const redirectUri = `${window.location.origin}/outlook-callback`;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/microsoft-auth-url?redirect_uri=${encodeURIComponent(redirectUri)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+      const result = await res.json();
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        toast.error("Failed to get Outlook login URL");
+      }
+    } catch {
+      toast.error("Failed to connect to Outlook");
+    }
+  };
 
   const savePhoneNumber = async () => {
     if (!user) return;
@@ -258,50 +285,63 @@ const Profile = () => {
             </button>
           )}
 
-          {/* Outlook Direct Sync */}
+          {/* Outlook Connection */}
           <div className="mt-4 pt-4 border-t border-border/50">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Direct Outlook Sync</p>
-            <button
-              onClick={async () => {
-                setSyncingOutlook(true);
-                try {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  if (!session) { toast.error("Please sign in first"); return; }
-                  const res = await fetch(
-                    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
-                    {
-                      method: "POST",
-                      headers: {
-                        Authorization: `Bearer ${session.access_token}`,
-                        "Content-Type": "application/json",
-                        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                      },
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Outlook Calendar</p>
+            {outlookConnected === null ? (
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            ) : outlookConnected ? (
+              <div className="space-y-2">
+                <p className="text-sm text-foreground flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Outlook account connected
+                </p>
+                <button
+                  onClick={async () => {
+                    setSyncingOutlook(true);
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession();
+                      if (!session) { toast.error("Please sign in first"); return; }
+                      const res = await fetch(
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
+                        {
+                          method: "POST",
+                          headers: {
+                            Authorization: `Bearer ${session.access_token}`,
+                            "Content-Type": "application/json",
+                            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                          },
+                        }
+                      );
+                      const result = await res.json();
+                      if (result.error) {
+                        toast.error(result.error);
+                      } else {
+                        toast.success(`Synced ${result.count || 0} events from Outlook!`);
+                      }
+                    } catch {
+                      toast.error("Failed to sync Outlook calendar");
+                    } finally {
+                      setSyncingOutlook(false);
                     }
-                  );
-                  const result = await res.json();
-                  if (result.error) {
-                    if (result.error === "no_microsoft_token") {
-                      toast.error("No Outlook account connected. Please connect via Microsoft first.");
-                    } else {
-                      toast.error(result.error);
-                    }
-                  } else {
-                    toast.success(`Synced ${result.count || 0} events from Outlook!`);
-                  }
-                } catch {
-                  toast.error("Failed to sync Outlook calendar");
-                } finally {
-                  setSyncingOutlook(false);
-                }
-              }}
-              disabled={syncingOutlook}
-              className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 ${syncingOutlook ? "animate-spin" : ""}`} />
-              {syncingOutlook ? "Syncing…" : "Sync from Outlook"}
-            </button>
+                  }}
+                  disabled={syncingOutlook}
+                  className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
+                >
+                  <RefreshCw className={`w-4 h-4 ${syncingOutlook ? "animate-spin" : ""}`} />
+                  {syncingOutlook ? "Syncing…" : "Sync Now"}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={connectOutlook}
+                className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
+              >
+                <Calendar className="w-4 h-4" />
+                Connect Outlook Account
+              </button>
+            )}
             <p className="text-[10px] text-muted-foreground mt-1.5">
-              Requires a connected Microsoft account with calendar access.
+              Connect your Microsoft account to sync calendar events automatically.
             </p>
           </div>
         </div>
