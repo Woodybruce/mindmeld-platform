@@ -1,4 +1,5 @@
-import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw } from "lucide-react";
+import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw, Camera } from "lucide-react";
+import PartnerAvatarUpload from "@/components/connect/PartnerAvatarUpload";
 import OutlookEventPicker from "@/components/OutlookEventPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
@@ -145,6 +146,9 @@ const Profile = () => {
             {profile?.partner_id ? "Partner linked ❤️" : "Partner not linked yet"}
           </p>
         </div>
+
+        {/* Partner Photo */}
+        {profile?.partner_id && <PartnerAvatarUpload />}
 
         {/* Link partner by email */}
         {!profile?.partner_id && (
