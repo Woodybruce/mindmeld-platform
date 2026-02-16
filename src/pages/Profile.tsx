@@ -1,8 +1,9 @@
-import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone } from "lucide-react";
+import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
@@ -11,12 +12,16 @@ import { supabase } from "@/integrations/supabase/client";
 const Profile = () => {
   const { user, profile, signOut, linkPartnerByEmail, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { forwardUrl, forwardToken, generateForwardToken } = useCalendarEvents();
   const navigate = useNavigate();
   const [partnerEmail, setPartnerEmail] = useState("");
   const [linking, setLinking] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [generatingToken, setGeneratingToken] = useState(false);
+  const [syncingOutlook, setSyncingOutlook] = useState(false);
 
   const quizCount = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("completedQuizzes") || "[]").length; } catch { return 0; }
@@ -199,6 +204,108 @@ const Profile = () => {
             </button>
           </div>
         </div>
+
+        {/* Calendar Sync */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-display font-semibold text-foreground mb-1 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary" /> Calendar Sync
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            Forward calendar invites from Outlook or Gmail to automatically add events to your shared calendar.
+          </p>
+
+          {forwardUrl ? (
+            <div className="space-y-2">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Your forwarding URL</p>
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={forwardUrl}
+                  className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground font-mono truncate"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(forwardUrl);
+                    setCopied(true);
+                    toast.success("Copied to clipboard!");
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="rounded-lg bg-secondary p-3 mt-2">
+                <p className="text-xs text-muted-foreground">
+                  <strong>Outlook:</strong> Set up an auto-forward rule to send .ics invites to this URL via POST request.{" "}
+                  <strong>Gmail:</strong> Forward .ics invite emails to this address.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={async () => {
+                setGeneratingToken(true);
+                await generateForwardToken();
+                toast.success("Forwarding address created!");
+                setGeneratingToken(false);
+              }}
+              disabled={generatingToken}
+              className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              {generatingToken ? "Creating…" : "Generate Forwarding Address"}
+            </button>
+          )}
+
+          {/* Outlook Direct Sync */}
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Direct Outlook Sync</p>
+            <button
+              onClick={async () => {
+                setSyncingOutlook(true);
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) { toast.error("Please sign in first"); return; }
+                  const res = await fetch(
+                    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
+                    {
+                      method: "POST",
+                      headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                        "Content-Type": "application/json",
+                        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                      },
+                    }
+                  );
+                  const result = await res.json();
+                  if (result.error) {
+                    if (result.error === "no_microsoft_token") {
+                      toast.error("No Outlook account connected. Please connect via Microsoft first.");
+                    } else {
+                      toast.error(result.error);
+                    }
+                  } else {
+                    toast.success(`Synced ${result.count || 0} events from Outlook!`);
+                  }
+                } catch {
+                  toast.error("Failed to sync Outlook calendar");
+                } finally {
+                  setSyncingOutlook(false);
+                }
+              }}
+              disabled={syncingOutlook}
+              className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncingOutlook ? "animate-spin" : ""}`} />
+              {syncingOutlook ? "Syncing…" : "Sync from Outlook"}
+            </button>
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              Requires a connected Microsoft account with calendar access.
+            </p>
+          </div>
+        </div>
+
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="font-display font-semibold text-foreground mb-3 flex items-center gap-2">
             <Heart className="w-4 h-4 text-us-coral" /> Relationship Stats

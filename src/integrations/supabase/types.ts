@@ -172,6 +172,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          calendar_forward_token: string | null
           created_at: string
           id: string
           partner_code: string | null
@@ -181,6 +182,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          calendar_forward_token?: string | null
           created_at?: string
           id: string
           partner_code?: string | null
@@ -190,6 +192,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          calendar_forward_token?: string | null
           created_at?: string
           id?: string
           partner_code?: string | null
