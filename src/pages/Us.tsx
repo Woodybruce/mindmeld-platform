@@ -217,7 +217,7 @@ const Us = () => {
           {completedQuizzes.length > 0 && (
             <>
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quiz Results</p>
+                <p className="text-sm font-bold text-foreground uppercase tracking-wider">Quiz Results</p>
                 <span className="flex items-center gap-1 text-xs text-primary font-medium">
                   <Trophy className="w-3.5 h-3.5" /> {completedQuizzes.length} done
                 </span>
@@ -229,7 +229,7 @@ const Us = () => {
 
         {/* Quizzes */}
         <TabsContent value="quizzes" className="mt-4 space-y-3">
-          <p className="text-sm text-muted-foreground">How well do you really know each other?</p>
+          <p className="text-sm font-bold text-foreground">How well do you really know each other?</p>
           {checklistQuizzes.map((cq, i) => (
             <QuizCard
               key={cq.id}
@@ -257,7 +257,7 @@ const Us = () => {
             />
           ))}
           <div className="pt-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
+            <p className="text-sm font-bold text-foreground uppercase tracking-wider mb-3">Multiple Choice</p>
           </div>
           {quizCards.map((quiz, i) => (
             <QuizCard key={quiz.title} {...quiz} onClick={() => navigate(`/quiz/${quiz.id}`)} delay={i * 0.08} />
@@ -266,7 +266,7 @@ const Us = () => {
 
           {/* Gratitude & Love Languages */}
           <div className="pt-4 border-t border-border/50 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gratitude & Connection</p>
+            <p className="text-sm font-bold text-foreground uppercase tracking-wider">Gratitude & Connection</p>
             <GratitudeJournal />
 
             <motion.button
@@ -289,7 +289,7 @@ const Us = () => {
 
         {/* Games */}
         <TabsContent value="games" className="mt-4 space-y-3">
-          <p className="text-sm text-muted-foreground">Fun activities to play together</p>
+          <p className="text-sm font-bold text-foreground">Fun activities to play together</p>
           <GameCard title="Kiss Chase" description="Chase each other in real life using GPS!" emoji="💋" players="2 players · Outdoors" gradient="bg-gradient-to-br from-us-coral/15 to-us-blush/25" onClick={() => navigate("/kiss-chase")} delay={0} />
           <GameCard title="Truth or Dare" description="Couples edition with spicy and sweet options." emoji="🎯" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-gold/15 to-us-cream/30" onClick={() => navigate("/truth-or-dare")} delay={0.08} />
           <GameCard title="Would You Rather" description="Impossible choices, hilarious debates." emoji="🤔" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-sage/15 to-us-cream/30" onClick={() => navigate("/would-you-rather")} delay={0.16} />
@@ -307,7 +307,7 @@ const Us = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-us-gold" />
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Events & Calendar</p>
+              <p className="text-sm font-bold text-foreground uppercase tracking-wider">Events & Calendar</p>
             </div>
             <OurEvents />
           </div>
@@ -315,7 +315,7 @@ const Us = () => {
           <div className="border-t border-border/50 pt-4 space-y-3">
             <div className="flex items-center gap-2">
               <FolderOpen className="w-4 h-4 text-us-navy" />
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Shared Files</p>
+              <p className="text-sm font-bold text-foreground uppercase tracking-wider">Shared Files</p>
             </div>
             <SharedFileManager />
           </div>
