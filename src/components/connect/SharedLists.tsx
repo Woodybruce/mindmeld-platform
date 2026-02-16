@@ -81,6 +81,8 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   const [showCompleted, setShowCompleted] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachingItemId, setAttachingItemId] = useState<{ listId: string; itemId: string } | null>(null);
+  const [eventPickerItem, setEventPickerItem] = useState<{ listId: string; itemId: string } | null>(null);
+  const [eventDate, setEventDate] = useState("");
 
   const createFromTemplate = (templateId: string) => {
     const t = templates.find((t) => t.id === templateId)!;
@@ -401,25 +403,70 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                           <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
                         </button>
                         <button
+                          onClick={() => setEventPickerItem(
+                            eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id
+                              ? null
+                              : { listId: list.id, itemId: item.id }
+                          )}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                          title="Create event"
+                        >
+                          <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                        </button>
+                        <button
                           onClick={() => removeItem(list.id, item.id)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                         </button>
                       </div>
+
+                      {/* Inline event date picker */}
+                      {eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id && (
+                        <div className="flex items-center gap-2 pl-7 mt-1.5">
+                          <input
+                            type="datetime-local"
+                            value={eventDate}
+                            onChange={(e) => setEventDate(e.target.value)}
+                            className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                          <button
+                            onClick={() => {
+                              if (!eventDate) return;
+                              addAttachment(list.id, item.id, {
+                                type: "event",
+                                name: item.text,
+                                date: eventDate,
+                              });
+                              setEventPickerItem(null);
+                              setEventDate("");
+                            }}
+                            className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                          >
+                            Add
+                          </button>
+                          <button
+                            onClick={() => { setEventPickerItem(null); setEventDate(""); }}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
                       {/* Attachments */}
                       {item.attachments && item.attachments.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 pl-7 mt-1">
                           {item.attachments.map((att, ai) => (
                             <a
                               key={ai}
-                              href={att.url}
+                              href={att.type === "event" ? undefined : att.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                             >
-                              {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
-                              {att.name || "Attachment"}
+                              {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
+                              {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}
                             </a>
                           ))}
                         </div>
