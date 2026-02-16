@@ -90,7 +90,7 @@ const ChatBubble = ({
       ) : (
       <div className={`relative max-w-[80%] rounded-[18px] overflow-hidden shadow-sm ${
         isMine
-          ? "bg-[hsl(var(--us-navy))] text-primary-foreground rounded-br-[4px]"
+          ? "bg-[hsl(var(--us-navy))] text-white rounded-br-[4px]"
           : "bg-card text-foreground border border-border/40 rounded-bl-[4px]"
       }`}>
         {/* Quoted reply */}
