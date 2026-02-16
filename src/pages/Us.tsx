@@ -83,6 +83,14 @@ const defaultLists: UserList[] = [
       { id: "trip-6", text: "Comporta Portugal", done: false },
     ],
   },
+  {
+    id: "dream-list",
+    name: "Our Long-Term Dreams",
+    icon: "🌟",
+    createdAt: "2026-01-04T15:30:00.000Z",
+    maxItems: 5,
+    items: [],
+  },
 ];
 
 const seedCompletedQuizzes = (): CompletedQuiz[] => [
