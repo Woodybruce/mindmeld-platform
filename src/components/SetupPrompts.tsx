@@ -53,6 +53,14 @@ const setupItems: SetupItem[] = [
     action: "/profile",
     checkKey: "us-avatar-set",
   },
+  {
+    id: "chat",
+    emoji: "💬",
+    title: "Send your first message",
+    description: "Start chatting with your partner",
+    action: "/chat",
+    checkKey: "us-chat-started",
+  },
 ];
 
 const DISMISSED_KEY = "setup-prompts-dismissed";
