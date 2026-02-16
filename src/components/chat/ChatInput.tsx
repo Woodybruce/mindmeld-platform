@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Instagram } from "lucide-react";
+import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Instagram, ExternalLink } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import LocationComposer from "./LocationComposer";
 import PollComposer from "./PollComposer";
@@ -292,9 +292,18 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">Paste an Instagram post or reel URL to save it to your shared links</p>
+              <p className="text-xs text-muted-foreground">Browse Instagram, copy a link, then paste it here to save</p>
+              
+              <a
+                href="https://www.instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full rounded-xl border border-border bg-secondary py-3 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" /> Open Instagram
+              </a>
+
               <input
-                autoFocus
                 type="url"
                 value={instagramUrl}
                 onChange={(e) => setInstagramUrl(e.target.value)}
@@ -305,7 +314,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                     setInstagramOpen(false);
                   }
                 }}
-                placeholder="https://www.instagram.com/p/..."
+                placeholder="Paste link here…"
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               <button
