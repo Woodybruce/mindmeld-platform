@@ -20,6 +20,7 @@ import TruthOrDare from "./pages/TruthOrDare";
 import WouldYouRather from "./pages/WouldYouRather";
 import PhotoChallenge from "./pages/PhotoChallenge";
 import Auth from "./pages/Auth";
+import OutlookCallback from "./pages/OutlookCallback";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/would-you-rather" element={<AuthGuard><WouldYouRather /></AuthGuard>} />
               <Route path="/photo-challenge" element={<AuthGuard><PhotoChallenge /></AuthGuard>} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/outlook-callback" element={<OutlookCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
