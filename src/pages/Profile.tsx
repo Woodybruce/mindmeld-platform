@@ -1,4 +1,5 @@
 import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw } from "lucide-react";
+import OutlookEventPicker from "@/components/OutlookEventPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +24,7 @@ const Profile = () => {
   const [generatingToken, setGeneratingToken] = useState(false);
   const [syncingOutlook, setSyncingOutlook] = useState(false);
   const [outlookConnected, setOutlookConnected] = useState<boolean | null>(null);
+  const [showEventPicker, setShowEventPicker] = useState(false);
 
   const quizCount = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("completedQuizzes") || "[]").length; } catch { return 0; }
@@ -300,39 +302,11 @@ const Profile = () => {
                   <Check className="w-4 h-4 text-green-500" /> Outlook account connected
                 </p>
                 <button
-                  onClick={async () => {
-                    setSyncingOutlook(true);
-                    try {
-                      const { data: { session } } = await supabase.auth.getSession();
-                      if (!session) { toast.error("Please sign in first"); return; }
-                      const res = await fetch(
-                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
-                        {
-                          method: "POST",
-                          headers: {
-                            Authorization: `Bearer ${session.access_token}`,
-                            "Content-Type": "application/json",
-                            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                          },
-                        }
-                      );
-                      const result = await res.json();
-                      if (result.error) {
-                        toast.error(result.error);
-                      } else {
-                        toast.success(`Synced ${result.count || 0} events from Outlook!`);
-                      }
-                    } catch {
-                      toast.error("Failed to sync Outlook calendar");
-                    } finally {
-                      setSyncingOutlook(false);
-                    }
-                  }}
-                  disabled={syncingOutlook}
-                  className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
+                  onClick={() => setShowEventPicker(true)}
+                  className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
                 >
-                  <RefreshCw className={`w-4 h-4 ${syncingOutlook ? "animate-spin" : ""}`} />
-                  {syncingOutlook ? "Syncing…" : "Sync Now"}
+                  <Calendar className="w-4 h-4" />
+                  Browse & Add Events
                 </button>
               </div>
             ) : (
@@ -397,6 +371,15 @@ const Profile = () => {
       </main>
 
       <BottomNav />
+
+      {showEventPicker && (
+        <OutlookEventPicker
+          onClose={() => setShowEventPicker(false)}
+          onImported={() => {
+            toast.success("Events added to your shared calendar!");
+          }}
+        />
+      )}
     </div>
   );
 };
