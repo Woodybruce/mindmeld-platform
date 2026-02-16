@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import ChatHeader from "@/components/chat/ChatHeader";
@@ -381,6 +382,20 @@ const Chat = () => {
       <ChatInput
         onSend={handleSend}
         onSendSpecial={handleSendSpecial}
+        onSaveInstagramLink={async (url) => {
+          if (!user) return;
+          const { error } = await supabase.from("shared_links").insert({
+            user_id: user.id,
+            url,
+            platform: "Instagram",
+            title: "Instagram Post",
+          });
+          if (error) {
+            toast.error("Failed to save link");
+          } else {
+            toast.success("Saved to shared links! 📸");
+          }
+        }}
         sending={sending}
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
