@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart, Pencil, Search } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart, Pencil, Search, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import SexBucketList from "./SexBucketList";
 
@@ -346,6 +347,27 @@ interface SharedListsProps {
 
 const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, initialExpandedId }: SharedListsProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const addToWeeklyList = async (text: string) => {
+    if (!user) {
+      toast({ title: "Sign in to add to your weekly list" });
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const { error } = await supabase.from("weekly_tasks").insert({
+      user_id: user.id,
+      text,
+      scheduled_date: today,
+      sort_order: 999,
+      source: "list",
+    } as any);
+    if (error) {
+      toast({ title: "Failed to add", description: error.message });
+    } else {
+      toast({ title: "📋 Added to today's weekly list", duration: 2000 });
+    }
+  };
   const [expandedId, setExpandedId] = useState<string | null>(initialExpandedId || null);
   const [newItemText, setNewItemText] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
@@ -1175,6 +1197,13 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                         title="Create event"
                                       >
                                         <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                      </button>
+                                      <button
+                                        onClick={() => addToWeeklyList(item.text)}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                        title="Add to weekly list"
+                                      >
+                                        <ClipboardList className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
                                       </button>
                                       <button
                                         onClick={() => removeItem(list.id, item.id)}
