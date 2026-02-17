@@ -33,8 +33,9 @@ serve(async (req) => {
               content: `You are a product recommendation engine for a couples/relationship app called "Us". 
 Suggest 4 real, purchasable products that couples would love. Mix categories: date night experiences, couple gifts, wellness, home, travel accessories, games, books.
 Each product must feel authentic — use real-sounding brand names, realistic prices in GBP, and compelling short descriptions.
-For productUrl, provide a direct Amazon.co.uk search URL like "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND" so users can find and buy the product. Use the actual product name and brand in the search query.
-Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box"), "imageHint": string (2-3 word search term for a product photo e.g. "candle set", "massage oil", "scratch map"), "productUrl": string (Amazon.co.uk search URL) }`,
+For productUrl, provide a direct Amazon.co.uk search URL like "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND" so users can find and buy the product.
+For imageUrl, provide a REAL, publicly accessible product image URL from the brand's official website, a major retailer CDN, or a well-known product review site. The image must be a direct link to a .jpg, .png, or .webp file that can be embedded in an <img> tag. Do NOT use placeholder services or make up URLs.
+Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box"), "imageHint": string (2-3 word search term), "productUrl": string (Amazon.co.uk search URL), "imageUrl": string (direct product image URL) }`,
             },
             {
               role: "user",
@@ -64,8 +65,9 @@ Return JSON array only, no markdown. Each object: { "name": string, "brand": str
                           affiliateTag: { type: "string" },
                           imageHint: { type: "string" },
                           productUrl: { type: "string" },
+                          imageUrl: { type: "string" },
                         },
-                        required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageHint", "productUrl"],
+                        required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageHint", "productUrl", "imageUrl"],
                         additionalProperties: false,
                       },
                     },
