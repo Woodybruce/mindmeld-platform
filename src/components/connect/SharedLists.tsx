@@ -857,6 +857,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                   {(() => {
                     // Group items by sections (heading + its children)
                     let currentHeadingId: string | null = null;
+                    let nonHeadingIndex = 0;
                     return activeItems.map((item) => {
                       if (item.isHeading) {
                         currentHeadingId = item.id;
@@ -899,15 +900,28 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                       if (query && !item.text.toLowerCase().includes(query)) return null;
 
                       const isEditing = editingItem?.listId === list.id && editingItem?.itemId === item.id;
+                      nonHeadingIndex++;
+                      const itemNumber = list.template === "long-term-goals" ? nonHeadingIndex : null;
 
                       return (
                         <div key={item.id} className="group">
                           <div className="flex items-center gap-2.5">
-                            <button
-                              onClick={() => toggleItem(list.id, item.id)}
-                              className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors border-border hover:border-primary/50"
-                            >
-                            </button>
+                            {itemNumber ? (
+                              <button
+                                onClick={() => toggleItem(list.id, item.id)}
+                                className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 text-[10px] font-bold transition-colors ${
+                                  item.done ? "bg-primary text-primary-foreground" : "border border-border hover:border-primary/50 text-muted-foreground"
+                                }`}
+                              >
+                                {item.done ? <Check className="w-3 h-3" /> : itemNumber}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => toggleItem(list.id, item.id)}
+                                className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors border-border hover:border-primary/50"
+                              >
+                              </button>
+                            )}
                             {isEditing ? (
                               <input
                                 autoFocus
