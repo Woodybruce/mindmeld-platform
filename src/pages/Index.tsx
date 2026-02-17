@@ -20,6 +20,11 @@ import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
 import RecentActivityWidget from "@/components/RecentActivityWidget";
 import InstaFeedWidget from "@/components/InstaFeedWidget";
 import SubstackFeedWidget from "@/components/SubstackFeedWidget";
+import DailyPromptCard from "@/components/DailyPromptCard";
+import MoodCheckinWidget from "@/components/MoodCheckinWidget";
+import AnniversaryCountdown from "@/components/AnniversaryCountdown";
+import StreaksWidget from "@/components/StreaksWidget";
+import PartnerInviteCard from "@/components/PartnerInviteCard";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -68,8 +73,23 @@ const Index = () => {
       <main className="px-3 py-4 space-y-4 pb-24">
         <SetupPrompts />
 
+        {/* Partner invite (only shows if no partner linked) */}
+        <PartnerInviteCard />
+
+        {/* Mood check-in */}
+        <MoodCheckinWidget />
+
         {/* Today's tasks — inline at top */}
         <DailyListsWidget />
+
+        {/* Streaks & milestones */}
+        <StreaksWidget />
+
+        {/* Daily prompt */}
+        <DailyPromptCard />
+
+        {/* Anniversary countdown */}
+        <AnniversaryCountdown />
 
         {/* What's been updated */}
         <RecentActivityWidget />

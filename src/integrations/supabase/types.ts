@@ -257,8 +257,36 @@ export type Database = {
           },
         ]
       }
+      mood_checkins: {
+        Row: {
+          check_date: string
+          created_at: string
+          id: string
+          mood: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          check_date?: string
+          created_at?: string
+          id?: string
+          mood: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          check_date?: string
+          created_at?: string
+          id?: string
+          mood?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          anniversary_date: string | null
           avatar_url: string | null
           calendar_forward_token: string | null
           created_at: string
@@ -270,6 +298,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          anniversary_date?: string | null
           avatar_url?: string | null
           calendar_forward_token?: string | null
           created_at?: string
@@ -281,6 +310,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          anniversary_date?: string | null
           avatar_url?: string | null
           calendar_forward_token?: string | null
           created_at?: string
