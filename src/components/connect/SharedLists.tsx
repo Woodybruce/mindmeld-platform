@@ -99,33 +99,6 @@ const templates = [
     lucideIcon: Heart,
     defaultItems: sexListDefaultItems,
   },
-  {
-    id: "daily",
-    name: "Daily To-Do",
-    icon: "☀️",
-    description: "Tasks for today",
-    gradient: "bg-gradient-to-br from-us-gold/15 to-us-cream/30",
-    lucideIcon: Calendar,
-    defaultItems: ["Morning check-in with partner", "Review shared calendar", "Send a sweet message"],
-  },
-  {
-    id: "long-term",
-    name: "Long-Term Goals",
-    icon: "🎯",
-    description: "Dreams & milestones",
-    gradient: "bg-gradient-to-br from-us-sage/15 to-us-cream/30",
-    lucideIcon: Target,
-    defaultItems: ["Plan a holiday together", "Start a savings goal", "Learn something new as a couple"],
-  },
-  {
-    id: "actions",
-    name: "Action Items",
-    icon: "⚡",
-    description: "Things to get done",
-    gradient: "bg-gradient-to-br from-us-coral/10 to-us-blush/25",
-    lucideIcon: Zap,
-    defaultItems: ["Book restaurant for date night", "Research weekend getaway", "Buy anniversary gift"],
-  },
 ];
 
 interface SharedListsProps {
