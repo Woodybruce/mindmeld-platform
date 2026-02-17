@@ -33,7 +33,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
 
   const sendVibe = (emoji: string, label: string) => {
     setVibeOpen(false);
-    toast({ title: `${emoji} ${label} sent to your partner!` });
+    toast({ title: `${emoji} ${label} sent to your partner!`, duration: 2000 });
   };
 
   return (
