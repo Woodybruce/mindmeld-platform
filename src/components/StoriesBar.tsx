@@ -24,12 +24,12 @@ const StoriesBar = () => {
   ];
 
   return (
-    <div className="flex gap-4 overflow-x-auto px-4 py-3 scrollbar-hide">
+    <div className="flex justify-between px-4 py-3">
       {stories.map((story) => (
         <button
           key={story.id}
           onClick={() => navigate(story.path)}
-          className="flex flex-col items-center gap-1.5 min-w-[60px] group"
+          className="flex flex-col items-center gap-1.5 flex-1 group"
         >
           <div className={`relative w-[62px] h-[62px] rounded-full bg-gradient-to-br ${story.gradient} p-[2.5px] transition-transform duration-200 group-active:scale-95`}>
             <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
