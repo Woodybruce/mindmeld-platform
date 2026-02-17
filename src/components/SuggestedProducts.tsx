@@ -11,6 +11,7 @@ interface Product {
   category: string;
   emoji: string;
   affiliateTag: string;
+  imageHint?: string;
 }
 
 const CATEGORIES = [
@@ -24,11 +25,19 @@ const CATEGORIES = [
 const CACHE_KEY = "suggested-products";
 const CACHE_TTL = 1000 * 60 * 60;
 
+const getProductImage = (hint?: string, fallbackEmoji?: string) => {
+  if (hint) {
+    return `https://source.unsplash.com/200x200/?${encodeURIComponent(hint)}`;
+  }
+  return null;
+};
+
 const SuggestedProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [activeCategory, setActiveCategory] = useState("general");
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   const fetchProducts = async (category: string, force = false) => {
     const cacheKey = `${CACHE_KEY}-${category}`;
@@ -47,6 +56,7 @@ const SuggestedProducts = () => {
     }
 
     setLoading(true);
+    setImgErrors({});
     try {
       const { data, error } = await supabase.functions.invoke("suggest-products", {
         body: { category },
@@ -60,10 +70,10 @@ const SuggestedProducts = () => {
       console.error("Failed to fetch products:", err);
       if (!products.length) {
         setProducts([
-          { name: "Date Night Box", brand: "Cosy Couple Co.", price: "£34.99", description: "Everything you need for the perfect night in", category: "Date Night", emoji: "🕯️", affiliateTag: "date-night-box" },
-          { name: "Couple's Journal", brand: "Papier", price: "£22.00", description: "365 prompts to deepen your connection", category: "Stationery", emoji: "📔", affiliateTag: "couples-journal" },
-          { name: "Massage Oil Set", brand: "Neal's Yard", price: "£28.00", description: "Organic aromatherapy oils for two", category: "Wellness", emoji: "💆", affiliateTag: "massage-set" },
-          { name: "Adventure Scratch Map", brand: "Luckies", price: "£19.99", description: "Track your travels together worldwide", category: "Travel", emoji: "🗺️", affiliateTag: "scratch-map" },
+          { name: "Date Night Box", brand: "Cosy Couple Co.", price: "£34.99", description: "Everything you need for the perfect night in", category: "Date Night", emoji: "🕯️", affiliateTag: "date-night-box", imageHint: "candle gift box" },
+          { name: "Couple's Journal", brand: "Papier", price: "£22.00", description: "365 prompts to deepen your connection", category: "Stationery", emoji: "📔", affiliateTag: "couples-journal", imageHint: "couples journal book" },
+          { name: "Massage Oil Set", brand: "Neal's Yard", price: "£28.00", description: "Organic aromatherapy oils for two", category: "Wellness", emoji: "💆", affiliateTag: "massage-set", imageHint: "massage oil bottles" },
+          { name: "Adventure Scratch Map", brand: "Luckies", price: "£19.99", description: "Track your travels together worldwide", category: "Travel", emoji: "🗺️", affiliateTag: "scratch-map", imageHint: "scratch world map" },
         ]);
       }
     } finally {
@@ -76,6 +86,7 @@ const SuggestedProducts = () => {
 
   const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
+    setImgErrors({});
     fetchProducts(cat);
   };
 
@@ -125,43 +136,65 @@ const SuggestedProducts = () => {
         {(loading && !products.length
           ? Array.from({ length: 4 })
           : products.slice(0, 4)
-        ).map((product, i) => (
-          <motion.button
-            key={product ? (product as Product).affiliateTag : i}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.05 }}
-            onClick={() => {
-              if (product) {
-                // In production, open affiliate link
-              }
-            }}
-            className="group rounded-xl bg-secondary/50 hover:bg-secondary p-3 text-left transition-all hover:shadow-sm"
-          >
-            {product ? (
-              <>
-                <div className="flex items-start justify-between mb-1.5">
-                  <span className="text-xl">{(product as Product).emoji}</span>
-                  <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        ).map((product, i) => {
+          const p = product as Product | undefined;
+          const imageUrl = p ? getProductImage(p.imageHint) : null;
+          const showFallback = !imageUrl || imgErrors[p?.affiliateTag || ""];
+
+          return (
+            <motion.button
+              key={p ? p.affiliateTag : i}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.05 }}
+              onClick={() => {
+                if (p) {
+                  // In production, open affiliate link
+                }
+              }}
+              className="group rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
+            >
+              {p ? (
+                <>
+                  {/* Product image */}
+                  <div className="relative w-full aspect-square bg-muted overflow-hidden">
+                    {!showFallback ? (
+                      <img
+                        src={imageUrl!}
+                        alt={p.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={() => setImgErrors(prev => ({ ...prev, [p.affiliateTag]: true }))}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary to-muted">
+                        <span className="text-4xl">{p.emoji}</span>
+                      </div>
+                    )}
+                    <div className="absolute top-1.5 right-1.5">
+                      <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <div className="absolute bottom-1.5 left-1.5">
+                      <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{p.category}</span>
+                    </div>
+                  </div>
+                  {/* Product info */}
+                  <div className="p-2.5">
+                    <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{p.brand}</p>
+                    <p className="text-xs font-bold text-primary mt-1">{p.price}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2 animate-pulse p-3">
+                  <div className="w-full aspect-square bg-muted rounded-lg" />
+                  <div className="w-3/4 h-3 bg-muted rounded" />
+                  <div className="w-1/2 h-2 bg-muted rounded" />
                 </div>
-                <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{(product as Product).name}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{(product as Product).brand}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{(product as Product).description}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs font-bold text-primary">{(product as Product).price}</span>
-                  <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{(product as Product).category}</span>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-2 animate-pulse">
-                <div className="w-6 h-6 bg-muted rounded" />
-                <div className="w-3/4 h-3 bg-muted rounded" />
-                <div className="w-1/2 h-2 bg-muted rounded" />
-                <div className="w-full h-2 bg-muted rounded mt-2" />
-              </div>
-            )}
-          </motion.button>
-        ))}
+              )}
+            </motion.button>
+          );
+        })}
       </div>
 
       <div className="px-4 pb-2.5 flex items-center gap-1">
