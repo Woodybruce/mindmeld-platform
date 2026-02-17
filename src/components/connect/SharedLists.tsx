@@ -135,16 +135,22 @@ const challengesListDefaultItems = [
 ];
 
 const templates = [
+  // Pinned
   {
-    id: "family",
-    name: "Family List",
-    icon: "👨‍👩‍👧‍👦",
-    description: "AI-powered family to-do list",
-    gradient: "bg-gradient-to-br from-us-sage/20 to-us-gold/15",
+    id: "long-term-goals",
+    name: "Our Long-Term Goals",
+    icon: "⭐",
+    description: "5 major life goals to celebrate together",
+    gradient: "bg-gradient-to-br from-us-gold/20 to-us-cream/25",
     lucideIcon: Target,
-    defaultItems: [],
-    navigateTo: "/family-quiz",
+    category: "pinned" as const,
+    defaultItems: [
+      "## Our 5 Long-Term Goals",
+      "## How we'll achieve them",
+    ],
+    maxItems: 5,
   },
+  // Core templates
   {
     id: "sex-list",
     name: "Our Sex List",
@@ -152,16 +158,8 @@ const templates = [
     description: "Private & honest intimacy list",
     gradient: "bg-gradient-to-br from-us-coral/15 to-us-blush/20",
     lucideIcon: Heart,
+    category: "core" as const,
     defaultItems: sexListDefaultItems,
-  },
-  {
-    id: "together-list",
-    name: "Our Together List",
-    icon: "💑",
-    description: "Activities & trips to do together",
-    gradient: "bg-gradient-to-br from-us-sage/15 to-us-gold/20",
-    lucideIcon: Heart,
-    defaultItems: togetherListDefaultItems,
   },
   {
     id: "challenges-list",
@@ -170,6 +168,7 @@ const templates = [
     description: "Track & solve relationship challenges",
     gradient: "bg-gradient-to-br from-us-blush/15 to-us-coral/20",
     lucideIcon: Target,
+    category: "core" as const,
     defaultItems: challengesListDefaultItems,
   },
   {
@@ -179,6 +178,7 @@ const templates = [
     description: "Deepen physical & emotional closeness",
     gradient: "bg-gradient-to-br from-us-coral/20 to-us-blush/15",
     lucideIcon: Heart,
+    category: "core" as const,
     defaultItems: [
       "## What intimacy means to us",
       "Feeling emotionally safe with each other",
@@ -213,6 +213,7 @@ const templates = [
     description: "How we talk, listen & repair",
     gradient: "bg-gradient-to-br from-us-sage/20 to-us-blush/15",
     lucideIcon: Heart,
+    category: "core" as const,
     defaultItems: [
       "## Our communication ground rules",
       "Listen to understand, not to respond",
@@ -238,17 +239,26 @@ const templates = [
     ],
   },
   {
-    id: "long-term-goals",
-    name: "Our Long-Term Goals",
-    icon: "⭐",
-    description: "5 major life goals to celebrate together",
-    gradient: "bg-gradient-to-br from-us-gold/20 to-us-cream/25",
+    id: "together-list",
+    name: "Our Together List",
+    icon: "💑",
+    description: "Activities & trips to do together",
+    gradient: "bg-gradient-to-br from-us-sage/15 to-us-gold/20",
+    lucideIcon: Heart,
+    category: "core" as const,
+    defaultItems: togetherListDefaultItems,
+  },
+  // Add-on
+  {
+    id: "family",
+    name: "Family List",
+    icon: "👨‍👩‍👧‍👦",
+    description: "AI-powered family to-do list",
+    gradient: "bg-gradient-to-br from-us-sage/20 to-us-gold/15",
     lucideIcon: Target,
-    defaultItems: [
-      "## Our 5 Long-Term Goals",
-      "## How we'll achieve them",
-    ],
-    maxItems: 5,
+    category: "addon" as const,
+    defaultItems: [],
+    navigateTo: "/family-quiz",
   },
 ];
 
