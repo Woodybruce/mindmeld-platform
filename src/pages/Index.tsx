@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 import GamesCarousel from "@/components/GamesCarousel";
-import QuickLinks from "@/components/QuickLinks";
+
 import CuratedLinksWidget from "@/components/CuratedLinksWidget";
 import SuggestedProducts from "@/components/SuggestedProducts";
 import { useFeedContent } from "@/hooks/useFeedContent";
@@ -128,8 +128,6 @@ const Index = () => {
           )
         ))}
 
-        {/* Quick links to all remaining Us sections */}
-        <QuickLinks />
 
         {/* Calendar */}
         <CalendarWidget />
