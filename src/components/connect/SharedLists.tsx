@@ -261,6 +261,90 @@ const templates = [
     defaultItems: [],
     navigateTo: "/family-quiz",
   },
+  // Suggested
+  {
+    id: "sex-bucket-ideas",
+    name: "Sex Bucket List Ideas",
+    icon: "🔥",
+    description: "Explore what you'd like to try together",
+    gradient: "bg-gradient-to-br from-us-coral/20 to-us-blush/20",
+    lucideIcon: Heart,
+    category: "suggested" as const,
+    defaultItems: [
+      "## Mind / Fantasy / Play",
+      "Erotic hypnosis",
+      "Fantasy / roleplay",
+      "Sensation play",
+      "Spanking",
+      "Feathers",
+      "Dominance",
+      "Submission",
+      "Rougher play",
+      "Restraint",
+      "Blindfolding",
+      "Orgasm control",
+      "## Toys & Tools",
+      "Vibrators",
+      "Bullet",
+      "Wand",
+      "Air stimulator",
+      "Licker toy",
+      "Thruster / pulsator",
+      "Anal beads",
+      "Anal plug",
+      "## Intimacy & Connection Practices",
+      "Regular solo pleasure practice",
+      "Sensual massage (incl breast massage)",
+      "Petting / stroking / hair play",
+      "More erotic kissing / making out",
+      "Neck/ear play (breath, licking, sucking)",
+      "Longer sensual holding moments",
+      "## Skills & Techniques",
+      "Manual genital massage skills",
+      "Improve oral techniques",
+      "Learn to orgasm while receiving oral",
+      "Explore mutual oral for energetic blending",
+      "Explore positions stimulating multiple zones",
+      "## Novelty, Talk & Confidence",
+      "Sex in new/unusual locations",
+      "More sensual talk / appreciation / dirty talk",
+      "Share fantasies (even if not acted on)",
+      "More moans / feedback / vocal response",
+      "Feel confident asking for what I want",
+      "Encourage partner to ask too",
+      "Share 'favourite frames' (best moments)",
+      "## Dressing Up / Media",
+      "Sexy clothes / lingerie / costumes / heels / latex / gear",
+      "Take sexy photos or video (self/partner)",
+      "## Clubs / Dance / Water Play",
+      "Erotic dance / lap dance / pole dance with partner",
+      "Go to an exotic dance club",
+      "Water play (hot tub / shower / spring / waterfall)",
+      "## Kink / BDSM Exploration",
+      "Spanking / flogging / restraints / blindfolds",
+      "Rope bondage (Shibari)",
+      "Sex furniture restraint play",
+      "Domination",
+      "Being dominated",
+      "Harness / strap-on play",
+      "Remote control toy play",
+      "## Anal / Pumps / Enhancement",
+      "Explore anal pleasure",
+      "Anal plug",
+      "Anal bead",
+      "Anal vibrator",
+      "Suction devices (clit/nipple/penis/vulva pump)",
+      "Penis pump / enlargement techniques",
+      "## Tantra / Spiritual / Expanded Orgasm",
+      "Tantra / spiritual sex techniques",
+      "Expanded orgasm / orgasmic meditation practice",
+      "Multi-orgasmic stamina training",
+      "Female ejaculation healing / exploration",
+      "Taoist thrusting techniques",
+      "360° tantric positions",
+      "Piercings / clamps / jewellery",
+    ],
+  },
 ];
 
 interface SharedListsProps {
@@ -506,7 +590,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="space-y-2 overflow-hidden"
+            className="space-y-3 overflow-hidden"
           >
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose a template</p>
@@ -514,7 +598,9 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                 Cancel
               </button>
             </div>
-            {templates.map((t, i) => (
+
+            {/* Core templates */}
+            {templates.filter(t => t.category !== "suggested").map((t, i) => (
               <motion.button
                 key={t.id}
                 initial={{ opacity: 0, x: -8 }}
@@ -530,8 +616,32 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </motion.button>
-            ))
-            }
+            ))}
+
+            {/* Suggested section */}
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Suggested</p>
+
+            {/* Sex Bucket List proposal flow */}
+            <SexBucketList lists={lists} onUpdate={(updated) => { onUpdate(updated); setShowTemplates(false); }} />
+
+            {templates.filter(t => t.category === "suggested").map((t, i) => (
+              <motion.button
+                key={t.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.06 }}
+                onClick={() => createFromTemplate(t.id)}
+                className={`w-full flex items-center gap-3 rounded-xl p-3.5 text-left ${t.gradient} border border-border/30 hover:scale-[1.01] transition-transform`}
+              >
+                <span className="text-xl">{t.icon}</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.description}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </motion.button>
+            ))}
+
             <button
               onClick={() => { setShowTemplates(false); setCreatingBlank(true); }}
               className="w-full flex items-center gap-3 rounded-xl p-3.5 text-left bg-secondary/50 border border-border/30 hover:bg-secondary transition-colors"
@@ -574,8 +684,8 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
         )}
       </AnimatePresence>
 
-      {/* Sex Bucket List sub-template */}
-      <SexBucketList lists={lists} onUpdate={onUpdate} />
+      {/* Sex Bucket List pending proposal (shown outside template picker when not browsing templates) */}
+      {!showTemplates && <SexBucketList lists={lists} onUpdate={onUpdate} pendingOnly />}
 
       {/* Existing lists */}
       {lists.length === 0 && !showTemplates && !creatingBlank && (

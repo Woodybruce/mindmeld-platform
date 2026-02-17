@@ -19,9 +19,10 @@ interface Proposal {
 interface SexBucketListProps {
   lists: UserList[];
   onUpdate: (lists: UserList[]) => void;
+  pendingOnly?: boolean;
 }
 
-const SexBucketList = ({ lists, onUpdate }: SexBucketListProps) => {
+const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => {
   const { user, profile } = useAuth();
   const [mode, setMode] = useState<"idle" | "creating" | "reviewing">("idle");
   const [items, setItems] = useState<string[]>([]);
@@ -307,7 +308,9 @@ const SexBucketList = ({ lists, onUpdate }: SexBucketListProps) => {
     );
   }
 
-  // Idle — show start button
+  // Idle — show start button (hide when pendingOnly mode)
+  if (pendingOnly) return null;
+
   return (
     <motion.button
       initial={{ opacity: 0, y: 10 }}
