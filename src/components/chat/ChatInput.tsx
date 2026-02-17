@@ -7,7 +7,7 @@ import EventComposer from "./EventComposer";
 import StickerPicker from "./StickerPicker";
 
 interface ChatInputProps {
-  onSend: (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => Promise<void>;
+  onSend: (content: string, imageFiles?: File[] | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => Promise<void>;
   onSendSpecial?: (type: string, data: any) => Promise<void>;
   onSaveInstagramLink?: (url: string) => void;
   sending: boolean;
@@ -17,8 +17,8 @@ interface ChatInputProps {
 
 const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyingTo, onCancelReply }: ChatInputProps) => {
   const [input, setInput] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -37,28 +37,38 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const newFiles = Array.from(files);
+    setImageFiles((prev) => [...prev, ...newFiles]);
+    setImagePreviews((prev) => [...prev, ...newFiles.map((f) => URL.createObjectURL(f))]);
     setGalleryUrl(null);
     setAttachOpen(false);
+    // Reset the input so the same file(s) can be re-selected
+    e.target.value = "";
   };
 
   const clearImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
+    imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    setImageFiles([]);
+    setImagePreviews([]);
     setGalleryUrl(null);
   };
 
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(imagePreviews[index]);
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSend = async () => {
-    if ((!input.trim() && !imageFile && !galleryUrl) || sending) return;
+    if ((!input.trim() && imageFiles.length === 0 && !galleryUrl) || sending) return;
     const content = input.trim();
     setInput("");
     const currentGalleryUrl = galleryUrl;
+    const currentFiles = [...imageFiles];
     clearImage();
-    await onSend(content, imageFile, null, currentGalleryUrl);
+    await onSend(content, currentFiles.length > 0 ? currentFiles : null, null, currentGalleryUrl);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -154,26 +164,31 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
         )}
       </AnimatePresence>
 
-      {/* Image preview */}
+      {/* Image previews */}
       <AnimatePresence>
-        {imagePreview && (
+        {imagePreviews.length > 0 && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="bg-card/95 backdrop-blur-xl border-t border-border/30 px-4 py-2"
           >
-            <div className="max-w-lg mx-auto relative inline-block">
-              <div className="rounded-2xl overflow-hidden border border-border/30 bg-secondary shadow-lg">
-                <img src={imagePreview} alt="Preview" className="max-h-32 object-cover" />
-              </div>
-              <button
-                onClick={clearImage}
-                className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-lg"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+            <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto pb-1">
+              {imagePreviews.map((preview, idx) => (
+                <div key={idx} className="relative flex-shrink-0">
+                  <div className="rounded-2xl overflow-hidden border border-border/30 bg-secondary shadow-lg">
+                    <img src={preview} alt={`Preview ${idx + 1}`} className="h-24 w-24 object-cover" />
+                  </div>
+                  <button
+                    onClick={() => removeImage(idx)}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-lg"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
             </div>
+            <p className="text-[11px] text-muted-foreground mt-1">{imagePreviews.length} photo{imagePreviews.length > 1 ? "s" : ""} selected</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -204,7 +219,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
       {/* Input bar */}
       <div className="bg-background/95 backdrop-blur-xl border-t border-border/30 px-2 py-1.5">
         <div className="flex items-end gap-1.5 max-w-lg mx-auto">
-          <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageSelect} />
+          <input type="file" ref={fileInputRef} accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
           <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
 
           {recording ? (
@@ -240,7 +255,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                 />
               </div>
 
-              {input.trim() || imageFile || galleryUrl ? (
+              {input.trim() || imageFiles.length > 0 || galleryUrl ? (
                 <button
                   onClick={handleSend}
                   disabled={sending}

@@ -128,43 +128,62 @@ const Chat = () => {
   }, []);
 
 
-  const handleSend = async (content: string, imageFile?: File | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => {
+  const handleSend = async (content: string, imageFiles?: File[] | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => {
     if (!user || !partnerId || sending) return;
     setSending(true);
 
-    let imageUrl: string | null = null;
-    let audioUrl: string | null = null;
-    let messageType = "text";
+    try {
+      let audioUrl: string | null = null;
+      let messageType = "text";
 
-    if (galleryImageUrl) {
-      imageUrl = galleryImageUrl;
-      messageType = "image";
-    } else if (imageFile) {
-      const ext = imageFile.name.split(".").pop();
-      const storagePath = `${user.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("chat-images").upload(storagePath, imageFile);
-      if (!error) {
-        imageUrl = supabase.storage.from("chat-images").getPublicUrl(storagePath).data.publicUrl;
-        messageType = "image";
+      if (audioBlob) {
+        audioUrl = await uploadAudio(audioBlob);
+        messageType = "voice";
       }
+
+      // If multiple images, send each as a separate message
+      if (imageFiles && imageFiles.length > 0) {
+        for (let i = 0; i < imageFiles.length; i++) {
+          const file = imageFiles[i];
+          const ext = file.name.split(".").pop();
+          const storagePath = `${user.id}/${Date.now()}-${i}.${ext}`;
+          const { error } = await supabase.storage.from("chat-images").upload(storagePath, file);
+          if (!error) {
+            const imageUrl = supabase.storage.from("chat-images").getPublicUrl(storagePath).data.publicUrl;
+            await supabase.from("messages").insert({
+              sender_id: user.id,
+              receiver_id: partnerId,
+              content: i === 0 && content ? content : "📷 Photo",
+              image_url: imageUrl,
+              reply_to_id: i === 0 ? (replyingTo?.id || null) : null,
+              message_type: "image",
+            } as any);
+          }
+        }
+      } else if (galleryImageUrl) {
+        await supabase.from("messages").insert({
+          sender_id: user.id,
+          receiver_id: partnerId,
+          content: content || "📷 Photo",
+          image_url: galleryImageUrl,
+          reply_to_id: replyingTo?.id || null,
+          message_type: "image",
+        } as any);
+      } else {
+        await supabase.from("messages").insert({
+          sender_id: user.id,
+          receiver_id: partnerId,
+          content: content || (audioUrl ? "🎤 Voice message" : ""),
+          image_url: audioUrl,
+          reply_to_id: replyingTo?.id || null,
+          message_type: audioUrl ? "voice" : messageType,
+        } as any);
+      }
+
+      setReplyingTo(null);
+    } finally {
+      setSending(false);
     }
-
-    if (audioBlob) {
-      audioUrl = await uploadAudio(audioBlob);
-      messageType = "voice";
-    }
-
-    await supabase.from("messages").insert({
-      sender_id: user.id,
-      receiver_id: partnerId,
-      content: content || (imageUrl ? "📷 Photo" : audioUrl ? "🎤 Voice message" : ""),
-      image_url: imageUrl || audioUrl,
-      reply_to_id: replyingTo?.id || null,
-      message_type: messageType,
-    } as any);
-
-    setReplyingTo(null);
-    setSending(false);
   };
 
   const handleSendSpecial = async (type: string, data: any) => {
