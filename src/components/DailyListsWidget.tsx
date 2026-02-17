@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check, Plus, CalendarDays, ChevronDown } from "lucide-react";
+import { haptics } from "@/lib/haptics";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useWeeklyTasks } from "@/hooks/useWeeklyTasks";
@@ -55,7 +56,7 @@ const DailyListsWidget = () => {
         {previewItems.map((task) => (
           <div key={task.id} className="flex items-center gap-3 py-2">
             <button
-              onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
+              onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
               className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
                 task.done ? "bg-primary text-primary-foreground" : "border-2 border-border"
               }`}
@@ -85,7 +86,7 @@ const DailyListsWidget = () => {
                   {remainingItems.map((task) => (
                     <div key={task.id} className="flex items-center gap-3 py-2">
                       <button
-                        onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
+                        onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
                         className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
                           task.done ? "bg-primary text-primary-foreground" : "border-2 border-border"
                         }`}

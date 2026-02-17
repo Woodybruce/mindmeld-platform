@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ImageIcon, X, MessageCircle, Upload, Loader2 } from "lucide-react";
+import { ImageIcon, X, MessageCircle, Upload, Loader2, Camera } from "lucide-react";
+import { SkeletonPhotoGrid } from "@/components/SkeletonCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -124,8 +125,14 @@ const OurPhotos = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-7 h-7 border-[3px] border-[hsl(var(--us-coral))] border-t-transparent rounded-full animate-spin" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="h-4 w-32 rounded bg-secondary animate-pulse" />
+            <div className="h-3 w-20 rounded bg-secondary animate-pulse" />
+          </div>
+        </div>
+        <SkeletonPhotoGrid />
       </div>
     );
   }
@@ -188,12 +195,20 @@ const OurPhotos = () => {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card p-8 text-center">
-          <ImageIcon className="w-10 h-10 mx-auto text-muted-foreground/20 mb-3" />
-          <p className="text-sm font-medium text-muted-foreground">No photos yet</p>
-          <p className="text-xs text-muted-foreground/50 mt-1">
-            Upload photos or share them in chat
+        <div className="rounded-2xl border border-dashed border-border bg-gradient-to-br from-us-blush/10 to-us-coral/5 p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-us-coral/10 flex items-center justify-center mx-auto mb-3">
+            <Camera className="w-7 h-7 text-[hsl(var(--us-coral))]" />
+          </div>
+          <p className="font-display text-base font-semibold text-foreground">Start your photo album</p>
+          <p className="text-xs text-muted-foreground mt-1.5 max-w-[200px] mx-auto">
+            Upload your favourite couple photos or share them in chat — they'll appear here ✨
           </p>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary-foreground px-4 py-2 rounded-full bg-[hsl(var(--us-coral))] hover:opacity-90 transition-opacity"
+          >
+            <ImageIcon className="w-3.5 h-3.5" /> Upload Photos
+          </button>
         </div>
       )}
 

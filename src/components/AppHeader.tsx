@@ -1,4 +1,5 @@
 import { Bell, Settings, Heart } from "lucide-react";
+import { haptics } from "@/lib/haptics";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,11 +34,12 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
 
   const sendVibe = (emoji: string, label: string) => {
     setVibeOpen(false);
+    haptics.success();
     toast({ title: `${emoji} ${label} sent to your partner!`, duration: 2000 });
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
       <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-3">
           <img src={usLogo} alt="Us logo" className="w-10 h-10 rounded-full object-cover" />
