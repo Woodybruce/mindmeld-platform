@@ -169,7 +169,7 @@ const InstaFeedWidget = () => {
             <Heart className="w-3 h-3 inline mr-1 text-[hsl(var(--us-coral))]" />
             Couple Inspo
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto scrollbar-hide">
             {curatedAccounts.map((account) => (
               <a
                 key={account.handle}
