@@ -18,6 +18,7 @@ import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
 import RecentActivityWidget from "@/components/RecentActivityWidget";
 import InstaFeedWidget from "@/components/InstaFeedWidget";
+import SubstackFeedWidget from "@/components/SubstackFeedWidget";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -113,6 +114,9 @@ const Index = () => {
 
         {/* Instagram feed */}
         <InstaFeedWidget />
+
+        {/* Substack feed */}
+        <SubstackFeedWidget />
 
         {/* Curated links & relationship articles */}
         <CuratedLinksWidget />
