@@ -1,0 +1,330 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Check, X, Send, Flame, Heart, Loader2, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import type { UserList, ListItem } from "./SharedLists";
+
+interface Proposal {
+  id: string;
+  user_id: string;
+  proposal_type: string;
+  items: string[];
+  selected_items: string[] | null;
+  status: string;
+  created_at: string;
+}
+
+interface SexBucketListProps {
+  lists: UserList[];
+  onUpdate: (lists: UserList[]) => void;
+}
+
+const SexBucketList = ({ lists, onUpdate }: SexBucketListProps) => {
+  const { user, profile } = useAuth();
+  const [mode, setMode] = useState<"idle" | "creating" | "reviewing">("idle");
+  const [items, setItems] = useState<string[]>([]);
+  const [newItem, setNewItem] = useState("");
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [pendingProposal, setPendingProposal] = useState<Proposal | null>(null);
+  const [myProposal, setMyProposal] = useState<Proposal | null>(null);
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch proposals on mount
+  useEffect(() => {
+    if (!user) return;
+    fetchProposals();
+
+    // Realtime subscription
+    const channel = supabase
+      .channel("bucket-proposals")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bucket_list_proposals" },
+        () => fetchProposals()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const fetchProposals = async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from("bucket_list_proposals" as any)
+      .select("*")
+      .eq("proposal_type", "sex-bucket")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (data) {
+      const proposals = data as any as Proposal[];
+      const fromPartner = proposals.find((p) => p.user_id !== user.id);
+      const fromMe = proposals.find((p) => p.user_id === user.id);
+      setPendingProposal(fromPartner || null);
+      setMyProposal(fromMe || null);
+    }
+    setLoading(false);
+  };
+
+  const addItem = () => {
+    const text = newItem.trim();
+    if (!text || items.length >= 10) return;
+    setItems([...items, text]);
+    setNewItem("");
+  };
+
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const sendProposal = async () => {
+    if (!user || items.length === 0) return;
+    setSending(true);
+    const { error } = await supabase
+      .from("bucket_list_proposals" as any)
+      .insert({
+        user_id: user.id,
+        proposal_type: "sex-bucket",
+        items: items,
+        status: "pending",
+      } as any);
+
+    if (error) {
+      toast({ title: "Error", description: "Could not send proposal", variant: "destructive" });
+    } else {
+      toast({ title: "🔥 Proposal sent!", description: "Your partner will pick their favourites" });
+      setItems([]);
+      setMode("idle");
+    }
+    setSending(false);
+    fetchProposals();
+  };
+
+  const toggleSelect = (item: string) => {
+    if (selectedItems.includes(item)) {
+      setSelectedItems(selectedItems.filter((i) => i !== item));
+    } else if (selectedItems.length < 5) {
+      setSelectedItems([...selectedItems, item]);
+    }
+  };
+
+  const acceptProposal = async () => {
+    if (!pendingProposal || selectedItems.length === 0) return;
+    setSending(true);
+
+    // Update proposal status
+    await supabase
+      .from("bucket_list_proposals" as any)
+      .update({ selected_items: selectedItems, status: "completed", responded_at: new Date().toISOString() } as any)
+      .eq("id", pendingProposal.id);
+
+    // Create the "Sex To Do" list with selected items
+    const newList: UserList = {
+      id: `sex-todo-${Date.now()}`,
+      name: "Sex To Do 🔥",
+      icon: "🔥",
+      template: "sex-todo",
+      createdAt: new Date().toISOString(),
+      items: selectedItems.map((text, i) => ({
+        id: `${Date.now()}-${i}`,
+        text,
+        done: false,
+      })),
+    };
+    onUpdate([newList, ...lists]);
+
+    toast({ title: "🎉 Sex To Do list created!", description: `${selectedItems.length} things to try together` });
+    setSelectedItems([]);
+    setPendingProposal(null);
+    setMode("idle");
+    setSending(false);
+    fetchProposals();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Partner sent a proposal — review mode
+  if (pendingProposal) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-us-coral/30 bg-gradient-to-br from-us-coral/10 to-us-blush/10 p-4 space-y-4"
+      >
+        <div className="flex items-center gap-2">
+          <Flame className="w-5 h-5 text-us-coral" />
+          <div>
+            <h3 className="font-display text-sm font-bold text-foreground">Your partner proposed!</h3>
+            <p className="text-[11px] text-muted-foreground">Pick up to 5 things you'd like to try</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {pendingProposal.items.map((item, i) => {
+            const isSelected = selectedItems.includes(item);
+            return (
+              <motion.button
+                key={i}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                onClick={() => toggleSelect(item)}
+                className={`w-full flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
+                  isSelected
+                    ? "border-primary bg-primary/10 shadow-sm"
+                    : "border-border/50 bg-card hover:border-primary/30"
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                  isSelected ? "bg-primary border-primary" : "border-muted-foreground/30"
+                }`}>
+                  {isSelected && <Heart className="w-3 h-3 text-primary-foreground" />}
+                </div>
+                <span className="text-sm text-foreground flex-1">{item}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">{selectedItems.length}/5 selected</p>
+          <button
+            onClick={acceptProposal}
+            disabled={selectedItems.length === 0 || sending}
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50 transition-colors"
+          >
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            Create To Do List
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // I already sent a proposal — waiting
+  if (myProposal) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-us-gold/30 bg-gradient-to-br from-us-gold/10 to-us-cream/10 p-4 space-y-3"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-us-gold animate-pulse" />
+          <div>
+            <h3 className="font-display text-sm font-bold text-foreground">Proposal sent!</h3>
+            <p className="text-[11px] text-muted-foreground">Waiting for your partner to pick their favourites…</p>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          {myProposal.items.map((item, i) => (
+            <div key={i} className="flex items-center gap-2 rounded-lg bg-card/60 px-3 py-2 text-sm text-muted-foreground">
+              <Flame className="w-3.5 h-3.5 text-us-coral/50" />
+              {item}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Creating mode — add up to 10 items
+  if (mode === "creating") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-us-coral/30 bg-gradient-to-br from-us-coral/10 to-us-blush/10 p-4 space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Flame className="w-5 h-5 text-us-coral" />
+            <div>
+              <h3 className="font-display text-sm font-bold text-foreground">Sex Bucket List</h3>
+              <p className="text-[11px] text-muted-foreground">Add up to 10 things to try — your partner picks 5</p>
+            </div>
+          </div>
+          <button onClick={() => { setMode("idle"); setItems([]); }} className="p-1">
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {items.map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-3 group"
+            >
+              <span className="text-xs font-bold text-us-coral w-5 text-center">{i + 1}</span>
+              <span className="text-sm text-foreground flex-1">{item}</span>
+              <button onClick={() => removeItem(i)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            </motion.div>
+          ))}
+
+          {items.length < 10 && (
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                value={newItem}
+                onChange={(e) => setNewItem(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addItem()}
+                placeholder={`Thing #${items.length + 1} to try…`}
+                className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <button onClick={addItem} className="rounded-xl bg-primary px-3 py-2.5 text-primary-foreground">
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">{items.length}/10 items</p>
+          <button
+            onClick={sendProposal}
+            disabled={items.length === 0 || sending}
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50 transition-colors"
+          >
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            Send to Partner
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Idle — show start button
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      onClick={() => setMode("creating")}
+      className="w-full rounded-2xl border border-us-coral/20 bg-gradient-to-br from-us-coral/5 to-us-blush/10 p-4 flex items-center gap-3 hover:border-us-coral/40 transition-all group"
+    >
+      <div className="w-10 h-10 rounded-xl bg-us-coral/10 flex items-center justify-center group-hover:bg-us-coral/20 transition-colors">
+        <Flame className="w-5 h-5 text-us-coral" />
+      </div>
+      <div className="text-left flex-1">
+        <h3 className="font-display text-sm font-bold text-foreground">Sex Bucket List</h3>
+        <p className="text-[11px] text-muted-foreground">Propose 10 things to try — your partner picks 5</p>
+      </div>
+      <Plus className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+    </motion.button>
+  );
+};
+
+export default SexBucketList;
