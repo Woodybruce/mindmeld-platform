@@ -16,6 +16,7 @@ import SuggestedProducts from "@/components/SuggestedProducts";
 import { useFeedContent } from "@/hooks/useFeedContent";
 import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
+import RecentActivityWidget from "@/components/RecentActivityWidget";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -66,6 +67,9 @@ const Index = () => {
 
         {/* Today's tasks — inline at top */}
         <DailyListsWidget />
+
+        {/* What's been updated */}
+        <RecentActivityWidget />
 
         {/* Banner card */}
         {rows[0] && (
