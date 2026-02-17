@@ -28,39 +28,15 @@ const CATEGORIES = [
 const CACHE_KEY = "suggested-products";
 const CACHE_TTL = 1000 * 60 * 60;
 
-const getProductImage = (hint?: string) => {
-  if (hint) {
-    return `https://images.unsplash.com/photo-${getUnsplashId(hint)}?w=200&h=200&fit=crop&auto=format`;
-  }
-  return null;
-};
-
-// Map common product hints to known Unsplash photo IDs for reliable images
-const unsplashMap: Record<string, string> = {
-  "candle gift box": "1602607474159-0d4e4b16c5a6",
-  "couples journal book": "1544947950-fa07a98d237f",
-  "massage oil bottles": "1600334089648-b0d9d3028eb2",
-  "scratch world map": "1526778548025-fa2f459cd5c1",
-  "couple cooking": "1556910103-1c02745aae4d",
-  "wine tasting": "1510812431401-41d2bd2722f3",
-  "spa treatment": "1544161515-4ab6ce6db874",
-  "travel suitcase": "1553531384-cc64259b7e9e",
-  "romantic dinner": "1414235077428-338989a2e8c0",
-  "couple gift": "1549465220-1a8b9238cd48",
-  "date night": "1529543544282-ea07407bc0b1",
-  "experience gift": "1506905925346-21bda4d32df4",
-  "intimacy": "1516589178581-6cd7833ae3b2",
-  "travel": "1488646953014-85cb44e25828",
-  "dining": "1414235077428-338989a2e8c0",
-};
-
-const getUnsplashId = (hint: string): string => {
-  const lower = hint.toLowerCase();
-  for (const [key, id] of Object.entries(unsplashMap)) {
-    if (lower.includes(key) || key.includes(lower)) return id;
-  }
-  // Fallback to a generic couple/gift image
-  return "1549465220-1a8b9238cd48";
+// Category-based gradient backgrounds for product cards
+const categoryGradients: Record<string, string> = {
+  "Date Night": "from-rose-200/80 to-amber-100/80 dark:from-rose-900/40 dark:to-amber-900/30",
+  "Stationery": "from-sky-200/80 to-indigo-100/80 dark:from-sky-900/40 dark:to-indigo-900/30",
+  "Wellness": "from-emerald-200/80 to-teal-100/80 dark:from-emerald-900/40 dark:to-teal-900/30",
+  "Travel": "from-blue-200/80 to-cyan-100/80 dark:from-blue-900/40 dark:to-cyan-900/30",
+  "Dining": "from-orange-200/80 to-red-100/80 dark:from-orange-900/40 dark:to-red-900/30",
+  "Intimacy": "from-pink-200/80 to-fuchsia-100/80 dark:from-pink-900/40 dark:to-fuchsia-900/30",
+  "Experiences": "from-violet-200/80 to-purple-100/80 dark:from-violet-900/40 dark:to-purple-900/30",
 };
 
 const SuggestedProducts = () => {
@@ -68,7 +44,6 @@ const SuggestedProducts = () => {
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [activeCategory, setActiveCategory] = useState("general");
-  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
   const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("product");
 
   const fetchProducts = async (category: string, force = false) => {
@@ -88,7 +63,7 @@ const SuggestedProducts = () => {
     }
 
     setLoading(true);
-    setImgErrors({});
+    
     try {
       const { data, error } = await supabase.functions.invoke("suggest-products", {
         body: { category },
@@ -118,7 +93,7 @@ const SuggestedProducts = () => {
 
   const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
-    setImgErrors({});
+    
     fetchProducts(cat);
   };
 
@@ -170,8 +145,7 @@ const SuggestedProducts = () => {
           : products.slice(0, 4)
         ).map((product, i) => {
           const p = product as Product | undefined;
-          const imageUrl = p ? getProductImage(p.imageHint) : null;
-          const showFallback = !imageUrl || imgErrors[p?.affiliateTag || ""];
+          const gradient = p ? (categoryGradients[p.category] || categoryGradients["Experiences"]) : "";
 
           return (
             <motion.button
@@ -188,21 +162,11 @@ const SuggestedProducts = () => {
             >
               {p ? (
                 <>
-                  {/* Product image */}
-                  <div className="relative w-full aspect-square bg-muted overflow-hidden">
-                    {!showFallback ? (
-                      <img
-                        src={imageUrl!}
-                        alt={p.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={() => setImgErrors(prev => ({ ...prev, [p.affiliateTag]: true }))}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary to-muted">
-                        <span className="text-4xl">{p.emoji}</span>
-                      </div>
-                    )}
+                  {/* Product visual */}
+                  <div className={`relative w-full aspect-square overflow-hidden bg-gradient-to-br ${gradient}`}>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-5xl drop-shadow-sm">{p.emoji}</span>
+                    </div>
                     <div className="absolute top-1.5 right-1.5">
                       <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
