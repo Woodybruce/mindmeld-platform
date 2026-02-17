@@ -77,7 +77,7 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
 
   const aspectClass =
     size === "banner" ? "aspect-[2.2/1]" :
-    size === "half" ? "aspect-square" :
+    size === "half" ? "aspect-[1/0.55]" :
     "aspect-[4/5]";
 
   // Pictorial card with image
