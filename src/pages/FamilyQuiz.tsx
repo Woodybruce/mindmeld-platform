@@ -96,9 +96,10 @@ const FamilyQuiz = () => {
   };
 
   const saveAsList = () => {
-    const allItems = generatedTasks.flatMap((cat) =>
-      cat.tasks.map((text, i) => ({ id: `fam-${Date.now()}-${cat.category}-${i}`, text, done: false }))
-    );
+    const allItems = generatedTasks.flatMap((cat) => [
+      { id: `heading-${Date.now()}-${cat.category}`, text: cat.category, done: false, isHeading: true },
+      ...cat.tasks.map((text, i) => ({ id: `fam-${Date.now()}-${cat.category}-${i}`, text, done: false })),
+    ]);
     const stored = localStorage.getItem("userLists");
     const lists: UserList[] = stored ? JSON.parse(stored) : [];
     const newList: UserList = {
