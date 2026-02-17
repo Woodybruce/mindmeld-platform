@@ -340,11 +340,13 @@ interface SharedListsProps {
   allExistingTemplates?: string[];
   /** Hide the "New List" button (used when another instance provides it) */
   hideNewButton?: boolean;
+  /** Auto-expand a specific list by ID */
+  initialExpandedId?: string | null;
 }
 
-const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton }: SharedListsProps) => {
+const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, initialExpandedId }: SharedListsProps) => {
   const navigate = useNavigate();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(initialExpandedId || null);
   const [newItemText, setNewItemText] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
   const [newListName, setNewListName] = useState("");
