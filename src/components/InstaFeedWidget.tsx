@@ -15,12 +15,12 @@ interface InstaLink {
 }
 
 const curatedAccounts = [
-  { handle: "@thedatingdivas", label: "Date Ideas", bio: "Creative date night inspiration for couples", color: "from-pink-500/20 to-rose-400/20" },
-  { handle: "@gottmaninstitute", label: "Relationship Tips", bio: "Science-based love advice", color: "from-blue-500/20 to-indigo-400/20" },
-  { handle: "@loveandlondon", label: "Travel Couples", bio: "Romantic travel inspiration", color: "from-amber-500/20 to-orange-400/20" },
-  { handle: "@couplegoals", label: "Couple Goals", bio: "Relationship inspiration & goals", color: "from-purple-500/20 to-violet-400/20" },
-  { handle: "@5lovelanguages", label: "Love Languages", bio: "Connect deeper with your partner", color: "from-[hsl(var(--us-coral))]/20 to-[hsl(var(--us-blush))]/20" },
-  { handle: "@datenight", label: "Date Nights", bio: "Fun at-home & out date ideas", color: "from-[hsl(var(--us-sage))]/20 to-emerald-400/20" },
+  { handle: "@thedatingdivas", label: "Date Ideas", bio: "Creative date night inspiration for couples", color: "from-pink-500/20 to-rose-400/20", image: "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=80&h=80&fit=crop" },
+  { handle: "@gottmaninstitute", label: "Relationship Tips", bio: "Science-based love advice", color: "from-blue-500/20 to-indigo-400/20", image: "https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?w=80&h=80&fit=crop" },
+  { handle: "@loveandlondon", label: "Travel Couples", bio: "Romantic travel inspiration", color: "from-amber-500/20 to-orange-400/20", image: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=80&h=80&fit=crop" },
+  { handle: "@couplegoals", label: "Couple Goals", bio: "Relationship inspiration & goals", color: "from-purple-500/20 to-violet-400/20", image: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=80&h=80&fit=crop" },
+  { handle: "@5lovelanguages", label: "Love Languages", bio: "Connect deeper with your partner", color: "from-[hsl(var(--us-coral))]/20 to-[hsl(var(--us-blush))]/20", image: "https://images.unsplash.com/photo-1474552226712-ac0f0961a954?w=80&h=80&fit=crop" },
+  { handle: "@datenight", label: "Date Nights", bio: "Fun at-home & out date ideas", color: "from-[hsl(var(--us-sage))]/20 to-emerald-400/20", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=80&h=80&fit=crop" },
 ];
 
 const extractInstaUsername = (url: string): string | null => {
@@ -176,10 +176,15 @@ const InstaFeedWidget = () => {
                 href={`https://instagram.com/${account.handle.replace("@", "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`bg-gradient-to-br ${account.color} rounded-xl px-3 py-2.5 hover:opacity-80 transition-opacity`}
+                className={`bg-gradient-to-br ${account.color} rounded-xl overflow-hidden hover:opacity-80 transition-opacity`}
               >
-                <p className="text-xs font-semibold text-foreground">{account.handle}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{account.bio}</p>
+                <div className="h-16 overflow-hidden">
+                  <img src={account.image} alt={account.label} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-foreground">{account.handle}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{account.bio}</p>
+                </div>
               </a>
             ))}
           </div>
