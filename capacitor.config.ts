@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.8a7c41d1336b44159716bbe56384b7fc',
+  appId: 'app.lovable.mindmeldplatform',
   appName: 'mindmeld-platform',
   webDir: 'dist',
   server: {
