@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, X, Send, Flame, Heart, Loader2, Sparkles } from "lucide-react";
+import { Plus, Check, X, Send, Flame, Heart, Loader2, Sparkles, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -61,6 +61,8 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
   const [myProposal, setMyProposal] = useState<Proposal | null>(null);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -310,7 +312,33 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
               className="flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-3 group"
             >
               <span className="text-xs font-bold text-us-coral w-5 text-center">{i + 1}</span>
-              <span className="text-sm text-foreground flex-1">{item}</span>
+              {editingIdx === i ? (
+                <input
+                  autoFocus
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && editText.trim()) {
+                      setItems(items.map((it, idx) => idx === i ? editText.trim() : it));
+                      setEditingIdx(null);
+                    }
+                    if (e.key === "Escape") setEditingIdx(null);
+                  }}
+                  onBlur={() => {
+                    if (editText.trim()) setItems(items.map((it, idx) => idx === i ? editText.trim() : it));
+                    setEditingIdx(null);
+                  }}
+                  className="flex-1 rounded-lg border border-primary/50 bg-background px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              ) : (
+                <span className="text-sm text-foreground flex-1">{item}</span>
+              )}
+              <button
+                onClick={() => { setEditingIdx(i); setEditText(item); }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+              >
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+              </button>
               <button onClick={() => removeItem(i)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
                 <X className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
