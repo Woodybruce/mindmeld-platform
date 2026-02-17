@@ -112,6 +112,7 @@ const Us = () => {
           {userLists.filter((l) => l.template === "long-term-goals").length > 0 && (
             <SharedLists
               lists={userLists.filter((l) => l.template === "long-term-goals")}
+              allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
               onUpdate={(updated) => {
                 const others = userLists.filter((l) => l.template !== "long-term-goals");
                 handleListsUpdate([...updated, ...others]);
@@ -122,6 +123,7 @@ const Us = () => {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Other Lists</p>
             <SharedLists
               lists={userLists.filter((l) => l.template !== "long-term-goals")}
+              allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
               onUpdate={(updated) => {
                 const pinned = userLists.filter((l) => l.template === "long-term-goals");
                 handleListsUpdate([...pinned, ...updated]);

@@ -350,9 +350,11 @@ const templates = [
 interface SharedListsProps {
   lists: UserList[];
   onUpdate: (lists: UserList[]) => void;
+  /** Template IDs of ALL existing lists (including those in other SharedLists instances) */
+  allExistingTemplates?: string[];
 }
 
-const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
+const SharedLists = ({ lists, onUpdate, allExistingTemplates }: SharedListsProps) => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
@@ -681,7 +683,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                 </div>
 
                 {/* Core templates */}
-                {templates.filter(t => t.category !== "suggested" && !lists.some(l => l.template === t.id)).map((t, i) => (
+                {templates.filter(t => t.category !== "suggested" && !(allExistingTemplates || lists.map(l => l.template)).includes(t.id)).map((t, i) => (
                   <motion.button
                     key={t.id}
                     initial={{ opacity: 0, x: -8 }}
@@ -704,7 +706,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
 
                 <SexBucketList lists={lists} onUpdate={(updated) => { onUpdate(updated); setShowTemplates(false); }} />
 
-                {templates.filter(t => t.category === "suggested" && !lists.some(l => l.template === t.id)).map((t, i) => (
+                {templates.filter(t => t.category === "suggested" && !(allExistingTemplates || lists.map(l => l.template)).includes(t.id)).map((t, i) => (
                   <motion.button
                     key={t.id}
                     initial={{ opacity: 0, x: -8 }}
