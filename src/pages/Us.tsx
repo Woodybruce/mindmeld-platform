@@ -113,6 +113,7 @@ const Us = () => {
             <SharedLists
               lists={userLists.filter((l) => l.template === "long-term-goals")}
               allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
+              hideNewButton
               onUpdate={(updated) => {
                 const others = userLists.filter((l) => l.template !== "long-term-goals");
                 handleListsUpdate([...updated, ...others]);

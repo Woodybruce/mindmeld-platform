@@ -352,9 +352,11 @@ interface SharedListsProps {
   onUpdate: (lists: UserList[]) => void;
   /** Template IDs of ALL existing lists (including those in other SharedLists instances) */
   allExistingTemplates?: string[];
+  /** Hide the "New List" button (used when another instance provides it) */
+  hideNewButton?: boolean;
 }
 
-const SharedLists = ({ lists, onUpdate, allExistingTemplates }: SharedListsProps) => {
+const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton }: SharedListsProps) => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
@@ -653,7 +655,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates }: SharedListsProps
   return (
     <div className="space-y-3">
       {/* Create new */}
-      {!showTemplates && !creatingBlank && (
+      {!hideNewButton && !showTemplates && !creatingBlank && (
         <motion.button
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
