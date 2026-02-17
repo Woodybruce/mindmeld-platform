@@ -12,6 +12,9 @@ const moods = [
   { emoji: "😴", label: "Tired" },
   { emoji: "🤩", label: "Excited" },
   { emoji: "😐", label: "Meh" },
+  { emoji: "😏", label: "Sexy" },
+  { emoji: "🔥", label: "Horny" },
+  { emoji: "💃", label: "Dance Ready" },
 ];
 
 const MoodCheckinWidget = () => {
@@ -98,7 +101,7 @@ const MoodCheckinWidget = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-8 gap-1">
+      <div className="flex flex-wrap gap-1 justify-center">
         {moods.map(({ emoji, label }) => (
           <button
             key={emoji}
