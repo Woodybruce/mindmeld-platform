@@ -172,6 +172,19 @@ const templates = [
     lucideIcon: Target,
     defaultItems: challengesListDefaultItems,
   },
+  {
+    id: "long-term-goals",
+    name: "Our Long-Term Goals",
+    icon: "⭐",
+    description: "5 major life goals to celebrate together",
+    gradient: "bg-gradient-to-br from-us-gold/20 to-us-cream/25",
+    lucideIcon: Target,
+    defaultItems: [
+      "## Our 5 Long-Term Goals",
+      "## How we'll achieve them",
+    ],
+    maxItems: 5,
+  },
 ];
 
 interface SharedListsProps {
@@ -208,6 +221,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
       icon: t.icon,
       template: t.id,
       createdAt: new Date().toISOString(),
+      maxItems: (t as any).maxItems || undefined,
       items: t.defaultItems.map((text, i) => {
         const isHeading = text.startsWith("## ");
         const itemText = isHeading ? text.slice(3).trim() : text;
@@ -237,10 +251,27 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   };
 
   const toggleItem = (listId: string, itemId: string) => {
+    const list = lists.find((l) => l.id === listId);
+    const item = list?.items.find((i) => i.id === itemId);
+    const isCompleting = item && !item.done;
+
     const updated = lists.map((l) =>
       l.id === listId ? { ...l, items: l.items.map((i) => (i.id === itemId ? { ...i, done: !i.done } : i)) } : l
     );
     onUpdate(updated);
+
+    // Celebrate completing a long-term goal
+    if (isCompleting && list?.template === "long-term-goals") {
+      const updatedList = updated.find((l) => l.id === listId);
+      const doneCount = updatedList?.items.filter((i) => i.done && !i.isHeading).length || 0;
+      const totalGoals = updatedList?.items.filter((i) => !i.isHeading).length || 0;
+      toast({
+        title: doneCount === totalGoals ? "🎉 All goals achieved!" : "🌟 Goal achieved!",
+        description: doneCount === totalGoals
+          ? "You've completed all your long-term goals together! Time to dream bigger!"
+          : `${doneCount}/${totalGoals} goals completed — keep going!`,
+      });
+    }
   };
 
   const addItem = (listId: string) => {
