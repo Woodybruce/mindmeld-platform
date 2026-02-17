@@ -30,14 +30,6 @@ const setupItems: SetupItem[] = [
     checkKey: "completedQuizzes",
   },
   {
-    id: "link",
-    emoji: "🔗",
-    title: "Share your first link",
-    description: "Save Instagram, YouTube or articles together",
-    action: "/chat",
-    checkKey: "us-shared-links-started",
-  },
-  {
     id: "calendar",
     emoji: "📅",
     title: "Add a calendar event",
@@ -143,7 +135,7 @@ const SetupPrompts = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 8, height: 0 }}
               transition={{ delay: i * 0.05 }}
-              onClick={() => navigate(item.action)}
+              onClick={() => { dismissItem(item.id); navigate(item.action); }}
               className="w-full flex items-center gap-3 rounded-xl p-3 text-left hover:bg-muted/50 transition-colors group"
             >
               <span className="text-xl">{item.emoji}</span>
