@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heading2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -16,6 +16,7 @@ export interface ListItem {
   id: string;
   text: string;
   done: boolean;
+  isHeading?: boolean;
   attachments?: ListItemAttachment[];
 }
 
@@ -155,8 +156,11 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
       toast({ title: `Max ${list.maxItems} items`, description: "Remove an item first to add a new one." });
       return;
     }
+    const text = newItemText.trim();
+    const isHeading = text.startsWith("## ");
+    const itemText = isHeading ? text.slice(3).trim() : text;
     const updated = lists.map((l) =>
-      l.id === listId ? { ...l, items: [...l.items, { id: Date.now().toString(), text: newItemText.trim(), done: false }] } : l
+      l.id === listId ? { ...l, items: [...l.items, { id: Date.now().toString(), text: itemText, done: false, isHeading: isHeading || undefined }] } : l
     );
     onUpdate(updated);
     setNewItemText("");
@@ -389,9 +393,9 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
 
       {lists.map((list, i) => {
         const isExpanded = expandedId === list.id;
-        const doneCount = list.items.filter((i) => i.done).length;
-        const activeItems = list.items.filter((i) => !i.done);
-        const completedItems = list.items.filter((i) => i.done);
+        const doneCount = list.items.filter((i) => i.done && !i.isHeading).length;
+        const activeItems = list.items.filter((i) => !i.done || i.isHeading);
+        const completedItems = list.items.filter((i) => i.done && !i.isHeading);
         const isShowingCompleted = showCompleted[list.id] ?? false;
         const completionPct = getCompletionPercent(list);
         const nextMilestone = list.scoreData ? getNextMilestone(list) : null;
@@ -479,6 +483,18 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                 <div className="px-4 py-3 space-y-1.5">
                   {activeItems.map((item) => (
                     <div key={item.id} className="group">
+                      {item.isHeading ? (
+                        <div className="flex items-center gap-2.5 pt-3 pb-1">
+                          <Heading2 className="w-4 h-4 text-primary flex-shrink-0" />
+                          <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{item.text}</span>
+                          <button
+                            onClick={() => removeItem(list.id, item.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </div>
+                      ) : (
                       <div className="flex items-center gap-2.5">
                         <button
                           onClick={() => toggleItem(list.id, item.id)}
@@ -514,6 +530,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                           <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                         </button>
                       </div>
+                      )}
 
                       {/* Inline event date picker */}
                       {eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id && (
@@ -579,7 +596,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                         value={expandedId === list.id ? newItemText : ""}
                         onChange={(e) => setNewItemText(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addItem(list.id)}
-                        placeholder={list.maxItems ? `Add item… (${list.items.length}/${list.maxItems})` : "Add item…"}
+                        placeholder={list.maxItems ? `Add item… (${list.items.length}/${list.maxItems})` : "Add item or ## subheading…"}
                         className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                       <button
