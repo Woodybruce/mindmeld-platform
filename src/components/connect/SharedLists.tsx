@@ -681,7 +681,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                 </div>
 
                 {/* Core templates */}
-                {templates.filter(t => t.category !== "suggested").map((t, i) => (
+                {templates.filter(t => t.category !== "suggested" && !lists.some(l => l.template === t.id)).map((t, i) => (
                   <motion.button
                     key={t.id}
                     initial={{ opacity: 0, x: -8 }}
@@ -704,7 +704,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
 
                 <SexBucketList lists={lists} onUpdate={(updated) => { onUpdate(updated); setShowTemplates(false); }} />
 
-                {templates.filter(t => t.category === "suggested").map((t, i) => (
+                {templates.filter(t => t.category === "suggested" && !lists.some(l => l.template === t.id)).map((t, i) => (
                   <motion.button
                     key={t.id}
                     initial={{ opacity: 0, x: -8 }}
