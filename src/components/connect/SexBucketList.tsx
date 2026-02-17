@@ -1,10 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Check, X, Send, Flame, Heart, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import type { UserList, ListItem } from "./SharedLists";
+
+const SEX_BUCKET_IDEAS = [
+  "Erotic hypnosis", "Fantasy / roleplay", "Sensation play", "Spanking", "Feathers",
+  "Dominance", "Submission", "Rougher play", "Restraint", "Blindfolding", "Orgasm control",
+  "Vibrators", "Bullet", "Wand", "Air stimulator", "Licker toy", "Thruster / pulsator",
+  "Anal beads", "Anal plug",
+  "Regular solo pleasure practice", "Sensual massage (incl breast massage)",
+  "Petting / stroking / hair play", "More erotic kissing / making out",
+  "Neck/ear play (breath, licking, sucking)", "Longer sensual holding moments",
+  "Manual genital massage skills", "Improve oral techniques",
+  "Learn to orgasm while receiving oral", "Explore mutual oral for energetic blending",
+  "Explore positions stimulating multiple zones",
+  "Sex in new/unusual locations", "More sensual talk / appreciation / dirty talk",
+  "Share fantasies (even if not acted on)", "More moans / feedback / vocal response",
+  "Feel confident asking for what I want", "Encourage partner to ask too",
+  "Share 'favourite frames' (best moments)",
+  "Sexy clothes / lingerie / costumes / heels / latex / gear",
+  "Take sexy photos or video (self/partner)",
+  "Erotic dance / lap dance / pole dance with partner", "Go to an exotic dance club",
+  "Water play (hot tub / shower / spring / waterfall)",
+  "Spanking / flogging / restraints / blindfolds", "Rope bondage (Shibari)",
+  "Sex furniture restraint play", "Domination", "Being dominated",
+  "Harness / strap-on play", "Remote control toy play",
+  "Explore anal pleasure", "Anal vibrator",
+  "Suction devices (clit/nipple/penis/vulva pump)", "Penis pump / enlargement techniques",
+  "Tantra / spiritual sex techniques", "Expanded orgasm / orgasmic meditation practice",
+  "Multi-orgasmic stamina training", "Female ejaculation healing / exploration",
+  "Taoist thrusting techniques", "360° tantric positions", "Piercings / clamps / jewellery",
+];
 
 interface Proposal {
   id: string;
@@ -32,6 +61,18 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
   const [myProposal, setMyProposal] = useState<Proposal | null>(null);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const suggestions = newItem.trim().length >= 1
+    ? SEX_BUCKET_IDEAS.filter(
+        (idea) =>
+          idea.toLowerCase().includes(newItem.toLowerCase()) &&
+          !items.includes(idea)
+      ).slice(0, 6)
+    : [];
 
   // Fetch proposals on mount
   useEffect(() => {
@@ -277,18 +318,61 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
           ))}
 
           {items.length < 10 && (
-            <div className="flex gap-2">
-              <input
-                autoFocus
-                value={newItem}
-                onChange={(e) => setNewItem(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addItem()}
-                placeholder={`Thing #${items.length + 1} to try…`}
-                className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-              <button onClick={addItem} className="rounded-xl bg-primary px-3 py-2.5 text-primary-foreground">
-                <Plus className="w-4 h-4" />
-              </button>
+            <div className="relative">
+              <div className="flex gap-2">
+                <input
+                  ref={inputRef}
+                  autoFocus
+                  value={newItem}
+                  onChange={(e) => { setNewItem(e.target.value); setShowSuggestions(true); setHighlightIdx(-1); }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      if (highlightIdx >= 0 && suggestions[highlightIdx]) {
+                        setNewItem(suggestions[highlightIdx]);
+                        setShowSuggestions(false);
+                        setHighlightIdx(-1);
+                      } else {
+                        addItem();
+                      }
+                    } else if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setHighlightIdx((prev) => Math.min(prev + 1, suggestions.length - 1));
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setHighlightIdx((prev) => Math.max(prev - 1, -1));
+                    } else if (e.key === "Escape") {
+                      setShowSuggestions(false);
+                    }
+                  }}
+                  placeholder={`Thing #${items.length + 1} to try…`}
+                  className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                <button onClick={addItem} className="rounded-xl bg-primary px-3 py-2.5 text-primary-foreground">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              {showSuggestions && suggestions.length > 0 && (
+                <div ref={suggestionsRef} className="absolute left-0 right-10 top-full mt-1 z-20 rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={s}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setNewItem(s);
+                        setShowSuggestions(false);
+                        inputRef.current?.focus();
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                        i === highlightIdx ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted/50"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
