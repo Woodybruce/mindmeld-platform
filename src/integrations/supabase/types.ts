@@ -74,6 +74,60 @@ export type Database = {
         }
         Relationships: []
       }
+      feed_content: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          emoji: string | null
+          id: string
+          image_url: string | null
+          link: string | null
+          size: string
+          subtitle: string | null
+          tag: string
+          tag_color: string
+          title: string
+          type: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          size?: string
+          subtitle?: string | null
+          tag?: string
+          tag_color?: string
+          title: string
+          type?: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          size?: string
+          subtitle?: string | null
+          tag?: string
+          tag_color?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
