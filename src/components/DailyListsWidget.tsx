@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Check, Plus, CalendarDays } from "lucide-react";
-import { motion } from "framer-motion";
+import { Check, Plus, CalendarDays, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useWeeklyTasks } from "@/hooks/useWeeklyTasks";
 
@@ -8,6 +8,7 @@ const DailyListsWidget = () => {
   const navigate = useNavigate();
   const { tasks, loading, toggleTask, getTodayTasks } = useWeeklyTasks();
   const todayTasks = getTodayTasks();
+  const [expanded, setExpanded] = useState(false);
 
   if (loading) return null;
 
@@ -27,8 +28,9 @@ const DailyListsWidget = () => {
   }
 
   const doneCount = todayTasks.filter((t) => t.done).length;
-  const visibleItems = todayTasks.slice(0, 5);
   const todayLabel = new Date().toLocaleDateString("default", { weekday: "long" });
+  const previewItems = todayTasks.slice(0, 2);
+  const remainingItems = todayTasks.slice(2);
 
   return (
     <motion.div
@@ -49,8 +51,8 @@ const DailyListsWidget = () => {
         </div>
       </button>
 
-      <div className="px-4 pb-3 space-y-1">
-        {visibleItems.map((task) => (
+      <div className="px-4 pb-1 space-y-1">
+        {previewItems.map((task) => (
           <div key={task.id} className="flex items-center gap-3 py-2">
             <button
               onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
@@ -63,19 +65,52 @@ const DailyListsWidget = () => {
             <span className={`flex-1 text-sm ${task.done ? "text-muted-foreground" : "text-foreground"}`}>
               {task.text}
             </span>
-            {task.source !== "manual" && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground uppercase">
-                {task.source}
-              </span>
-            )}
           </div>
         ))}
-        {todayTasks.length > 5 && (
-          <button onClick={() => navigate("/us?tab=lists")} className="text-xs text-primary font-medium py-1">
-            +{todayTasks.length - 5} more
-          </button>
-        )}
       </div>
+
+      {/* Expandable remaining items */}
+      {remainingItems.length > 0 && (
+        <>
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 space-y-1">
+                  {remainingItems.map((task) => (
+                    <div key={task.id} className="flex items-center gap-3 py-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
+                        className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
+                          task.done ? "bg-primary text-primary-foreground" : "border-2 border-border"
+                        }`}
+                      >
+                        {task.done && <Check className="w-3 h-3" />}
+                      </button>
+                      <span className={`flex-1 text-sm ${task.done ? "text-muted-foreground" : "text-foreground"}`}>
+                        {task.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full flex items-center justify-center gap-1 py-2 text-xs text-primary font-medium hover:bg-secondary/50 transition-colors"
+          >
+            {expanded ? "Show less" : `+${remainingItems.length} more`}
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+          </button>
+        </>
+      )}
 
       {todayTasks.length > 0 && (
         <div className="px-4 pb-4">
