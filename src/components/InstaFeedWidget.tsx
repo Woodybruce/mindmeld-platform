@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, Instagram, Plus, X, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,12 @@ interface InstaLink {
   title: string | null;
   note: string | null;
   created_at: string;
+}
+
+interface OEmbedData {
+  thumbnail_url: string | null;
+  title: string | null;
+  author: string | null;
 }
 
 const curatedAccounts = [
@@ -48,10 +54,12 @@ const InstaFeedWidget = () => {
   const [newUrl, setNewUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [embedCache, setEmbedCache] = useState<Record<string, OEmbedData>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const partnerId = profile?.partner_id;
 
+  // Fetch saved links
   useEffect(() => {
     if (!user) return;
     const fetchLinks = async () => {
@@ -73,6 +81,32 @@ const InstaFeedWidget = () => {
     };
     fetchLinks();
   }, [user, partnerId]);
+
+  // Fetch oEmbed data for saved links
+  const fetchEmbed = useCallback(async (url: string, id: string) => {
+    if (embedCache[id]) return;
+    try {
+      const { data } = await supabase.functions.invoke("instagram-oembed", {
+        body: { url },
+      });
+      if (data && !data.error) {
+        setEmbedCache((prev) => ({
+          ...prev,
+          [id]: {
+            thumbnail_url: data.thumbnail_url,
+            title: data.title || data.author,
+            author: data.author,
+          },
+        }));
+      }
+    } catch {
+      // silently fail — gradient fallback will show
+    }
+  }, [embedCache]);
+
+  useEffect(() => {
+    savedLinks.forEach((link) => fetchEmbed(link.url, link.id));
+  }, [savedLinks, fetchEmbed]);
 
   const handleSave = async () => {
     if (!newUrl.trim() || !user) return;
@@ -186,11 +220,14 @@ const InstaFeedWidget = () => {
             className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
             style={{ scrollbarWidth: "none" }}
           >
-            {allCards.map((card, idx) => {
+            {allCards.map((card) => {
               if (card.type === "saved") {
                 const link = card.data as InstaLink;
                 const username = extractInstaUsername(link.url);
                 const gradient = getPostGradient(link.id);
+                const embed = embedCache[link.id];
+                const hasThumbnail = embed?.thumbnail_url;
+
                 return (
                   <a
                     key={link.id}
@@ -199,21 +236,37 @@ const InstaFeedWidget = () => {
                     rel="noopener noreferrer"
                     className="snap-center shrink-0 w-[75%] aspect-square rounded-2xl overflow-hidden relative group"
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
-                    <div className="absolute inset-0 bg-black/20" />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
-                      <Instagram className="w-8 h-8 mb-3 opacity-90" />
-                      <p className="text-lg font-display font-bold text-center leading-tight">
-                        {link.title || "Instagram Post"}
+                    {/* Background: real thumbnail or gradient fallback */}
+                    {hasThumbnail ? (
+                      <img
+                        src={embed.thumbnail_url!}
+                        alt={link.title || "Instagram post"}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+                    {/* Content overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      {!hasThumbnail && (
+                        <Instagram className="w-7 h-7 mb-2 opacity-80" />
+                      )}
+                      <p className="text-sm font-display font-bold leading-tight drop-shadow-lg">
+                        {embed?.title || link.title || "Instagram Post"}
                       </p>
                       {username && (
-                        <p className="text-sm opacity-80 mt-1">@{username}</p>
+                        <p className="text-xs opacity-80 mt-0.5 drop-shadow">@{username}</p>
                       )}
-                      <div className="mt-3 flex items-center gap-1.5 text-xs opacity-70">
+                      <div className="mt-2 flex items-center gap-1.5 text-[10px] opacity-70">
                         <ExternalLink className="w-3 h-3" />
-                        <span>Tap to view</span>
+                        <span>View on Instagram</span>
                       </div>
                     </div>
+
+                    {/* Date badge */}
                     <div className="absolute top-3 right-3 bg-black/30 backdrop-blur-sm rounded-lg px-2 py-1">
                       <p className="text-[10px] text-white/80 font-medium">
                         {new Date(link.created_at).toLocaleDateString("default", { day: "numeric", month: "short" })}
@@ -222,7 +275,7 @@ const InstaFeedWidget = () => {
                   </a>
                 );
               } else {
-                const account = card.data as typeof curatedAccounts[0];
+                const account = card.data as (typeof curatedAccounts)[0];
                 return (
                   <a
                     key={account.handle}
