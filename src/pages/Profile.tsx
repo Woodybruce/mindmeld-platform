@@ -1,6 +1,7 @@
 import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw, Camera, Shield } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import PartnerAvatarUpload from "@/components/connect/PartnerAvatarUpload";
+import PartnerInviteCard from "@/components/PartnerInviteCard";
 import OutlookEventPicker from "@/components/OutlookEventPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
@@ -152,52 +153,8 @@ const Profile = () => {
         {/* Partner Photo */}
         {profile?.partner_id && <PartnerAvatarUpload />}
 
-        {/* Link partner by email */}
-        {!profile?.partner_id && (
-          <div className="rounded-xl border border-border bg-card p-5">
-            {!showLinkInput ? (
-              <button
-                onClick={() => setShowLinkInput(true)}
-                className="w-full flex items-center gap-3 text-left"
-              >
-                <UserPlus className="w-5 h-5 text-primary" />
-                <div>
-                  <span className="font-medium text-foreground text-sm">Link Your Partner</span>
-                  <p className="text-xs text-muted-foreground">Enter their email to connect your accounts</p>
-                </div>
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-foreground">Enter your partner's email</p>
-                <p className="text-xs text-muted-foreground">They must have an account already</p>
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      autoFocus
-                      type="email"
-                      value={partnerEmail}
-                      onChange={(e) => setPartnerEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleLinkPartner()}
-                      placeholder="partner@email.com"
-                      className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                  </div>
-                  <button
-                    onClick={handleLinkPartner}
-                    disabled={linking}
-                    className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
-                  >
-                    {linking ? "…" : "Link"}
-                  </button>
-                </div>
-                <button onClick={() => setShowLinkInput(false)} className="text-xs text-muted-foreground">
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Link partner — improved UX */}
+        {!profile?.partner_id && <PartnerInviteCard />}
 
         {/* Theme selector */}
         <div className="rounded-xl border border-border bg-card p-5">
@@ -369,6 +326,8 @@ const Profile = () => {
                   supabase.from("shared_files").delete().eq("user_id", uid),
                   supabase.from("shared_folders").delete().eq("user_id", uid),
                   supabase.from("calendar_events").delete().eq("user_id", uid),
+                  supabase.from("mood_checkins").delete().eq("user_id", uid),
+                  supabase.from("profiles").update({ anniversary_date: null } as any).eq("id", uid),
                 ]);
               }
             } catch (e) {
