@@ -27,11 +27,39 @@ const CATEGORIES = [
 const CACHE_KEY = "suggested-products";
 const CACHE_TTL = 1000 * 60 * 60;
 
-const getProductImage = (hint?: string, fallbackEmoji?: string) => {
+const getProductImage = (hint?: string) => {
   if (hint) {
-    return `https://source.unsplash.com/200x200/?${encodeURIComponent(hint)}`;
+    return `https://images.unsplash.com/photo-${getUnsplashId(hint)}?w=200&h=200&fit=crop&auto=format`;
   }
   return null;
+};
+
+// Map common product hints to known Unsplash photo IDs for reliable images
+const unsplashMap: Record<string, string> = {
+  "candle gift box": "1602607474159-0d4e4b16c5a6",
+  "couples journal book": "1544947950-fa07a98d237f",
+  "massage oil bottles": "1600334089648-b0d9d3028eb2",
+  "scratch world map": "1526778548025-fa2f459cd5c1",
+  "couple cooking": "1556910103-1c02745aae4d",
+  "wine tasting": "1510812431401-41d2bd2722f3",
+  "spa treatment": "1544161515-4ab6ce6db874",
+  "travel suitcase": "1553531384-cc64259b7e9e",
+  "romantic dinner": "1414235077428-338989a2e8c0",
+  "couple gift": "1549465220-1a8b9238cd48",
+  "date night": "1529543544282-ea07407bc0b1",
+  "experience gift": "1506905925346-21bda4d32df4",
+  "intimacy": "1516589178581-6cd7833ae3b2",
+  "travel": "1488646953014-85cb44e25828",
+  "dining": "1414235077428-338989a2e8c0",
+};
+
+const getUnsplashId = (hint: string): string => {
+  const lower = hint.toLowerCase();
+  for (const [key, id] of Object.entries(unsplashMap)) {
+    if (lower.includes(key) || key.includes(lower)) return id;
+  }
+  // Fallback to a generic couple/gift image
+  return "1549465220-1a8b9238cd48";
 };
 
 const SuggestedProducts = () => {
