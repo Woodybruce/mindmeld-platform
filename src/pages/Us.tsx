@@ -39,7 +39,20 @@ const fileIcon = (type: string) => {
   }
 };
 
-const defaultLists: UserList[] = [];
+const defaultLists: UserList[] = [
+  {
+    id: "default-long-term-goals",
+    name: "Our Long-Term Goals",
+    icon: "⭐",
+    template: "long-term-goals",
+    createdAt: new Date().toISOString(),
+    maxItems: 5,
+    items: [
+      { id: "ltg-h1", text: "Our 5 Long-Term Goals", done: false, isHeading: true },
+      { id: "ltg-h2", text: "How we'll achieve them", done: false, isHeading: true },
+    ],
+  },
+];
 
 const Us = () => {
   const navigate = useNavigate();
