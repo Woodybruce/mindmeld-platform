@@ -15,6 +15,7 @@ interface Product {
   affiliateTag: string;
   imageHint?: string;
   productUrl?: string;
+  imageUrl?: string;
 }
 
 const CATEGORIES = [
@@ -165,7 +166,25 @@ const SuggestedProducts = () => {
                   {/* Product visual */}
                   <div className={`relative w-full aspect-square overflow-hidden bg-gradient-to-br ${gradient}`}>
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-5xl drop-shadow-sm">{p.emoji}</span>
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                            const parent = (e.target as HTMLImageElement).parentElement;
+                            if (parent) {
+                              const emoji = document.createElement("span");
+                              emoji.className = "text-5xl drop-shadow-sm";
+                              emoji.textContent = p.emoji;
+                              parent.appendChild(emoji);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span className="text-5xl drop-shadow-sm">{p.emoji}</span>
+                      )}
                     </div>
                     <div className="absolute top-1.5 right-1.5">
                       <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
