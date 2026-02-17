@@ -47,7 +47,7 @@ export const ListsSummaryWidget = () => {
 
       <div className="px-4 pb-4 pt-1 space-y-2 max-h-[180px] overflow-y-auto scrollbar-hide">
         {summaries.map((s) => (
-          <div key={s.id} className="flex items-center gap-3 bg-secondary/60 rounded-xl px-3 py-2.5">
+          <button key={s.id} onClick={() => navigate("/us?tab=lists")} className="w-full flex items-center gap-3 bg-secondary/60 rounded-xl px-3 py-2.5 text-left hover:bg-secondary transition-colors">
             <span className="text-base">{s.icon}</span>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{s.name}</p>
@@ -66,7 +66,7 @@ export const ListsSummaryWidget = () => {
                 )}
               </div>
             )}
-          </div>
+          </button>
         ))}
       </div>
     </motion.div>
