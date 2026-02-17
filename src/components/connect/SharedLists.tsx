@@ -89,6 +89,7 @@ const togetherListDefaultItems = [
   "A beach holiday",
   "A road trip adventure",
   "## Things we have done together",
+  "Add your first memory here…",
 ];
 
 const challengesListDefaultItems = [
