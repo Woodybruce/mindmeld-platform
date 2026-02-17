@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heading2 } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heading2, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -44,6 +44,41 @@ export interface UserList {
   };
 }
 
+const sexListDefaultItems = [
+  "## What we feel is a good sex life",
+  "Not valued on frequency",
+  "Intimate",
+  "More pleasure",
+  "More novel",
+  "More variety",
+  "More playful",
+  "Relaxed / easy / no pressure",
+  "Connected",
+  "Equality",
+  "Exploration",
+  "Trust",
+  "Communication",
+  "Responsive — communal giving and strength. Give without receiving",
+  "Organised, attentive, like to plan",
+  "## What are our motivations for sex?",
+  "Pleasure",
+  "Fun",
+  "Enjoyment",
+  "Become closer together",
+  "## Preferences Don't Like",
+  "Pubic hair",
+  "## Preferences Like or have liked",
+  "Pretty much everything - prefer you to orgasm",
+  "Oral sex",
+  "Toys",
+  "Flirting",
+  "You masturbating with toy",
+  "Massage leading to sex",
+  "## Our Top 10 Priorities",
+  "## How do we hit our priorities",
+  "## Ideas & Resources",
+];
+
 const templates = [
   {
     id: "family",
@@ -54,6 +89,15 @@ const templates = [
     lucideIcon: Target,
     defaultItems: [],
     navigateTo: "/family-quiz",
+  },
+  {
+    id: "sex-list",
+    name: "Our Sex List",
+    icon: "🔥",
+    description: "Private & honest intimacy list",
+    gradient: "bg-gradient-to-br from-us-coral/15 to-us-blush/20",
+    lucideIcon: Heart,
+    defaultItems: sexListDefaultItems,
   },
   {
     id: "daily",
@@ -118,7 +162,11 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
       icon: t.icon,
       template: t.id,
       createdAt: new Date().toISOString(),
-      items: t.defaultItems.map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false })),
+      items: t.defaultItems.map((text, i) => {
+        const isHeading = text.startsWith("## ");
+        const itemText = isHeading ? text.slice(3).trim() : text;
+        return { id: `${Date.now()}-${i}`, text: itemText, done: false, isHeading: isHeading || undefined };
+      }),
     };
     const updated = [newList, ...lists];
     onUpdate(updated);
