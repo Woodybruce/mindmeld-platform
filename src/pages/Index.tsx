@@ -10,9 +10,6 @@ import Onboarding from "@/components/Onboarding";
 import { useAuth } from "@/contexts/AuthContext";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
-import {
-  QuizzesPreview,
-} from "@/components/UsSectionPreviews";
 import QuickLinks from "@/components/QuickLinks";
 import RecentChatLinksWidget from "@/components/chat/RecentChatLinksWidget";
 
@@ -87,9 +84,8 @@ const Index = () => {
           )
         )}
 
-        {/* Lists + Quizzes */}
+        {/* Lists */}
         <DailyListsWidget />
-        <QuizzesPreview />
 
         {/* Remaining feed cards */}
         {rows.slice(2).map((row, idx) => (

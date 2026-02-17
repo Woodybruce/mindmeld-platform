@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,16 @@ export interface UserList {
 
 const templates = [
   {
+    id: "family",
+    name: "Family List",
+    icon: "👨‍👩‍👧‍👦",
+    description: "AI-powered family to-do list",
+    gradient: "bg-gradient-to-br from-us-sage/20 to-us-gold/15",
+    lucideIcon: Target,
+    defaultItems: [],
+    navigateTo: "/family-quiz",
+  },
+  {
     id: "daily",
     name: "Daily To-Do",
     icon: "☀️",
@@ -78,6 +89,7 @@ interface SharedListsProps {
 }
 
 const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
+  const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
@@ -93,6 +105,12 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
 
   const createFromTemplate = (templateId: string) => {
     const t = templates.find((t) => t.id === templateId)!;
+    // If template has a navigation target (e.g. Family Quiz), go there instead
+    if ((t as any).navigateTo) {
+      setShowTemplates(false);
+      navigate((t as any).navigateTo);
+      return;
+    }
     const newList: UserList = {
       id: Date.now().toString(),
       name: t.name,
