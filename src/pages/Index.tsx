@@ -35,7 +35,7 @@ const layoutItems = (items: FeedItem[]) => {
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
   const { user, profile } = useAuth();
-  const { data: backendFeedItems = [] } = useFeedContent(3);
+  const { data: backendFeedItems = [] } = useFeedContent(2);
   
 
   const [onboardingDone, setOnboardingDone] = useState(() => {
