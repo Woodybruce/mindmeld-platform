@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      bucket_list_proposals: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          proposal_type: string
+          responded_at: string | null
+          selected_items: Json | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          proposal_type?: string
+          responded_at?: string | null
+          selected_items?: Json | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          proposal_type?: string
+          responded_at?: string | null
+          selected_items?: Json | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           created_at: string

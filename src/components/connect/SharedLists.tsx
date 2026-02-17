@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heading2, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import SexBucketList from "./SexBucketList";
 
 export interface ListItemAttachment {
   type: "photo" | "file" | "event";
@@ -572,6 +573,9 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Sex Bucket List sub-template */}
+      <SexBucketList lists={lists} onUpdate={onUpdate} />
 
       {/* Existing lists */}
       {lists.length === 0 && !showTemplates && !creatingBlank && (
