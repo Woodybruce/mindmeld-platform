@@ -14,6 +14,8 @@ import QuickLinks from "@/components/QuickLinks";
 import CuratedLinksWidget from "@/components/CuratedLinksWidget";
 import SuggestedProducts from "@/components/SuggestedProducts";
 import { useFeedContent } from "@/hooks/useFeedContent";
+import { PhotosPreview } from "@/components/UsSectionPreviews";
+import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -97,6 +99,12 @@ const Index = () => {
             ))}
           </div>
         )}
+
+        {/* Lists summary */}
+        <ListsSummaryWidget />
+
+        {/* Our Photos */}
+        <PhotosPreview />
 
         {/* Curated links & relationship articles */}
         <CuratedLinksWidget />
