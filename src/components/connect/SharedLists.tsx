@@ -377,6 +377,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   const [attachingItemId, setAttachingItemId] = useState<{ listId: string; itemId: string } | null>(null);
   const [eventPickerItem, setEventPickerItem] = useState<{ listId: string; itemId: string } | null>(null);
   const [eventDate, setEventDate] = useState("");
+  const [sectionNewItem, setSectionNewItem] = useState<Record<string, string>>({});
 
   const createFromTemplate = (templateId: string) => {
     const t = templates.find((t) => t.id === templateId)!;
@@ -474,21 +475,39 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
     }
   };
 
-  const addItem = (listId: string) => {
-    if (!newItemText.trim()) return;
+  const addItem = (listId: string, afterHeadingId?: string) => {
+    const inputText = afterHeadingId ? (sectionNewItem[`${listId}-${afterHeadingId}`] || "") : newItemText;
+    if (!inputText.trim()) return;
     const list = lists.find((l) => l.id === listId);
-    if (list?.maxItems && list.items.length >= list.maxItems) {
+    if (list?.maxItems && list.items.filter(i => !i.isHeading).length >= list.maxItems) {
       toast({ title: `Max ${list.maxItems} items`, description: "Remove an item first to add a new one." });
       return;
     }
-    const text = newItemText.trim();
+    const text = inputText.trim();
     const isHeading = text.startsWith("## ");
     const itemText = isHeading ? text.slice(3).trim() : text;
-    const updated = lists.map((l) =>
-      l.id === listId ? { ...l, items: [...l.items, { id: Date.now().toString(), text: itemText, done: false, isHeading: isHeading || undefined }] } : l
-    );
+    const newItem = { id: Date.now().toString(), text: itemText, done: false, isHeading: isHeading || undefined };
+
+    const updated = lists.map((l) => {
+      if (l.id !== listId) return l;
+      if (afterHeadingId) {
+        // Insert at end of this heading's section
+        const headingIdx = l.items.findIndex(i => i.id === afterHeadingId);
+        if (headingIdx === -1) return { ...l, items: [...l.items, newItem] };
+        const nextHeadingIdx = l.items.findIndex((it, idx) => idx > headingIdx && it.isHeading);
+        const insertIdx = nextHeadingIdx === -1 ? l.items.length : nextHeadingIdx;
+        const newItems = [...l.items];
+        newItems.splice(insertIdx, 0, newItem);
+        return { ...l, items: newItems };
+      }
+      return { ...l, items: [...l.items, newItem] };
+    });
     onUpdate(updated);
-    setNewItemText("");
+    if (afterHeadingId) {
+      setSectionNewItem(prev => ({ ...prev, [`${listId}-${afterHeadingId}`]: "" }));
+    } else {
+      setNewItemText("");
+    }
   };
 
   const suggestDreams = async (listId: string) => {
@@ -961,181 +980,211 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                 {/* Active items */}
                 <div className="px-4 py-3 space-y-1.5">
                   {(() => {
-                    // Group items by sections (heading + its children)
-                    let currentHeadingId: string | null = null;
-                    let nonHeadingIndex = 0;
-                    return activeItems.map((item) => {
+                    // Build sections: group items by heading
+                    type Section = { heading: ListItem | null; items: ListItem[] };
+                    const sections: Section[] = [];
+                    let curSec: Section = { heading: null, items: [] };
+
+                    activeItems.forEach((item) => {
                       if (item.isHeading) {
-                        currentHeadingId = item.id;
-                        const isSectionCollapsed = collapsedSections.has(item.id);
-                        // If searching, skip section collapse
-                        if (query && !item.text.toLowerCase().includes(query)) {
-                          // Check if any child matches
-                          const headingIdx = list.items.indexOf(item);
-                          const nextHeadingIdx = list.items.findIndex((it, idx) => idx > headingIdx && it.isHeading);
-                          const children = list.items.slice(headingIdx + 1, nextHeadingIdx === -1 ? undefined : nextHeadingIdx);
-                          if (!children.some((c) => c.text.toLowerCase().includes(query))) return null;
-                        }
-                        return (
-                          <div key={item.id} className="group">
-                            <button
-                              onClick={() => toggleSection(item.id)}
-                              className="w-full flex items-center gap-2 pt-3 pb-1 text-left"
-                            >
-                              {isSectionCollapsed ? (
-                                <ChevronRight className="w-3 h-3 text-primary flex-shrink-0" />
-                              ) : (
-                                <ChevronDown className="w-3 h-3 text-primary flex-shrink-0" />
-                              )}
-                              <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{item.text}</span>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); removeItem(list.id, item.id); }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                              </button>
-                            </button>
-                          </div>
-                        );
+                        sections.push(curSec);
+                        curSec = { heading: item, items: [] };
+                      } else {
+                        curSec.items.push(item);
+                      }
+                    });
+                    sections.push(curSec);
+
+                    let nonHeadingIndex = 0;
+
+                    return sections.map((section, si) => {
+                      const headingId = section.heading?.id || null;
+                      const isSectionCollapsed = headingId ? collapsedSections.has(headingId) : false;
+
+                      if (section.heading && query && !section.heading.text.toLowerCase().includes(query)) {
+                        if (!section.items.some((c) => c.text.toLowerCase().includes(query))) return null;
                       }
 
-                      // If this item's section is collapsed, hide it
-                      if (currentHeadingId && collapsedSections.has(currentHeadingId)) return null;
-
-                      // Search filter
-                      if (query && !item.text.toLowerCase().includes(query)) return null;
-
-                      const isEditing = editingItem?.listId === list.id && editingItem?.itemId === item.id;
-                      nonHeadingIndex++;
-                      const itemNumber = list.template === "long-term-goals" ? nonHeadingIndex : null;
+                      const sectionInputKey = `${list.id}-${headingId || "root"}`;
 
                       return (
-                        <div key={item.id} className="group">
-                          <div className="flex items-center gap-2.5">
-                            {itemNumber ? (
+                        <div key={headingId || `section-root-${si}`}>
+                          {section.heading && (
+                            <div className="group">
                               <button
-                                onClick={() => toggleItem(list.id, item.id)}
-                                className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 text-[10px] font-bold transition-colors ${
-                                  item.done ? "bg-primary text-primary-foreground" : "border border-border hover:border-primary/50 text-muted-foreground"
-                                }`}
+                                onClick={() => toggleSection(section.heading!.id)}
+                                className="w-full flex items-center gap-2 pt-3 pb-1 text-left"
                               >
-                                {item.done ? <Check className="w-3 h-3" /> : itemNumber}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => toggleItem(list.id, item.id)}
-                                className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors border-border hover:border-primary/50"
-                              >
-                              </button>
-                            )}
-                            {isEditing ? (
-                              <input
-                                autoFocus
-                                value={editText}
-                                onChange={(e) => setEditText(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") saveEdit(list.id, item.id);
-                                  if (e.key === "Escape") { setEditingItem(null); setEditText(""); }
-                                }}
-                                onBlur={() => saveEdit(list.id, item.id)}
-                                className="flex-1 rounded-lg border border-primary bg-background px-2 py-0.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            ) : (
-                              <span
-                                onClick={() => { setEditingItem({ listId: list.id, itemId: item.id }); setEditText(item.text); }}
-                                className="flex-1 text-sm text-foreground cursor-text hover:text-primary/80 transition-colors"
-                              >
-                                {item.text}
-                              </span>
-                            )}
-                            {!isEditing && (
-                              <>
+                                {isSectionCollapsed ? (
+                                  <ChevronRight className="w-3 h-3 text-primary flex-shrink-0" />
+                                ) : (
+                                  <ChevronDown className="w-3 h-3 text-primary flex-shrink-0" />
+                                )}
+                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{section.heading.text}</span>
                                 <button
-                                  onClick={() => { setEditingItem({ listId: list.id, itemId: item.id }); setEditText(item.text); }}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                  title="Edit"
-                                >
-                                  <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setAttachingItemId({ listId: list.id, itemId: item.id });
-                                    fileInputRef.current?.click();
-                                  }}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                  title="Attach photo/file"
-                                >
-                                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                                </button>
-                                <button
-                                  onClick={() => setEventPickerItem(
-                                    eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id
-                                      ? null
-                                      : { listId: list.id, itemId: item.id }
-                                  )}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                  title="Create event"
-                                >
-                                  <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                                </button>
-                                <button
-                                  onClick={() => removeItem(list.id, item.id)}
+                                  onClick={(e) => { e.stopPropagation(); removeItem(list.id, section.heading!.id); }}
                                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                                 </button>
-                              </>
-                            )}
-                          </div>
-
-                          {/* Inline event date picker */}
-                          {eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id && (
-                            <div className="flex items-center gap-2 pl-7 mt-1.5">
-                              <input
-                                type="datetime-local"
-                                value={eventDate}
-                                onChange={(e) => setEventDate(e.target.value)}
-                                className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                              <button
-                                onClick={() => {
-                                  if (!eventDate) return;
-                                  addAttachment(list.id, item.id, {
-                                    type: "event",
-                                    name: item.text,
-                                    date: eventDate,
-                                  });
-                                  setEventPickerItem(null);
-                                  setEventDate("");
-                                }}
-                                className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                              >
-                                Add
-                              </button>
-                              <button
-                                onClick={() => { setEventPickerItem(null); setEventDate(""); }}
-                                className="text-xs text-muted-foreground hover:text-foreground"
-                              >
-                                ✕
                               </button>
                             </div>
                           )}
 
-                          {/* Attachments */}
-                          {item.attachments && item.attachments.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pl-7 mt-1">
-                              {item.attachments.map((att, ai) => (
-                                <a
-                                  key={ai}
-                                  href={att.type === "event" ? undefined : att.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                  {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
-                                  {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}
-                                </a>
-                              ))}
+                          {!isSectionCollapsed && section.items.map((item) => {
+                            if (query && !item.text.toLowerCase().includes(query)) return null;
+
+                            const isEditing = editingItem?.listId === list.id && editingItem?.itemId === item.id;
+                            nonHeadingIndex++;
+                            const itemNumber = list.template === "long-term-goals" ? nonHeadingIndex : null;
+
+                            return (
+                              <div key={item.id} className="group">
+                                <div className="flex items-center gap-2.5">
+                                  {itemNumber ? (
+                                    <button
+                                      onClick={() => toggleItem(list.id, item.id)}
+                                      className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 text-[10px] font-bold transition-colors ${
+                                        item.done ? "bg-primary text-primary-foreground" : "border border-border hover:border-primary/50 text-muted-foreground"
+                                      }`}
+                                    >
+                                      {item.done ? <Check className="w-3 h-3" /> : itemNumber}
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => toggleItem(list.id, item.id)}
+                                      className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors border-border hover:border-primary/50"
+                                    >
+                                    </button>
+                                  )}
+                                  {isEditing ? (
+                                    <input
+                                      autoFocus
+                                      value={editText}
+                                      onChange={(e) => setEditText(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") saveEdit(list.id, item.id);
+                                        if (e.key === "Escape") { setEditingItem(null); setEditText(""); }
+                                      }}
+                                      onBlur={() => saveEdit(list.id, item.id)}
+                                      className="flex-1 rounded-lg border border-primary bg-background px-2 py-0.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                  ) : (
+                                    <span
+                                      onClick={() => { setEditingItem({ listId: list.id, itemId: item.id }); setEditText(item.text); }}
+                                      className="flex-1 text-sm text-foreground cursor-text hover:text-primary/80 transition-colors"
+                                    >
+                                      {item.text}
+                                    </span>
+                                  )}
+                                  {!isEditing && (
+                                    <>
+                                      <button
+                                        onClick={() => { setEditingItem({ listId: list.id, itemId: item.id }); setEditText(item.text); }}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                        title="Edit"
+                                      >
+                                        <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setAttachingItemId({ listId: list.id, itemId: item.id });
+                                          fileInputRef.current?.click();
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                        title="Attach photo/file"
+                                      >
+                                        <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                      </button>
+                                      <button
+                                        onClick={() => setEventPickerItem(
+                                          eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id
+                                            ? null
+                                            : { listId: list.id, itemId: item.id }
+                                        )}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                        title="Create event"
+                                      >
+                                        <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                      </button>
+                                      <button
+                                        onClick={() => removeItem(list.id, item.id)}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+
+                                {eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id && (
+                                  <div className="flex items-center gap-2 pl-7 mt-1.5">
+                                    <input
+                                      type="datetime-local"
+                                      value={eventDate}
+                                      onChange={(e) => setEventDate(e.target.value)}
+                                      className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        if (!eventDate) return;
+                                        addAttachment(list.id, item.id, {
+                                          type: "event",
+                                          name: item.text,
+                                          date: eventDate,
+                                        });
+                                        setEventPickerItem(null);
+                                        setEventDate("");
+                                      }}
+                                      className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                                    >
+                                      Add
+                                    </button>
+                                    <button
+                                      onClick={() => { setEventPickerItem(null); setEventDate(""); }}
+                                      className="text-xs text-muted-foreground hover:text-foreground"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                )}
+
+                                {item.attachments && item.attachments.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 pl-7 mt-1">
+                                    {item.attachments.map((att, ai) => (
+                                      <a
+                                        key={ai}
+                                        href={att.type === "event" ? undefined : att.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                                      >
+                                        {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
+                                        {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}
+                                      </a>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Per-section add item input */}
+                          {headingId && !isSectionCollapsed && (!list.maxItems || list.items.filter(i => !i.isHeading).length < list.maxItems) && (
+                            <div className="flex gap-1.5 pl-7 pt-1 pb-1">
+                              <input
+                                value={sectionNewItem[sectionInputKey] || ""}
+                                onChange={(e) => setSectionNewItem(prev => ({ ...prev, [sectionInputKey]: e.target.value }))}
+                                onKeyDown={(e) => e.key === "Enter" && addItem(list.id, headingId!)}
+                                placeholder="Add item…"
+                                className="flex-1 rounded-lg border border-border/60 bg-background px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                              <button
+                                onClick={() => addItem(list.id, headingId!)}
+                                className="rounded-lg bg-primary/10 px-2 py-1 text-primary hover:bg-primary/20 transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
                             </div>
                           )}
                         </div>
