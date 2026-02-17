@@ -13,6 +13,7 @@ interface SubstackArticle {
   description: string;
   pubDate: string;
   newsletter: string;
+  imageUrl?: string | null;
 }
 
 interface SavedLink {
@@ -270,22 +271,29 @@ const SubstackFeedWidget = () => {
                   href={article.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block bg-secondary/60 rounded-xl px-3 py-2.5 hover:bg-secondary transition-colors"
+                  className="flex bg-secondary/60 rounded-xl overflow-hidden hover:bg-secondary transition-colors"
                 >
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground line-clamp-1">{article.title}</p>
-                      <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{article.description}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-orange-500 font-medium">{article.newsletter}</span>
-                        {article.pubDate && (
-                          <span className="text-[10px] text-muted-foreground/60">
-                            {formatDistanceToNow(new Date(article.pubDate), { addSuffix: true })}
-                          </span>
-                        )}
-                      </div>
+                  {article.imageUrl && (
+                    <div className="w-20 h-20 shrink-0 overflow-hidden">
+                      <img src={article.imageUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1 min-w-0 px-3 py-2.5">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground line-clamp-1">{article.title}</p>
+                        <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{article.description}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] text-orange-500 font-medium">{article.newsletter}</span>
+                          {article.pubDate && (
+                            <span className="text-[10px] text-muted-foreground/60">
+                              {formatDistanceToNow(new Date(article.pubDate), { addSuffix: true })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                    </div>
                   </div>
                 </a>
               ))}

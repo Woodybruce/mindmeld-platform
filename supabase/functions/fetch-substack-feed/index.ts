@@ -8,6 +8,7 @@ interface FeedItem {
   link: string;
   description: string;
   pubDate: string;
+  imageUrl: string | null;
 }
 
 function extractItems(xml: string): FeedItem[] {
@@ -21,10 +22,13 @@ function extractItems(xml: string): FeedItem[] {
     const link = block.match(/<link>(.*?)<\/link>/)?.[1] || "";
     const rawDesc = block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/)?.[1] ||
                     block.match(/<description>([\s\S]*?)<\/description>/)?.[1] || "";
+    // Extract first image from description HTML
+    const imgMatch = rawDesc.match(/<img[^>]+src=["']([^"']+)["']/i);
+    const imageUrl = imgMatch?.[1] || block.match(/<enclosure[^>]+url=["']([^"']+)["']/i)?.[1] || null;
     // Strip HTML for a plain-text preview
     const description = rawDesc.replace(/<[^>]+>/g, "").trim().slice(0, 200);
     const pubDate = block.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || "";
-    items.push({ title, link, description, pubDate });
+    items.push({ title, link, description, pubDate, imageUrl });
   }
   return items;
 }
