@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { ExternalLink, Instagram, Plus, X, Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ExternalLink, Instagram, Plus, X, Heart, ChevronLeft, ChevronRight, Trash2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -14,19 +14,25 @@ interface InstaLink {
   created_at: string;
 }
 
+interface InstaSuggestion {
+  id: string;
+  handle: string;
+  label: string | null;
+  bio: string | null;
+  image_url: string | null;
+}
+
 interface OEmbedData {
   thumbnail_url: string | null;
   title: string | null;
   author: string | null;
 }
 
-const curatedAccounts = [
-  { handle: "@thedatingdivas", label: "Date Ideas", bio: "Creative date night inspiration for couples", color: "from-pink-500/20 to-rose-400/20", image: "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=400&h=400&fit=crop" },
-  { handle: "@gottmaninstitute", label: "Relationship Tips", bio: "Science-based love advice", color: "from-blue-500/20 to-indigo-400/20", image: "https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?w=400&h=400&fit=crop" },
-  { handle: "@loveandlondon", label: "Travel Couples", bio: "Romantic travel inspiration", color: "from-amber-500/20 to-orange-400/20", image: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400&h=400&fit=crop" },
-  { handle: "@couplegoals", label: "Couple Goals", bio: "Relationship inspiration & goals", color: "from-purple-500/20 to-violet-400/20", image: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop" },
-  { handle: "@5lovelanguages", label: "Love Languages", bio: "Connect deeper with your partner", color: "from-[hsl(var(--us-coral))]/20 to-[hsl(var(--us-blush))]/20", image: "https://images.unsplash.com/photo-1474552226712-ac0f0961a954?w=400&h=400&fit=crop" },
-  { handle: "@datenight", label: "Date Nights", bio: "Fun at-home & out date ideas", color: "from-[hsl(var(--us-sage))]/20 to-emerald-400/20", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=400&fit=crop" },
+const defaultSuggestions = [
+  { handle: "@thedatingdivas", label: "Date Ideas", bio: "Creative date night inspiration for couples", image: "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=400&h=400&fit=crop" },
+  { handle: "@gottmaninstitute", label: "Relationship Tips", bio: "Science-based love advice", image: "https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?w=400&h=400&fit=crop" },
+  { handle: "@loveandlondon", label: "Travel Couples", bio: "Romantic travel inspiration", image: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400&h=400&fit=crop" },
+  { handle: "@couplegoals", label: "Couple Goals", bio: "Relationship inspiration & goals", image: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop" },
 ];
 
 const extractInstaUsername = (url: string): string | null => {
@@ -50,8 +56,11 @@ const getPostGradient = (id: string) => {
 const InstaFeedWidget = () => {
   const { user, profile } = useAuth();
   const [savedLinks, setSavedLinks] = useState<InstaLink[]>([]);
+  const [suggestions, setSuggestions] = useState<InstaSuggestion[]>([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [addMode, setAddMode] = useState<"link" | "account">("link");
   const [newUrl, setNewUrl] = useState("");
+  const [newHandle, setNewHandle] = useState("");
   const [saving, setSaving] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [embedCache, setEmbedCache] = useState<Record<string, OEmbedData>>({});
@@ -82,6 +91,25 @@ const InstaFeedWidget = () => {
     fetchLinks();
   }, [user, partnerId]);
 
+  // Fetch custom suggestions
+  useEffect(() => {
+    if (!user) return;
+    const fetchSuggestions = async () => {
+      const { data } = await supabase
+        .from("insta_suggestions")
+        .select("id, handle, label, bio, image_url")
+        .order("created_at", { ascending: true });
+
+      if (data && data.length > 0) {
+        setSuggestions(data);
+      } else {
+        // Show defaults if no custom ones yet
+        setSuggestions(defaultSuggestions.map((s, i) => ({ id: `default-${i}`, ...s, image_url: s.image })));
+      }
+    };
+    fetchSuggestions();
+  }, [user]);
+
   // Fetch oEmbed data for saved links
   const fetchEmbed = useCallback(async (url: string, id: string) => {
     if (embedCache[id]) return;
@@ -100,7 +128,7 @@ const InstaFeedWidget = () => {
         }));
       }
     } catch {
-      // silently fail — gradient fallback will show
+      // silently fail
     }
   }, [embedCache]);
 
@@ -108,7 +136,7 @@ const InstaFeedWidget = () => {
     savedLinks.forEach((link) => fetchEmbed(link.url, link.id));
   }, [savedLinks, fetchEmbed]);
 
-  const handleSave = async () => {
+  const handleSaveLink = async () => {
     if (!newUrl.trim() || !user) return;
     const url = newUrl.trim().startsWith("http") ? newUrl.trim() : `https://${newUrl.trim()}`;
     if (!url.includes("instagram.com")) {
@@ -142,9 +170,45 @@ const InstaFeedWidget = () => {
     setSaving(false);
   };
 
+  const handleAddSuggestion = async () => {
+    if (!newHandle.trim() || !user) return;
+    const handle = newHandle.trim().startsWith("@") ? newHandle.trim() : `@${newHandle.trim()}`;
+    setSaving(true);
+    const { error } = await supabase.from("insta_suggestions").insert({
+      user_id: user.id,
+      handle,
+      label: handle.replace("@", ""),
+    });
+    if (error) {
+      toast.error("Failed to add account");
+    } else {
+      toast.success(`${handle} added!`);
+      setNewHandle("");
+      setShowAdd(false);
+      // Refresh suggestions
+      const { data } = await supabase
+        .from("insta_suggestions")
+        .select("id, handle, label, bio, image_url")
+        .order("created_at", { ascending: true });
+      if (data && data.length > 0) setSuggestions(data);
+    }
+    setSaving(false);
+  };
+
+  const handleRemoveSuggestion = async (id: string) => {
+    if (id.startsWith("default-")) {
+      // Replace defaults with custom list (minus this one)
+      setSuggestions((prev) => prev.filter((s) => s.id !== id));
+      return;
+    }
+    await supabase.from("insta_suggestions").delete().eq("id", id);
+    setSuggestions((prev) => prev.filter((s) => s.id !== id));
+    toast.success("Account removed");
+  };
+
   const allCards = [
     ...savedLinks.map((link) => ({ type: "saved" as const, data: link })),
-    ...curatedAccounts.map((acc) => ({ type: "curated" as const, data: acc })),
+    ...suggestions.map((s) => ({ type: "suggestion" as const, data: s })),
   ];
 
   const scrollToIndex = (idx: number) => {
@@ -165,6 +229,9 @@ const InstaFeedWidget = () => {
     const idx = Math.round(container.scrollLeft / (cardWidth + gap));
     setCurrentIndex(idx);
   };
+
+  const suggestionImage = (s: InstaSuggestion) =>
+    s.image_url || `https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop`;
 
   return (
     <motion.div
@@ -191,25 +258,81 @@ const InstaFeedWidget = () => {
         </button>
       </div>
 
-      {/* Add link input */}
-      {showAdd && (
-        <div className="px-4 py-2 flex gap-2">
-          <Input
-            placeholder="Paste Instagram link…"
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSave()}
-            className="text-sm h-9"
-          />
-          <button
-            onClick={handleSave}
-            disabled={saving || !newUrl.trim()}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white disabled:opacity-50 shrink-0"
+      {/* Add panel */}
+      <AnimatePresence>
+        {showAdd && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
           >
-            {saving ? "…" : "Save"}
-          </button>
-        </div>
-      )}
+            {/* Mode tabs */}
+            <div className="flex gap-2 px-4 pt-1 pb-2">
+              <button
+                onClick={() => setAddMode("link")}
+                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                  addMode === "link"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                <ExternalLink className="w-3 h-3 inline mr-1" />
+                Save Post
+              </button>
+              <button
+                onClick={() => setAddMode("account")}
+                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                  addMode === "account"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                <UserPlus className="w-3 h-3 inline mr-1" />
+                Follow Account
+              </button>
+            </div>
+
+            <div className="px-4 pb-2 flex gap-2">
+              {addMode === "link" ? (
+                <>
+                  <Input
+                    placeholder="Paste Instagram link…"
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveLink()}
+                    className="text-sm h-9"
+                  />
+                  <button
+                    onClick={handleSaveLink}
+                    disabled={saving || !newUrl.trim()}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground disabled:opacity-50 shrink-0"
+                  >
+                    {saving ? "…" : "Save"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Input
+                    placeholder="@username"
+                    value={newHandle}
+                    onChange={(e) => setNewHandle(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddSuggestion()}
+                    className="text-sm h-9"
+                  />
+                  <button
+                    onClick={handleAddSuggestion}
+                    disabled={saving || !newHandle.trim()}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground disabled:opacity-50 shrink-0"
+                  >
+                    {saving ? "…" : "Add"}
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Swipeable square cards */}
       <div className="px-4 pb-3 pt-1">
@@ -236,7 +359,6 @@ const InstaFeedWidget = () => {
                     rel="noopener noreferrer"
                     className="snap-center shrink-0 w-[75%] aspect-square rounded-2xl overflow-hidden relative group"
                   >
-                    {/* Background: real thumbnail or gradient fallback */}
                     {hasThumbnail ? (
                       <img
                         src={embed.thumbnail_url!}
@@ -248,25 +370,17 @@ const InstaFeedWidget = () => {
                       <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
-                    {/* Content overlay */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                      {!hasThumbnail && (
-                        <Instagram className="w-7 h-7 mb-2 opacity-80" />
-                      )}
+                      {!hasThumbnail && <Instagram className="w-7 h-7 mb-2 opacity-80" />}
                       <p className="text-sm font-display font-bold leading-tight drop-shadow-lg">
                         {embed?.title || link.title || "Instagram Post"}
                       </p>
-                      {username && (
-                        <p className="text-xs opacity-80 mt-0.5 drop-shadow">@{username}</p>
-                      )}
+                      {username && <p className="text-xs opacity-80 mt-0.5 drop-shadow">@{username}</p>}
                       <div className="mt-2 flex items-center gap-1.5 text-[10px] opacity-70">
                         <ExternalLink className="w-3 h-3" />
                         <span>View on Instagram</span>
                       </div>
                     </div>
-
-                    {/* Date badge */}
                     <div className="absolute top-3 right-3 bg-black/30 backdrop-blur-sm rounded-lg px-2 py-1">
                       <p className="text-[10px] text-white/80 font-medium">
                         {new Date(link.created_at).toLocaleDateString("default", { day: "numeric", month: "short" })}
@@ -275,31 +389,47 @@ const InstaFeedWidget = () => {
                   </a>
                 );
               } else {
-                const account = card.data as (typeof curatedAccounts)[0];
+                const account = card.data as InstaSuggestion;
                 return (
-                  <a
-                    key={account.handle}
-                    href={`https://instagram.com/${account.handle.replace("@", "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <div
+                    key={account.id}
                     className="snap-center shrink-0 w-[75%] aspect-square rounded-2xl overflow-hidden relative group"
                   >
-                    <img
-                      src={account.image}
-                      alt={account.label}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Heart className="w-3 h-3 text-pink-400" />
-                        <span className="text-[10px] font-medium uppercase tracking-wider opacity-80">{account.label}</span>
+                    <a
+                      href={`https://instagram.com/${account.handle.replace("@", "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0"
+                    >
+                      <img
+                        src={suggestionImage(account)}
+                        alt={account.label || account.handle}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Heart className="w-3 h-3 text-pink-400" />
+                          <span className="text-[10px] font-medium uppercase tracking-wider opacity-80">
+                            {account.label || "Suggestion"}
+                          </span>
+                        </div>
+                        <p className="text-base font-display font-bold">{account.handle}</p>
+                        {account.bio && <p className="text-xs opacity-70 mt-0.5">{account.bio}</p>}
                       </div>
-                      <p className="text-base font-display font-bold">{account.handle}</p>
-                      <p className="text-xs opacity-70 mt-0.5">{account.bio}</p>
-                    </div>
-                  </a>
+                    </a>
+                    {/* Delete button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveSuggestion(account.id);
+                      }}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/70 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 );
               }
             })}
@@ -337,7 +467,7 @@ const InstaFeedWidget = () => {
                 onClick={() => scrollToIndex(idx)}
                 className={`h-1.5 rounded-full transition-all duration-200 ${
                   idx === currentIndex
-                    ? "w-5 bg-gradient-to-r from-purple-500 to-pink-500"
+                    ? "w-5 bg-primary"
                     : "w-1.5 bg-muted-foreground/30"
                 }`}
               />
