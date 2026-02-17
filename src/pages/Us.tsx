@@ -66,6 +66,18 @@ const Us = () => {
   useEffect(() => {
     const stored = localStorage.getItem("userLists");
     let parsed: UserList[] = stored ? JSON.parse(stored) : [];
+
+    // One-time fix: reset falsely completed items from template creation bug
+    const fixKey = "lists-done-fix-v1";
+    if (!localStorage.getItem(fixKey) && parsed.length > 0) {
+      parsed = parsed.map(list => ({
+        ...list,
+        items: list.items.map(item => ({ ...item, done: false })),
+      }));
+      localStorage.setItem(fixKey, "1");
+      localStorage.setItem("userLists", JSON.stringify(parsed));
+    }
+
     // Ensure Long-Term Goals always exists
     const hasLTG = parsed.some((l) => l.template === "long-term-goals");
     if (!hasLTG) {
