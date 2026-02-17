@@ -1044,17 +1044,20 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                                   {itemNumber ? (
                                     <button
                                       onClick={() => toggleItem(list.id, item.id)}
-                                      className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 text-[10px] font-bold transition-colors ${
-                                        item.done ? "bg-primary text-primary-foreground" : "border border-border hover:border-primary/50 text-muted-foreground"
+                                      className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold transition-colors ${
+                                        item.done ? "bg-primary text-primary-foreground" : "border-2 border-border hover:border-primary/50 text-muted-foreground"
                                       }`}
                                     >
-                                      {item.done ? <Check className="w-3 h-3" /> : itemNumber}
+                                      {item.done ? <Check className="w-4 h-4" /> : itemNumber}
                                     </button>
                                   ) : (
                                     <button
                                       onClick={() => toggleItem(list.id, item.id)}
-                                      className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors border-border hover:border-primary/50"
+                                      className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                        item.done ? "bg-primary border-primary text-primary-foreground" : "border-border hover:border-primary/50"
+                                      }`}
                                     >
+                                      {item.done && <Check className="w-4 h-4" />}
                                     </button>
                                   )}
                                   {isEditing ? (
