@@ -185,7 +185,7 @@ const RecentActivityWidget = () => {
         </div>
       </div>
 
-      <div className="px-4 pb-4 pt-1 space-y-1.5">
+      <div className="px-4 pb-4 pt-1 space-y-1.5 max-h-[160px] overflow-y-auto scrollbar-hide">
         {activities.map((a, i) => (
           <motion.button
             key={a.id}
