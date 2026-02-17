@@ -271,4 +271,33 @@ export const checklistQuizzes: ChecklistQuizDefinition[] = [
       },
     ],
   },
+  {
+    id: "sex-satisfaction",
+    title: "Sex Satisfaction",
+    description: "Rate your satisfaction, confidence, and libido — then compare with your partner.",
+    emoji: "💜",
+    duration: "3 min",
+    gradient: "bg-gradient-to-br from-purple-500/15 to-us-blush/25",
+    hasGenderPerspective: true,
+    sections: [
+      {
+        title: "Quick Snapshot",
+        items: [
+          { id: "sat-satisfaction", text: "Satisfaction rating (1–10)", type: "rating" },
+          { id: "sat-skills", text: "Skills rating (1–10)", type: "rating" },
+          { id: "sat-trend", text: "Trend", type: "choice", choices: ["Better", "Worse", "Same"] },
+          { id: "sat-frequency", text: "Avg. times per month (solo or partnered)", type: "rating" },
+        ],
+      },
+      {
+        title: "Libido & Confidence",
+        items: [
+          { id: "sat-libido-mine", text: "My libido level (1–10)", type: "rating" },
+          { id: "sat-libido-partner", text: "Partner's libido level (1–10)", type: "rating" },
+          { id: "sat-confident", text: "I feel confident I can bring my partner to orgasm", type: "checkbox" },
+          { id: "sat-improve", text: "I'd like to improve my sexual confidence/stamina", type: "checkbox" },
+        ],
+      },
+    ],
+  },
 ];
