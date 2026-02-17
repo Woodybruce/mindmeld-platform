@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heading2, Heart } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import SexBucketList from "./SexBucketList";
@@ -935,7 +935,7 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                           }}
                           className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors px-1"
                         >
-                          <Heading2 className="w-3 h-3" /> Add subheading
+                          <span className="text-[10px]">━</span> Add subheading
                         </button>
                       )}
                     </div>
