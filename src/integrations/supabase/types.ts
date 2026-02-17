@@ -83,6 +83,36 @@ export type Database = {
         }
         Relationships: []
       }
+      content_likes: {
+        Row: {
+          content_emoji: string | null
+          content_id: string
+          content_title: string | null
+          content_type: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content_emoji?: string | null
+          content_id: string
+          content_title?: string | null
+          content_type: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content_emoji?: string | null
+          content_id?: string
+          content_title?: string | null
+          content_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       couple_photos: {
         Row: {
           caption: string | null

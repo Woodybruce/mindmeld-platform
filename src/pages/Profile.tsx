@@ -328,6 +328,7 @@ const Profile = () => {
                   supabase.from("calendar_events").delete().eq("user_id", uid),
                   supabase.from("mood_checkins").delete().eq("user_id", uid),
                   supabase.from("profiles").update({ anniversary_date: null } as any).eq("id", uid),
+                  supabase.from("content_likes").delete().eq("user_id", uid),
                 ]);
               }
             } catch (e) {

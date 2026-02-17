@@ -4,6 +4,8 @@ import { Bookmark, RefreshCw, ExternalLink, ListPlus, Sparkles } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useContentLikes } from "@/hooks/useContentLikes";
+import LikeButton from "@/components/LikeButton";
 
 interface Article {
   title: string;
@@ -43,6 +45,7 @@ const CuratedLinksWidget = () => {
   const [sharedLinks, setSharedLinks] = useState<SharedLink[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("article");
 
   // Fetch shared links
   useEffect(() => {
@@ -203,13 +206,21 @@ const CuratedLinksWidget = () => {
                       <p className="text-[9px] text-muted-foreground/70 mt-1">{article.source} · {article.category}</p>
                     </a>
                   </div>
-                  <button
-                    onClick={() => saveArticleAsList(article)}
-                    className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all flex-shrink-0"
-                    title="Save as list"
-                  >
-                    <ListPlus className="w-3.5 h-3.5 text-primary" />
-                  </button>
+                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <LikeButton
+                      liked={isLikedByMe(article.url)}
+                      partnerLiked={isLikedByPartner(article.url)}
+                      mutual={isMutualLike(article.url)}
+                      onToggle={() => toggleLike(article.url, article.title)}
+                    />
+                    <button
+                      onClick={() => saveArticleAsList(article)}
+                      className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all"
+                      title="Save as list"
+                    >
+                      <ListPlus className="w-3.5 h-3.5 text-primary" />
+                    </button>
+                  </div>
                 </div>
               ))
           )}

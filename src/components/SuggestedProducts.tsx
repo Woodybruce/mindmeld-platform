@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShoppingBag, RefreshCw, ExternalLink, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useContentLikes } from "@/hooks/useContentLikes";
+import LikeButton from "@/components/LikeButton";
 
 interface Product {
   name: string;
@@ -38,6 +40,7 @@ const SuggestedProducts = () => {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [activeCategory, setActiveCategory] = useState("general");
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+  const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("product");
 
   const fetchProducts = async (category: string, force = false) => {
     const cacheKey = `${CACHE_KEY}-${category}`;
@@ -179,10 +182,18 @@ const SuggestedProducts = () => {
                     </div>
                   </div>
                   {/* Product info */}
-                  <div className="p-2.5">
-                    <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{p.brand}</p>
-                    <p className="text-xs font-bold text-primary mt-1">{p.price}</p>
+                  <div className="p-2.5 flex items-start justify-between gap-1">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{p.brand}</p>
+                      <p className="text-xs font-bold text-primary mt-1">{p.price}</p>
+                    </div>
+                    <LikeButton
+                      liked={isLikedByMe(p.affiliateTag)}
+                      partnerLiked={isLikedByPartner(p.affiliateTag)}
+                      mutual={isMutualLike(p.affiliateTag)}
+                      onToggle={() => toggleLike(p.affiliateTag, p.name)}
+                    />
                   </div>
                 </>
               ) : (
