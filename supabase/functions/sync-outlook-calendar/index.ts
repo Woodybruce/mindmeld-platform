@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     if (mode === "import" && Array.isArray(body.events)) {
       const rows = body.events.map((e: any) => ({
         user_id: user.id,
-        subject: e.subject || "Untitled",
+        subject: (e.subject || "Untitled").trim(),
         start_time: e.start_time,
         end_time: e.end_time,
         is_all_day: e.is_all_day || false,
@@ -99,19 +99,27 @@ Deno.serve(async (req) => {
         source: "outlook",
       }));
 
-      // Dedupe against existing
+      // Dedupe against existing — normalize start_time to ISO date-only for all-day, full ISO otherwise
       const { data: existing } = await admin
         .from("calendar_events")
-        .select("subject, start_time")
+        .select("subject, start_time, is_all_day")
         .eq("user_id", user.id)
         .eq("source", "outlook");
 
+      const normalizeKey = (subject: string, startTime: string, isAllDay: boolean) => {
+        const s = subject.trim().toLowerCase();
+        const t = isAllDay
+          ? new Date(startTime).toISOString().slice(0, 10)
+          : new Date(startTime).toISOString();
+        return `${s}|${t}`;
+      };
+
       const existingSet = new Set(
-        (existing || []).map((e: any) => `${e.subject}|${e.start_time}`)
+        (existing || []).map((e: any) => normalizeKey(e.subject, e.start_time, e.is_all_day))
       );
 
       const newRows = rows.filter(
-        (r: any) => !existingSet.has(`${r.subject}|${r.start_time}`)
+        (r: any) => !existingSet.has(normalizeKey(r.subject, r.start_time, r.is_all_day))
       );
 
       if (newRows.length > 0) {
@@ -160,23 +168,32 @@ Deno.serve(async (req) => {
     // Check which events are already imported
     const { data: existing } = await admin
       .from("calendar_events")
-      .select("subject, start_time")
+      .select("subject, start_time, is_all_day")
       .eq("user_id", user.id)
       .eq("source", "outlook");
 
+    const normalizeKey = (subject: string, startTime: string, isAllDay: boolean) => {
+      const s = subject.trim().toLowerCase();
+      const t = isAllDay
+        ? new Date(startTime).toISOString().slice(0, 10)
+        : new Date(startTime).toISOString();
+      return `${s}|${t}`;
+    };
+
     const existingSet = new Set(
-      (existing || []).map((e: any) => `${e.subject}|${e.start_time}`)
+      (existing || []).map((e: any) => normalizeKey(e.subject, e.start_time, e.is_all_day))
     );
 
     const events = outlookEvents.map((e: any) => {
       const startTime = e.start?.dateTime ? new Date(e.start.dateTime + "Z").toISOString() : now.toISOString();
       const endTime = e.end?.dateTime ? new Date(e.end.dateTime + "Z").toISOString() : now.toISOString();
+      const isAllDay = e.isAllDay || false;
       const attendees = (e.attendees || []).map((a: any) => a.emailAddress?.address?.toLowerCase()).filter(Boolean);
       const partnerInvited = partnerEmail ? attendees.includes(partnerEmail) : false;
-      const alreadyImported = existingSet.has(`${e.subject || "Untitled"}|${startTime}`);
+      const alreadyImported = existingSet.has(normalizeKey(e.subject || "Untitled", startTime, isAllDay));
 
       return {
-        subject: e.subject || "Untitled",
+        subject: (e.subject || "Untitled").trim(),
         start_time: startTime,
         end_time: endTime,
         is_all_day: e.isAllDay || false,
