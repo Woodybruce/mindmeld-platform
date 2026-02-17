@@ -33,7 +33,7 @@ serve(async (req) => {
               content: `You are a product recommendation engine for a couples/relationship app called "Us". 
 Suggest 4 real, purchasable products that couples would love. Mix categories: date night experiences, couple gifts, wellness, home, travel accessories, games, books.
 Each product must feel authentic — use real-sounding brand names, realistic prices in GBP, and compelling short descriptions.
-Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box") }`,
+Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box"), "imageHint": string (2-3 word search term for a product photo e.g. "candle set", "massage oil", "scratch map") }`,
             },
             {
               role: "user",
@@ -61,8 +61,9 @@ Return JSON array only, no markdown. Each object: { "name": string, "brand": str
                           category: { type: "string" },
                           emoji: { type: "string" },
                           affiliateTag: { type: "string" },
+                          imageHint: { type: "string" },
                         },
-                        required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag"],
+                        required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageHint"],
                         additionalProperties: false,
                       },
                     },
@@ -104,7 +105,6 @@ Return JSON array only, no markdown. Each object: { "name": string, "brand": str
       const parsed = JSON.parse(toolCall.function.arguments);
       products = parsed.products;
     } else {
-      // Fallback: try parsing content directly
       const content = data.choices?.[0]?.message?.content || "[]";
       products = JSON.parse(content.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
     }
