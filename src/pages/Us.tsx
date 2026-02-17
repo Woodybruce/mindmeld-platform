@@ -135,7 +135,7 @@ const Us = () => {
             />
           )}
           <div className="border-t border-border/50 pt-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Other Lists</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Our Lists</p>
             <SharedLists
               lists={userLists.filter((l) => l.template !== "long-term-goals")}
               allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
