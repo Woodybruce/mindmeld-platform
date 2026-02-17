@@ -344,7 +344,7 @@ const Profile = () => {
               <p className="text-[10px] text-muted-foreground mt-0.5">Quizzes Done</p>
             </div>
             <div className="rounded-lg bg-secondary p-3">
-              <span className="text-lg font-bold text-foreground">1</span>
+              <span className="text-lg font-bold text-foreground">0</span>
               <p className="text-[10px] text-muted-foreground mt-0.5">Games Played</p>
             </div>
           </div>

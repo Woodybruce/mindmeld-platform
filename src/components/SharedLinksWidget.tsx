@@ -36,7 +36,7 @@ const sampleSharedLinks: SharedLink[] = [
     title: "This restaurant looks amazing for date night! 🍝",
     note: "We should try this place next weekend",
     timeAgo: "30m ago",
-    sender: "Woody",
+    sender: "Partner",
   },
   {
     id: "sl2",
@@ -55,7 +55,7 @@ const sampleSharedLinks: SharedLink[] = [
     title: "How to improve communication in relationships",
     note: "This is really good, watch when you get a chance",
     timeAgo: "Yesterday",
-    sender: "Woody",
+    sender: "Partner",
   },
 ];
 
