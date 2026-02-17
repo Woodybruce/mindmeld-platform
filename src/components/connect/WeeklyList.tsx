@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { useWeeklyTasks } from "@/hooks/useWeeklyTasks";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { toast } from "@/hooks/use-toast";
@@ -16,6 +16,7 @@ const WeeklyList = () => {
   });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [addingTo, setAddingTo] = useState<string | null>(null);
+  const [showAllDays, setShowAllDays] = useState(false);
 
   const toggleDay = (dateStr: string) => {
     setExpandedDays((prev) => {
@@ -91,10 +92,17 @@ const WeeklyList = () => {
             />
           </div>
         )}
+        <button
+          onClick={() => setShowAllDays((v) => !v)}
+          className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground"
+          title={showAllDays ? "Show today only" : "Show all days"}
+        >
+          {showAllDays ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
       </div>
 
       {/* Days */}
-      {weekDates.map(({ dateStr, label, isToday, date }) => {
+      {weekDates.filter(({ isToday }) => showAllDays || isToday).map(({ dateStr, label, isToday, date }) => {
         const dayTasks = getTasksForDate(dateStr);
         const calEvents = getCalendarEventsForDate(dateStr);
         const addedCalIds = new Set(dayTasks.filter((t) => t.source === "calendar").map((t) => t.source_id));
