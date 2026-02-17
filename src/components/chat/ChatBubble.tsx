@@ -1,6 +1,38 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink, ListPlus, CalendarCheck, Navigation, Clock, Trash2 } from "lucide-react";
+import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink, ListPlus, CalendarCheck, Navigation, Clock, Trash2, ImageOff } from "lucide-react";
+
+const ChatImage = ({ src, alt }: { src: string; alt: string }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="w-full h-40 flex flex-col items-center justify-center bg-secondary/60 text-muted-foreground gap-2">
+        <ImageOff className="w-6 h-6 opacity-40" />
+        <span className="text-xs opacity-60">Photo unavailable</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {!loaded && (
+        <div className="w-full h-40 bg-secondary/60 animate-pulse flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full max-h-72 object-cover ${loaded ? "" : "h-0 overflow-hidden"}`}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+};
 import { toast } from "sonner";
 
 interface ChatBubbleProps {
@@ -171,7 +203,7 @@ const ChatBubble = ({
         )}
 
         {imageUrl && (
-          <img src={imageUrl} alt="Shared photo" className="w-full max-h-72 object-cover" loading="lazy" />
+          <ChatImage src={imageUrl} alt="Shared photo" />
         )}
 
         {audioUrl && (
