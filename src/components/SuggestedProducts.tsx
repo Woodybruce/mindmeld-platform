@@ -90,7 +90,11 @@ const SuggestedProducts = () => {
     }
   };
 
-  useEffect(() => { fetchProducts(activeCategory); }, []);
+  useEffect(() => {
+    // Clear old caches that may lack imageUrl
+    CATEGORIES.forEach(c => localStorage.removeItem(`${CACHE_KEY}-${c.key}`));
+    fetchProducts(activeCategory, true);
+  }, []);
 
   const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
@@ -166,18 +170,21 @@ const SuggestedProducts = () => {
                   {/* Product visual */}
                   <div className={`relative w-full aspect-square overflow-hidden bg-gradient-to-br ${gradient}`}>
                     <div className="w-full h-full flex items-center justify-center">
-                      <img
-                        src={`https://loremflickr.com/400/400/${encodeURIComponent(p.imageHint || p.name)}`}
-                        alt={p.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          const img = e.target as HTMLImageElement;
-                          img.style.display = "none";
-                          img.parentElement?.querySelector('.emoji-fallback')?.classList.remove('hidden');
-                        }}
-                      />
-                      <span className="emoji-fallback hidden text-5xl drop-shadow-sm absolute">{p.emoji}</span>
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            img.style.display = "none";
+                            img.parentElement?.querySelector('.emoji-fallback')?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <span className={`emoji-fallback ${p.imageUrl ? 'hidden' : ''} text-5xl drop-shadow-sm absolute`}>{p.emoji}</span>
                     </div>
                     <div className="absolute top-1.5 right-1.5">
                       <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
