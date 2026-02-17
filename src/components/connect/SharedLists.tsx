@@ -360,6 +360,8 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   const [newListName, setNewListName] = useState("");
   const [creatingBlank, setCreatingBlank] = useState(false);
   const [suggestingFor, setSuggestingFor] = useState<string | null>(null);
+  const [addingSubheading, setAddingSubheading] = useState<string | null>(null);
+  const [subheadingText, setSubheadingText] = useState("");
 
   const [showCompleted, setShowCompleted] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -921,22 +923,56 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                         </button>
                       </div>
                       {!list.maxItems && (
-                        <button
-                          onClick={() => {
-                            const name = prompt("Subheading name:");
-                            if (name?.trim()) {
-                              const updated = lists.map((l) =>
-                                l.id === list.id
-                                  ? { ...l, items: [...l.items, { id: Date.now().toString(), text: name.trim(), done: false, isHeading: true }] }
-                                  : l
-                              );
-                              onUpdate(updated);
-                            }
-                          }}
-                          className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors px-1"
-                        >
-                          <span className="text-[10px]">━</span> Add subheading
-                        </button>
+                        addingSubheading === list.id ? (
+                          <div className="flex gap-2">
+                            <input
+                              autoFocus
+                              value={subheadingText}
+                              onChange={(e) => setSubheadingText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && subheadingText.trim()) {
+                                  const updated = lists.map((l) =>
+                                    l.id === list.id
+                                      ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true }] }
+                                      : l
+                                  );
+                                  onUpdate(updated);
+                                  setSubheadingText("");
+                                  setAddingSubheading(null);
+                                } else if (e.key === "Escape") {
+                                  setSubheadingText("");
+                                  setAddingSubheading(null);
+                                }
+                              }}
+                              placeholder="Subheading name…"
+                              className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                            <button
+                              onClick={() => {
+                                if (subheadingText.trim()) {
+                                  const updated = lists.map((l) =>
+                                    l.id === list.id
+                                      ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true }] }
+                                      : l
+                                  );
+                                  onUpdate(updated);
+                                  setSubheadingText("");
+                                  setAddingSubheading(null);
+                                }
+                              }}
+                              className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setAddingSubheading(list.id)}
+                            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors px-1"
+                          >
+                            <Plus className="w-3 h-3" /> Add subheading
+                          </button>
+                        )
                       )}
                     </div>
                   )}
