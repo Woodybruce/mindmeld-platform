@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart, Pencil, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import SexBucketList from "./SexBucketList";
@@ -364,6 +364,10 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
   const [subheadingText, setSubheadingText] = useState("");
 
   const [showCompleted, setShowCompleted] = useState<Record<string, boolean>>({});
+  const [editingItem, setEditingItem] = useState<{ listId: string; itemId: string } | null>(null);
+  const [editText, setEditText] = useState("");
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachingItemId, setAttachingItemId] = useState<{ listId: string; itemId: string } | null>(null);
   const [eventPickerItem, setEventPickerItem] = useState<{ listId: string; itemId: string } | null>(null);
@@ -559,9 +563,29 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const saveEdit = (listId: string, itemId: string) => {
+    if (!editText.trim()) return;
+    const updated = lists.map((l) =>
+      l.id === listId ? { ...l, items: l.items.map((i) => (i.id === itemId ? { ...i, text: editText.trim() } : i)) } : l
+    );
+    onUpdate(updated);
+    setEditingItem(null);
+    setEditText("");
+  };
+
+  const toggleSection = (headingId: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(headingId)) next.delete(headingId);
+      else next.add(headingId);
+      return next;
+    });
+  };
+
   const getCompletionPercent = (list: UserList) => {
-    if (list.items.length === 0) return 0;
-    return Math.round((list.items.filter((i) => i.done).length / list.items.length) * 100);
+    const countable = list.items.filter((i) => !i.isHeading);
+    if (countable.length === 0) return 0;
+    return Math.round((countable.filter((i) => i.done).length / countable.length) * 100);
   };
 
   const getNextMilestone = (list: UserList) => {
@@ -716,6 +740,10 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
         const completionPct = getCompletionPercent(list);
         const nextMilestone = list.scoreData ? getNextMilestone(list) : null;
 
+        const countable = list.items.filter((i) => !i.isHeading);
+        const totalCountable = countable.length;
+        const query = searchQuery[list.id]?.toLowerCase() || "";
+
         return (
           <motion.div
             key={list.id}
@@ -731,10 +759,21 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
               <span className="text-xl">{list.icon}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">{list.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {doneCount}/{list.items.length} done
-                  {list.scoreData && ` · ${completionPct}%`}
-                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-muted-foreground">
+                    {doneCount}/{totalCountable} done
+                    {list.scoreData && ` · ${completionPct}%`}
+                  </p>
+                  {totalCountable > 0 && (
+                    <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${completionPct}%` }}
+                        className="h-full rounded-full bg-primary"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
               <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
             </button>
@@ -795,110 +834,194 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                   </div>
                 )}
 
-                {/* Active items */}
-                <div className="px-4 py-3 space-y-1.5">
-                  {activeItems.map((item) => (
-                    <div key={item.id} className="group">
-                      {item.isHeading ? (
-                        <div className="flex items-center gap-2.5 pt-3 pb-1">
-                          <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{item.text}</span>
-                          <button
-                            onClick={() => removeItem(list.id, item.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                          </button>
-                        </div>
-                      ) : (
-                      <div className="flex items-center gap-2.5">
-                        <button
-                          onClick={() => toggleItem(list.id, item.id)}
-                          className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors border-border hover:border-primary/50"
-                        >
-                        </button>
-                        <span className="flex-1 text-sm text-foreground">{item.text}</span>
-                        <button
-                          onClick={() => {
-                            setAttachingItemId({ listId: list.id, itemId: item.id });
-                            fileInputRef.current?.click();
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                          title="Attach photo/file"
-                        >
-                          <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                        </button>
-                        <button
-                          onClick={() => setEventPickerItem(
-                            eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id
-                              ? null
-                              : { listId: list.id, itemId: item.id }
-                          )}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                          title="Create event"
-                        >
-                          <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                        </button>
-                        <button
-                          onClick={() => removeItem(list.id, item.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                        </button>
-                      </div>
-                      )}
-
-                      {/* Inline event date picker */}
-                      {eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id && (
-                        <div className="flex items-center gap-2 pl-7 mt-1.5">
-                          <input
-                            type="datetime-local"
-                            value={eventDate}
-                            onChange={(e) => setEventDate(e.target.value)}
-                            className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
-                          <button
-                            onClick={() => {
-                              if (!eventDate) return;
-                              addAttachment(list.id, item.id, {
-                                type: "event",
-                                name: item.text,
-                                date: eventDate,
-                              });
-                              setEventPickerItem(null);
-                              setEventDate("");
-                            }}
-                            className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                          >
-                            Add
-                          </button>
-                          <button
-                            onClick={() => { setEventPickerItem(null); setEventDate(""); }}
-                            className="text-xs text-muted-foreground hover:text-foreground"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Attachments */}
-                      {item.attachments && item.attachments.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pl-7 mt-1">
-                          {item.attachments.map((att, ai) => (
-                            <a
-                              key={ai}
-                              href={att.type === "event" ? undefined : att.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
-                              {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}
-                            </a>
-                          ))}
-                        </div>
+                {/* Search bar for lists with many items */}
+                {list.items.length > 8 && (
+                  <div className="px-4 pt-3 pb-1">
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5">
+                      <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                      <input
+                        value={searchQuery[list.id] || ""}
+                        onChange={(e) => setSearchQuery((prev) => ({ ...prev, [list.id]: e.target.value }))}
+                        placeholder="Search items…"
+                        className="flex-1 text-xs text-foreground placeholder:text-muted-foreground bg-transparent focus:outline-none"
+                      />
+                      {query && (
+                        <button onClick={() => setSearchQuery((prev) => ({ ...prev, [list.id]: "" }))} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
                       )}
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* Active items */}
+                <div className="px-4 py-3 space-y-1.5">
+                  {(() => {
+                    // Group items by sections (heading + its children)
+                    let currentHeadingId: string | null = null;
+                    return activeItems.map((item) => {
+                      if (item.isHeading) {
+                        currentHeadingId = item.id;
+                        const isSectionCollapsed = collapsedSections.has(item.id);
+                        // If searching, skip section collapse
+                        if (query && !item.text.toLowerCase().includes(query)) {
+                          // Check if any child matches
+                          const headingIdx = list.items.indexOf(item);
+                          const nextHeadingIdx = list.items.findIndex((it, idx) => idx > headingIdx && it.isHeading);
+                          const children = list.items.slice(headingIdx + 1, nextHeadingIdx === -1 ? undefined : nextHeadingIdx);
+                          if (!children.some((c) => c.text.toLowerCase().includes(query))) return null;
+                        }
+                        return (
+                          <div key={item.id} className="group">
+                            <button
+                              onClick={() => toggleSection(item.id)}
+                              className="w-full flex items-center gap-2 pt-3 pb-1 text-left"
+                            >
+                              {isSectionCollapsed ? (
+                                <ChevronRight className="w-3 h-3 text-primary flex-shrink-0" />
+                              ) : (
+                                <ChevronDown className="w-3 h-3 text-primary flex-shrink-0" />
+                              )}
+                              <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{item.text}</span>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); removeItem(list.id, item.id); }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                              </button>
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      // If this item's section is collapsed, hide it
+                      if (currentHeadingId && collapsedSections.has(currentHeadingId)) return null;
+
+                      // Search filter
+                      if (query && !item.text.toLowerCase().includes(query)) return null;
+
+                      const isEditing = editingItem?.listId === list.id && editingItem?.itemId === item.id;
+
+                      return (
+                        <div key={item.id} className="group">
+                          <div className="flex items-center gap-2.5">
+                            <button
+                              onClick={() => toggleItem(list.id, item.id)}
+                              className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors border-border hover:border-primary/50"
+                            >
+                            </button>
+                            {isEditing ? (
+                              <input
+                                autoFocus
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") saveEdit(list.id, item.id);
+                                  if (e.key === "Escape") { setEditingItem(null); setEditText(""); }
+                                }}
+                                onBlur={() => saveEdit(list.id, item.id)}
+                                className="flex-1 rounded-lg border border-primary bg-background px-2 py-0.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                            ) : (
+                              <span
+                                onClick={() => { setEditingItem({ listId: list.id, itemId: item.id }); setEditText(item.text); }}
+                                className="flex-1 text-sm text-foreground cursor-text hover:text-primary/80 transition-colors"
+                              >
+                                {item.text}
+                              </span>
+                            )}
+                            {!isEditing && (
+                              <>
+                                <button
+                                  onClick={() => { setEditingItem({ listId: list.id, itemId: item.id }); setEditText(item.text); }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAttachingItemId({ listId: list.id, itemId: item.id });
+                                    fileInputRef.current?.click();
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                  title="Attach photo/file"
+                                >
+                                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                </button>
+                                <button
+                                  onClick={() => setEventPickerItem(
+                                    eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id
+                                      ? null
+                                      : { listId: list.id, itemId: item.id }
+                                  )}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                  title="Create event"
+                                >
+                                  <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                </button>
+                                <button
+                                  onClick={() => removeItem(list.id, item.id)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Inline event date picker */}
+                          {eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id && (
+                            <div className="flex items-center gap-2 pl-7 mt-1.5">
+                              <input
+                                type="datetime-local"
+                                value={eventDate}
+                                onChange={(e) => setEventDate(e.target.value)}
+                                className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                              <button
+                                onClick={() => {
+                                  if (!eventDate) return;
+                                  addAttachment(list.id, item.id, {
+                                    type: "event",
+                                    name: item.text,
+                                    date: eventDate,
+                                  });
+                                  setEventPickerItem(null);
+                                  setEventDate("");
+                                }}
+                                className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                              >
+                                Add
+                              </button>
+                              <button
+                                onClick={() => { setEventPickerItem(null); setEventDate(""); }}
+                                className="text-xs text-muted-foreground hover:text-foreground"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Attachments */}
+                          {item.attachments && item.attachments.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pl-7 mt-1">
+                              {item.attachments.map((att, ai) => (
+                                <a
+                                  key={ai}
+                                  href={att.type === "event" ? undefined : att.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
+                                  {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
 
                   {activeItems.length === 0 && completedItems.length > 0 && (
                     <p className="text-xs text-center text-muted-foreground py-2">All items completed! 🎉</p>
