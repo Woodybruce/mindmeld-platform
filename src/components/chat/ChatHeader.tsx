@@ -59,22 +59,22 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
 
   return (
     <header className="sticky top-0 z-50 bg-[hsl(var(--us-navy))] text-white shadow-lg safe-top">
-      <div className="flex items-center gap-1.5 px-1.5 py-1 max-w-lg mx-auto">
+      <div className="flex items-center gap-2.5 px-2 py-2.5 max-w-lg mx-auto">
         <button
           onClick={() => navigate("/")}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white transition-colors flex-shrink-0"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-white/80 hover:text-white transition-colors flex-shrink-0"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-6 h-6" />
         </button>
-        <Avatar className="w-8 h-8 flex-shrink-0">
+        <Avatar className="w-11 h-11 flex-shrink-0">
           {avatarUrl && <AvatarImage src={avatarUrl} alt={partnerName} />}
-          <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--us-blush))] to-[hsl(var(--us-coral))] text-white text-sm font-display font-semibold">
+          <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--us-blush))] to-[hsl(var(--us-coral))] text-white text-base font-display font-semibold">
             {initial}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <h1 className="font-body text-[13px] font-semibold truncate leading-tight">{partnerName}</h1>
-          <p className="text-[10px] text-white/50 font-body flex items-center gap-1 leading-tight">
+          <h1 className="font-body text-base font-semibold truncate leading-tight">{partnerName}</h1>
+          <p className="text-xs text-white/50 font-body flex items-center gap-1 leading-tight">
             {isOnline && (
               <span className="w-2 h-2 rounded-full bg-[hsl(var(--us-sage))] inline-block" />
             )}
