@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { haptics } from "@/lib/haptics";
 
 interface LikeButtonProps {
   liked: boolean;
@@ -15,7 +16,7 @@ const LikeButton = ({ liked, partnerLiked, mutual, onToggle, size = "sm" }: Like
   return (
     <div className="flex items-center gap-1 flex-shrink-0">
       <button
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggle(); }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); haptics.light(); onToggle(); }}
         className={`${padding} rounded-lg transition-all active:scale-90 ${
           liked
             ? "text-destructive"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import AppHeader from "@/components/AppHeader";
 import StoriesBar from "@/components/StoriesBar";
 import BottomNav from "@/components/BottomNav";
@@ -25,7 +25,7 @@ import MoodCheckinWidget from "@/components/MoodCheckinWidget";
 import AnniversaryCountdown from "@/components/AnniversaryCountdown";
 import StreaksWidget from "@/components/StreaksWidget";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
-
+import PullToRefresh from "@/components/PullToRefresh";
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
   const rows: (FeedItem | [FeedItem, FeedItem])[] = [];
@@ -70,6 +70,7 @@ const Index = () => {
         <StoriesBar />
       </div>
 
+      <PullToRefresh onRefresh={async () => { window.location.reload(); }}>
       <main className="px-3 py-4 space-y-4 pb-24">
         <SetupPrompts />
 
@@ -152,6 +153,7 @@ const Index = () => {
         {/* Calendar */}
         <CalendarWidget />
       </main>
+      </PullToRefresh>
 
       <BottomNav />
     </div>

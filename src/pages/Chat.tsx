@@ -337,11 +337,13 @@ const Chat = () => {
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center pt-20">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-secondary/80 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">💬</span>
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-us-blush/30 to-us-coral/20 flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">💬</span>
               </div>
-              <p className="text-muted-foreground text-sm font-medium">No messages yet</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">Say something lovely 💕</p>
+              <p className="font-display text-lg font-semibold text-foreground">Start the conversation</p>
+              <p className="text-sm text-muted-foreground mt-1.5 max-w-[220px] mx-auto">
+                Send a message, photo, or GIF to your partner 💕
+              </p>
             </div>
           </div>
         )}
