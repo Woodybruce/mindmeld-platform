@@ -14,6 +14,7 @@ interface Product {
   emoji: string;
   affiliateTag: string;
   imageHint?: string;
+  productUrl?: string;
 }
 
 const CATEGORIES = [
@@ -101,10 +102,10 @@ const SuggestedProducts = () => {
       console.error("Failed to fetch products:", err);
       if (!products.length) {
         setProducts([
-          { name: "Date Night Box", brand: "Cosy Couple Co.", price: "£34.99", description: "Everything you need for the perfect night in", category: "Date Night", emoji: "🕯️", affiliateTag: "date-night-box", imageHint: "candle gift box" },
-          { name: "Couple's Journal", brand: "Papier", price: "£22.00", description: "365 prompts to deepen your connection", category: "Stationery", emoji: "📔", affiliateTag: "couples-journal", imageHint: "couples journal book" },
-          { name: "Massage Oil Set", brand: "Neal's Yard", price: "£28.00", description: "Organic aromatherapy oils for two", category: "Wellness", emoji: "💆", affiliateTag: "massage-set", imageHint: "massage oil bottles" },
-          { name: "Adventure Scratch Map", brand: "Luckies", price: "£19.99", description: "Track your travels together worldwide", category: "Travel", emoji: "🗺️", affiliateTag: "scratch-map", imageHint: "scratch world map" },
+          { name: "Date Night Box", brand: "Cosy Couple Co.", price: "£34.99", description: "Everything you need for the perfect night in", category: "Date Night", emoji: "🕯️", affiliateTag: "date-night-box", imageHint: "candle gift box", productUrl: "https://www.amazon.co.uk/s?k=date+night+box+couples" },
+          { name: "Couple's Journal", brand: "Papier", price: "£22.00", description: "365 prompts to deepen your connection", category: "Stationery", emoji: "📔", affiliateTag: "couples-journal", imageHint: "couples journal book", productUrl: "https://www.amazon.co.uk/s?k=couples+journal" },
+          { name: "Massage Oil Set", brand: "Neal's Yard", price: "£28.00", description: "Organic aromatherapy oils for two", category: "Wellness", emoji: "💆", affiliateTag: "massage-set", imageHint: "massage oil bottles", productUrl: "https://www.amazon.co.uk/s?k=massage+oil+set+couples" },
+          { name: "Adventure Scratch Map", brand: "Luckies", price: "£19.99", description: "Track your travels together worldwide", category: "Travel", emoji: "🗺️", affiliateTag: "scratch-map", imageHint: "scratch world map", productUrl: "https://www.amazon.co.uk/s?k=scratch+map+couples" },
         ]);
       }
     } finally {
@@ -179,8 +180,8 @@ const SuggestedProducts = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.05 }}
               onClick={() => {
-                if (p) {
-                  // In production, open affiliate link
+                if (p?.productUrl) {
+                  window.open(p.productUrl, "_blank", "noopener,noreferrer");
                 }
               }}
               className="group rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
