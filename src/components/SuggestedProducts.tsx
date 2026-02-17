@@ -5,6 +5,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
 
+const ProductImage = ({ imageUrl, emoji, name }: { imageUrl?: string; emoji: string; name: string }) => {
+  const [failed, setFailed] = useState(false);
+
+  if (!imageUrl || failed) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="text-5xl drop-shadow-sm">{emoji}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center relative">
+      <img
+        src={imageUrl}
+        alt={name}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+};
+
 interface Product {
   name: string;
   brand: string;
@@ -169,23 +194,7 @@ const SuggestedProducts = () => {
                 <>
                   {/* Product visual */}
                   <div className={`relative w-full aspect-square overflow-hidden bg-gradient-to-br ${gradient}`}>
-                    <div className="w-full h-full flex items-center justify-center">
-                      {p.imageUrl ? (
-                        <img
-                          src={p.imageUrl}
-                          alt={p.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            const img = e.target as HTMLImageElement;
-                            img.style.display = "none";
-                            img.parentElement?.querySelector('.emoji-fallback')?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <span className={`emoji-fallback ${p.imageUrl ? 'hidden' : ''} text-5xl drop-shadow-sm absolute`}>{p.emoji}</span>
-                    </div>
+                    <ProductImage imageUrl={p.imageUrl} emoji={p.emoji} name={p.name} />
                     <div className="absolute top-1.5 right-1.5">
                       <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
