@@ -1,11 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Sparkles, MessageCircle, Gamepad2, Camera,
   Heart, FolderOpen, ChevronRight, RefreshCw, Check, Circle
 } from "lucide-react";
 import type { UserList } from "@/components/connect/SharedLists";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SectionPreviewProps {
   title: string;
@@ -153,23 +155,106 @@ export const GamesPreview = () => (
 );
 
 /* ── Photos Preview — shows count from localStorage/supabase ── */
-export const PhotosPreview = () => (
-  <SectionPreview
-    title="Our Photos"
-    subtitle="Shared memories together"
-    icon={<Camera className="w-5 h-5" />}
-    gradient="from-us-blush to-pink-400"
-    tab="photos"
-  >
-    <div className="flex gap-2">
-      {["📸 Upload photos", "👀 View together", "💬 Add captions"].map((item) => (
-        <div key={item} className="bg-secondary/60 rounded-lg px-2.5 py-2 shrink-0">
-          <span className="text-[11px] font-medium text-foreground">{item}</span>
+export const PhotosPreview = () => {
+  const { user, profile } = useAuth();
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const partnerId = profile?.partner_id;
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchPhotos = async () => {
+      const urls: string[] = [];
+
+      // Chat images
+      if (partnerId) {
+        const { data: chatData } = await supabase
+          .from("messages")
+          .select("image_url")
+          .eq("message_type", "image")
+          .not("image_url", "is", null)
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+          .order("created_at", { ascending: false })
+          .limit(10);
+        (chatData || []).forEach((m) => { if (m.image_url) urls.push(m.image_url); });
+      }
+
+      // Uploaded photos
+      const { data: uploadData } = await supabase
+        .from("couple_photos")
+        .select("storage_path")
+        .or(partnerId ? `user_id.eq.${user.id},user_id.eq.${partnerId}` : `user_id.eq.${user.id}`)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      (uploadData || []).forEach((p) => {
+        const { data: urlData } = supabase.storage.from("couple-photos").getPublicUrl(p.storage_path);
+        urls.push(urlData.publicUrl);
+      });
+
+      // Shuffle for variety
+      for (let i = urls.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [urls[i], urls[j]] = [urls[j], urls[i]];
+      }
+      setPhotoUrls(urls.slice(0, 12));
+    };
+    fetchPhotos();
+  }, [user, partnerId]);
+
+  // Auto-rotate every 3 seconds
+  useEffect(() => {
+    if (photoUrls.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIdx((i) => (i + 1) % photoUrls.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [photoUrls.length]);
+
+  const visiblePhotos = photoUrls.length > 0
+    ? [0, 1, 2, 3].map((offset) => photoUrls[(currentIdx + offset) % photoUrls.length])
+    : [];
+
+  return (
+    <SectionPreview
+      title="Our Photos"
+      subtitle={photoUrls.length > 0 ? `${photoUrls.length} shared memories` : "Shared memories together"}
+      icon={<Camera className="w-5 h-5" />}
+      gradient="from-us-blush to-pink-400"
+      tab="photos"
+    >
+      {visiblePhotos.length > 0 ? (
+        <div className="flex gap-2 overflow-hidden">
+          <AnimatePresence mode="popLayout">
+            {visiblePhotos.map((url, i) => (
+              <motion.div
+                key={`${currentIdx}-${i}`}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.4 }}
+                className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-secondary"
+              >
+                <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-secondary/60 shrink-0">
+            <span className="text-xs font-medium text-muted-foreground">+more</span>
+          </div>
         </div>
-      ))}
-    </div>
-  </SectionPreview>
-);
+      ) : (
+        <div className="flex gap-2">
+          {["📸 Upload photos", "👀 View together", "💬 Add captions"].map((item) => (
+            <div key={item} className="bg-secondary/60 rounded-lg px-2.5 py-2 shrink-0">
+              <span className="text-[11px] font-medium text-foreground">{item}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionPreview>
+  );
+};
 
 /* ── Gratitude Preview — pulls latest from localStorage ── */
 export const GratitudePreview = () => {
