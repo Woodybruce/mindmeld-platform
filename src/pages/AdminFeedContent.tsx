@@ -61,6 +61,8 @@ const AdminFeedContent = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Omit<FeedContentItem, "id" | "created_at"> & { id?: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
 
   const fetchItems = async () => {
     setLoading(true);
@@ -81,6 +83,34 @@ const AdminFeedContent = () => {
   useEffect(() => {
     if (isAdmin) fetchItems();
   }, [isAdmin]);
+
+  const handleAiGenerate = async () => {
+    if (!editing) return;
+    setAiGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-feed-content", {
+        body: { type: editing.type, description: aiPrompt.trim() || undefined },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      setEditing({
+        ...editing,
+        title: data.title || editing.title,
+        subtitle: data.subtitle || editing.subtitle,
+        body: data.body || editing.body,
+        emoji: data.emoji || editing.emoji,
+        tag: data.tag || editing.tag,
+        tag_color: data.tag_color || editing.tag_color,
+      });
+      setAiPrompt("");
+      toast({ title: "AI content generated ✨" });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "AI generation failed", description: e.message, variant: "destructive" });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!editing || !editing.title.trim() || !editing.body.trim()) {
@@ -233,6 +263,30 @@ const AdminFeedContent = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* AI Assist */}
+              <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 space-y-2">
+                <p className="text-[10px] font-semibold text-primary uppercase flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> AI Assist
+                </p>
+                <input
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                  placeholder={`Describe the ${editing.type} you want, or leave blank for a surprise…`}
+                />
+                <button
+                  onClick={handleAiGenerate}
+                  disabled={aiGenerating}
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-xs font-semibold text-primary disabled:opacity-50"
+                >
+                  {aiGenerating ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                  ) : (
+                    <><Sparkles className="w-3.5 h-3.5" /> Generate with AI</>
+                  )}
+                </button>
               </div>
 
               {/* Title */}
