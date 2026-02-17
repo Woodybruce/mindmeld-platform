@@ -215,7 +215,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
         animate={{ y: 0 }}
         exit={{ y: 100 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
+        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg h-[70dvh] sm:h-auto sm:max-h-[80vh] flex flex-col mb-16 sm:mb-0"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/50 flex-shrink-0">
@@ -283,7 +283,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
                       key={idx}
                       onClick={() => setSelectedDate(isSelected ? null : dk)}
                       className={cn(
-                        "relative flex flex-col items-center justify-center rounded-lg py-2 text-sm transition-all",
+                        "relative flex flex-col items-center justify-center rounded-lg py-1 text-xs transition-all",
                         isSelected
                           ? "bg-primary text-primary-foreground font-semibold"
                           : isToday
