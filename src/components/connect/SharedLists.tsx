@@ -1405,14 +1405,15 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton }: S
                               <div key={item.id} className="flex items-center gap-2.5 group">
                                 <button
                                   onClick={() => toggleItem(list.id, item.id)}
-                                  className="w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 bg-primary border-primary"
+                                  className="w-7 h-7 rounded-md border flex items-center justify-center flex-shrink-0 bg-primary border-primary hover:bg-primary/70 transition-colors"
+                                  title="Mark as incomplete"
                                 >
-                                  <Check className="w-3 h-3 text-primary-foreground" />
+                                  <Check className="w-3.5 h-3.5 text-primary-foreground" />
                                 </button>
-                                <span className="flex-1 text-sm text-muted-foreground line-through">{item.text}</span>
+                                <span className="flex-1 text-sm text-muted-foreground">{item.text}</span>
                                 <button
                                   onClick={() => removeItem(list.id, item.id)}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                  className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                                 </button>
