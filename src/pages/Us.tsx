@@ -108,9 +108,25 @@ const Us = () => {
         {/* Lists — default tab, imported from OneNote */}
         <TabsContent value="lists" className="mt-4 space-y-5">
           <WeeklyList />
+          {/* Long-Term Goals pinned above other lists */}
+          {userLists.filter((l) => l.template === "long-term-goals").length > 0 && (
+            <SharedLists
+              lists={userLists.filter((l) => l.template === "long-term-goals")}
+              onUpdate={(updated) => {
+                const others = userLists.filter((l) => l.template !== "long-term-goals");
+                handleListsUpdate([...updated, ...others]);
+              }}
+            />
+          )}
           <div className="border-t border-border/50 pt-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Other Lists</p>
-            <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
+            <SharedLists
+              lists={userLists.filter((l) => l.template !== "long-term-goals")}
+              onUpdate={(updated) => {
+                const pinned = userLists.filter((l) => l.template === "long-term-goals");
+                handleListsUpdate([...pinned, ...updated]);
+              }}
+            />
           </div>
         </TabsContent>
 
