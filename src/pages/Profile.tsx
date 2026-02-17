@@ -1,4 +1,5 @@
-import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw, Camera } from "lucide-react";
+import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw, Camera, Shield } from "lucide-react";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import PartnerAvatarUpload from "@/components/connect/PartnerAvatarUpload";
 import OutlookEventPicker from "@/components/OutlookEventPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 const Profile = () => {
   const { user, profile, signOut, linkPartnerByEmail, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { data: isAdmin } = useIsAdmin();
   const { forwardUrl, forwardToken, generateForwardToken } = useCalendarEvents();
   const navigate = useNavigate();
   const [partnerEmail, setPartnerEmail] = useState("");
@@ -383,6 +385,20 @@ const Profile = () => {
             <p className="text-xs text-muted-foreground">Clear all local data and start fresh</p>
           </div>
         </button>
+
+        {/* Admin link */}
+        {isAdmin && (
+          <button
+            onClick={() => navigate("/admin/feed")}
+            className="w-full rounded-xl border border-border bg-card p-4 text-left flex items-center gap-3 hover:bg-secondary/50 transition-colors"
+          >
+            <Shield className="w-5 h-5 text-primary" />
+            <div>
+              <span className="font-medium text-foreground text-sm">Feed Content Manager</span>
+              <p className="text-xs text-muted-foreground">Add, edit & manage home screen content</p>
+            </div>
+          </button>
+        )}
 
         {/* Sign out */}
         <button
