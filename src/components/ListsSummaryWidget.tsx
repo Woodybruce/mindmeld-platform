@@ -18,7 +18,7 @@ export const ListsSummaryWidget = () => {
   if (lists.length === 0) return null;
 
   // Show up to 3 lists with their completion stats
-  const summaries = lists.slice(0, 4).map((list) => {
+  const summaries = lists.map((list) => {
     const checkableItems = list.items.filter((i) => !i.isHeading);
     const doneCount = checkableItems.filter((i) => i.done).length;
     const totalCount = checkableItems.length;
@@ -45,7 +45,7 @@ export const ListsSummaryWidget = () => {
         <ChevronRight className="w-4 h-4 text-muted-foreground" />
       </button>
 
-      <div className="px-4 pb-4 pt-1 space-y-2">
+      <div className="px-4 pb-4 pt-1 space-y-2 max-h-[180px] overflow-y-auto scrollbar-hide">
         {summaries.map((s) => (
           <div key={s.id} className="flex items-center gap-3 bg-secondary/60 rounded-xl px-3 py-2.5">
             <span className="text-base">{s.icon}</span>
