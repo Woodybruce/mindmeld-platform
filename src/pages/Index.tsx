@@ -12,6 +12,7 @@ import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 import QuickLinks from "@/components/QuickLinks";
 import RecentChatLinksWidget from "@/components/chat/RecentChatLinksWidget";
+import { useFeedContent } from "@/hooks/useFeedContent";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -33,6 +34,8 @@ const layoutItems = (items: FeedItem[]) => {
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
   const { user, profile } = useAuth();
+  const { data: backendFeedItems = [] } = useFeedContent(3);
+  const backendRows = layoutItems(backendFeedItems);
 
   const [onboardingDone, setOnboardingDone] = useState(() => {
     return localStorage.getItem("us-onboarding-done") === "true";
@@ -83,6 +86,18 @@ const Index = () => {
             <FeedCard item={rows[1]} index={2} />
           )
         )}
+
+        {/* Backend-driven content (quizzes, prompts, tips) */}
+        {backendRows.map((row, idx) => (
+          Array.isArray(row) ? (
+            <div key={`backend-pair-${idx}`} className="grid grid-cols-2 gap-3">
+              <FeedCard item={row[0]} index={idx + 10} />
+              <FeedCard item={row[1]} index={idx + 11} />
+            </div>
+          ) : (
+            <FeedCard key={row.id} item={row} index={idx + 10} />
+          )
+        ))}
 
         {/* Lists */}
         <DailyListsWidget />
