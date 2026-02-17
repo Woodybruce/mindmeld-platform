@@ -138,9 +138,9 @@ export const GamesPreview = () => (
     <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
       {[
         { emoji: "💋", name: "Kiss Chase", desc: "GPS chase game" },
-        { emoji: "💋", name: "Truth or Dare", desc: "Couples edition" },
-        { emoji: "💋", name: "Would You Rather", desc: "Hilarious debates" },
-        { emoji: "💋", name: "Photo Challenge", desc: "Fun photo tasks" },
+        { emoji: "🎯", name: "Truth or Dare", desc: "Couples edition" },
+        { emoji: "🤔", name: "Would You Rather", desc: "Hilarious debates" },
+        { emoji: "📸", name: "Photo Challenge", desc: "Fun photo tasks" },
       ].map((g) => (
         <div key={g.name} className="bg-secondary/60 rounded-xl px-3 py-2.5 shrink-0 min-w-[120px]">
           <div className="flex items-center gap-1.5">
