@@ -362,6 +362,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton }: S
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [previewItems, setPreviewItems] = useState<ListItem[]>([]);
   const [previewNewItem, setPreviewNewItem] = useState("");
+  const [previewAddingAfter, setPreviewAddingAfter] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachingItemId, setAttachingItemId] = useState<{ listId: string; itemId: string } | null>(null);
   const [eventPickerItem, setEventPickerItem] = useState<{ listId: string; itemId: string } | null>(null);
@@ -743,48 +744,122 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton }: S
 
                   <p className="text-xs text-muted-foreground">Add or remove items before creating your list.</p>
 
-                  <div className="rounded-xl border border-border/50 bg-card overflow-hidden max-h-72 overflow-y-auto">
+                  <div className="rounded-xl border border-border/50 bg-card overflow-hidden max-h-80 overflow-y-auto">
                     <div className="px-4 py-3 space-y-1">
-                      {previewItems.map((item) => (
-                        <div key={item.id} className="flex items-center gap-2.5 py-1 group">
-                          {item.isHeading ? (
-                            <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">{item.text}</span>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setPreviewItems(prev => prev.map(i =>
-                                  i.id === item.id ? { ...i, done: !i.done } : i
-                                ));
-                              }}
-                              className="flex items-center gap-2.5 flex-1 text-left"
-                            >
-                              <div className={`w-7 h-7 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                                item.done ? "bg-primary border-primary" : "border-muted-foreground/30"
-                              }`}>
-                                {item.done && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+                      {previewItems.map((item, idx) => {
+                        // Check if this is the last non-heading item before the next heading (or end of list)
+                        const isLastBeforeNextHeading = !item.isHeading && (
+                          idx === previewItems.length - 1 ||
+                          previewItems[idx + 1]?.isHeading
+                        );
+                        // Find the heading this item belongs to for the inline add
+                        const findSectionHeadingIndex = () => {
+                          for (let j = idx; j >= 0; j--) {
+                            if (previewItems[j]?.isHeading) return j;
+                          }
+                          return -1;
+                        };
+
+                        return (
+                          <div key={item.id}>
+                            <div className="flex items-center gap-2.5 py-1 group">
+                              {item.isHeading ? (
+                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">{item.text}</span>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setPreviewItems(prev => prev.map(i =>
+                                      i.id === item.id ? { ...i, done: !i.done } : i
+                                    ));
+                                  }}
+                                  className="flex items-center gap-2.5 flex-1 text-left"
+                                >
+                                  <div className={`w-7 h-7 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                                    item.done ? "bg-primary border-primary" : "border-muted-foreground/30"
+                                  }`}>
+                                    {item.done && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+                                  </div>
+                                  <span className={`text-sm ${item.done ? "text-muted-foreground" : "text-foreground"}`}>{item.text}</span>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => removePreviewItem(item.id)}
+                                className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                              </button>
+                            </div>
+                            {/* Inline add button after last item in each section */}
+                            {isLastBeforeNextHeading && (
+                              <div className="pl-9 py-1">
+                                {previewAddingAfter === idx ? (
+                                  <div className="flex gap-1.5">
+                                    <input
+                                      autoFocus
+                                      value={previewNewItem}
+                                      onChange={(e) => setPreviewNewItem(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          if (!previewNewItem.trim()) return;
+                                          const tpl = templates.find((tp) => tp.id === previewTemplate);
+                                          if (tpl && (tpl as any).maxItems && previewItems.filter(i => !i.isHeading).length >= (tpl as any).maxItems) {
+                                            toast({ title: `Max ${(tpl as any).maxItems} items` });
+                                            return;
+                                          }
+                                          const newItem = { id: `preview-${Date.now()}`, text: previewNewItem.trim(), done: false };
+                                          setPreviewItems(prev => {
+                                            const copy = [...prev];
+                                            copy.splice(idx + 1, 0, newItem);
+                                            return copy;
+                                          });
+                                          setPreviewNewItem("");
+                                          setPreviewAddingAfter(null);
+                                        }
+                                        if (e.key === "Escape") { setPreviewAddingAfter(null); setPreviewNewItem(""); }
+                                      }}
+                                      placeholder="Add item…"
+                                      className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        if (!previewNewItem.trim()) return;
+                                        const newItem = { id: `preview-${Date.now()}`, text: previewNewItem.trim(), done: false };
+                                        setPreviewItems(prev => {
+                                          const copy = [...prev];
+                                          copy.splice(idx + 1, 0, newItem);
+                                          return copy;
+                                        });
+                                        setPreviewNewItem("");
+                                        setPreviewAddingAfter(null);
+                                      }}
+                                      className="rounded-lg bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => { setPreviewAddingAfter(idx); setPreviewNewItem(""); }}
+                                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" /> Add item
+                                  </button>
+                                )}
                               </div>
-                              <span className={`text-sm ${item.done ? "text-muted-foreground" : "text-foreground"}`}>{item.text}</span>
-                            </button>
-                          )}
-                          <button
-                            onClick={() => removePreviewItem(item.id)}
-                            className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                          </button>
-                        </div>
-                      ))}
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Add item input */}
+                  {/* Add item to end */}
                   <div className="flex gap-2">
                     <input
-                      autoFocus
                       value={previewNewItem}
                       onChange={(e) => setPreviewNewItem(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addPreviewItem()}
-                      placeholder={(t as any).maxItems ? `Add item… (${nonHeadingCount}/${(t as any).maxItems})` : "Add item…"}
+                      placeholder={(t as any).maxItems ? `Add item or "## Heading"… (${nonHeadingCount}/${(t as any).maxItems})` : 'Add item or "## Heading"…'}
                       className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                     <button
