@@ -17,6 +17,7 @@ import { useFeedContent } from "@/hooks/useFeedContent";
 import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
 import RecentActivityWidget from "@/components/RecentActivityWidget";
+import InstaFeedWidget from "@/components/InstaFeedWidget";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -109,6 +110,9 @@ const Index = () => {
 
         {/* Our Photos */}
         <PhotosPreview />
+
+        {/* Instagram feed */}
+        <InstaFeedWidget />
 
         {/* Curated links & relationship articles */}
         <CuratedLinksWidget />
