@@ -1,22 +1,33 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2, Eye, EyeOff } from "lucide-react";
-import { useWeeklyTasks } from "@/hooks/useWeeklyTasks";
+import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2, Eye, EyeOff, Pencil, Paperclip, CalendarPlus, Image } from "lucide-react";
+import { useWeeklyTasks, TaskAttachment } from "@/hooks/useWeeklyTasks";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { toast } from "@/hooks/use-toast";
 
 const WeeklyList = () => {
-  const { tasks, loading, addTask, toggleTask, deleteTask, getTasksForDate, getWeekDates } = useWeeklyTasks();
+  const { tasks, loading, addTask, toggleTask, deleteTask, updateTaskText, updateTaskAttachments, getTasksForDate, getWeekDates } = useWeeklyTasks();
   const { events } = useCalendarEvents();
   const weekDates = getWeekDates();
   const [expandedDays, setExpandedDays] = useState<Set<string>>(() => {
-    // Auto-expand today
     const todayStr = new Date().toISOString().split("T")[0];
     return new Set([todayStr]);
   });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [showAllDays, setShowAllDays] = useState(false);
+
+  // Edit state
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+
+  // Attachment state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachingTaskId, setAttachingTaskId] = useState<string | null>(null);
+
+  // Event picker state
+  const [eventPickerTaskId, setEventPickerTaskId] = useState<string | null>(null);
+  const [eventDate, setEventDate] = useState("");
 
   const toggleDay = (dateStr: string) => {
     setExpandedDays((prev) => {
@@ -39,7 +50,6 @@ const WeeklyList = () => {
   };
 
   const handleAddCalendarEvent = async (subject: string, dateStr: string, eventId: string) => {
-    // Check if already added
     const dayTasks = getTasksForDate(dateStr);
     if (dayTasks.some((t) => t.source === "calendar" && t.source_id === eventId)) {
       toast({ title: "Already in your list" });
@@ -53,12 +63,41 @@ const WeeklyList = () => {
     }
   };
 
-  // Get calendar events for a specific date
   const getCalendarEventsForDate = (dateStr: string) => {
     return events.filter((e) => {
       const eventDate = new Date(e.start_time).toISOString().split("T")[0];
       return eventDate === dateStr;
     });
+  };
+
+  const handleSaveEdit = (taskId: string) => {
+    if (!editText.trim()) return;
+    updateTaskText(taskId, editText.trim());
+    setEditingTaskId(null);
+    setEditText("");
+  };
+
+  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!attachingTaskId || !e.target.files?.[0]) return;
+    const file = e.target.files[0];
+    const isImage = file.type.startsWith("image/");
+    const url = URL.createObjectURL(file);
+    const task = tasks.find((t) => t.id === attachingTaskId);
+    if (!task) return;
+    const newAttachment: TaskAttachment = { type: isImage ? "photo" : "file", url, name: file.name };
+    updateTaskAttachments(attachingTaskId, [...(task.attachments || []), newAttachment]);
+    setAttachingTaskId(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleAddEvent = (taskId: string, taskText: string) => {
+    if (!eventDate) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const newAttachment: TaskAttachment = { type: "event", name: taskText, date: eventDate };
+    updateTaskAttachments(taskId, [...(task.attachments || []), newAttachment]);
+    setEventPickerTaskId(null);
+    setEventDate("");
   };
 
   if (loading) {
@@ -74,6 +113,15 @@ const WeeklyList = () => {
 
   return (
     <div className="space-y-2">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf,.doc,.docx,.txt"
+        className="hidden"
+        onChange={handleFileAttach}
+      />
+
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <CalendarDays className="w-5 h-5 text-primary" />
@@ -156,32 +204,130 @@ const WeeklyList = () => {
                 >
                   <div className="px-3 py-2 space-y-1">
                     {/* Tasks */}
-                    {dayTasks.map((task) => (
-                      <div key={task.id} className="group flex items-center gap-2.5 py-1.5">
-                        <button
-                          onClick={() => toggleTask(task.id)}
-                          className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
-                            task.done ? "bg-primary text-primary-foreground" : "border-2 border-border hover:border-primary"
-                          }`}
-                        >
-                          {task.done && <Check className="w-3 h-3" />}
-                        </button>
-                        <span className={`flex-1 text-sm ${task.done ? "text-muted-foreground" : "text-foreground"}`}>
-                          {task.text}
-                        </span>
-                        {task.source !== "manual" && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground uppercase tracking-wider">
-                            {task.source}
-                          </span>
-                        )}
-                        <button
-                          onClick={() => deleteTask(task.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                        </button>
-                      </div>
-                    ))}
+                    {dayTasks.map((task) => {
+                      const isEditing = editingTaskId === task.id;
+
+                      return (
+                        <div key={task.id} className="group">
+                          <div className="flex items-center gap-2.5 py-1.5">
+                            <button
+                              onClick={() => toggleTask(task.id)}
+                              className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
+                                task.done ? "bg-primary text-primary-foreground" : "border-2 border-border hover:border-primary"
+                              }`}
+                            >
+                              {task.done && <Check className="w-3 h-3" />}
+                            </button>
+
+                            {isEditing ? (
+                              <input
+                                autoFocus
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveEdit(task.id);
+                                  if (e.key === "Escape") { setEditingTaskId(null); setEditText(""); }
+                                }}
+                                onBlur={() => handleSaveEdit(task.id)}
+                                className="flex-1 rounded-lg border border-primary bg-background px-2 py-0.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                            ) : (
+                              <span
+                                onClick={() => { setEditingTaskId(task.id); setEditText(task.text); }}
+                                className={`flex-1 text-sm cursor-text hover:text-primary/80 transition-colors ${task.done ? "text-muted-foreground line-through" : "text-foreground"}`}
+                              >
+                                {task.text}
+                              </span>
+                            )}
+
+                            {task.source !== "manual" && !isEditing && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground uppercase tracking-wider">
+                                {task.source}
+                              </span>
+                            )}
+
+                            {!isEditing && (
+                              <>
+                                <button
+                                  onClick={() => { setEditingTaskId(task.id); setEditText(task.text); }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAttachingTaskId(task.id);
+                                    fileInputRef.current?.click();
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                  title="Attach photo/file"
+                                >
+                                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                </button>
+                                <button
+                                  onClick={() => setEventPickerTaskId(
+                                    eventPickerTaskId === task.id ? null : task.id
+                                  )}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                  title="Create event"
+                                >
+                                  <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                </button>
+                                <button
+                                  onClick={() => deleteTask(task.id)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Inline event date picker */}
+                          {eventPickerTaskId === task.id && (
+                            <div className="flex items-center gap-2 pl-7 mt-1.5">
+                              <input
+                                type="datetime-local"
+                                value={eventDate}
+                                onChange={(e) => setEventDate(e.target.value)}
+                                className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                              <button
+                                onClick={() => handleAddEvent(task.id, task.text)}
+                                className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                              >
+                                Add
+                              </button>
+                              <button
+                                onClick={() => { setEventPickerTaskId(null); setEventDate(""); }}
+                                className="text-xs text-muted-foreground hover:text-foreground"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Attachments */}
+                          {task.attachments && task.attachments.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pl-7 mt-1">
+                              {task.attachments.map((att, ai) => (
+                                <a
+                                  key={ai}
+                                  href={att.type === "event" ? undefined : att.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
+                                  {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
 
                     {/* Unadded calendar events */}
                     {unaddedCalEvents.length > 0 && (

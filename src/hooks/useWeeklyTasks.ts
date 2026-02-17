@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export interface TaskAttachment {
+  type: "photo" | "file" | "event";
+  url?: string;
+  name?: string;
+  date?: string;
+}
+
 export interface WeeklyTask {
   id: string;
   user_id: string;
@@ -13,6 +20,7 @@ export interface WeeklyTask {
   source_id: string | null;
   created_at: string;
   completed_at: string | null;
+  attachments: TaskAttachment[];
 }
 
 export function useWeeklyTasks() {
@@ -44,7 +52,7 @@ export function useWeeklyTasks() {
       .order("scheduled_date", { ascending: true })
       .order("sort_order", { ascending: true });
 
-    if (!error && data) setTasks(data as WeeklyTask[]);
+    if (!error && data) setTasks(data.map((d: any) => ({ ...d, attachments: Array.isArray(d.attachments) ? d.attachments : [] })) as WeeklyTask[]);
     setLoading(false);
   }, [user]);
 
@@ -96,6 +104,15 @@ export function useWeeklyTasks() {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const updateTaskText = useCallback(async (id: string, text: string) => {
+    await supabase.from("weekly_tasks").update({ text } as any).eq("id", id);
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, text } : t));
+  }, []);
+
+  const updateTaskAttachments = useCallback(async (id: string, attachments: TaskAttachment[]) => {
+    await supabase.from("weekly_tasks").update({ attachments: JSON.parse(JSON.stringify(attachments)) } as any).eq("id", id);
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, attachments } : t));
+  }, []);
   const getTasksForDate = useCallback((dateStr: string) => {
     return tasks.filter((t) => t.scheduled_date === dateStr);
   }, [tasks]);
@@ -132,6 +149,8 @@ export function useWeeklyTasks() {
     addTask,
     toggleTask,
     deleteTask,
+    updateTaskText,
+    updateTaskAttachments,
     getTasksForDate,
     getTodayTasks,
     getWeekDates,

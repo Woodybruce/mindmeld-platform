@@ -505,6 +505,7 @@ export type Database = {
       }
       weekly_tasks: {
         Row: {
+          attachments: Json | null
           completed_at: string | null
           created_at: string
           done: boolean
@@ -517,6 +518,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachments?: Json | null
           completed_at?: string | null
           created_at?: string
           done?: boolean
@@ -529,6 +531,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachments?: Json | null
           completed_at?: string | null
           created_at?: string
           done?: boolean
