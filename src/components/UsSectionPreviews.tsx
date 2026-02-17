@@ -212,7 +212,7 @@ export const PhotosPreview = () => {
   }, [photoUrls.length]);
 
   const visiblePhotos = photoUrls.length > 0
-    ? [0, 1, 2, 3].map((offset) => photoUrls[(currentIdx + offset) % photoUrls.length])
+    ? [0, 1].map((offset) => photoUrls[(currentIdx + offset) % photoUrls.length])
     : [];
 
   return (
@@ -224,7 +224,7 @@ export const PhotosPreview = () => {
       tab="photos"
     >
       {visiblePhotos.length > 0 ? (
-        <div className="flex gap-2 overflow-hidden">
+        <div className="flex gap-3 overflow-hidden">
           <AnimatePresence mode="popLayout">
             {visiblePhotos.map((url, i) => (
               <motion.div
@@ -233,15 +233,12 @@ export const PhotosPreview = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
                 transition={{ duration: 0.4 }}
-                className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-secondary"
+                className="flex-1 aspect-[4/3] rounded-xl overflow-hidden bg-secondary"
               >
                 <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
               </motion.div>
             ))}
           </AnimatePresence>
-          <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-secondary/60 shrink-0">
-            <span className="text-xs font-medium text-muted-foreground">+more</span>
-          </div>
         </div>
       ) : (
         <div className="flex gap-2">
