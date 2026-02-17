@@ -765,7 +765,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton }: S
                           <div key={item.id}>
                             <div className="flex items-center gap-2.5 py-1 group">
                               {item.isHeading ? (
-                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">{item.text}</span>
+                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">{item.text.replace(/^##\s*/, '')}</span>
                               ) : (
                                 <button
                                   onClick={() => {
@@ -1096,7 +1096,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton }: S
                                 ) : (
                                   <ChevronDown className="w-3 h-3 text-primary flex-shrink-0" />
                                 )}
-                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{section.heading.text}</span>
+                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{section.heading.text.replace(/^##\s*/, '')}</span>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); removeItem(list.id, section.heading!.id); }}
                                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
