@@ -22,14 +22,6 @@ const setupItems: SetupItem[] = [
     checkKey: "userLists",
   },
   {
-    id: "quiz",
-    emoji: "💕",
-    title: "Take your first quiz",
-    description: "Discover how well you know each other",
-    action: "/us?tab=quizzes",
-    checkKey: "completedQuizzes",
-  },
-  {
     id: "calendar",
     emoji: "📅",
     title: "Add a calendar event",
