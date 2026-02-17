@@ -750,16 +750,27 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton }: S
                           {item.isHeading ? (
                             <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">{item.text}</span>
                           ) : (
-                            <>
-                              <div className="w-4 h-4 rounded-md border border-border flex-shrink-0" />
-                              <span className="flex-1 text-sm text-foreground">{item.text}</span>
-                            </>
+                            <button
+                              onClick={() => {
+                                setPreviewItems(prev => prev.map(i =>
+                                  i.id === item.id ? { ...i, done: !i.done } : i
+                                ));
+                              }}
+                              className="flex items-center gap-2.5 flex-1 text-left"
+                            >
+                              <div className={`w-7 h-7 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                                item.done ? "bg-primary border-primary" : "border-muted-foreground/30"
+                              }`}>
+                                {item.done && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+                              </div>
+                              <span className={`text-sm ${item.done ? "text-muted-foreground" : "text-foreground"}`}>{item.text}</span>
+                            </button>
                           )}
                           <button
                             onClick={() => removePreviewItem(item.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                            className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
                           >
-                            <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                           </button>
                         </div>
                       ))}
