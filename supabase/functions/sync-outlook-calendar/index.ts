@@ -122,12 +122,14 @@ Deno.serve(async (req) => {
         (r: any) => !existingSet.has(normalizeKey(r.subject, r.start_time, r.is_all_day))
       );
 
-      if (newRows.length > 0) {
-        const { error: insertError } = await admin.from("calendar_events").insert(newRows);
-        if (insertError) throw insertError;
+      let insertedCount = 0;
+      for (const row of newRows) {
+        const { error: insertError } = await admin.from("calendar_events").insert(row);
+        if (!insertError) insertedCount++;
+        // silently skip duplicates caught by unique index
       }
 
-      return json({ success: true, count: newRows.length });
+      return json({ success: true, count: insertedCount });
     }
 
     // ── PREVIEW MODE: fetch and return events ──
