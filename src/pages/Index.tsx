@@ -3,12 +3,12 @@ import AppHeader from "@/components/AppHeader";
 import StoriesBar from "@/components/StoriesBar";
 import BottomNav from "@/components/BottomNav";
 import FeedCard from "@/components/FeedCard";
-import GamesCarousel from "@/components/GamesCarousel";
 import DailyListsWidget from "@/components/DailyListsWidget";
 import CalendarWidget from "@/components/CalendarWidget";
 import SetupPrompts from "@/components/SetupPrompts";
 import Onboarding from "@/components/Onboarding";
 import { useAuth } from "@/contexts/AuthContext";
+import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 import QuickLinks from "@/components/QuickLinks";
 import CuratedLinksWidget from "@/components/CuratedLinksWidget";
@@ -38,6 +38,7 @@ const layoutItems = (items: FeedItem[]) => {
 };
 
 const Index = () => {
+  const rows = layoutItems(sampleFeedData);
   const { user, profile } = useAuth();
   const { data: backendFeedItems = [] } = useFeedContent(2);
   
@@ -72,8 +73,29 @@ const Index = () => {
         {/* What's been updated */}
         <RecentActivityWidget />
 
-        {/* Games carousel */}
-        <GamesCarousel />
+        {/* Banner card */}
+        {rows[0] && (
+          Array.isArray(rows[0]) ? (
+            <div className="grid grid-cols-2 gap-3">
+              <FeedCard item={rows[0][0]} index={0} />
+              <FeedCard item={rows[0][1]} index={1} />
+            </div>
+          ) : (
+            <FeedCard item={rows[0]} index={0} />
+          )
+        )}
+
+        {/* Half cards */}
+        {rows[1] && (
+          Array.isArray(rows[1]) ? (
+            <div className="grid grid-cols-2 gap-3">
+              <FeedCard item={rows[1][0]} index={2} />
+              <FeedCard item={rows[1][1]} index={3} />
+            </div>
+          ) : (
+            <FeedCard item={rows[1]} index={2} />
+          )
+        )}
 
         {/* Backend-driven content (quizzes, prompts, tips) — compact 2-up grid */}
         {backendFeedItems.length > 0 && (
@@ -102,6 +124,17 @@ const Index = () => {
         {/* Shopping suggestions with categories */}
         <SuggestedProducts />
 
+        {/* Remaining feed cards */}
+        {rows.slice(2).map((row, idx) => (
+          Array.isArray(row) ? (
+            <div key={`pair-${idx + 2}`} className="grid grid-cols-2 gap-3">
+              <FeedCard item={row[0]} index={idx + 4} />
+              <FeedCard item={row[1]} index={idx + 5} />
+            </div>
+          ) : (
+            <FeedCard key={row.id} item={row} index={idx + 4} />
+          )
+        ))}
 
         {/* Quick links to all remaining Us sections */}
         <QuickLinks />
