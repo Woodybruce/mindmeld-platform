@@ -294,7 +294,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
           <div className="flex items-center gap-2">
             <Flame className="w-5 h-5 text-us-coral" />
             <div>
-              <h3 className="font-display text-sm font-bold text-foreground">Sex Bucket List</h3>
+              <h3 className="font-display text-sm font-bold text-foreground">Sex Bucket Challenge</h3>
               <p className="text-[11px] text-muted-foreground">Add up to 10 things to try — your partner picks 5</p>
             </div>
           </div>
@@ -434,7 +434,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
         <Flame className="w-5 h-5 text-us-coral" />
       </div>
       <div className="text-left flex-1">
-        <h3 className="font-display text-sm font-bold text-foreground">Sex Bucket List</h3>
+        <h3 className="font-display text-sm font-bold text-foreground">Sex Bucket Challenge</h3>
         <p className="text-[11px] text-muted-foreground">Propose 10 things to try — your partner picks 5</p>
       </div>
       <Plus className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
