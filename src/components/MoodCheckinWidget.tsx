@@ -101,12 +101,12 @@ const MoodCheckinWidget = () => {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1 justify-center">
+      <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
         {moods.map(({ emoji, label }) => (
           <button
             key={emoji}
             onClick={() => selectMood(emoji)}
-            className={`flex flex-col items-center gap-0.5 rounded-xl p-1.5 transition-all ${
+            className={`flex flex-col items-center gap-0.5 rounded-xl p-1.5 transition-all flex-shrink-0 ${
               myMood === emoji
                 ? "bg-primary/15 scale-110 ring-2 ring-primary/30"
                 : "hover:bg-secondary active:scale-95"
