@@ -79,6 +79,26 @@ const sexListDefaultItems = [
   "## Ideas & Resources",
 ];
 
+const togetherListDefaultItems = [
+  "## Our top 3 things we should do together",
+  "Date night every week",
+  "Go away once every month together",
+  "## Things we would like to do together",
+  "Dancing",
+  "Go see an act",
+  "Paint / draw each other",
+  "Pottery class together",
+  "Go to 2 art Galleries",
+  "## Trips we want to do",
+  "Scottish Lakes",
+  "Amalfi coast",
+  "Colondor hotel",
+  "Amsterdam",
+  "Scotland lake house",
+  "Comporta Portugal",
+  "## Things we have done together",
+];
+
 const templates = [
   {
     id: "family",
@@ -98,6 +118,15 @@ const templates = [
     gradient: "bg-gradient-to-br from-us-coral/15 to-us-blush/20",
     lucideIcon: Heart,
     defaultItems: sexListDefaultItems,
+  },
+  {
+    id: "together-list",
+    name: "Our Together List",
+    icon: "💑",
+    description: "Activities & trips to do together",
+    gradient: "bg-gradient-to-br from-us-sage/15 to-us-gold/20",
+    lucideIcon: Heart,
+    defaultItems: togetherListDefaultItems,
   },
 ];
 
