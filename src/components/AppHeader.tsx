@@ -43,7 +43,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
           <img src={usLogo} alt="Us logo" className="w-10 h-10 rounded-full object-cover" />
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              US
+              Us
             </h1>
             {subtitle && <p className="text-xs text-muted-foreground -mt-0.5">{subtitle}</p>}
           </div>
