@@ -904,20 +904,40 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
 
                   {/* Add item */}
                   {(!list.maxItems || list.items.length < list.maxItems) && (
-                    <div className="flex gap-2 pt-2">
-                      <input
-                        value={expandedId === list.id ? newItemText : ""}
-                        onChange={(e) => setNewItemText(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && addItem(list.id)}
-                        placeholder={list.maxItems ? `Add item… (${list.items.length}/${list.maxItems})` : "Add item or ## subheading…"}
-                        className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                      />
-                      <button
-                        onClick={() => addItem(list.id)}
-                        className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="space-y-1.5 pt-2">
+                      <div className="flex gap-2">
+                        <input
+                          value={expandedId === list.id ? newItemText : ""}
+                          onChange={(e) => setNewItemText(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && addItem(list.id)}
+                          placeholder={list.maxItems ? `Add item… (${list.items.length}/${list.maxItems})` : "Add item…"}
+                          className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <button
+                          onClick={() => addItem(list.id)}
+                          className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {!list.maxItems && (
+                        <button
+                          onClick={() => {
+                            const name = prompt("Subheading name:");
+                            if (name?.trim()) {
+                              const updated = lists.map((l) =>
+                                l.id === list.id
+                                  ? { ...l, items: [...l.items, { id: Date.now().toString(), text: name.trim(), done: false, isHeading: true }] }
+                                  : l
+                              );
+                              onUpdate(updated);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors px-1"
+                        >
+                          <Heading2 className="w-3 h-3" /> Add subheading
+                        </button>
+                      )}
                     </div>
                   )}
                   {list.maxItems && list.items.length >= list.maxItems && (
