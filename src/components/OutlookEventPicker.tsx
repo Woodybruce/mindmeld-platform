@@ -45,15 +45,17 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setError("Please sign in first"); setLoading(false); return; }
 
+      const headers = {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
+
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
+          headers,
           body: JSON.stringify({ mode: "preview" }),
         }
       );
@@ -62,10 +64,45 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
       if (result.error) {
         setError(result.error);
       } else {
-        setEvents(result.events || []);
+        const allEvents: OutlookEvent[] = result.events || [];
+        setEvents(allEvents);
+
+        // Auto-import events where both partners are invited
+        const sharedNotImported = allEvents
+          .filter((e) => e.partner_invited && !e.already_imported);
+
+        if (sharedNotImported.length > 0) {
+          // Auto-import shared events in the background
+          fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ mode: "import", events: sharedNotImported }),
+            }
+          ).then(async (importRes) => {
+            const importResult = await importRes.json();
+            if (importResult.count > 0) {
+              toast.success(`Auto-added ${importResult.count} shared event${importResult.count !== 1 ? "s" : ""} ✓`);
+              onImported();
+              // Mark them as already imported in the UI
+              setEvents((prev) =>
+                prev.map((e) =>
+                  e.partner_invited && !e.already_imported
+                    ? { ...e, already_imported: true }
+                    : e
+                )
+              );
+            }
+          }).catch(() => {});
+        }
+
+        // Pre-select remaining non-imported events for manual selection
         const autoSelect = new Set<number>();
-        (result.events || []).forEach((e: OutlookEvent, i: number) => {
-          if (e.partner_invited && !e.already_imported) autoSelect.add(i);
+        allEvents.forEach((e, i) => {
+          if (!e.partner_invited && !e.already_imported) {
+            // Don't auto-select non-shared events
+          }
         });
         setSelected(autoSelect);
       }
@@ -178,10 +215,10 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
         animate={{ y: 0 }}
         exit={{ y: 100 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
+        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border/50">
+        <div className="flex items-center justify-between p-4 border-b border-border/50 flex-shrink-0">
           <div>
             <h2 className="font-display font-bold text-foreground">Outlook Calendar</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -194,7 +231,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {loading && (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
@@ -374,9 +411,9 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - always visible */}
         {!loading && events.length > 0 && (
-          <div className="p-4 border-t border-border/50">
+          <div className="p-4 border-t border-border/50 flex-shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <button
               onClick={handleImport}
               disabled={selected.size === 0 || importing}
@@ -389,6 +426,8 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
               )}
               {importing
                 ? "Adding…"
+                : selected.size === 0
+                ? "Select events to add"
                 : `Add ${selected.size} Event${selected.size !== 1 ? "s" : ""}`}
             </button>
           </div>
