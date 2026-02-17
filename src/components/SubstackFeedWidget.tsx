@@ -264,8 +264,8 @@ const SubstackFeedWidget = () => {
               <Rss className="w-3 h-3 inline mr-1" />
               Latest Posts
             </p>
-            <div className="space-y-2">
-              {articles.slice(0, 4).map((article, i) => (
+            <div className="space-y-2 max-h-[180px] overflow-y-auto scrollbar-hide">
+              {articles.map((article, i) => (
                 <a
                   key={`${article.newsletter}-${i}`}
                   href={article.link}
