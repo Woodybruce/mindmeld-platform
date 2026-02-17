@@ -191,6 +191,36 @@ export type Database = {
         }
         Relationships: []
       }
+      insta_suggestions: {
+        Row: {
+          bio: string | null
+          created_at: string
+          handle: string
+          id: string
+          image_url: string | null
+          label: string | null
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          handle: string
+          id?: string
+          image_url?: string | null
+          label?: string | null
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          handle?: string
+          id?: string
+          image_url?: string | null
+          label?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
