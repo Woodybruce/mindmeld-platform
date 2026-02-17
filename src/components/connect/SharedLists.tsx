@@ -702,8 +702,8 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                   </motion.button>
                 ))}
 
-                {/* Suggested section */}
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Suggested</p>
+                {/* More templates */}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">More Templates</p>
 
                 <SexBucketList lists={lists} onUpdate={(updated) => { onUpdate(updated); setShowTemplates(false); }} />
 
