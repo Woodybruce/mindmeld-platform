@@ -99,6 +99,41 @@ const togetherListDefaultItems = [
   "## Things we have done together",
 ];
 
+const challengesListDefaultItems = [
+  "## Our challenges in our relationship",
+  "Communication Both",
+  "Judgment of woody",
+  "Rejection physical and time together woody",
+  "Doesn't feel safe due to reaction Helen",
+  "Thinks woody going to leave Helen",
+  "ADHD Family Helen",
+  "Dismissive of problems Helen",
+  "Judgmental of problems Woody",
+  "Not Prioritising Woody",
+  "Intimacy",
+  "Phone use - Being present",
+  "## What we are doing to solve them",
+  "Open ourselves to one another unconditionally",
+  "Boundaries for the girls. Say NO",
+  "Be supportive and grateful for each other",
+  "Able to ask and respond without judgment",
+  "Agree to be able to disagree",
+  "Talk with truth - Woody makes stuff up",
+  "Repair after any conflict with discussion",
+  "Prioritise our relationship over everything else",
+  "Phone down and be present",
+  "Try to maintain family support",
+  "Learn how to comfort Helen about her dad",
+  "Manage family workload / tasks",
+  "Embrace and kiss for 10 seconds everyday you leave or reunite",
+  "Say I love you",
+  "Spend time together doing things without the girls",
+  "Focus on our physical and sexual connection",
+  "## What have we solved and how",
+  "Made a One note app to use",
+  "Go to Hotel for night away",
+];
+
 const templates = [
   {
     id: "family",
@@ -127,6 +162,15 @@ const templates = [
     gradient: "bg-gradient-to-br from-us-sage/15 to-us-gold/20",
     lucideIcon: Heart,
     defaultItems: togetherListDefaultItems,
+  },
+  {
+    id: "challenges-list",
+    name: "Our Challenges",
+    icon: "💪",
+    description: "Track & solve relationship challenges",
+    gradient: "bg-gradient-to-br from-us-blush/15 to-us-coral/20",
+    lucideIcon: Target,
+    defaultItems: challengesListDefaultItems,
   },
 ];
 
