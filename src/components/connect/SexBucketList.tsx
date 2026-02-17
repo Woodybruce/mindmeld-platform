@@ -71,7 +71,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
         (idea) =>
           idea.toLowerCase().includes(newItem.toLowerCase()) &&
           !items.includes(idea)
-      ).slice(0, 6)
+      )
     : [];
 
   // Fetch proposals on mount
@@ -354,7 +354,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
                 </button>
               </div>
               {showSuggestions && suggestions.length > 0 && (
-                <div ref={suggestionsRef} className="absolute left-0 right-10 top-full mt-1 z-20 rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+                <div ref={suggestionsRef} className="absolute left-0 right-10 top-full mt-1 z-20 rounded-xl border border-border bg-card shadow-lg overflow-y-auto max-h-48">
                   {suggestions.map((s, i) => (
                     <button
                       key={s}
