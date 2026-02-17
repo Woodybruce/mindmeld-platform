@@ -422,7 +422,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       template: t.id,
       createdAt: new Date().toISOString(),
       maxItems: (t as any).maxItems || undefined,
-      items: previewItems.map(item => ({ ...item, done: false })),
+      items: previewItems.filter(item => !item.done || item.isHeading).map(item => ({ ...item, done: false })),
     };
     const updated = [newList, ...lists];
     onUpdate(updated);
