@@ -799,7 +799,6 @@ const SharedLists = ({ lists, onUpdate }: SharedListsProps) => {
                     <div key={item.id} className="group">
                       {item.isHeading ? (
                         <div className="flex items-center gap-2.5 pt-3 pb-1">
-                          <Heading2 className="w-4 h-4 text-primary flex-shrink-0" />
                           <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{item.text}</span>
                           <button
                             onClick={() => removeItem(list.id, item.id)}
