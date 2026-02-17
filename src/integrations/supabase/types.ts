@@ -470,6 +470,45 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          done: boolean
+          id: string
+          scheduled_date: string
+          sort_order: number
+          source: string
+          source_id: string | null
+          text: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          scheduled_date?: string
+          sort_order?: number
+          source?: string
+          source_id?: string | null
+          text: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          scheduled_date?: string
+          sort_order?: number
+          source?: string
+          source_id?: string | null
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -488,6 +527,7 @@ export type Database = {
         Args: { _partner_email: string }
         Returns: boolean
       }
+      rollover_weekly_tasks: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
