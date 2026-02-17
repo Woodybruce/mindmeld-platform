@@ -64,12 +64,14 @@ const Us = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem("userLists");
-    if (stored) {
-      setUserLists(JSON.parse(stored));
-    } else {
-      setUserLists(defaultLists);
-      localStorage.setItem("userLists", JSON.stringify(defaultLists));
+    let parsed: UserList[] = stored ? JSON.parse(stored) : [];
+    // Ensure Long-Term Goals always exists
+    const hasLTG = parsed.some((l) => l.template === "long-term-goals");
+    if (!hasLTG) {
+      parsed = [...parsed, ...defaultLists.filter((d) => d.template === "long-term-goals")];
+      localStorage.setItem("userLists", JSON.stringify(parsed));
     }
+    setUserLists(parsed);
   }, []);
 
   const handleListsUpdate = (updated: UserList[]) => {
