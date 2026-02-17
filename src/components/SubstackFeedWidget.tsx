@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
+import { useContentLikes } from "@/hooks/useContentLikes";
+import LikeButton from "@/components/LikeButton";
 
 interface SubstackArticle {
   title: string;
@@ -30,6 +32,7 @@ const defaultNewsletters = ["thedatingdivas", "loveandrelationships"];
 
 const SubstackFeedWidget = () => {
   const { user, profile } = useAuth();
+  const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("substack");
   const [newsletters, setNewsletters] = useState<string[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : defaultNewsletters;
@@ -278,7 +281,7 @@ const SubstackFeedWidget = () => {
                       <img src={article.imageUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
                     </div>
                   )}
-                  <div className="flex-1 min-w-0 px-3 py-2.5">
+                   <div className="flex-1 min-w-0 px-3 py-2.5">
                     <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-foreground line-clamp-1">{article.title}</p>
@@ -292,7 +295,15 @@ const SubstackFeedWidget = () => {
                           )}
                         </div>
                       </div>
-                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                      <div className="flex items-center gap-1 shrink-0">
+                        <LikeButton
+                          liked={isLikedByMe(article.link)}
+                          partnerLiked={isLikedByPartner(article.link)}
+                          mutual={isMutualLike(article.link)}
+                          onToggle={() => toggleLike(article.link, article.title)}
+                        />
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
+                      </div>
                     </div>
                   </div>
                 </a>
