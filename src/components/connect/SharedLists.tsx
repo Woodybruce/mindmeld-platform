@@ -643,18 +643,6 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
 
   return (
     <div className="space-y-3">
-      {/* Create new */}
-      {!hideNewButton && !showTemplates && !creatingBlank && (
-        <motion.button
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={() => setShowTemplates(true)}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card p-4 text-sm font-medium text-primary hover:bg-muted/50 transition-colors"
-        >
-          <Plus className="w-4 h-4" /> New List
-        </motion.button>
-      )}
-
       {/* Template picker */}
       <AnimatePresence>
         {showTemplates && (
@@ -1442,6 +1430,18 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
           </motion.div>
         );
       })}
+
+      {/* Create new — at bottom */}
+      {!hideNewButton && !showTemplates && !creatingBlank && (
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => setShowTemplates(true)}
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card p-4 text-sm font-medium text-primary hover:bg-muted/50 transition-colors"
+        >
+          <Plus className="w-4 h-4" /> New List
+        </motion.button>
+      )}
     </div>
   );
 };
