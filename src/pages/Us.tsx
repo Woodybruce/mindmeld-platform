@@ -58,6 +58,7 @@ const Us = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "lists";
+  const listId = searchParams.get("listId") || null;
   
   const [userLists, setUserLists] = useState<UserList[]>([]);
   const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
@@ -114,6 +115,7 @@ const Us = () => {
               lists={userLists.filter((l) => l.template === "long-term-goals")}
               allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
               hideNewButton
+              initialExpandedId={listId}
               onUpdate={(updated) => {
                 const others = userLists.filter((l) => l.template !== "long-term-goals");
                 handleListsUpdate([...updated, ...others]);
@@ -125,6 +127,7 @@ const Us = () => {
             <SharedLists
               lists={userLists.filter((l) => l.template !== "long-term-goals")}
               allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
+              initialExpandedId={listId}
               onUpdate={(updated) => {
                 const pinned = userLists.filter((l) => l.template === "long-term-goals");
                 handleListsUpdate([...pinned, ...updated]);
