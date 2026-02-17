@@ -11,7 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 import QuickLinks from "@/components/QuickLinks";
-import RecentChatLinksWidget from "@/components/chat/RecentChatLinksWidget";
+import CuratedLinksWidget from "@/components/CuratedLinksWidget";
+import SuggestedProducts from "@/components/SuggestedProducts";
 import { useFeedContent } from "@/hooks/useFeedContent";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
@@ -61,6 +62,9 @@ const Index = () => {
       <main className="px-3 py-4 space-y-4 pb-24">
         <SetupPrompts />
 
+        {/* Today's tasks — inline at top */}
+        <DailyListsWidget />
+
         {/* Banner card */}
         {rows[0] && (
           Array.isArray(rows[0]) ? (
@@ -72,8 +76,6 @@ const Index = () => {
             <FeedCard item={rows[0]} index={0} />
           )
         )}
-
-        {/* Half cards */}
 
         {/* Half cards */}
         {rows[1] && (
@@ -99,8 +101,11 @@ const Index = () => {
           )
         ))}
 
-        {/* Lists */}
-        <DailyListsWidget />
+        {/* Curated links & relationship articles */}
+        <CuratedLinksWidget />
+
+        {/* Shopping suggestions with categories */}
+        <SuggestedProducts />
 
         {/* Remaining feed cards */}
         {rows.slice(2).map((row, idx) => (
@@ -116,9 +121,6 @@ const Index = () => {
 
         {/* Quick links to all remaining Us sections */}
         <QuickLinks />
-
-        {/* Recent chat links */}
-        <RecentChatLinksWidget />
 
         {/* Calendar */}
         <CalendarWidget />
