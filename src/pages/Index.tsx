@@ -36,7 +36,7 @@ const Index = () => {
   const rows = layoutItems(sampleFeedData);
   const { user, profile } = useAuth();
   const { data: backendFeedItems = [] } = useFeedContent(3);
-  const backendRows = layoutItems(backendFeedItems);
+  
 
   const [onboardingDone, setOnboardingDone] = useState(() => {
     return localStorage.getItem("us-onboarding-done") === "true";
@@ -89,17 +89,14 @@ const Index = () => {
           )
         )}
 
-        {/* Backend-driven content (quizzes, prompts, tips) */}
-        {backendRows.map((row, idx) => (
-          Array.isArray(row) ? (
-            <div key={`backend-pair-${idx}`} className="grid grid-cols-2 gap-3">
-              <FeedCard item={row[0]} index={idx + 10} />
-              <FeedCard item={row[1]} index={idx + 11} />
-            </div>
-          ) : (
-            <FeedCard key={row.id} item={row} index={idx + 10} />
-          )
-        ))}
+        {/* Backend-driven content (quizzes, prompts, tips) — compact 2-up grid */}
+        {backendFeedItems.length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            {backendFeedItems.map((item, idx) => (
+              <FeedCard key={item.id} item={{ ...item, size: "half" }} index={idx + 10} />
+            ))}
+          </div>
+        )}
 
         {/* Curated links & relationship articles */}
         <CuratedLinksWidget />
