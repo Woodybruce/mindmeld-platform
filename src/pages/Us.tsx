@@ -14,6 +14,7 @@ import BottomNav from "@/components/BottomNav";
 import GameCard from "@/components/connect/GameCard";
 import SharedLists from "@/components/connect/SharedLists";
 import type { UserList } from "@/components/connect/SharedLists";
+import WeeklyList from "@/components/connect/WeeklyList";
 import OurPhotos from "@/components/connect/OurPhotos";
 import OurEvents from "@/components/connect/OurEvents";
 
@@ -91,7 +92,11 @@ const Us = () => {
 
         {/* Lists — default tab, imported from OneNote */}
         <TabsContent value="lists" className="mt-4 space-y-5">
-          <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
+          <WeeklyList />
+          <div className="border-t border-border/50 pt-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Other Lists</p>
+            <SharedLists lists={userLists} onUpdate={handleListsUpdate} />
+          </div>
         </TabsContent>
 
         {/* Games */}
