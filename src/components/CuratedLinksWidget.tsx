@@ -196,8 +196,16 @@ const CuratedLinksWidget = () => {
               ))
             : articles.slice(0, 4).map((article, i) => (
                 <div key={i} className="flex items-start gap-3 p-2 rounded-xl hover:bg-secondary/50 transition-colors group">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center text-2xl flex-shrink-0">
-                    {article.emoji}
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden relative">
+                    <img
+                      src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(article.url)}&size=128`}
+                      alt=""
+                      className="w-8 h-8 object-contain absolute"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                    <span className="opacity-20 text-3xl select-none">{article.emoji}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <a href={article.url} target="_blank" rel="noopener noreferrer" className="block">
