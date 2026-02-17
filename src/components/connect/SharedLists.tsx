@@ -251,7 +251,7 @@ const templates = [
   // Suggested
   {
     id: "sex-bucket-ideas",
-    name: "Sex Bucket List Ideas",
+    name: "Sex Bucket Challenge Ideas",
     icon: "🔥",
     description: "Explore what you'd like to try together",
     gradient: "bg-gradient-to-br from-us-coral/20 to-us-blush/20",
@@ -923,7 +923,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
         )}
       </AnimatePresence>
 
-      {/* Sex Bucket List pending proposal (shown outside template picker when not browsing templates) */}
+      {/* Sex Bucket Challenge pending proposal (shown outside template picker when not browsing templates) */}
       {!showTemplates && <SexBucketList lists={lists} onUpdate={onUpdate} pendingOnly />}
 
       {/* Existing lists */}
