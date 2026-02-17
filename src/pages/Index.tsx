@@ -25,6 +25,7 @@ import MoodCheckinWidget from "@/components/MoodCheckinWidget";
 import AnniversaryCountdown from "@/components/AnniversaryCountdown";
 import StreaksWidget from "@/components/StreaksWidget";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
+import SendVibeButton from "@/components/SendVibeButton";
 
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
@@ -75,6 +76,9 @@ const Index = () => {
 
         {/* Partner invite (only shows if no partner linked) */}
         <PartnerInviteCard />
+
+        {/* Send a vibe */}
+        <SendVibeButton />
 
         {/* Mood check-in */}
         <MoodCheckinWidget />
