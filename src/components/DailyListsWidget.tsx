@@ -8,7 +8,8 @@ import { useWeeklyTasks } from "@/hooks/useWeeklyTasks";
 const DailyListsWidget = () => {
   const navigate = useNavigate();
   const { tasks, loading, toggleTask, getTodayTasks } = useWeeklyTasks();
-  const todayTasks = getTodayTasks();
+  const allTodayTasks = getTodayTasks();
+  const todayTasks = allTodayTasks.filter((t) => !t.done);
   const [expanded, setExpanded] = useState(false);
 
   if (loading) return null;
@@ -28,7 +29,8 @@ const DailyListsWidget = () => {
     );
   }
 
-  const doneCount = todayTasks.filter((t) => t.done).length;
+  const doneCount = allTodayTasks.filter((t) => t.done).length;
+  const totalCount = allTodayTasks.length;
   const todayLabel = new Date().toLocaleDateString("default", { weekday: "long" });
   const previewItems = todayTasks.slice(0, 2);
   const remainingItems = todayTasks.slice(2);
@@ -46,7 +48,7 @@ const DailyListsWidget = () => {
           <div>
             <h3 className="font-display text-base font-bold text-foreground">{todayLabel}'s Tasks</h3>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {doneCount}/{todayTasks.length} done
+              {doneCount}/{totalCount} done
             </p>
           </div>
         </div>
@@ -113,12 +115,12 @@ const DailyListsWidget = () => {
         </>
       )}
 
-      {todayTasks.length > 0 && (
+      {totalCount > 0 && (
         <div className="px-4 pb-4">
           <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${(doneCount / todayTasks.length) * 100}%` }}
+              animate={{ width: `${(doneCount / totalCount) * 100}%` }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="h-full rounded-full bg-primary"
             />
