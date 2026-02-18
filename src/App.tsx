@@ -19,6 +19,7 @@ import OurSexList from "./pages/OurSexList";
 import TruthOrDare from "./pages/TruthOrDare";
 import WouldYouRather from "./pages/WouldYouRather";
 import PhotoChallenge from "./pages/PhotoChallenge";
+import DareDuel from "./pages/DareDuel";
 import FamilyQuiz from "./pages/FamilyQuiz";
 import AdminFeedContent from "./pages/AdminFeedContent";
 import Auth from "./pages/Auth";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/truth-or-dare" element={<AuthGuard><TruthOrDare /></AuthGuard>} />
               <Route path="/would-you-rather" element={<AuthGuard><WouldYouRather /></AuthGuard>} />
               <Route path="/photo-challenge" element={<AuthGuard><PhotoChallenge /></AuthGuard>} />
+              <Route path="/dare-duel" element={<AuthGuard><DareDuel /></AuthGuard>} />
               <Route path="/family-quiz" element={<AuthGuard><FamilyQuiz /></AuthGuard>} />
               <Route path="/admin/feed" element={<AuthGuard><AdminFeedContent /></AuthGuard>} />
               <Route path="/auth" element={<Auth />} />
