@@ -44,11 +44,11 @@ const GamesCarousel = () => {
           <button
             key={g.name}
             onClick={() => navigate(g.link)}
-            className="shrink-0 w-[130px] bg-gradient-to-br from-secondary/80 to-secondary/40 border border-border/30 rounded-xl p-3 text-left hover:scale-[1.03] active:scale-[0.97] transition-transform"
+            className="shrink-0 w-[260px] bg-gradient-to-br from-secondary/80 to-secondary/40 border border-border/30 rounded-xl p-4 text-left hover:scale-[1.03] active:scale-[0.97] transition-transform"
           >
-            <span className="text-2xl block mb-1.5">{g.emoji}</span>
-            <h4 className="text-xs font-semibold text-foreground">{g.name}</h4>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{g.desc}</p>
+            <span className="text-3xl block mb-2">{g.emoji}</span>
+            <h4 className="text-sm font-semibold text-foreground">{g.name}</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">{g.desc}</p>
           </button>
         ))}
       </div>
