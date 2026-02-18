@@ -1,4 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
+
+const AMAZON_TAG = "woodybruce-21";
+
+/** Ensure Amazon links always carry the affiliate tag */
+const withAffiliateTag = (url?: string): string | undefined => {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("amazon.co.uk") || u.hostname.includes("amazon.com")) {
+      u.searchParams.set("tag", AMAZON_TAG);
+      return u.toString();
+    }
+  } catch {}
+  return url;
+};
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -263,7 +278,7 @@ const DiscoverTogether = () => {
                     const img = categoryImages[p.category] || categoryImages["general"];
                     return (
                       <motion.button key={p.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => p.productUrl && window.open(p.productUrl, "_blank", "noopener,noreferrer")}
+                        onClick={() => { const u = withAffiliateTag(p.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
                         <div className="relative w-full h-36 overflow-hidden">
@@ -297,7 +312,7 @@ const DiscoverTogether = () => {
                     const img = categoryImages[item.category] || categoryImages["Massage"];
                     return (
                       <motion.button key={item.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => item.productUrl && window.open(item.productUrl, "_blank", "noopener,noreferrer")}
+                        onClick={() => { const u = withAffiliateTag(item.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
                         <div className="relative w-full h-36 overflow-hidden">
