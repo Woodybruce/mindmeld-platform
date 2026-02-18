@@ -7,10 +7,10 @@ const corsHeaders = {
 };
 
 const FALLBACK_PRODUCTS = [
-  { name: "Couples Massage Oil Gift Set", brand: "Intimate Earth", price: "£24.99", description: "Sensual massage oils for two", category: "Massage", emoji: "💆", affiliateTag: "massage-oil-set", productUrl: "https://www.amazon.co.uk/s?k=couples+massage+oil+gift+set&tag=woodybruce-21" },
-  { name: "We-Vibe Sync Couples Vibrator", brand: "We-Vibe", price: "£89.99", description: "Award-winning wearable couples massager", category: "Vibrators", emoji: "💕", affiliateTag: "couples-vibrator", productUrl: "https://www.amazon.co.uk/s?k=we+vibe+sync+couples+vibrator&tag=woodybruce-21" },
-  { name: "Silk Chemise Lingerie Set", brand: "Bluebella", price: "£39.99", description: "Elegant silk-feel lingerie for her", category: "Lingerie", emoji: "🌸", affiliateTag: "silk-lingerie", productUrl: "https://www.amazon.co.uk/s?k=silk+chemise+lingerie+set&tag=woodybruce-21" },
-  { name: "Couples Intimacy Card Game", brand: "Lovehoney", price: "£14.99", description: "50 fun dares and questions for couples", category: "Games", emoji: "🃏", affiliateTag: "couples-game", productUrl: "https://www.amazon.co.uk/s?k=couples+intimacy+card+game&tag=woodybruce-21" },
+  { name: "Couples Massage Oil Gift Set", brand: "Intimate Earth", price: "£24.99", description: "Sensual massage oils for two", category: "Massage", emoji: "💆", affiliateTag: "massage-oil-set", productUrl: "https://www.amazon.co.uk/s?k=couples+massage+oil+gift+set&tag=woodybruce-21", imageUrl: "https://m.media-amazon.com/images/I/71QnLCMDGAL._AC_SL1500_.jpg" },
+  { name: "We-Vibe Sync Couples Vibrator", brand: "We-Vibe", price: "£89.99", description: "Award-winning wearable couples massager", category: "Vibrators", emoji: "💕", affiliateTag: "couples-vibrator", productUrl: "https://www.amazon.co.uk/s?k=we+vibe+sync+couples+vibrator&tag=woodybruce-21", imageUrl: "https://m.media-amazon.com/images/I/61yFJdwFZHL._AC_SL1000_.jpg" },
+  { name: "Silk Chemise Lingerie Set", brand: "Bluebella", price: "£39.99", description: "Elegant silk-feel lingerie for her", category: "Lingerie", emoji: "🌸", affiliateTag: "silk-lingerie", productUrl: "https://www.amazon.co.uk/s?k=silk+chemise+lingerie+set&tag=woodybruce-21", imageUrl: "https://m.media-amazon.com/images/I/71ZJKR5YXOL._AC_UL1500_.jpg" },
+  { name: "Couples Intimacy Card Game", brand: "Lovehoney", price: "£14.99", description: "50 fun dares and questions for couples", category: "Games", emoji: "🃏", affiliateTag: "couples-game", productUrl: "https://www.amazon.co.uk/s?k=couples+intimacy+card+game&tag=woodybruce-21", imageUrl: "https://m.media-amazon.com/images/I/81tSPDMFgEL._AC_SL1500_.jpg" },
 ];
 
 serve(async (req) => {
@@ -33,11 +33,13 @@ serve(async (req) => {
             content: `You are a product recommender for a couples wellness app. Suggest 4 romantic and intimate products available on Amazon UK. 
 Include a variety: couples massage oil sets, scented candles, luxury bath sets, couples board games, silk lingerie, massage candles, body paint kits, couples vibrators or intimate massagers, sensual gift sets.
 For productUrl use Amazon.co.uk search: "https://www.amazon.co.uk/s?k=SEARCH+TERM&tag=woodybruce-21"
-Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
+Always include &tag=woodybruce-21.
+For imageUrl, provide a REAL Amazon CDN product image URL (https://m.media-amazon.com/images/I/XXXXX.jpg) — a genuine product photo.
+Keep descriptions under 60 chars.`,
           },
           {
             role: "user",
-            content: `Suggest 4 couples intimate and romantic products for Amazon UK. Include at least one couples vibrator or massager. Return only valid JSON.`,
+            content: `Suggest 4 couples intimate and romantic products for Amazon UK. Include at least one couples vibrator or massager. For each, provide a real imageUrl from Amazon CDN (https://m.media-amazon.com/images/...). Return only valid JSON.`,
           },
         ],
         tools: [
@@ -62,6 +64,7 @@ Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
                         emoji: { type: "string" },
                         affiliateTag: { type: "string" },
                         productUrl: { type: "string" },
+                        imageUrl: { type: "string", description: "Real Amazon CDN product image URL" },
                       },
                       required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "productUrl"],
                       additionalProperties: false,
@@ -98,12 +101,29 @@ Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
       } catch { products = []; }
     }
 
-    // Always fall back if AI returns nothing (e.g. content filtered)
     if (!products || products.length === 0) {
       products = FALLBACK_PRODUCTS;
     }
 
-    return new Response(JSON.stringify({ products }), {
+    // Enrich products: scrape Amazon for real image if AI didn't return a valid one
+    const enriched = await Promise.all(products.map(async (p: any) => {
+      if (p.imageUrl && p.imageUrl.startsWith("https://m.media-amazon.com")) {
+        return p;
+      }
+      try {
+        const searchUrl = `https://www.amazon.co.uk/s?k=${encodeURIComponent(p.name + " " + p.brand)}`;
+        const res = await fetch(searchUrl, {
+          headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
+          signal: AbortSignal.timeout(3000),
+        });
+        const html = await res.text();
+        const imgMatch = html.match(/https:\/\/m\.media-amazon\.com\/images\/I\/[A-Za-z0-9._%-]+\.(?:jpg|png|jpeg)/);
+        if (imgMatch) return { ...p, imageUrl: imgMatch[0] };
+      } catch {}
+      return p;
+    }));
+
+    return new Response(JSON.stringify({ products: enriched }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

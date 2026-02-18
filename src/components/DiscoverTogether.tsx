@@ -56,9 +56,9 @@ const PRODUCT_CATEGORIES: Record<string, { key: string; label: string }[]> = {
   ],
 };
 
-/** Build a relevant Unsplash image URL from a text hint */
+/** Build a relevant Unsplash image URL from a text hint (fallback only) */
 const hintImage = (hint: string) =>
-  `https://source.unsplash.com/400x400/?${encodeURIComponent(hint)}`;
+  `https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop&q=80`;
 
 
 const CACHE_TTL = 1000 * 60 * 60;
@@ -151,9 +151,10 @@ const DiscoverTogether = () => {
     } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, travel: false })); setLoaded(p => ({ ...p, travel: true })); }
   }, []);
 
-  // Bust old caches so URLs are refreshed with correct affiliate links
+  // Bust old caches so URLs are refreshed with correct affiliate links and real images
   useEffect(() => {
-    ["disc-experiences", "disc-intimacy", "disc-travel", "disc-products-general", "disc-products-date night", "disc-products-wellness", "disc-products-games"].forEach(k => localStorage.removeItem(k));
+    ["disc-experiences", "disc-intimacy", "disc-travel", "disc-products-general", "disc-products-date night", "disc-products-wellness", "disc-products-games",
+     "suggested-products-general", "suggested-products-experiences", "suggested-products-intimacy", "suggested-products-travel", "suggested-products-dining"].forEach(k => localStorage.removeItem(k));
   }, []);
 
   // Load active tab on first visit
@@ -276,7 +277,7 @@ const DiscoverTogether = () => {
               isLoading && !products.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : products.slice(0, 6).map((p, i) => {
-                    const img = hintImage((p as any).imageHint || `${p.category} ${p.name} gift`);
+                    const img = (p as any).imageUrl || hintImage(`${p.category} ${p.name} gift`);
                     return (
                       <motion.button key={p.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
                         onClick={() => { const u = withAffiliateTag(p.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
@@ -310,7 +311,7 @@ const DiscoverTogether = () => {
               isLoading && !intimacy.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : intimacy.slice(0, 6).map((item, i) => {
-                    const img = hintImage(`${item.category} ${item.name} intimate`);
+                    const img = (item as any).imageUrl || hintImage(`${item.category} ${item.name} intimate`);
                     return (
                       <motion.button key={item.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
                         onClick={() => { const u = withAffiliateTag(item.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
