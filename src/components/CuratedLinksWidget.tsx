@@ -112,7 +112,7 @@ const CuratedLinksWidget = () => {
     }
   };
 
-  useEffect(() => { fetchArticles(); }, []);
+  useEffect(() => { localStorage.removeItem(CACHE_KEY); fetchArticles(); }, []);
 
   const saveArticleAsList = (article: Article) => {
     toast.info(`"${article.title}" saved — open Lists to view key points`, { duration: 3000 });
