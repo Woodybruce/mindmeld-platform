@@ -3,21 +3,23 @@ import { useState, useEffect, useCallback } from "react";
 const AMAZON_TAG = "woodybruce-21";
 const CJ_PID = "7540258";
 
-/** Ensure Amazon links always carry the affiliate tag */
+/** Ensure affiliate params are always present on outbound links */
 const withAffiliateTag = (url?: string): string | undefined => {
   if (!url) return url;
   try {
     const u = new URL(url);
+    // Amazon — affiliate tag
     if (u.hostname.includes("amazon.co.uk") || u.hostname.includes("amazon.com")) {
       u.searchParams.set("tag", AMAZON_TAG);
       return u.toString();
     }
-    // Booking.com — append CJ affiliate PID
+    // Booking.com — CJ affiliate PID
     if (u.hostname.includes("booking.com")) {
       u.searchParams.set("affiliate_id", CJ_PID);
       if (!u.searchParams.has("aid")) u.searchParams.set("aid", "356980");
       return u.toString();
     }
+    // DesignMyNight — pass through as-is
   } catch {}
   return url;
 };
@@ -160,6 +162,11 @@ const DiscoverTogether = () => {
       const { data } = await supabase.functions.invoke("suggest-travel", { body: {} });
       if (data?.destinations?.length) { setTravel(data.destinations); cacheSet(key, data.destinations); }
     } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, travel: false })); setLoaded(p => ({ ...p, travel: true })); }
+  }, []);
+
+  // Bust old caches so URLs are refreshed with correct affiliate links
+  useEffect(() => {
+    ["disc-experiences", "disc-intimacy", "disc-travel", "disc-products-general", "disc-products-date night", "disc-products-wellness", "disc-products-games"].forEach(k => localStorage.removeItem(k));
   }, []);
 
   // Load active tab on first visit

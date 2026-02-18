@@ -6,8 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Placeholder for Awin/Lovehoney affiliate feed
-// When ready: const AWIN_API_KEY = Deno.env.get("AWIN_API_KEY");
+// Intimacy products → Amazon.co.uk with affiliate tag
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -27,10 +26,9 @@ serve(async (req) => {
           {
             role: "system",
             content: `You are an intimacy product recommender for a couples relationship app.
-Suggest 4 adult wellness and intimacy products from mainstream UK retailers (Lovehoney, LELO, We-Vibe, Durex, Boots).
-Focus on: massage oils, candles, couples games, lingerie, bath sets, adult novelties. Keep it tasteful, couple-positive.
-For productUrl use a search on lovehoney.co.uk like "https://www.lovehoney.co.uk/search/?q=PRODUCT+NAME"
-Keep descriptions under 60 chars. Return valid JSON array only.`,
+Suggest 4 adult wellness and intimacy products available on Amazon UK (massage oils, candles, couples games, bath sets, lingerie, aromatherapy). Keep it tasteful and romantic.
+For productUrl use an Amazon.co.uk affiliate search URL in this exact format: "https://www.amazon.co.uk/s?k=PRODUCT+SEARCH+TERM&tag=woodybruce-21"
+Always append &tag=woodybruce-21 to every URL. Keep descriptions under 60 chars.`,
           },
           {
             role: "user",
