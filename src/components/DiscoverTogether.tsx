@@ -56,29 +56,10 @@ const PRODUCT_CATEGORIES: Record<string, { key: string; label: string }[]> = {
   ],
 };
 
-const categoryImages: Record<string, string> = {
-  "Date Night": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=400&fit=crop",
-  "Wellness": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop",
-  "Travel": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=400&fit=crop",
-  "Restaurant": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=400&fit=crop",
-  "Bar": "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=400&h=400&fit=crop",
-  "Activity": "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=400&h=400&fit=crop",
-  "Spa": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=400&fit=crop",
-  "Class": "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&h=400&fit=crop",
-  "City Break": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=400&fit=crop",
-  "Beach": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&fit=crop",
-  "Countryside": "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&h=400&fit=crop",
-  "Massage": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop",
-  "Candles": "https://images.unsplash.com/photo-1602028915047-37269d1a73f7?w=400&h=400&fit=crop",
-  "Games": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=400&h=400&fit=crop",
-  "Toys": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop",
-  "Vibrators": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop",
-  "Lingerie": "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop",
-  "Bondage": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=400&fit=crop",
-  "Accessories": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop",
-  "Bath": "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=400&h=400&fit=crop",
-  "general": "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=400&h=400&fit=crop",
-};
+/** Build a relevant Unsplash image URL from a text hint */
+const hintImage = (hint: string) =>
+  `https://source.unsplash.com/400x400/?${encodeURIComponent(hint)}`;
+
 
 const CACHE_TTL = 1000 * 60 * 60;
 
@@ -257,7 +238,7 @@ const DiscoverTogether = () => {
               isLoading && !experiences.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : experiences.slice(0, 6).map((exp, i) => {
-                    const img = categoryImages[exp.category] || categoryImages["Activity"];
+                    const img = hintImage(`${exp.category} ${exp.name} romantic date`);
                     const id = `exp-${exp.name}`;
                     return (
                       <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
@@ -295,7 +276,7 @@ const DiscoverTogether = () => {
               isLoading && !products.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : products.slice(0, 6).map((p, i) => {
-                    const img = categoryImages[p.category] || categoryImages["general"];
+                    const img = hintImage((p as any).imageHint || `${p.category} ${p.name} gift`);
                     return (
                       <motion.button key={p.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
                         onClick={() => { const u = withAffiliateTag(p.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
@@ -329,7 +310,7 @@ const DiscoverTogether = () => {
               isLoading && !intimacy.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : intimacy.slice(0, 6).map((item, i) => {
-                    const img = categoryImages[item.category] || categoryImages["Massage"];
+                    const img = hintImage(`${item.category} ${item.name} intimate`);
                     return (
                       <motion.button key={item.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
                         onClick={() => { const u = withAffiliateTag(item.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
@@ -363,7 +344,7 @@ const DiscoverTogether = () => {
               isLoading && !travel.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : travel.slice(0, 6).map((dest, i) => {
-                    const img = categoryImages[dest.category] || categoryImages["City Break"];
+                    const img = hintImage(`${dest.category} ${dest.destination} travel`);
                     const id = `travel-${dest.destination}`;
                     return (
                       <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
