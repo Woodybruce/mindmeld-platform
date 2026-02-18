@@ -176,45 +176,40 @@ const CuratedLinksWidget = () => {
         </div>
       )}
 
-      {/* Curated articles */}
-      <div className="px-3 pb-1">
-        <div className="flex items-center gap-1 px-1 pb-1.5">
+      {/* Curated articles — horizontal scroll */}
+      <div className="pb-1">
+        <div className="flex items-center gap-1 px-4 pb-1.5">
           <Sparkles className="w-3 h-3 text-primary" />
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Suggested Reads</p>
         </div>
-        <div className="space-y-1">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-3 pb-1">
           {(loading && !articles.length
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex gap-3 p-2 animate-pulse">
-                  <div className="w-14 h-14 bg-muted rounded-xl flex-shrink-0" />
-                  <div className="flex-1 space-y-1.5 py-1">
-                    <div className="w-3/4 h-3 bg-muted rounded" />
-                    <div className="w-full h-2 bg-muted rounded" />
-                    <div className="w-1/3 h-2 bg-muted rounded" />
-                  </div>
+                <div key={i} className="flex-shrink-0 w-48 animate-pulse bg-secondary/60 rounded-xl p-3 space-y-2">
+                  <div className="w-full h-24 bg-muted rounded-lg" />
+                  <div className="w-3/4 h-3 bg-muted rounded" />
+                  <div className="w-full h-2 bg-muted rounded" />
                 </div>
               ))
-            : articles.slice(0, 4).map((article, i) => (
-                <div key={i} className="flex items-start gap-3 p-2 rounded-xl hover:bg-secondary/50 transition-colors group">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden relative">
+            : articles.slice(0, 6).map((article, i) => (
+                <div key={i} className="flex-shrink-0 w-48 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors overflow-hidden group">
+                  <div className="relative w-full h-24 bg-gradient-to-br from-secondary to-muted flex items-center justify-center overflow-hidden">
                     <img
                       src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(article.url)}&size=128`}
                       alt=""
-                      className="w-8 h-8 object-contain absolute"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
+                      className="w-10 h-10 object-contain"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
-                    <span className="opacity-20 text-3xl select-none">{article.emoji}</span>
+                    <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-10 select-none">{article.emoji}</span>
+                    <div className="absolute bottom-1.5 left-1.5">
+                      <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{article.category}</span>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <a href={article.url} target="_blank" rel="noopener noreferrer" className="block">
-                      <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{article.title}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{article.description}</p>
-                      <p className="text-[9px] text-muted-foreground/70 mt-1">{article.source} · {article.category}</p>
-                    </a>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                  <a href={article.url} target="_blank" rel="noopener noreferrer" className="block p-2.5">
+                    <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{article.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{article.source}</p>
+                  </a>
+                  <div className="px-2.5 pb-2 flex items-center justify-between">
                     <LikeButton
                       liked={isLikedByMe(article.url)}
                       partnerLiked={isLikedByPartner(article.url)}
@@ -223,7 +218,7 @@ const CuratedLinksWidget = () => {
                     />
                     <button
                       onClick={() => saveArticleAsList(article)}
-                      className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all"
+                      className="p-1.5 rounded-lg hover:bg-secondary transition-all"
                       title="Save as list"
                     >
                       <ListPlus className="w-3.5 h-3.5 text-primary" />

@@ -100,21 +100,8 @@ const Index = () => {
           )
         )}
 
-        {/* Backend-driven content (quizzes, prompts, tips) — compact 2-up grid */}
-        {backendFeedItems.length > 0 && (
-          <div className="grid grid-cols-2 gap-3">
-            {backendFeedItems.map((item, idx) => (
-              <FeedCard key={item.id} item={{ ...item, size: "half" }} index={idx + 10} />
-            ))}
-          </div>
-        )}
-
         {/* Our Photos */}
         <PhotosPreview />
-
-        {/* Instagram feed */}
-        <InstaFeedWidget />
-
 
         {/* Curated links & relationship articles */}
         <CuratedLinksWidget />
@@ -133,6 +120,18 @@ const Index = () => {
             <FeedCard key={row.id} item={row} index={idx + 4} />
           )
         ))}
+
+        {/* Backend-driven content (quizzes, prompts, tips) — compact 2-up grid */}
+        {backendFeedItems.length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            {backendFeedItems.map((item, idx) => (
+              <FeedCard key={item.id} item={{ ...item, size: "half" }} index={idx + 10} />
+            ))}
+          </div>
+        )}
+
+        {/* Instagram feed */}
+        <InstaFeedWidget />
 
 
 
