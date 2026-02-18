@@ -19,7 +19,6 @@ import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
 import InstaFeedWidget from "@/components/InstaFeedWidget";
 import DailyPromptCard from "@/components/DailyPromptCard";
-import AnniversaryCountdown from "@/components/AnniversaryCountdown";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
 import PullToRefresh from "@/components/PullToRefresh";
 // Groups feed items: consecutive "half" items pair up, others standalone
@@ -80,11 +79,11 @@ const Index = () => {
         {/* Daily prompt */}
         <DailyPromptCard />
 
-        {/* Anniversary countdown */}
-        <AnniversaryCountdown />
-
         {/* Calendar */}
         <CalendarWidget />
+
+        {/* Lists summary — below calendar */}
+        <ListsSummaryWidget />
 
         {/* Games carousel */}
         <GamesCarousel />
@@ -109,9 +108,6 @@ const Index = () => {
             ))}
           </div>
         )}
-
-        {/* Lists summary */}
-        <ListsSummaryWidget />
 
         {/* Our Photos */}
         <PhotosPreview />
