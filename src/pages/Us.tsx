@@ -150,13 +150,13 @@ const Us = () => {
 
         {/* Games */}
         <TabsContent value="games" className="mt-4 space-y-3">
-          <p className="text-sm font-bold text-foreground">Fun activities to play together</p>
-          <GameCard title="Kiss Chase" description="Chase each other in real life using GPS!" emoji="💋" players="2 players · Outdoors" gradient="bg-gradient-to-br from-us-coral/15 to-us-blush/25" onClick={() => navigate("/kiss-chase")} delay={0} />
-          <GameCard title="Design My Night" description="Draw cards to plan your perfect date night together." emoji="🌙" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-blush/25 to-us-coral/15" onClick={() => navigate("/design-my-night")} delay={0.08} />
-          <GameCard title="Truth or Dare" description="Couples edition with spicy and sweet options." emoji="🎯" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-gold/15 to-us-cream/30" onClick={() => navigate("/truth-or-dare")} delay={0.16} />
-          <GameCard title="Dare Duel" description="Draw dares and challenge your partner to beat you." emoji="⚔️" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-coral/20 to-us-gold/15" onClick={() => navigate("/dare-duel")} delay={0.24} />
-          <GameCard title="Spicy Would You Rather" description="Hot choices and spicy dilemmas for two." emoji="🔥" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-coral/20 to-us-gold/15" onClick={() => navigate("/would-you-rather")} delay={0.32} />
-          <GameCard title="Photo Challenge" description="Complete fun photo tasks together as a team." emoji="📸" players="2 players · Outdoors" gradient="bg-gradient-to-br from-us-blush/20 to-us-coral/10" onClick={() => navigate("/photo-challenge")} delay={0.4} />
+          <p className="text-sm font-bold text-foreground">Sexy games for two 🔥</p>
+          <GameCard title="Kiss Chase" description="Chase your lover by GPS — winner gets a kiss." emoji="💋" players="2 players · Outdoors" gradient="bg-gradient-to-br from-us-coral/15 to-us-blush/25" onClick={() => navigate("/kiss-chase")} delay={0} />
+          <GameCard title="Design My Night" description="Draw cards to plan the ultimate sexy date night." emoji="🌙" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-blush/25 to-us-coral/15" onClick={() => navigate("/design-my-night")} delay={0.08} />
+          <GameCard title="Truth or Dare" description="Naughty truths and steamy dares for couples." emoji="😈" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-gold/15 to-us-cream/30" onClick={() => navigate("/truth-or-dare")} delay={0.16} />
+          <GameCard title="Dare Duel" description="Take turns setting daring challenges — loser strips." emoji="⚔️" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-coral/20 to-us-gold/15" onClick={() => navigate("/dare-duel")} delay={0.24} />
+          <GameCard title="Spicy Would You Rather" description="Steamy dilemmas — pick your fantasy, reveal together." emoji="🔥" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-coral/20 to-us-blush/20" onClick={() => navigate("/would-you-rather")} delay={0.32} />
+          <GameCard title="Photo Challenge" description="Saucy couple photo tasks — share to your private album." emoji="📸" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-blush/20 to-us-coral/10" onClick={() => navigate("/photo-challenge")} delay={0.4} />
         </TabsContent>
 
         {/* Photos */}
