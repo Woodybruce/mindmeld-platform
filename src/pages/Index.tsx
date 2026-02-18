@@ -91,6 +91,9 @@ const Index = () => {
         {/* What's been updated */}
         <RecentActivityWidget />
 
+        {/* Calendar */}
+        <CalendarWidget />
+
         {/* Games carousel */}
         <GamesCarousel />
 
@@ -144,8 +147,7 @@ const Index = () => {
         ))}
 
 
-        {/* Calendar */}
-        <CalendarWidget />
+
       </main>
       </PullToRefresh>
 
