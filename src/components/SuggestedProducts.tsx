@@ -170,66 +170,68 @@ const SuggestedProducts = () => {
         ))}
       </div>
 
-      {/* Products grid */}
-      <div className="px-3 pb-3 grid grid-cols-2 gap-2">
-        {(loading && !products.length
-          ? Array.from({ length: 4 })
-          : products.slice(0, 4)
-        ).map((product, i) => {
-          const p = product as Product | undefined;
-          const categoryImg = p ? (categoryImages[p.category] || categoryImages["Experiences"]) : undefined;
+      {/* Products — horizontal scroll */}
+      <div className="pb-1">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-3 pb-2">
+          {(loading && !products.length
+            ? Array.from({ length: 4 })
+            : products.slice(0, 6)
+          ).map((product, i) => {
+            const p = product as Product | undefined;
+            const categoryImg = p ? (categoryImages[p.category] || categoryImages["Experiences"]) : undefined;
 
-          return (
-            <motion.button
-              key={p ? p.affiliateTag : i}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.05 }}
-              onClick={() => {
-                if (p?.productUrl) {
-                  window.open(p.productUrl, "_blank", "noopener,noreferrer");
-                }
-              }}
-              className="group rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
-            >
-              {p ? (
-                <>
-                  {/* Product visual */}
-                  <div className="relative w-full aspect-square overflow-hidden">
-                    <ProductImage categoryImageUrl={categoryImg} emoji={p.emoji} name={p.name} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                    <div className="absolute top-1.5 right-1.5">
-                      <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
+            return (
+              <motion.button
+                key={p ? p.affiliateTag : i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
+                onClick={() => {
+                  if (p?.productUrl) {
+                    window.open(p.productUrl, "_blank", "noopener,noreferrer");
+                  }
+                }}
+                className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
+              >
+                {p ? (
+                  <>
+                    {/* Product visual */}
+                    <div className="relative w-full h-36 overflow-hidden">
+                      <ProductImage categoryImageUrl={categoryImg} emoji={p.emoji} name={p.name} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                      <div className="absolute top-1.5 right-1.5">
+                        <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <div className="absolute bottom-1.5 left-1.5">
+                        <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{p.category}</span>
+                      </div>
                     </div>
-                    <div className="absolute bottom-1.5 left-1.5">
-                      <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{p.category}</span>
-                    </div>
-                  </div>
-                  {/* Product info */}
-                  <div className="p-2.5 flex items-start justify-between gap-1">
-                    <div className="min-w-0">
+                    {/* Product info */}
+                    <div className="p-2.5">
                       <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">{p.brand}</p>
-                      <p className="text-xs font-bold text-primary mt-1">{p.price}</p>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <p className="text-xs font-bold text-primary">{p.price}</p>
+                        <LikeButton
+                          liked={isLikedByMe(p.affiliateTag)}
+                          partnerLiked={isLikedByPartner(p.affiliateTag)}
+                          mutual={isMutualLike(p.affiliateTag)}
+                          onToggle={() => toggleLike(p.affiliateTag, p.name)}
+                        />
+                      </div>
                     </div>
-                    <LikeButton
-                      liked={isLikedByMe(p.affiliateTag)}
-                      partnerLiked={isLikedByPartner(p.affiliateTag)}
-                      mutual={isMutualLike(p.affiliateTag)}
-                      onToggle={() => toggleLike(p.affiliateTag, p.name)}
-                    />
+                  </>
+                ) : (
+                  <div className="space-y-2 animate-pulse p-3">
+                    <div className="w-full h-36 bg-muted rounded-lg" />
+                    <div className="w-3/4 h-3 bg-muted rounded" />
+                    <div className="w-1/2 h-2 bg-muted rounded" />
                   </div>
-                </>
-              ) : (
-                <div className="space-y-2 animate-pulse p-3">
-                  <div className="w-full aspect-square bg-muted rounded-lg" />
-                  <div className="w-3/4 h-3 bg-muted rounded" />
-                  <div className="w-1/2 h-2 bg-muted rounded" />
-                </div>
-              )}
-            </motion.button>
-          );
-        })}
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="px-4 pb-2.5 flex items-center gap-1">
