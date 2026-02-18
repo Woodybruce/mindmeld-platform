@@ -5,6 +5,8 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import usLogo from "@/assets/us-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const vibes = [
   { emoji: "🤗", label: "Hug" },
@@ -21,6 +23,7 @@ interface AppHeaderProps {
 
 const AppHeader = ({ subtitle }: AppHeaderProps) => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [vibeOpen, setVibeOpen] = useState(false);
   const vibeRef = useRef<HTMLDivElement>(null);
 
@@ -32,9 +35,19 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const sendVibe = (emoji: string, label: string) => {
+  const sendVibe = async (emoji: string, label: string) => {
     setVibeOpen(false);
     haptics.success();
+
+    if (user && profile?.partner_id) {
+      await supabase.from("messages").insert({
+        sender_id: user.id,
+        receiver_id: profile.partner_id,
+        content: JSON.stringify({ emoji, label }),
+        message_type: "vibe",
+      } as any);
+    }
+
     toast({ title: `${emoji} ${label} sent to your partner!`, duration: 2000 });
   };
 
