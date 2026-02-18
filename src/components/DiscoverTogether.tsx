@@ -261,7 +261,7 @@ const DiscoverTogether = () => {
                     const id = `exp-${exp.name}`;
                     return (
                       <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => exp.bookingUrl && window.open(exp.bookingUrl, "_blank", "noopener,noreferrer")}
+                        onClick={() => { const u = withAffiliateTag(exp.bookingUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
                         <div className="relative w-full h-36 overflow-hidden">
