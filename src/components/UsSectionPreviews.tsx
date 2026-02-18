@@ -202,12 +202,12 @@ export const PhotosPreview = () => {
     fetchPhotos();
   }, [user, partnerId]);
 
-  // Auto-rotate every 3 seconds
+  // Auto-rotate every 5 minutes
   useEffect(() => {
     if (photoUrls.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentIdx((i) => (i + 1) % photoUrls.length);
-    }, 3000);
+    }, 5 * 60 * 1000);
     return () => clearInterval(timer);
   }, [photoUrls.length]);
 
