@@ -13,7 +13,7 @@ import type { FeedItem } from "@/components/FeedCard";
 import GamesCarousel from "@/components/GamesCarousel";
 
 import CuratedLinksWidget from "@/components/CuratedLinksWidget";
-import SuggestedProducts from "@/components/SuggestedProducts";
+import DiscoverTogether from "@/components/DiscoverTogether";
 import { useFeedContent } from "@/hooks/useFeedContent";
 import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
@@ -110,7 +110,7 @@ const Index = () => {
         <CuratedLinksWidget />
 
         {/* Shopping suggestions with categories */}
-        <SuggestedProducts />
+        <DiscoverTogether />
 
         {/* Remaining feed cards */}
         {rows.slice(2).map((row, idx) => (
