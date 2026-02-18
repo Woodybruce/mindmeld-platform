@@ -112,7 +112,11 @@ const CuratedLinksWidget = () => {
     }
   };
 
-  useEffect(() => { localStorage.removeItem(CACHE_KEY); fetchArticles(); }, []);
+  useEffect(() => { 
+    // Clear any cached articles that may have had broken URLs
+    Object.keys(localStorage).filter(k => k.startsWith("curated")).forEach(k => localStorage.removeItem(k));
+    fetchArticles(); 
+  }, []);
 
   const saveArticleAsList = (article: Article) => {
     toast.info(`"${article.title}" saved — open Lists to view key points`, { duration: 3000 });
