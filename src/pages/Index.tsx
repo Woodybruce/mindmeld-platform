@@ -103,7 +103,10 @@ const Index = () => {
         {/* Our Photos */}
         <PhotosPreview />
 
-        {/* Curated links & relationship articles */}
+        {/* Instagram feed — above For You */}
+        <InstaFeedWidget />
+
+        {/* For You — combined saved links + suggested reads (randomised) */}
         <CuratedLinksWidget />
 
         {/* Shopping suggestions with categories */}
@@ -129,9 +132,6 @@ const Index = () => {
             ))}
           </div>
         )}
-
-        {/* Instagram feed */}
-        <InstaFeedWidget />
 
 
 
