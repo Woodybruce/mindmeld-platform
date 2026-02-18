@@ -26,16 +26,16 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash-lite",
           messages: [
             {
               role: "system",
               content: `You are a product recommendation engine for a couples/relationship app called "Us". 
-Suggest 4 real, purchasable products that couples would love. Mix categories: date night experiences, couple gifts, wellness, home, travel accessories, games, books.
+Suggest 4 real, purchasable products that couples would love. Mix categories: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books.
 Each product must feel authentic — use real-sounding brand names, realistic prices in GBP, and compelling short descriptions.
 For productUrl, provide a direct Amazon.co.uk search URL like "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND" so users can find and buy the product.
-For imageUrl, provide a REAL, publicly accessible product image URL from the brand's official website, a major retailer CDN, or a well-known product review site. The image must be a direct link to a .jpg, .png, or .webp file that can be embedded in an <img> tag. Do NOT use placeholder services or make up URLs.
-Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box"), "imageHint": string (2-3 word search term), "productUrl": string (Amazon.co.uk search URL), "imageUrl": string (direct product image URL) }`,
+IMPORTANT: The "category" field must exactly match one of: "Date Night", "Wellness", "Travel", "Intimacy", "Experiences", "Games", "Home", "Books", "Stationery", "Dining".
+Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box"), "imageHint": string (2-3 word search term), "productUrl": string (Amazon.co.uk search URL) }`,
             },
             {
               role: "user",
@@ -65,9 +65,8 @@ Return JSON array only, no markdown. Each object: { "name": string, "brand": str
                           affiliateTag: { type: "string" },
                           imageHint: { type: "string" },
                           productUrl: { type: "string" },
-                          imageUrl: { type: "string" },
                         },
-                        required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageHint", "productUrl", "imageUrl"],
+                        required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageHint", "productUrl"],
                         additionalProperties: false,
                       },
                     },

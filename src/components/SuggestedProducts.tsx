@@ -63,6 +63,7 @@ const categoryImages: Record<string, string> = {
   "Games": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=400&h=400&fit=crop",
   "Home": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
   "Books": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=400&fit=crop",
+  "general": "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=400&h=400&fit=crop",
 };
 
 const SuggestedProducts = () => {
@@ -116,7 +117,7 @@ const SuggestedProducts = () => {
   };
 
   useEffect(() => {
-    // Clear old caches that may lack imageUrl
+    // Clear old caches that may have stale data
     CATEGORIES.forEach(c => localStorage.removeItem(`${CACHE_KEY}-${c.key}`));
     fetchProducts(activeCategory, true);
   }, []);
@@ -128,6 +129,7 @@ const SuggestedProducts = () => {
   };
 
   if (!hasLoaded && !loading) return null;
+
 
   return (
     <motion.div
