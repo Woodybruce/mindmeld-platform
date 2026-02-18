@@ -17,11 +17,9 @@ import SuggestedProducts from "@/components/SuggestedProducts";
 import { useFeedContent } from "@/hooks/useFeedContent";
 import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
-import RecentActivityWidget from "@/components/RecentActivityWidget";
 import InstaFeedWidget from "@/components/InstaFeedWidget";
 import DailyPromptCard from "@/components/DailyPromptCard";
 import AnniversaryCountdown from "@/components/AnniversaryCountdown";
-import StreaksWidget from "@/components/StreaksWidget";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
 import PullToRefresh from "@/components/PullToRefresh";
 // Groups feed items: consecutive "half" items pair up, others standalone
@@ -79,17 +77,11 @@ const Index = () => {
         {/* Today's tasks — inline at top */}
         <DailyListsWidget />
 
-        {/* Streaks & milestones */}
-        <StreaksWidget />
-
         {/* Daily prompt */}
         <DailyPromptCard />
 
         {/* Anniversary countdown */}
         <AnniversaryCountdown />
-
-        {/* What's been updated */}
-        <RecentActivityWidget />
 
         {/* Calendar */}
         <CalendarWidget />
