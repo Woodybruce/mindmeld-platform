@@ -29,10 +29,10 @@ interface OEmbedData {
 }
 
 const defaultSuggestions = [
-  { handle: "@thedatingdivas", label: "Date Ideas", bio: "Creative date night inspiration for couples", image: "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=400&h=400&fit=crop" },
-  { handle: "@gottmaninstitute", label: "Relationship Tips", bio: "Science-based love advice", image: "https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?w=400&h=400&fit=crop" },
-  { handle: "@loveandlondon", label: "Travel Couples", bio: "Romantic travel inspiration", image: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400&h=400&fit=crop" },
-  { handle: "@couplegoals", label: "Couple Goals", bio: "Relationship inspiration & goals", image: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop" },
+  { handle: "@thedatingdivas", label: "Date Ideas", bio: "Creative date night inspiration for couples", image_url: null },
+  { handle: "@gottmaninstitute", label: "Relationship Tips", bio: "Science-based love advice", image_url: null },
+  { handle: "@loveandlondon", label: "Travel Couples", bio: "Romantic travel inspiration", image_url: null },
+  { handle: "@couplegoals", label: "Couple Goals", bio: "Relationship inspiration & goals", image_url: null },
 ];
 
 const extractInstaUsername = (url: string): string | null => {
@@ -104,7 +104,7 @@ const InstaFeedWidget = () => {
         setSuggestions(data);
       } else {
         // Show defaults if no custom ones yet
-        setSuggestions(defaultSuggestions.map((s, i) => ({ id: `default-${i}`, ...s, image_url: s.image })));
+        setSuggestions(defaultSuggestions.map((s, i) => ({ id: `default-${i}`, ...s })));
       }
     };
     fetchSuggestions();
@@ -230,8 +230,18 @@ const InstaFeedWidget = () => {
     setCurrentIndex(idx);
   };
 
-  const suggestionImage = (s: InstaSuggestion) =>
-    s.image_url || `https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop`;
+  const getSuggestionGradient = (account: InstaSuggestion) => {
+    const gradients = [
+      "from-rose-500 via-pink-500 to-orange-400",
+      "from-violet-600 via-purple-500 to-indigo-500",
+      "from-sky-500 via-blue-500 to-cyan-500",
+      "from-fuchsia-500 via-pink-500 to-rose-500",
+      "from-emerald-500 via-teal-500 to-cyan-500",
+      "from-amber-500 via-orange-500 to-red-500",
+    ];
+    const hash = account.handle.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return gradients[hash % gradients.length];
+  };
 
   return (
     <motion.div
@@ -401,13 +411,11 @@ const InstaFeedWidget = () => {
                       rel="noopener noreferrer"
                       className="absolute inset-0"
                     >
-                      <img
-                        src={suggestionImage(account)}
-                        alt={account.label || account.handle}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        loading="lazy"
-                      />
+                      <div className={`absolute inset-0 bg-gradient-to-br ${getSuggestionGradient(account)}`} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Instagram className="w-12 h-12 text-white/20" />
+                      </div>
                       <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                         <div className="flex items-center gap-1.5 mb-1">
                           <Heart className="w-3 h-3 text-pink-400" />

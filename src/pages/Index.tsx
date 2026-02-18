@@ -19,9 +19,7 @@ import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
 import RecentActivityWidget from "@/components/RecentActivityWidget";
 import InstaFeedWidget from "@/components/InstaFeedWidget";
-import SubstackFeedWidget from "@/components/SubstackFeedWidget";
 import DailyPromptCard from "@/components/DailyPromptCard";
-import MoodCheckinWidget from "@/components/MoodCheckinWidget";
 import AnniversaryCountdown from "@/components/AnniversaryCountdown";
 import StreaksWidget from "@/components/StreaksWidget";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
@@ -77,8 +75,6 @@ const Index = () => {
         {/* Partner invite (only shows if no partner linked) */}
         <PartnerInviteCard />
 
-        {/* Mood check-in */}
-        <MoodCheckinWidget />
 
         {/* Today's tasks — inline at top */}
         <DailyListsWidget />
@@ -128,8 +124,6 @@ const Index = () => {
         {/* Instagram feed */}
         <InstaFeedWidget />
 
-        {/* Substack feed */}
-        <SubstackFeedWidget />
 
         {/* Curated links & relationship articles */}
         <CuratedLinksWidget />
