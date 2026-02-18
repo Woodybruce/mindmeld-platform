@@ -6,7 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Intimacy products → Amazon.co.uk with affiliate tag
+const FALLBACK_PRODUCTS = [
+  { name: "Couples Massage Oil Gift Set", brand: "Intimate Earth", price: "£24.99", description: "Sensual massage oils for two", category: "Massage", emoji: "💆", affiliateTag: "massage-oil-set", productUrl: "https://www.amazon.co.uk/s?k=couples+massage+oil+gift+set&tag=woodybruce-21" },
+  { name: "We-Vibe Sync Couples Vibrator", brand: "We-Vibe", price: "£89.99", description: "Award-winning wearable couples massager", category: "Vibrators", emoji: "💕", affiliateTag: "couples-vibrator", productUrl: "https://www.amazon.co.uk/s?k=we+vibe+sync+couples+vibrator&tag=woodybruce-21" },
+  { name: "Silk Chemise Lingerie Set", brand: "Bluebella", price: "£39.99", description: "Elegant silk-feel lingerie for her", category: "Lingerie", emoji: "🌸", affiliateTag: "silk-lingerie", productUrl: "https://www.amazon.co.uk/s?k=silk+chemise+lingerie+set&tag=woodybruce-21" },
+  { name: "Couples Intimacy Card Game", brand: "Lovehoney", price: "£14.99", description: "50 fun dares and questions for couples", category: "Games", emoji: "🃏", affiliateTag: "couples-game", productUrl: "https://www.amazon.co.uk/s?k=couples+intimacy+card+game&tag=woodybruce-21" },
+];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -25,14 +30,14 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an intimacy product recommender for a couples relationship app.
-Suggest 4 adult intimacy products available on Amazon UK. Mix across: massage oils, couples vibrators, adult toys, lingerie, bondage accessories, candles, bath sets, couples games. Be varied and sex-positive — include at least one adult toy or vibrator.
-For productUrl use an Amazon.co.uk affiliate search URL in this exact format: "https://www.amazon.co.uk/s?k=PRODUCT+SEARCH+TERM&tag=woodybruce-21"
-Always append &tag=woodybruce-21 to every URL. Keep descriptions under 60 chars.`,
+            content: `You are a product recommender for a couples wellness app. Suggest 4 romantic and intimate products available on Amazon UK. 
+Include a variety: couples massage oil sets, scented candles, luxury bath sets, couples board games, silk lingerie, massage candles, body paint kits, couples vibrators or intimate massagers, sensual gift sets.
+For productUrl use Amazon.co.uk search: "https://www.amazon.co.uk/s?k=SEARCH+TERM&tag=woodybruce-21"
+Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
           },
           {
             role: "user",
-            content: `Suggest 4 couples intimacy products. Make them romantic and fun. Return only the JSON array.`,
+            content: `Suggest 4 couples intimate and romantic products for Amazon UK. Include at least one couples vibrator or massager. Return only valid JSON.`,
           },
         ],
         tools: [
@@ -76,7 +81,9 @@ Always append &tag=woodybruce-21 to every URL. Keep descriptions under 60 chars.
     if (!response.ok) {
       const text = await response.text();
       console.error("AI error:", response.status, text);
-      throw new Error("AI gateway error");
+      return new Response(JSON.stringify({ products: FALLBACK_PRODUCTS }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await response.json();
@@ -86,7 +93,14 @@ Always append &tag=woodybruce-21 to every URL. Keep descriptions under 60 chars.
       products = JSON.parse(toolCall.function.arguments).products;
     } else {
       const content = data.choices?.[0]?.message?.content || "[]";
-      products = JSON.parse(content.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      try {
+        products = JSON.parse(content.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      } catch { products = []; }
+    }
+
+    // Always fall back if AI returns nothing (e.g. content filtered)
+    if (!products || products.length === 0) {
+      products = FALLBACK_PRODUCTS;
     }
 
     return new Response(JSON.stringify({ products }), {
@@ -95,8 +109,8 @@ Always append &tag=woodybruce-21 to every URL. Keep descriptions under 60 chars.
   } catch (e) {
     console.error("suggest-intimacy error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ products: FALLBACK_PRODUCTS }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
