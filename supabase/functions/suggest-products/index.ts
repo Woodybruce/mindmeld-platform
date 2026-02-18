@@ -33,9 +33,9 @@ serve(async (req) => {
               content: `You are a product recommendation engine for a couples/relationship app called "Us". 
 Suggest 4 real, purchasable products that couples would love. Mix categories: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books.
 Each product must feel authentic — use real-sounding brand names, realistic prices in GBP, and compelling short descriptions.
-For productUrl, provide a direct Amazon.co.uk search URL like "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND" so users can find and buy the product.
+For productUrl, provide an Amazon.co.uk affiliate search URL in this exact format: "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND&tag=woodybruce-21" — always append &tag=woodybruce-21 to every URL.
 IMPORTANT: The "category" field must exactly match one of: "Date Night", "Wellness", "Travel", "Intimacy", "Experiences", "Games", "Home", "Books", "Stationery", "Dining".
-Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box"), "imageHint": string (2-3 word search term), "productUrl": string (Amazon.co.uk search URL) }`,
+Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box"), "imageHint": string (2-3 word search term), "productUrl": string (Amazon.co.uk affiliate URL with tag=woodybruce-21) }`,
             },
             {
               role: "user",
