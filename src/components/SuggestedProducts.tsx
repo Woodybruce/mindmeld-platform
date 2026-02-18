@@ -5,28 +5,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
 
-const ProductImage = ({ imageUrl, emoji, name }: { imageUrl?: string; emoji: string; name: string }) => {
+const ProductImage = ({ categoryImageUrl, emoji, name }: { categoryImageUrl?: string; emoji: string; name: string }) => {
   const [failed, setFailed] = useState(false);
 
-  if (!imageUrl || failed) {
+  if (!categoryImageUrl || failed) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center bg-secondary/60">
         <span className="text-5xl drop-shadow-sm">{emoji}</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex items-center justify-center relative">
-      <img
-        src={imageUrl}
-        alt={name}
-        className="w-full h-full object-cover"
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => setFailed(true)}
-      />
-    </div>
+    <img
+      src={categoryImageUrl}
+      alt={name}
+      className="w-full h-full object-cover"
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
   );
 };
 
@@ -54,15 +51,18 @@ const CATEGORIES = [
 const CACHE_KEY = "suggested-products";
 const CACHE_TTL = 1000 * 60 * 60;
 
-// Category-based gradient backgrounds for product cards
-const categoryGradients: Record<string, string> = {
-  "Date Night": "from-rose-200/80 to-amber-100/80 dark:from-rose-900/40 dark:to-amber-900/30",
-  "Stationery": "from-sky-200/80 to-indigo-100/80 dark:from-sky-900/40 dark:to-indigo-900/30",
-  "Wellness": "from-emerald-200/80 to-teal-100/80 dark:from-emerald-900/40 dark:to-teal-900/30",
-  "Travel": "from-blue-200/80 to-cyan-100/80 dark:from-blue-900/40 dark:to-cyan-900/30",
-  "Dining": "from-orange-200/80 to-red-100/80 dark:from-orange-900/40 dark:to-red-900/30",
-  "Intimacy": "from-pink-200/80 to-fuchsia-100/80 dark:from-pink-900/40 dark:to-fuchsia-900/30",
-  "Experiences": "from-violet-200/80 to-purple-100/80 dark:from-violet-900/40 dark:to-purple-900/30",
+// Reliable Unsplash images by category keyword
+const categoryImages: Record<string, string> = {
+  "Date Night": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=400&fit=crop",
+  "Stationery": "https://images.unsplash.com/photo-1497942304796-b8bc2cc898f3?w=400&h=400&fit=crop",
+  "Wellness": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop",
+  "Travel": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=400&fit=crop",
+  "Dining": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=400&fit=crop",
+  "Intimacy": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop",
+  "Experiences": "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=400&h=400&fit=crop",
+  "Games": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=400&h=400&fit=crop",
+  "Home": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
+  "Books": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=400&fit=crop",
 };
 
 const SuggestedProducts = () => {
@@ -175,7 +175,7 @@ const SuggestedProducts = () => {
           : products.slice(0, 4)
         ).map((product, i) => {
           const p = product as Product | undefined;
-          const gradient = p ? (categoryGradients[p.category] || categoryGradients["Experiences"]) : "";
+          const categoryImg = p ? (categoryImages[p.category] || categoryImages["Experiences"]) : undefined;
 
           return (
             <motion.button
@@ -193,8 +193,9 @@ const SuggestedProducts = () => {
               {p ? (
                 <>
                   {/* Product visual */}
-                  <div className={`relative w-full aspect-square overflow-hidden bg-gradient-to-br ${gradient}`}>
-                    <ProductImage imageUrl={p.imageUrl} emoji={p.emoji} name={p.name} />
+                  <div className="relative w-full aspect-square overflow-hidden">
+                    <ProductImage categoryImageUrl={categoryImg} emoji={p.emoji} name={p.name} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                     <div className="absolute top-1.5 right-1.5">
                       <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
