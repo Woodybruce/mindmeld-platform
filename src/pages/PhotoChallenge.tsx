@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Camera, Shuffle, Check } from "lucide-react";
+import { ArrowLeft, Camera, Shuffle, Check, Upload, Image, X, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const challenges = [
   "Take a selfie recreating your first photo together",
@@ -28,8 +31,12 @@ const challenges = [
 
 const PhotoChallenge = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
+  const [uploadedPhotos, setUploadedPhotos] = useState<Record<number, string>>({});
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const challenge = challenges[currentIdx];
 
@@ -50,6 +57,69 @@ const PhotoChallenge = () => {
       setCurrentIdx(remaining[Math.floor(Math.random() * remaining.length)]);
     }
   };
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!user) {
+      toast.error("Please sign in to upload photos");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Photo must be under 10MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user.id}/challenge-${currentIdx}-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("couple-photos")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Save reference in couple_photos table
+      await supabase.from("couple_photos").insert({
+        user_id: user.id,
+        storage_path: path,
+        caption: `📸 Photo Challenge #${currentIdx + 1}: ${challenge}`,
+      });
+
+      const { data: urlData } = supabase.storage.from("couple-photos").getPublicUrl(path);
+      setUploadedPhotos((prev) => ({ ...prev, [currentIdx]: urlData.publicUrl }));
+
+      // Auto-mark as done when photo uploaded
+      setCompleted((prev) => new Set(prev).add(currentIdx));
+      toast.success("Photo saved to your shared album! 🎉");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload photo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handlePhotoUpload(file);
+    e.target.value = "";
+  };
+
+  const removePhoto = () => {
+    setUploadedPhotos((prev) => {
+      const next = { ...prev };
+      delete next[currentIdx];
+      return next;
+    });
+    setCompleted((prev) => {
+      const next = new Set(prev);
+      next.delete(currentIdx);
+      return next;
+    });
+  };
+
+  const currentPhoto = uploadedPhotos[currentIdx];
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
@@ -78,20 +148,72 @@ const PhotoChallenge = () => {
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             className="rounded-2xl bg-gradient-to-br from-us-blush/20 to-us-coral/10 border border-border/30 p-6 text-center space-y-4"
           >
-            <Camera className="w-10 h-10 mx-auto text-us-coral" />
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Challenge #{currentIdx + 1}
-            </p>
+            {currentPhoto ? (
+              <div className="relative rounded-xl overflow-hidden aspect-[4/3]">
+                <img src={currentPhoto} alt="Challenge photo" className="w-full h-full object-cover" />
+                <button
+                  onClick={removePhoto}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center"
+                >
+                  <X className="w-3.5 h-3.5 text-foreground" />
+                </button>
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent p-3">
+                  <span className="text-[11px] text-white font-medium">Saved to Our Photos ✓</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Camera className="w-10 h-10 mx-auto text-primary" />
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Challenge #{currentIdx + 1}
+                </p>
+              </>
+            )}
+
             <p className="font-display text-lg font-bold text-foreground leading-relaxed">
               {challenge}
             </p>
-            {completed.has(currentIdx) && (
+
+            {completed.has(currentIdx) && !currentPhoto && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-us-sage">
                 <Check className="w-3.5 h-3.5" /> Completed!
               </span>
             )}
           </motion.div>
         </AnimatePresence>
+
+        {/* Upload photo button */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 py-4 text-sm font-semibold text-primary transition-colors"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Uploading…
+            </>
+          ) : currentPhoto ? (
+            <>
+              <Image className="w-4 h-4" />
+              Replace Photo
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4" />
+              Upload Your Photo
+            </>
+          )}
+        </button>
 
         <div className="flex gap-3">
           {!completed.has(currentIdx) && (
