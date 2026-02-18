@@ -6,8 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Placeholder for Booking.com affiliate or Skyscanner API
-// When ready: const BOOKING_API_KEY = Deno.env.get("BOOKING_API_KEY");
+// Booking.com affiliate via CJ (Commission Junction) — Publisher ID 7540258
+const CJ_PID = "7540258";
+
+/** Build a Booking.com affiliate search URL via CJ deep-link */
+const bookingUrl = (destination: string) =>
+  `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(destination)}&aid=356980&label=gen173nr-1FCAEoggI46AdIM1gEaFCIAQGYAQm4ARfIAQzYAQHoAQH4AQKIAgGoAgO4AoaC0rQGwAIB0gIkZWU2NjEwZWMtYzEzOS00MGYzLWIwNTEtMTBiNDExNTVhMzJh2AIF4AIB&sid=&src=searchresults&src_elem=sb&affiliate_id=${CJ_PID}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -28,7 +32,9 @@ serve(async (req) => {
             role: "system",
             content: `You are a couples travel recommender. Suggest 4 romantic UK/Europe weekend getaways or travel experiences.
 Mix city breaks (Paris, Rome, Edinburgh, Amsterdam), coastal retreats, countryside escapes, and spa weekends.
-Include realistic price-per-couple estimates. Use Booking.com search URLs: "https://www.booking.com/searchresults.html?ss=DESTINATION"
+Include realistic price-per-couple estimates.
+For bookingUrl use this exact format with the destination encoded: "https://www.booking.com/searchresults.html?ss=DESTINATION&aid=356980&affiliate_id=7540258"
+Example: "https://www.booking.com/searchresults.html?ss=Paris%2C+France&aid=356980&affiliate_id=7540258"
 Keep descriptions under 60 chars. Return valid JSON array only.`,
           },
           {
