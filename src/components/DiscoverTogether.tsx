@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const AMAZON_TAG = "woodybruce-21";
+const CJ_PID = "7540258";
 
 /** Ensure Amazon links always carry the affiliate tag */
 const withAffiliateTag = (url?: string): string | undefined => {
@@ -9,6 +10,12 @@ const withAffiliateTag = (url?: string): string | undefined => {
     const u = new URL(url);
     if (u.hostname.includes("amazon.co.uk") || u.hostname.includes("amazon.com")) {
       u.searchParams.set("tag", AMAZON_TAG);
+      return u.toString();
+    }
+    // Booking.com — append CJ affiliate PID
+    if (u.hostname.includes("booking.com")) {
+      u.searchParams.set("affiliate_id", CJ_PID);
+      if (!u.searchParams.has("aid")) u.searchParams.set("aid", "356980");
       return u.toString();
     }
   } catch {}
@@ -347,7 +354,7 @@ const DiscoverTogether = () => {
                     const id = `travel-${dest.destination}`;
                     return (
                       <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => dest.bookingUrl && window.open(dest.bookingUrl, "_blank", "noopener,noreferrer")}
+                        onClick={() => { const u = withAffiliateTag(dest.bookingUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
                         <div className="relative w-full h-36 overflow-hidden">
