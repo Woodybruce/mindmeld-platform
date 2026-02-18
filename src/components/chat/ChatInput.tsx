@@ -217,33 +217,33 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
       </AnimatePresence>
 
       {/* Input bar */}
-      <div className="bg-background/95 backdrop-blur-xl border-t border-border/30 px-2 py-1.5">
-        <div className="flex items-end gap-1.5 max-w-lg mx-auto">
+      <div className="bg-background/95 backdrop-blur-xl border-t border-border/30 px-3 py-3 safe-area-bottom">
+        <div className="flex items-end gap-2 max-w-lg mx-auto">
           <input type="file" ref={fileInputRef} accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
           <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
 
           {recording ? (
             <>
-              <div className="flex-1 h-12 flex items-center gap-3 px-4 rounded-full bg-destructive/10 border border-destructive/20">
-                <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
-                <span className="text-sm font-semibold text-destructive font-body">{formatTime(recordingTime)}</span>
-                <span className="text-xs text-destructive/60">Recording…</span>
+              <div className="flex-1 h-14 flex items-center gap-3 px-4 rounded-full bg-destructive/10 border border-destructive/20">
+                <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
+                <span className="text-base font-semibold text-destructive font-body">{formatTime(recordingTime)}</span>
+                <span className="text-sm text-destructive/60">Recording…</span>
               </div>
               <button
                 onClick={stopRecording}
-                className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center text-destructive-foreground shadow-lg flex-shrink-0 active:scale-95 transition-transform"
+                className="w-14 h-14 rounded-full bg-destructive flex items-center justify-center text-destructive-foreground shadow-lg flex-shrink-0 active:scale-95 transition-transform"
               >
-                <Square className="w-5 h-5" />
+                <Square className="w-6 h-6" />
               </button>
             </>
           ) : (
             <>
-              <div className="flex-1 flex items-center rounded-full bg-secondary border border-border/30 overflow-hidden min-h-[48px]">
+              <div className="flex-1 flex items-center rounded-full bg-secondary border border-border/30 overflow-hidden min-h-[56px]">
                 <button
                   onClick={() => setAttachOpen((v) => !v)}
-                  className="pl-3 pr-1 py-3 text-muted-foreground hover:text-foreground transition-all flex-shrink-0"
+                  className="pl-4 pr-2 py-4 text-muted-foreground hover:text-foreground transition-all flex-shrink-0"
                 >
-                  <Plus className={`w-5 h-5 transition-transform duration-200 ${attachOpen ? "rotate-45 text-[hsl(var(--us-coral))]" : ""}`} />
+                  <Plus className={`w-6 h-6 transition-transform duration-200 ${attachOpen ? "rotate-45 text-[hsl(var(--us-coral))]" : ""}`} />
                 </button>
                 <input
                   type="text"
@@ -251,7 +251,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Message"
-                  className="flex-1 bg-transparent py-3 px-2 text-[15px] text-foreground placeholder:text-muted-foreground/60 outline-none font-body"
+                  className="flex-1 bg-transparent py-4 px-2 text-base text-foreground placeholder:text-muted-foreground/60 outline-none font-body"
                 />
               </div>
 
@@ -259,16 +259,16 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                 <button
                   onClick={handleSend}
                   disabled={sending}
-                  className="w-12 h-12 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground disabled:opacity-40 shadow-lg flex-shrink-0 active:scale-95 transition-transform"
+                  className="w-14 h-14 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground disabled:opacity-40 shadow-lg flex-shrink-0 active:scale-95 transition-transform"
                 >
-                  {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                  {sending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
                 </button>
               ) : (
                 <button
                   onClick={startRecording}
-                  className="w-12 h-12 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground shadow-lg flex-shrink-0 active:scale-95 transition-transform"
+                  className="w-14 h-14 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground shadow-lg flex-shrink-0 active:scale-95 transition-transform"
                 >
-                  <Mic className="w-5 h-5" />
+                  <Mic className="w-6 h-6" />
                 </button>
               )}
             </>
