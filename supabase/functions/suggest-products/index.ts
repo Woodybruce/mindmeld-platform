@@ -33,13 +33,14 @@ serve(async (req) => {
               content: `You are a product recommendation engine for a couples/relationship app called "Us". 
 Suggest 4 real, purchasable products that couples would love. Mix categories: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books.
 Each product must feel authentic — use real-sounding brand names, realistic prices in GBP, and compelling short descriptions.
-For productUrl, provide an Amazon.co.uk affiliate search URL in this exact format: "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND&tag=woodybruce-21" — always append &tag=woodybruce-21 to every URL.
+For productUrl, provide an Amazon.co.uk affiliate search URL: "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND&tag=woodybruce-21"
+For imageUrl, provide a REAL publicly accessible product image URL. Use Amazon CDN images like "https://m.media-amazon.com/images/..." or real product images from known brands. The image must be a real product photo, not a placeholder.
 IMPORTANT: The "category" field must exactly match one of: "Date Night", "Wellness", "Travel", "Intimacy", "Experiences", "Games", "Home", "Books", "Stationery", "Dining".
-Return JSON array only, no markdown. Each object: { "name": string, "brand": string, "price": string (e.g. "£29.99"), "description": string (max 60 chars), "category": string, "emoji": string, "affiliateTag": string (a slug like "date-night-box"), "imageHint": string (2-3 word search term), "productUrl": string (Amazon.co.uk affiliate URL with tag=woodybruce-21) }`,
+Return JSON array only, no markdown.`,
             },
             {
               role: "user",
-              content: `Suggest 4 products for couples. Category hint: ${category}. Make them varied, seasonal (February), and gift-worthy. Return only the JSON array.`,
+              content: `Suggest 4 products for couples. Category hint: ${category}. Make them varied, seasonal (February), and gift-worthy. For each product, provide a real imageUrl — a direct link to a product photo from Amazon CDN (https://m.media-amazon.com/images/...) or a brand's CDN. Return only the JSON array.`,
             },
           ],
           tools: [
@@ -64,6 +65,7 @@ Return JSON array only, no markdown. Each object: { "name": string, "brand": str
                           emoji: { type: "string" },
                           affiliateTag: { type: "string" },
                           imageHint: { type: "string" },
+                          imageUrl: { type: "string", description: "Real product image URL from Amazon CDN or brand CDN" },
                           productUrl: { type: "string" },
                         },
                         required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageHint", "productUrl"],
@@ -112,7 +114,30 @@ Return JSON array only, no markdown. Each object: { "name": string, "brand": str
       products = JSON.parse(content.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
     }
 
-    return new Response(JSON.stringify({ products }), {
+    // For each product, verify the imageUrl is valid by trying to resolve it
+    // If imageUrl is missing or looks fake, fetch the real OG image from Amazon search
+    const enriched = await Promise.all((products || []).map(async (p: any) => {
+      if (p.imageUrl && (p.imageUrl.startsWith("https://m.media-amazon.com") || p.imageUrl.startsWith("https://images-na.ssl-images-amazon.com"))) {
+        return p;
+      }
+      // Fetch Amazon search page OG image as fallback
+      try {
+        const searchUrl = `https://www.amazon.co.uk/s?k=${encodeURIComponent(p.name + " " + p.brand)}`;
+        const res = await fetch(searchUrl, {
+          headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
+          signal: AbortSignal.timeout(3000),
+        });
+        const html = await res.text();
+        // Extract first product image from Amazon search results
+        const imgMatch = html.match(/https:\/\/m\.media-amazon\.com\/images\/I\/[A-Za-z0-9._%-]+\.(?:jpg|png|jpeg)/);
+        if (imgMatch) {
+          return { ...p, imageUrl: imgMatch[0] };
+        }
+      } catch {}
+      return p;
+    }));
+
+    return new Response(JSON.stringify({ products: enriched }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
