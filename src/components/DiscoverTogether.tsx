@@ -71,6 +71,12 @@ const categoryImages: Record<string, string> = {
   "Massage": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop",
   "Candles": "https://images.unsplash.com/photo-1602028915047-37269d1a73f7?w=400&h=400&fit=crop",
   "Games": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=400&h=400&fit=crop",
+  "Toys": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop",
+  "Vibrators": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop",
+  "Lingerie": "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop",
+  "Bondage": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=400&fit=crop",
+  "Accessories": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop",
+  "Bath": "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=400&h=400&fit=crop",
   "general": "https://images.unsplash.com/photo-1529543544282-ea57407bc2f3?w=400&h=400&fit=crop",
 };
 
