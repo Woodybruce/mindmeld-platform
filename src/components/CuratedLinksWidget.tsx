@@ -124,7 +124,7 @@ const CuratedLinksWidget = () => {
     localStorage.setItem("userLists", JSON.stringify(lists));
   };
 
-  if (!hasLoaded && !loading && sharedLinks.length === 0) return null;
+  if (!hasLoaded && !loading) return null;
 
   return (
     <motion.div
