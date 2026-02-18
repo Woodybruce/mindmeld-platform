@@ -26,7 +26,7 @@ serve(async (req) => {
           {
             role: "system",
             content: `You are an intimacy product recommender for a couples relationship app.
-Suggest 4 adult wellness and intimacy products available on Amazon UK (massage oils, candles, couples games, bath sets, lingerie, aromatherapy). Keep it tasteful and romantic.
+Suggest 4 adult intimacy products available on Amazon UK. Mix across: massage oils, couples vibrators, adult toys, lingerie, bondage accessories, candles, bath sets, couples games. Be varied and sex-positive — include at least one adult toy or vibrator.
 For productUrl use an Amazon.co.uk affiliate search URL in this exact format: "https://www.amazon.co.uk/s?k=PRODUCT+SEARCH+TERM&tag=woodybruce-21"
 Always append &tag=woodybruce-21 to every URL. Keep descriptions under 60 chars.`,
           },
@@ -53,7 +53,7 @@ Always append &tag=woodybruce-21 to every URL. Keep descriptions under 60 chars.
                         brand: { type: "string" },
                         price: { type: "string" },
                         description: { type: "string" },
-                        category: { type: "string", enum: ["Massage", "Candles", "Games", "Lingerie", "Bath", "Toys", "Accessories"] },
+                        category: { type: "string", enum: ["Massage", "Candles", "Games", "Lingerie", "Bath", "Toys", "Accessories", "Vibrators", "Bondage"] },
                         emoji: { type: "string" },
                         affiliateTag: { type: "string" },
                         productUrl: { type: "string" },
