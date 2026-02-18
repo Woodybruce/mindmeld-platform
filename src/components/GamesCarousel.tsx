@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const games = [
   { emoji: "💋", name: "Kiss Chase", desc: "GPS chase game", link: "/kiss-chase" },
   { emoji: "🎯", name: "Truth or Dare", desc: "Couples edition", link: "/truth-or-dare" },
-  { emoji: "🔥", name: "Spicy WYR", desc: "Naughty choices", link: "/would-you-rather" },
+  { emoji: "🔥", name: "Spicy Would You Rather", desc: "Hot choices for two", link: "/would-you-rather" },
   { emoji: "📸", name: "Photo Challenge", desc: "Fun photo tasks", link: "/photo-challenge" },
 ];
 
