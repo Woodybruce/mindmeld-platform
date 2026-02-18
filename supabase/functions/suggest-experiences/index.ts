@@ -6,8 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Placeholder for DesignMyNight API integration
-// When ready: const DMN_API_KEY = Deno.env.get("DESIGNMYNIGHT_API_KEY");
+// Date Night experiences → DesignMyNight search URLs
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -27,15 +26,14 @@ serve(async (req) => {
           {
             role: "system",
             content: `You are a date night experience recommender for couples in ${city}, UK. 
-Suggest 4 real, bookable date experiences (restaurants, cocktail bars, escape rooms, cooking classes, spa days, theatre, rooftop bars, art classes, wine tasting, etc).
-Each must feel like a real, bookable venue. Use real-sounding venue names.
-For bookingUrl use a Google search URL like "https://www.google.com/search?q=VENUE+NAME+${city}+book" 
-IMPORTANT: Keep descriptions under 60 characters.
-Return valid JSON array only, no markdown.`,
+Suggest 4 romantic date experiences (restaurants, cocktail bars, escape rooms, cooking classes, spa days, theatre, rooftop bars, wine tasting, etc).
+For bookingUrl, generate a DesignMyNight search URL using this exact format: "https://www.designmynight.com/search?q=SEARCH+TERM&location=${encodeURIComponent(city)}&type=venue"
+Example: "https://www.designmynight.com/search?q=cocktail+bar&location=London&type=venue"
+Use a relevant search term from the experience name/category. Keep descriptions under 60 characters.`,
           },
           {
             role: "user",
-            content: `Suggest 4 date night experiences in ${city} for couples. Make them varied — mix romantic, adventurous, and fun. Return only the JSON array.`,
+            content: `Suggest 4 date night experiences in ${city} for couples. Varied mix of romantic, adventurous, and fun. Return only the JSON array.`,
           },
         ],
         tools: [
