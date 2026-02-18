@@ -34,7 +34,7 @@
     --input: 30 15% 90%;
     --ring: 12 60% 52%;
 
-    --radius: 1rem;
+    --radius: 1.1rem;
 
     --sidebar-background: 30 20% 96%;
     --sidebar-foreground: 20 15% 30%;
@@ -98,7 +98,7 @@
 body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
-    font-size: 17px;
+    font-size: 18px;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -143,4 +143,5 @@ body {
 /* Smooth scroll */
 html {
   scroll-behavior: smooth;
+  font-size: 18px;
 }
