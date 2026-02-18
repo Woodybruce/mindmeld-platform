@@ -56,6 +56,33 @@ const PRODUCT_CATEGORIES: Record<string, { key: string; label: string }[]> = {
   ],
 };
 
+// Map product categories to specific high-quality Unsplash photo IDs
+const CATEGORY_PHOTOS: Record<string, string> = {
+  "Date Night": "photo-1414235077428-338989a2e8c0", // restaurant candlelight
+  "Wellness": "photo-1544367567-0f2fcb009e0b",       // spa wellness
+  "Travel": "photo-1488646953014-85cb44e25828",       // travel suitcase
+  "Intimacy": "photo-1518199266791-5375a83190b7",     // rose petals romantic
+  "Experiences": "photo-1529543544282-ea57407bc2f3",  // couple experience
+  "Games": "photo-1610890716171-6b1bb98ffd09",        // board game
+  "Home": "photo-1555041469-a586c61ea9bc",            // cosy home
+  "Books": "photo-1512820790803-83ca734da794",        // books
+  "Stationery": "photo-1497942304796-b8bc2cc898f3",   // stationery
+  "Dining": "photo-1414235077428-338989a2e8c0",       // dining
+  "Massage": "photo-1544367567-0f2fcb009e0b",         // massage
+  "Candles": "photo-1602607109874-38f32b456bea",      // candles
+  "Lingerie": "photo-1518199266791-5375a83190b7",     // romantic
+  "Vibrators": "photo-1518199266791-5375a83190b7",    // romantic
+  "Bath": "photo-1552058544-f2b08422138a",            // bath
+  "Toys": "photo-1529543544282-ea57407bc2f3",         // fun
+  "Accessories": "photo-1518199266791-5375a83190b7",  // romantic
+  "Bondage": "photo-1518199266791-5375a83190b7",      // romantic
+};
+
+const getCategoryImage = (category: string) => {
+  const photoId = CATEGORY_PHOTOS[category] || CATEGORY_PHOTOS["Experiences"];
+  return `https://images.unsplash.com/${photoId}?w=400&h=400&fit=crop&q=80`;
+};
+
 /** Build a relevant Unsplash image URL from a text hint (fallback only) */
 const hintImage = (hint: string) =>
   `https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&h=400&fit=crop&q=80`;
@@ -66,12 +93,17 @@ const CACHE_TTL = 1000 * 60 * 60;
 // ─── Sub-components ──────────────────────────────────────────────────────────
 const CardImage = ({ src, emoji, alt }: { src?: string; emoji: string; alt: string }) => {
   const [failed, setFailed] = useState(false);
-  if (!src || failed) return (
+  const [currentSrc, setCurrentSrc] = useState(src);
+
+  // If src changes (e.g. after data loads), reset failed state
+  useEffect(() => { setCurrentSrc(src); setFailed(false); }, [src]);
+
+  if (!currentSrc || failed) return (
     <div className="w-full h-full flex items-center justify-center bg-secondary/60">
       <span className="text-5xl drop-shadow-sm">{emoji}</span>
     </div>
   );
-  return <img src={src} alt={alt} className="w-full h-full object-cover" loading="lazy" onError={() => setFailed(true)} />;
+  return <img src={currentSrc} alt={alt} className="w-full h-full object-cover" loading="lazy" onError={() => setFailed(true)} />;
 };
 
 const SkeletonCard = () => (
@@ -151,10 +183,13 @@ const DiscoverTogether = () => {
     } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, travel: false })); setLoaded(p => ({ ...p, travel: true })); }
   }, []);
 
-  // Bust old caches so URLs are refreshed with correct affiliate links and real images
+  // Bust ALL caches on every mount so we always get fresh data with real images
   useEffect(() => {
-    ["disc-experiences", "disc-intimacy", "disc-travel", "disc-products-general", "disc-products-date night", "disc-products-wellness", "disc-products-games",
-     "suggested-products-general", "suggested-products-experiences", "suggested-products-intimacy", "suggested-products-travel", "suggested-products-dining"].forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith("disc-") || k.startsWith("suggested-products") || k.startsWith("curated-")) {
+        localStorage.removeItem(k);
+      }
+    });
   }, []);
 
   // Load active tab on first visit
@@ -239,7 +274,7 @@ const DiscoverTogether = () => {
               isLoading && !experiences.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : experiences.slice(0, 6).map((exp, i) => {
-                    const img = hintImage(`${exp.category} ${exp.name} romantic date`);
+                    const img = getCategoryImage(exp.category || "Experiences");
                     const id = `exp-${exp.name}`;
                     return (
                       <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
@@ -277,7 +312,7 @@ const DiscoverTogether = () => {
               isLoading && !products.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : products.slice(0, 6).map((p, i) => {
-                    const img = (p as any).imageUrl || hintImage(`${p.category} ${p.name} gift`);
+                    const img = getCategoryImage(p.category);
                     return (
                       <motion.button key={p.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
                         onClick={() => { const u = withAffiliateTag(p.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
@@ -311,7 +346,7 @@ const DiscoverTogether = () => {
               isLoading && !intimacy.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : intimacy.slice(0, 6).map((item, i) => {
-                    const img = (item as any).imageUrl || hintImage(`${item.category} ${item.name} intimate`);
+                    const img = getCategoryImage(item.category);
                     return (
                       <motion.button key={item.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
                         onClick={() => { const u = withAffiliateTag(item.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
@@ -345,7 +380,7 @@ const DiscoverTogether = () => {
               isLoading && !travel.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : travel.slice(0, 6).map((dest, i) => {
-                    const img = hintImage(`${dest.category} ${dest.destination} travel`);
+                    const img = getCategoryImage("Travel");
                     const id = `travel-${dest.destination}`;
                     return (
                       <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}

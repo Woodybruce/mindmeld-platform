@@ -6,6 +6,38 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Fetch a real product image from Amazon search by scraping the first result image
+async function fetchAmazonProductImage(searchTerm: string): Promise<string | null> {
+  try {
+    const url = `https://www.amazon.co.uk/s?k=${encodeURIComponent(searchTerm)}`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-GB,en;q=0.9",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+    const html = await res.text();
+    // Match Amazon CDN image patterns from search results
+    const patterns = [
+      /https:\/\/m\.media-amazon\.com\/images\/I\/[A-Za-z0-9%._-]+?\.(?:jpg|png|jpeg)(?=["\s])/g,
+      /https:\/\/images-na\.ssl-images-amazon\.com\/images\/I\/[A-Za-z0-9%._-]+?\.(?:jpg|png|jpeg)(?=["\s])/g,
+    ];
+    for (const pattern of patterns) {
+      const matches = html.match(pattern);
+      if (matches && matches.length > 0) {
+        // Filter out tiny/icon images (look for ones with size hints or just pick first reasonable one)
+        const goodMatch = matches.find(m => !m.includes("sprite") && !m.includes("icon") && !m.includes("logo") && !m.includes("transparent")) || matches[0];
+        if (goodMatch) return goodMatch;
+      }
+    }
+  } catch (e) {
+    console.error("Amazon image fetch error:", e);
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,6 +49,7 @@ serve(async (req) => {
 
     const { category } = await req.json().catch(() => ({ category: "general" }));
 
+    // Step 1: Get AI product suggestions (without imageUrl — we'll fetch them ourselves)
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
@@ -30,17 +63,16 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are a product recommendation engine for a couples/relationship app called "Us". 
+              content: `You are a product recommendation engine for a couples/relationship app. 
 Suggest 4 real, purchasable products that couples would love. Mix categories: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books.
-Each product must feel authentic — use real-sounding brand names, realistic prices in GBP, and compelling short descriptions.
-For productUrl, provide an Amazon.co.uk affiliate search URL: "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND&tag=woodybruce-21"
-For imageUrl, provide a REAL publicly accessible product image URL. Use Amazon CDN images like "https://m.media-amazon.com/images/..." or real product images from known brands. The image must be a real product photo, not a placeholder.
-IMPORTANT: The "category" field must exactly match one of: "Date Night", "Wellness", "Travel", "Intimacy", "Experiences", "Games", "Home", "Books", "Stationery", "Dining".
-Return JSON array only, no markdown.`,
+Use real brand names, realistic GBP prices, short descriptions (max 60 chars).
+For productUrl: "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND&tag=woodybruce-21"
+For imageSearchTerm: provide a 3-5 word search term to find this product on Amazon (e.g. "couples massage oil gift set", "scratch world map poster").
+Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books, Stationery, Dining.`,
             },
             {
               role: "user",
-              content: `Suggest 4 products for couples. Category hint: ${category}. Make them varied, seasonal (February), and gift-worthy. For each product, provide a real imageUrl — a direct link to a product photo from Amazon CDN (https://m.media-amazon.com/images/...) or a brand's CDN. Return only the JSON array.`,
+              content: `Suggest 4 products for couples. Category hint: ${category}. Make them varied and gift-worthy for February.`,
             },
           ],
           tools: [
@@ -64,11 +96,10 @@ Return JSON array only, no markdown.`,
                           category: { type: "string" },
                           emoji: { type: "string" },
                           affiliateTag: { type: "string" },
-                          imageHint: { type: "string" },
-                          imageUrl: { type: "string", description: "Real product image URL from Amazon CDN or brand CDN" },
+                          imageSearchTerm: { type: "string", description: "3-5 word Amazon search term to find a real product image" },
                           productUrl: { type: "string" },
                         },
-                        required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageHint", "productUrl"],
+                        required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageSearchTerm", "productUrl"],
                         additionalProperties: false,
                       },
                     },
@@ -85,18 +116,6 @@ Return JSON array only, no markdown.`,
     );
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited, please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const text = await response.text();
       console.error("AI error:", response.status, text);
       throw new Error("AI gateway error");
@@ -107,34 +126,16 @@ Return JSON array only, no markdown.`,
     
     let products;
     if (toolCall?.function?.arguments) {
-      const parsed = JSON.parse(toolCall.function.arguments);
-      products = parsed.products;
+      products = JSON.parse(toolCall.function.arguments).products;
     } else {
-      const content = data.choices?.[0]?.message?.content || "[]";
-      products = JSON.parse(content.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      throw new Error("No tool call response from AI");
     }
 
-    // For each product, verify the imageUrl is valid by trying to resolve it
-    // If imageUrl is missing or looks fake, fetch the real OG image from Amazon search
+    // Step 2: For each product, fetch a real Amazon image by scraping search results
     const enriched = await Promise.all((products || []).map(async (p: any) => {
-      if (p.imageUrl && (p.imageUrl.startsWith("https://m.media-amazon.com") || p.imageUrl.startsWith("https://images-na.ssl-images-amazon.com"))) {
-        return p;
-      }
-      // Fetch Amazon search page OG image as fallback
-      try {
-        const searchUrl = `https://www.amazon.co.uk/s?k=${encodeURIComponent(p.name + " " + p.brand)}`;
-        const res = await fetch(searchUrl, {
-          headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
-          signal: AbortSignal.timeout(3000),
-        });
-        const html = await res.text();
-        // Extract first product image from Amazon search results
-        const imgMatch = html.match(/https:\/\/m\.media-amazon\.com\/images\/I\/[A-Za-z0-9._%-]+\.(?:jpg|png|jpeg)/);
-        if (imgMatch) {
-          return { ...p, imageUrl: imgMatch[0] };
-        }
-      } catch {}
-      return p;
+      const searchTerm = p.imageSearchTerm || `${p.name} ${p.brand}`;
+      const imageUrl = await fetchAmazonProductImage(searchTerm);
+      return { ...p, imageUrl };
     }));
 
     return new Response(JSON.stringify({ products: enriched }), {
