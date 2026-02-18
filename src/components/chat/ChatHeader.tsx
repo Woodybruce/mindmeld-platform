@@ -81,21 +81,21 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
             {isOnline ? "online" : "offline"}
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => handleCall("video")}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
+            className="w-11 h-11 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
           >
-            <Video className="w-[18px] h-[18px]" />
+            <Video className="w-6 h-6" />
           </button>
           <button
             onClick={() => handleCall("audio")}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
+            className="w-11 h-11 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
           >
-            <Phone className="w-[17px] h-[17px]" />
+            <Phone className="w-6 h-6" />
           </button>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors">
-            <MoreVertical className="w-[18px] h-[18px]" />
+          <button className="w-11 h-11 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors">
+            <MoreVertical className="w-6 h-6" />
           </button>
         </div>
       </div>
