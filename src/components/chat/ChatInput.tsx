@@ -119,7 +119,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40">
+    <div className="relative z-40">
       {/* Attachment backdrop */}
       <AnimatePresence>
         {attachOpen && (
@@ -264,12 +264,20 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                   {sending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
                 </button>
               ) : (
-                <button
-                  onClick={startRecording}
-                  className="w-14 h-14 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground shadow-lg flex-shrink-0 active:scale-95 transition-transform"
-                >
-                  <Mic className="w-6 h-6" />
-                </button>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="w-12 h-12 rounded-full bg-[hsl(var(--us-navy))]/80 flex items-center justify-center text-primary-foreground shadow-lg active:scale-95 transition-transform"
+                  >
+                    <Camera className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={startRecording}
+                    className="w-14 h-14 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground shadow-lg active:scale-95 transition-transform"
+                  >
+                    <Mic className="w-6 h-6" />
+                  </button>
+                </div>
               )}
             </>
           )}
