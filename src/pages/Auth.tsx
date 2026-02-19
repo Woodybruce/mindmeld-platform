@@ -3,17 +3,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Heart, Mail } from "lucide-react";
-import { lovable } from "@/integrations/lovable/index";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-type Step = "email-enter" | "email-sent";
+type Step = "email-enter" | "otp-verify";
 
 const Auth = () => {
-  const { user, loading: authLoading, signInWithEmail } = useAuth();
+  const { user, loading: authLoading, signInWithEmail, verifyOtp: verifyOtpCtx } = useAuth();
   const [step, setStep] = useState<Step>("email-enter");
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   if (authLoading) {
     return (
@@ -33,7 +33,20 @@ const Auth = () => {
     setSubmitting(true);
     const { error } = await signInWithEmail(email);
     if (error) setError(error.message);
-    else setStep("email-sent");
+    else setStep("otp-verify");
+    setSubmitting(false);
+  };
+
+  const handleVerifyOtp = async (value: string) => {
+    setOtp(value);
+    if (value.length !== 6) return;
+    setError("");
+    setSubmitting(true);
+    const { error } = await verifyOtpCtx(email, value);
+    if (error) {
+      setError(error.message);
+      setOtp("");
+    }
     setSubmitting(false);
   };
 
@@ -42,16 +55,6 @@ const Auth = () => {
   const handleDevBypass = () => {
     localStorage.setItem("dev-auth-bypass", "true");
     window.location.href = "/";
-  };
-
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setError("");
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (error) setError(error.message || "Google sign-in failed");
-    setGoogleLoading(false);
   };
 
   return (
@@ -87,26 +90,40 @@ const Auth = () => {
                   className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   <Mail className="w-4 h-4" />
-                  {submitting ? "Sending…" : "Send Magic Link"}
+                  {submitting ? "Sending…" : "Send Code"}
                 </button>
               </form>
             </motion.div>
           )}
 
-          {step === "email-sent" && (
-            <motion.div key="email-sent" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
+          {step === "otp-verify" && (
+            <motion.div key="otp-verify" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
               <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-7 h-7 text-primary" />
               </div>
-              <h2 className="font-display text-lg font-bold text-foreground mb-2">Check your email</h2>
-              <p className="text-sm text-muted-foreground">
-                We sent a magic link to <span className="font-medium text-foreground">{email}</span>. Click it to sign in.
+              <h2 className="font-display text-lg font-bold text-foreground mb-2">Enter your code</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>
               </p>
-              <button onClick={() => setStep("email-enter")} className="mt-6 text-sm text-primary font-medium">
-                Try again
+              <div className="flex justify-center mb-4">
+                <InputOTP maxLength={6} value={otp} onChange={handleVerifyOtp} disabled={submitting}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              {error && <p className="text-sm text-destructive mb-2">{error}</p>}
+              {submitting && <p className="text-sm text-muted-foreground">Verifying…</p>}
+              <button onClick={() => { setStep("email-enter"); setOtp(""); setError(""); }} className="mt-4 text-sm text-primary font-medium">
+                Use a different email
               </button>
             </motion.div>
-           )}
+          )}
         </AnimatePresence>
 
         {isPreview && (
