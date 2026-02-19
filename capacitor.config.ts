@@ -8,6 +8,7 @@ const config: CapacitorConfig = {
     url: 'https://mindmeld-platform.lovable.app?forceHideBadge=true',
     cleartext: true,
     errorPath: 'error.html',
+    allowNavigation: ['mindmeld-platform.lovable.app', '*.lovable.app', '*.supabase.co'],
   },
   plugins: {
     SplashScreen: {
