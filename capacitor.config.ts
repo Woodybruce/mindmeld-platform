@@ -4,7 +4,10 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.mindmeldplatform',
   appName: 'Us',
   webDir: 'dist',
-  // server config removed for production/TestFlight build
+  server: {
+    url: 'https://mindmeld-platform.lovable.app?forceHideBadge=true',
+    cleartext: true,
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
