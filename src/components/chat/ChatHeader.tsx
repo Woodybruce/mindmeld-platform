@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Phone, Video, MoreVertical, PhoneOff } from "lucide-react";
+import { ArrowLeft, Phone, Video, PhoneOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -93,9 +93,6 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
             className="w-11 h-11 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
           >
             <Phone className="w-6 h-6" />
-          </button>
-          <button className="w-11 h-11 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors">
-            <MoreVertical className="w-6 h-6" />
           </button>
         </div>
       </div>
