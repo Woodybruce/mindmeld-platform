@@ -52,7 +52,19 @@ interface KissChaseGameProps {
 
 const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissChaseGameProps) => {
   const geo = useGeolocation(true);
-  const partnerPos = useSimulatedPartner(geo.latitude, geo.longitude, true);
+
+  // Timeout: if location takes >10s, use fallback coordinates
+  const [geoTimedOut, setGeoTimedOut] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setGeoTimedOut(true), 10000);
+    if (geo.latitude) clearTimeout(timer);
+    return () => clearTimeout(timer);
+  }, [geo.latitude]);
+
+  const effectiveLat = geo.latitude || (geoTimedOut ? 51.4545 : null);
+  const effectiveLng = geo.longitude || (geoTimedOut ? -0.0975 : null);
+
+  const partnerPos = useSimulatedPartner(effectiveLat ?? 0, effectiveLng ?? 0, !!effectiveLat);
   const [timeLeft, setTimeLeft] = useState(timeMinutes * 60);
   const [distance, setDistance] = useState<number | null>(null);
   const caught = useRef(false);
@@ -69,15 +81,15 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
 
   // Distance check
   useEffect(() => {
-    if (geo.latitude && geo.longitude && partnerPos) {
-      const d = getDistanceMeters(geo.latitude, geo.longitude, partnerPos.lat, partnerPos.lng);
+    if (effectiveLat && effectiveLng && partnerPos) {
+      const d = getDistanceMeters(effectiveLat, effectiveLng, partnerPos.lat, partnerPos.lng);
       setDistance(d);
       if (d <= CATCH_RADIUS && !caught.current) {
         caught.current = true;
         onCatch();
       }
     }
-  }, [geo.latitude, geo.longitude, partnerPos]);
+  }, [effectiveLat, effectiveLng, partnerPos]);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -87,15 +99,23 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
 
   const urgency = timeLeft < 60 ? "text-destructive" : timeLeft < 180 ? "text-us-gold" : "text-foreground";
 
-  if (geo.loading || !geo.latitude) {
+  if (!effectiveLat || !effectiveLng) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-          className="w-16 h-16 rounded-full border-4 border-us-coral border-t-transparent"
-        />
-        <p className="ml-4 text-muted-foreground">Getting your location...</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6">
+        <div className="flex items-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+            className="w-16 h-16 rounded-full border-4 border-us-coral border-t-transparent"
+          />
+          <p className="ml-4 text-muted-foreground">Getting your location...</p>
+        </div>
+        <button
+          onClick={onQuit}
+          className="mt-4 px-6 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
@@ -115,7 +135,7 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
     <div className="h-screen w-full relative max-w-lg mx-auto">
       {/* Map */}
       <MapContainer
-        center={[geo.latitude!, geo.longitude!]}
+        center={[effectiveLat!, effectiveLng!]}
         zoom={16}
         className="h-full w-full z-0"
         zoomControl={false}
@@ -124,13 +144,13 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
           attribution=""
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-        <MapFollower lat={geo.latitude!} lng={geo.longitude!} />
+        <MapFollower lat={effectiveLat!} lng={effectiveLng!} />
 
         {/* Player */}
-        <Marker position={[geo.latitude!, geo.longitude!]} icon={playerIcon}>
+        <Marker position={[effectiveLat!, effectiveLng!]} icon={playerIcon}>
           <Popup>You are here</Popup>
         </Marker>
-        <Circle center={[geo.latitude!, geo.longitude!]} radius={CATCH_RADIUS} pathOptions={{ color: "#c9553d", fillColor: "#c9553d", fillOpacity: 0.1, weight: 1 }} />
+        <Circle center={[effectiveLat!, effectiveLng!]} radius={CATCH_RADIUS} pathOptions={{ color: "#c9553d", fillColor: "#c9553d", fillOpacity: 0.1, weight: 1 }} />
 
         {/* Partner */}
         {partnerPos && (
