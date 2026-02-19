@@ -7,6 +7,7 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://mindmeld-platform.lovable.app?forceHideBadge=true',
     cleartext: true,
+    errorPath: 'error.html',
   },
   plugins: {
     SplashScreen: {
