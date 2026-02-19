@@ -24,6 +24,7 @@ import DesignMyNight from "./pages/DesignMyNight";
 import FamilyQuiz from "./pages/FamilyQuiz";
 import AdminFeedContent from "./pages/AdminFeedContent";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import OutlookCallback from "./pages/OutlookCallback";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/family-quiz" element={<AuthGuard><FamilyQuiz /></AuthGuard>} />
               <Route path="/admin/feed" element={<AuthGuard><AdminFeedContent /></AuthGuard>} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/outlook-callback" element={<OutlookCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
