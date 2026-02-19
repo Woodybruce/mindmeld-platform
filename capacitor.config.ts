@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Us',
   webDir: 'dist',
   server: {
-    url: 'https://mindmeld-platform.lovable.app?forceHideBadge=true',
+    // For development hot-reload only, uncomment the line below:
+    // url: 'https://mindmeld-platform.lovable.app?forceHideBadge=true',
     cleartext: true,
     errorPath: 'error.html',
     allowNavigation: ['mindmeld-platform.lovable.app', '*.lovable.app', '*.supabase.co'],
