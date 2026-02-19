@@ -23,7 +23,7 @@ interface KissChaseSetupProps {
 
 const KissChaseSetup = ({ onStart }: KissChaseSetupProps) => {
   const navigate = useNavigate();
-  const [selectedReward, setSelectedReward] = useState<string | null>(null);
+  const [selectedReward, setSelectedReward] = useState<string | null>("task");
   const [selectedTime, setSelectedTime] = useState<number>(30);
 
   return (
