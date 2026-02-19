@@ -2,18 +2,19 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { Heart, Mail } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Heart, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-type Step = "email-enter" | "otp-verify";
+type Mode = "login" | "signup";
 
 const Auth = () => {
-  const { user, loading: authLoading, signInWithEmail, verifyOtp: verifyOtpCtx } = useAuth();
-  const [step, setStep] = useState<Step>("email-enter");
+  const { user, loading: authLoading, signInWithPassword, signUp } = useAuth();
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   if (authLoading) {
     return (
@@ -27,25 +28,28 @@ const Auth = () => {
     return <Navigate to="/" replace />;
   }
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSubmitting(true);
-    const { error } = await signInWithEmail(email);
-    if (error) setError(error.message);
-    else setStep("otp-verify");
-    setSubmitting(false);
-  };
 
-  const handleVerifyOtp = async (value: string) => {
-    setOtp(value);
-    if (value.length !== 6) return;
-    setError("");
-    setSubmitting(true);
-    const { error } = await verifyOtpCtx(email, value);
-    if (error) {
-      setError(error.message);
-      setOtp("");
+    if (mode === "signup") {
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters");
+        setSubmitting(false);
+        return;
+      }
+      const { error } = await signUp(email, password);
+      if (error) {
+        setError(error.message);
+      } else {
+        setSignupSuccess(true);
+      }
+    } else {
+      const { error } = await signInWithPassword(email, password);
+      if (error) {
+        setError(error.message);
+      }
     }
     setSubmitting(false);
   };
@@ -56,6 +60,28 @@ const Auth = () => {
     localStorage.setItem("dev-auth-bypass", "true");
     window.location.href = "/";
   };
+
+  if (signupSuccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm text-center">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Mail className="w-7 h-7 text-primary" />
+          </div>
+          <h2 className="font-display text-lg font-bold text-foreground mb-2">Check your email</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>. Tap it to activate your account, then come back and log in.
+          </p>
+          <button
+            onClick={() => { setSignupSuccess(false); setMode("login"); setPassword(""); setError(""); }}
+            className="text-sm text-primary font-medium"
+          >
+            Back to login
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
@@ -70,60 +96,78 @@ const Auth = () => {
           <p className="text-base text-muted-foreground mt-2">Your shared space, together</p>
         </div>
 
-        <AnimatePresence mode="wait">
-          {step === "email-enter" && (
-            <motion.div key="email-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <form onSubmit={handleEmailSubmit} className="space-y-4">
-                <input
-                  type="email"
-                  autoFocus
-                  placeholder="Your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full rounded-2xl border border-border bg-card px-5 py-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                >
-                  <Mail className="w-4 h-4" />
-                  {submitting ? "Sending…" : "Send Code"}
-                </button>
-              </form>
-            </motion.div>
-          )}
+        {/* Mode toggle */}
+        <div className="flex gap-1 mb-6 bg-secondary rounded-2xl p-1">
+          <button
+            onClick={() => { setMode("login"); setError(""); }}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              mode === "login" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            }`}
+          >
+            Log in
+          </button>
+          <button
+            onClick={() => { setMode("signup"); setError(""); }}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              mode === "signup" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            }`}
+          >
+            Sign up
+          </button>
+        </div>
 
-          {step === "otp-verify" && (
-            <motion.div key="otp-verify" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-7 h-7 text-primary" />
-              </div>
-              <h2 className="font-display text-lg font-bold text-foreground mb-2">Enter your code</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>
-              </p>
-              <div className="flex justify-center mb-4">
-                <InputOTP maxLength={6} value={otp} onChange={handleVerifyOtp} disabled={submitting}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-              {error && <p className="text-sm text-destructive mb-2">{error}</p>}
-              {submitting && <p className="text-sm text-muted-foreground">Verifying…</p>}
-              <button onClick={() => { setStep("email-enter"); setOtp(""); setError(""); }} className="mt-4 text-sm text-primary font-medium">
-                Use a different email
+        <AnimatePresence mode="wait">
+          <motion.form
+            key={mode}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="email"
+                autoFocus
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-2xl border border-border bg-card pl-11 pr-5 py-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full rounded-2xl border border-border bg-card pl-11 pr-12 py-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
-            </motion.div>
-          )}
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
+            </button>
+          </motion.form>
         </AnimatePresence>
 
         {isPreview && (
