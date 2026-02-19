@@ -16,9 +16,8 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   partnerOnline: boolean;
-  signInWithEmail: (email: string) => Promise<{ error: any }>;
-  signInWithPhone: (phone: string) => Promise<{ error: any }>;
-  verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   linkPartnerByEmail: (email: string) => Promise<boolean>;
   refreshProfile: () => Promise<void>;
@@ -75,27 +74,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithEmail = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
       email,
+      password,
       options: { emailRedirectTo: window.location.origin },
     });
     return { error };
   };
 
-  const signInWithPhone = async (phone: string) => {
-    const { error } = await supabase.auth.signInWithOtp({ phone });
-    return { error };
-  };
-
-  const verifyOtp = async (emailOrPhone: string, token: string) => {
-    // Detect if it's an email or phone number
-    const isEmail = emailOrPhone.includes("@");
-    const { error } = await supabase.auth.verifyOtp(
-      isEmail
-        ? { email: emailOrPhone, token, type: "email" }
-        : { phone: emailOrPhone, token, type: "sms" }
-    );
+  const signInWithPassword = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   };
 
@@ -115,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const partnerOnline = usePresence(user?.id, profile?.partner_id ?? undefined);
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, partnerOnline, signInWithEmail, signInWithPhone, verifyOtp, signOut, linkPartnerByEmail, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, partnerOnline, signUp, signInWithPassword, signOut, linkPartnerByEmail, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
