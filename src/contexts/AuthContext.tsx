@@ -88,8 +88,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
-  const verifyOtp = async (phone: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
+  const verifyOtp = async (emailOrPhone: string, token: string) => {
+    // Detect if it's an email or phone number
+    const isEmail = emailOrPhone.includes("@");
+    const { error } = await supabase.auth.verifyOtp(
+      isEmail
+        ? { email: emailOrPhone, token, type: "email" }
+        : { phone: emailOrPhone, token, type: "sms" }
+    );
     return { error };
   };
 
