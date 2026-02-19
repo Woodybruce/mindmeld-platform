@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { Geolocation } from "@capacitor/geolocation";
+import { Capacitor } from "@capacitor/core";
 
 interface GeolocationState {
   latitude: number | null;
@@ -7,6 +9,8 @@ interface GeolocationState {
   error: string | null;
   loading: boolean;
 }
+
+const FALLBACK = { latitude: 51.4545, longitude: -0.1081, accuracy: 100 };
 
 export const useGeolocation = (enabled: boolean = false) => {
   const [state, setState] = useState<GeolocationState>({
@@ -19,38 +23,84 @@ export const useGeolocation = (enabled: boolean = false) => {
 
   useEffect(() => {
     if (!enabled) return;
-    if (!navigator.geolocation) {
-      setState((s) => ({ ...s, error: "Geolocation not supported" }));
-      return;
-    }
 
     setState((s) => ({ ...s, loading: true }));
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        setState({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          error: null,
-          loading: false,
-        });
-      },
-      (err) => {
-        // Fallback to a default location so the game is still playable
-        console.warn("Geolocation error, using fallback location:", err.message);
-        setState({
-          latitude: 51.4545,
-          longitude: -0.1081,
-          accuracy: 100,
-          error: null,
-          loading: false,
-        });
-      },
-      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
-    );
+    const useFallback = (reason?: string) => {
+      console.warn("Geolocation unavailable, using fallback:", reason);
+      setState({
+        ...FALLBACK,
+        error: null,
+        loading: false,
+      });
+    };
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    // Use Capacitor Geolocation on native, browser API on web
+    if (Capacitor.isNativePlatform()) {
+      let watchId: string | undefined;
+
+      const startWatch = async () => {
+        try {
+          // Request permission first on native
+          const permResult = await Geolocation.requestPermissions();
+          if (permResult.location === "denied") {
+            useFallback("Location permission denied");
+            return;
+          }
+
+          watchId = await Geolocation.watchPosition(
+            { enableHighAccuracy: true, timeout: 10000 },
+            (position, err) => {
+              if (err || !position) {
+                useFallback(err?.message);
+                return;
+              }
+              setState({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                error: null,
+                loading: false,
+              });
+            }
+          );
+        } catch (e: any) {
+          useFallback(e?.message);
+        }
+      };
+
+      startWatch();
+
+      return () => {
+        if (watchId) {
+          Geolocation.clearWatch({ id: watchId });
+        }
+      };
+    } else {
+      // Web fallback
+      if (!navigator.geolocation) {
+        useFallback("Geolocation not supported");
+        return;
+      }
+
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setState({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            error: null,
+            loading: false,
+          });
+        },
+        (err) => {
+          useFallback(err.message);
+        },
+        { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+      );
+
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
   }, [enabled]);
 
   return state;
