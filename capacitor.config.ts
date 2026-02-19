@@ -5,11 +5,18 @@ const config: CapacitorConfig = {
   appName: 'Us',
   webDir: 'dist',
   server: {
-    // For development hot-reload only, uncomment the line below:
-    // url: 'https://mindmeld-platform.lovable.app?forceHideBadge=true',
+    url: 'https://mindmeld-platform.lovable.app?forceHideBadge=true',
     cleartext: true,
     errorPath: 'error.html',
-    allowNavigation: ['mindmeld-platform.lovable.app', '*.lovable.app', '*.supabase.co'],
+    allowNavigation: [
+      'mindmeld-platform.lovable.app',
+      '*.lovable.app',
+      '*.supabase.co',
+      'oauth.lovable.app',
+      'accounts.google.com',
+      '*.google.com',
+      '*.googleapis.com',
+    ],
   },
   plugins: {
     SplashScreen: {
