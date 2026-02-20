@@ -59,16 +59,16 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[hsl(var(--us-navy))] text-white shadow-lg safe-area-top">
-      <div className="flex items-center gap-2 px-2 py-1.5 max-w-lg mx-auto">
+      <div className="flex items-center gap-2 px-2 py-1 max-w-lg mx-auto">
         <button
           onClick={() => navigate("/")}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white transition-colors flex-shrink-0"
+          className="w-7 h-7 rounded-full flex items-center justify-center text-white/80 hover:text-white transition-colors flex-shrink-0"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4.5 h-4.5" />
         </button>
-        <Avatar className="w-8 h-8 flex-shrink-0">
-          {avatarUrl && <AvatarImage src={avatarUrl} alt={partnerName} />}
-          <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--us-blush))] to-[hsl(var(--us-coral))] text-white text-sm font-display font-semibold">
+        <Avatar className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden">
+          {avatarUrl && <AvatarImage src={avatarUrl} alt={partnerName} className="object-cover w-full h-full" />}
+          <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--us-blush))] to-[hsl(var(--us-coral))] text-white text-xs font-display font-semibold">
             {initial}
           </AvatarFallback>
         </Avatar>
@@ -81,18 +81,18 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
             {isOnline ? "online" : "offline"}
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => handleCall("video")}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
           >
-            <Video className="w-5 h-5" />
+            <Video className="w-6 h-6" />
           </button>
           <button
             onClick={() => handleCall("audio")}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
           >
-            <Phone className="w-5 h-5" />
+            <Phone className="w-6 h-6" />
           </button>
         </div>
       </div>
