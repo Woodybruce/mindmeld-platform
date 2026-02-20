@@ -197,7 +197,7 @@ const SuggestedProducts = () => {
                   <>
                     {/* Product visual */}
                     <div className="relative w-full h-36 overflow-hidden">
-                      <ProductImage categoryImageUrl={categoryImg} emoji={p.emoji} name={p.name} />
+                      <ProductImage categoryImageUrl={p.imageUrl || categoryImg} emoji={p.emoji} name={p.name} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                       <div className="absolute top-1.5 right-1.5">
                         <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
