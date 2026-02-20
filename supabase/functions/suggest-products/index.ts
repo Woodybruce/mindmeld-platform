@@ -103,12 +103,8 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
       throw new Error("No tool call response from AI");
     }
 
-    // Step 2: Build Unsplash image URLs from keywords
-    const enriched = (products || []).map((p: any) => {
-      const keyword = p.imageKeyword || p.category || "couple gift";
-      const imageUrl = `https://source.unsplash.com/400x400/?${encodeURIComponent(keyword)}`;
-      return { ...p, imageUrl };
-    });
+    // Return products as-is — frontend handles category images
+    const enriched = (products || []).map((p: any) => ({ ...p }));
 
     return new Response(JSON.stringify({ products: enriched }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

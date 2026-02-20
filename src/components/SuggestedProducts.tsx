@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ShoppingBag, RefreshCw, ExternalLink, Sparkles } from "lucide-react";
+import { ShoppingBag, RefreshCw, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
@@ -197,11 +197,8 @@ const SuggestedProducts = () => {
                   <>
                     {/* Product visual */}
                     <div className="relative w-full h-36 overflow-hidden">
-                      <ProductImage categoryImageUrl={p.imageUrl || categoryImg} emoji={p.emoji} name={p.name} />
+                      <ProductImage categoryImageUrl={categoryImg} emoji={p.emoji} name={p.name} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                      <div className="absolute top-1.5 right-1.5">
-                        <ExternalLink className="w-3 h-3 text-white/70 drop-shadow opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
                       <div className="absolute bottom-1.5 left-1.5">
                         <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{p.category}</span>
                       </div>
@@ -218,6 +215,13 @@ const SuggestedProducts = () => {
                           mutual={isMutualLike(p.affiliateTag)}
                           onToggle={() => toggleLike(p.affiliateTag, p.name)}
                         />
+                      </div>
+                      {/* Amazon CTA */}
+                      <div
+                        className="mt-2 flex items-center justify-center gap-1 bg-[#FF9900] hover:bg-[#e88b00] text-white text-[10px] font-semibold py-1.5 rounded-lg transition-colors"
+                      >
+                        <ShoppingBag className="w-3 h-3" />
+                        <span>View on Amazon</span>
                       </div>
                     </div>
                   </>
