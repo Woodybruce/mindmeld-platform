@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import { Sparkles, RefreshCw, Heart } from "lucide-react";
 
 const prompts = [
+  // Romantic & emotional
   { emoji: "💭", text: "What made you smile about your partner today?" },
   { emoji: "🌟", text: "Name one thing you admire about your partner." },
   { emoji: "💌", text: "Send your partner a surprise compliment right now." },
   { emoji: "🎯", text: "What's one goal you'd love to achieve together this year?" },
   { emoji: "🏡", text: "Describe your dream weekend together in 3 words." },
-  { emoji: "🔥", text: "What's something new you'd like to try together?" },
   { emoji: "🤗", text: "When did you last feel truly grateful for your partner?" },
   { emoji: "💪", text: "What challenge have you overcome together recently?" },
   { emoji: "🎵", text: "What song reminds you of your relationship?" },
@@ -33,6 +33,37 @@ const prompts = [
   { emoji: "🎪", text: "What's something spontaneous you could do together today?" },
   { emoji: "💎", text: "What's one non-negotiable in your relationship?" },
   { emoji: "🌙", text: "What's your ideal end-of-day routine together?" },
+  // Intimate & spicy
+  { emoji: "🔥", text: "What's the most attractive thing your partner did this week?" },
+  { emoji: "💋", text: "Describe your perfect kiss in three words." },
+  { emoji: "🫦", text: "What's one thing your partner does that drives you wild?" },
+  { emoji: "✨", text: "What's a fantasy date night you've never told your partner about?" },
+  { emoji: "🛁", text: "Would you rather: a candlelit bath together or a midnight picnic?" },
+  { emoji: "👀", text: "What outfit of your partner's makes you weak at the knees?" },
+  { emoji: "🌶️", text: "Rate your intimacy this week 1–10. What would raise the score?" },
+  { emoji: "💫", text: "What's one thing you'd love to hear whispered to you tonight?" },
+  { emoji: "🍷", text: "If you had one uninterrupted evening together, how would you spend it?" },
+  { emoji: "🫣", text: "What's something you've always wanted to try but never asked for?" },
+  { emoji: "💥", text: "When was the last time your partner gave you butterflies?" },
+  { emoji: "🌹", text: "What's the most seductive song on your playlist right now?" },
+  { emoji: "😏", text: "Send your partner a flirty text right now. Go on." },
+  { emoji: "🧲", text: "What's one physical touch from your partner that melts you?" },
+  { emoji: "🔮", text: "Predict: who'll make the first move tonight?" },
+  { emoji: "💄", text: "What's a look or vibe from your partner that instantly turns you on?" },
+  { emoji: "🍑", text: "What body part of your partner's deserves more appreciation?" },
+  { emoji: "🎶", text: "Pick a song that matches the energy you want tonight." },
+  { emoji: "🥂", text: "What's the most spontaneous intimate moment you've shared?" },
+  { emoji: "🫠", text: "Describe your partner's kiss in one word. Now tell them." },
+  { emoji: "🔥", text: "What's one thing that would make bedtime more exciting tonight?" },
+  { emoji: "💘", text: "When do you feel the strongest physical connection with your partner?" },
+  { emoji: "🕯️", text: "Set the mood tonight — what three things do you need?" },
+  { emoji: "😈", text: "Truth or dare: tell your partner your spiciest thought about them today." },
+  { emoji: "🫶", text: "What's the best compliment your partner ever gave you about your body?" },
+  { emoji: "🧊", text: "Hot take: morning intimacy or late-night intimacy?" },
+  { emoji: "💃", text: "If you could slow dance to one song right now, which would it be?" },
+  { emoji: "👅", text: "What's a new way you'd like to be kissed?" },
+  { emoji: "🪩", text: "Plan a 'no phones, just us' evening. What does it look like?" },
+  { emoji: "❤️‍🔥", text: "What's one word that describes how your partner makes you feel in private?" },
 ];
 
 const getDailyPrompt = () => {
