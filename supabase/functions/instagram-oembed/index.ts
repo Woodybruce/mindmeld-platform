@@ -46,9 +46,9 @@ serve(async (req) => {
       );
     }
 
-    // oEmbed requires Meta app token for most posts now,
-    // so fallback gracefully
-    await resp.text(); // consume body
+    // Log the error for debugging
+    const errorBody = await resp.text();
+    console.error("oEmbed API error:", resp.status, errorBody);
     return new Response(
       JSON.stringify({
         title: null,
