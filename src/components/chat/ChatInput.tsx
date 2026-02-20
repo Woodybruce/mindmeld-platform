@@ -267,9 +267,9 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
                     onClick={() => cameraInputRef.current?.click()}
-                    className="w-12 h-12 rounded-full bg-[hsl(var(--us-navy))]/80 flex items-center justify-center text-primary-foreground shadow-lg active:scale-95 transition-transform"
+                    className="w-14 h-14 rounded-full bg-[hsl(var(--us-navy))]/80 flex items-center justify-center text-primary-foreground shadow-lg active:scale-95 transition-transform"
                   >
-                    <Camera className="w-5 h-5" />
+                    <Camera className="w-6 h-6" />
                   </button>
                   <button
                     onClick={startRecording}
