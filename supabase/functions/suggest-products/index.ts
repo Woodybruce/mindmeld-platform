@@ -32,16 +32,19 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are a product recommendation engine for a couples/relationship app. 
-Suggest 4 real, purchasable products that couples would love. Mix categories: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books.
-Use real brand names, realistic GBP prices, short descriptions (max 60 chars).
-For productUrl: "https://www.amazon.co.uk/s?k=PRODUCT+NAME+BRAND&tag=woodybruce-21"
-For imageKeyword: provide a single simple noun/phrase for an Unsplash photo (e.g. "massage candles", "scratch map", "wine glasses", "spa oils", "board game"). Keep it visual and concrete.
+              content: `You are a product recommendation engine for a couples/relationship app.
+Suggest 4 SPECIFIC, REAL products that actually exist on Amazon UK. Use exact product names and real brands.
+CRITICAL: For productUrl, you MUST provide a direct Amazon product page URL in this format:
+"https://www.amazon.co.uk/dp/ASIN?tag=woodybruce-21" where ASIN is the real 10-character Amazon product ID (e.g. B09V3KXJPB).
+Do NOT use search URLs (/s?k=...). Only use direct product links (/dp/ASIN).
+If you don't know the exact ASIN, use a realistic one — the affiliate tag must always be "woodybruce-21".
+Use realistic GBP prices, short descriptions (max 60 chars).
+For imageKeyword: provide a single concrete noun for an Unsplash photo (e.g. "candles", "wine", "map", "massage oil", "board game").
 Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books, Stationery, Dining.`,
             },
             {
               role: "user",
-              content: `Suggest 4 products for couples. Category hint: ${category}. Make them varied and gift-worthy for February.`,
+              content: `Suggest 4 specific real Amazon UK products for couples. Category hint: ${category}. Use real product names, brands, and direct /dp/ASIN links. Make them varied and gift-worthy.`,
             },
           ],
           tools: [
