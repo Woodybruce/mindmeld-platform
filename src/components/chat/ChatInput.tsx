@@ -119,7 +119,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
   ];
 
   return (
-    <div className="relative z-40">
+    <div className="fixed bottom-0 left-0 right-0 z-40 max-w-lg mx-auto">
       {/* Attachment backdrop */}
       <AnimatePresence>
         {attachOpen && (
