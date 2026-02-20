@@ -20,10 +20,16 @@ serve(async (req) => {
       });
     }
 
-    // Instagram oEmbed API — public, no auth needed
-    const oembedUrl = `https://graph.facebook.com/v22.0/instagram_oembed?url=${encodeURIComponent(url)}&omitscript=true&maxwidth=400`;
+    const accessToken = Deno.env.get("META_APP_TOKEN");
+    if (!accessToken) {
+      return new Response(JSON.stringify({ error: "META_APP_TOKEN not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Try oEmbed first
+    const oembedUrl = `https://graph.facebook.com/v22.0/instagram_oembed?url=${encodeURIComponent(url)}&access_token=${encodeURIComponent(accessToken)}&omitscript=true&maxwidth=400`;
+
     const resp = await fetch(oembedUrl);
 
     if (resp.ok) {
