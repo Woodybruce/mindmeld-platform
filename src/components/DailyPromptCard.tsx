@@ -88,19 +88,19 @@ const DailyPromptCard = () => {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-accent/10 p-4"
+      className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-accent/10 p-5"
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Daily Prompt</span>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <Sparkles className="w-5 h-5 text-primary" />
+          <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Daily Prompt</span>
         </div>
         <button
           onClick={shuffle}
-          className="p-1.5 rounded-full hover:bg-secondary transition-colors"
+          className="p-2 rounded-full hover:bg-secondary transition-colors"
           aria-label="Shuffle prompt"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${spinning ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-4.5 h-4.5 text-muted-foreground transition-transform ${spinning ? "animate-spin" : ""}`} />
         </button>
       </div>
 
@@ -108,10 +108,10 @@ const DailyPromptCard = () => {
         key={prompt.text}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-start gap-3"
+        className="flex items-start gap-3.5"
       >
-        <span className="text-2xl mt-0.5">{prompt.emoji}</span>
-        <p className="text-sm font-medium text-foreground leading-relaxed flex-1">
+        <span className="text-3xl mt-0.5">{prompt.emoji}</span>
+        <p className="text-base font-semibold text-foreground leading-relaxed flex-1">
           {prompt.text}
         </p>
       </motion.div>
