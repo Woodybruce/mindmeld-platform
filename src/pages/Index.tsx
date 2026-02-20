@@ -21,6 +21,7 @@ import InstaFeedWidget from "@/components/InstaFeedWidget";
 import DailyPromptCard from "@/components/DailyPromptCard";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
 import PullToRefresh from "@/components/PullToRefresh";
+import { useWidgetSync } from "@/hooks/useWidgetSync";
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
   const rows: (FeedItem | [FeedItem, FeedItem])[] = [];
@@ -40,6 +41,7 @@ const layoutItems = (items: FeedItem[]) => {
 
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
+  useWidgetSync();
   const { user, profile } = useAuth();
   const { data: backendFeedItems = [] } = useFeedContent(2);
   
