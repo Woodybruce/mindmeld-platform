@@ -122,7 +122,7 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
             transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
             className="w-16 h-16 rounded-full border-4 border-us-coral border-t-transparent"
           />
-          <p className="ml-4 text-muted-foreground">Getting your location...</p>
+          <p className="ml-4 text-muted-foreground">Waiting for partner…</p>
         </div>
         <button
           onClick={onQuit}
