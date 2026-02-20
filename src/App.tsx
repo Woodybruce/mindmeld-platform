@@ -29,6 +29,7 @@ import OutlookCallback from "./pages/OutlookCallback";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 import VibeOverlay from "./components/VibeOverlay";
+import OfflineBanner from "./components/OfflineBanner";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <VibeOverlay />
+          <OfflineBanner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
