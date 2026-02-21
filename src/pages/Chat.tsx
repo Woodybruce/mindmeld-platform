@@ -3,10 +3,11 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useWebRTC } from "@/hooks/useWebRTC";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -34,9 +35,12 @@ const Chat = () => {
   const [partnerName, setPartnerName] = useState("Partner");
   const [partnerPhone, setPartnerPhone] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; content: string; senderName: string } | null>(null);
+  const [reactions, setReactions] = useState<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const partnerId = profile?.partner_id;
+
+  const { partnerTyping, sendTyping, sendStopTyping } = useTypingIndicator(user?.id, partnerId || undefined);
 
   const webrtc = useWebRTC({
     userId: user?.id,
@@ -71,6 +75,7 @@ const Chat = () => {
         .from("messages")
         .select("*")
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .neq("message_type", "vibe")
         .order("created_at", { ascending: true });
       if (data) setMessages(data as Message[]);
     };
@@ -87,8 +92,9 @@ const Chat = () => {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         const msg = payload.new as Message;
         if (
-          (msg.sender_id === user.id && msg.receiver_id === partnerId) ||
-          (msg.sender_id === partnerId && msg.receiver_id === user.id)
+          msg.message_type !== "vibe" &&
+          ((msg.sender_id === user.id && msg.receiver_id === partnerId) ||
+          (msg.sender_id === partnerId && msg.receiver_id === user.id))
         ) {
           setMessages((prev) => [...prev, msg]);
           if (msg.receiver_id === user.id) {
@@ -127,6 +133,19 @@ const Chat = () => {
     }
   }, []);
 
+  const handleReact = useCallback((msgId: string, emoji: string) => {
+    setReactions((prev) => {
+      const updated = { ...prev, [msgId]: prev[msgId] === emoji ? "" : emoji };
+      localStorage.setItem("us-chat-reactions", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  // Load reactions from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("us-chat-reactions");
+    if (stored) setReactions(JSON.parse(stored));
+  }, []);
 
   const handleSend = async (content: string, imageFiles?: File[] | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => {
     if (!user || !partnerId || sending) return;
@@ -400,6 +419,8 @@ const Chat = () => {
                     onSavePollToList={handleSavePollToList}
                     onSaveEventToCalendar={handleSaveEventToCalendar}
                     onDelete={handleDelete}
+                    onReact={handleReact}
+                    reaction={reactions[msg.id] || null}
                     userId={user.id}
                   />
                 );
@@ -407,6 +428,35 @@ const Chat = () => {
             </AnimatePresence>
           </div>
         ))}
+        {/* Typing indicator */}
+        {partnerTyping && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="flex justify-start mb-1"
+          >
+            <div className="bg-card border border-border/40 rounded-[18px] rounded-bl-[4px] px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-1">
+                <motion.span
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 1.2, delay: 0 }}
+                  className="w-2 h-2 rounded-full bg-muted-foreground/50"
+                />
+                <motion.span
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }}
+                  className="w-2 h-2 rounded-full bg-muted-foreground/50"
+                />
+                <motion.span
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }}
+                  className="w-2 h-2 rounded-full bg-muted-foreground/50"
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
         <div ref={bottomRef} />
       </main>
 
@@ -430,6 +480,8 @@ const Chat = () => {
         sending={sending}
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
+        onTyping={sendTyping}
+        onStopTyping={sendStopTyping}
       />
     </div>
   );
