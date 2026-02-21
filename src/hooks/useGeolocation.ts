@@ -25,8 +25,11 @@ export const useGeolocation = (enabled: boolean = false) => {
 
     setState((s) => ({ ...s, loading: true }));
 
+    const isNative = Capacitor.isNativePlatform();
+    console.log("[Geo] Starting geolocation. isNative:", isNative, "platform:", Capacitor.getPlatform());
+
     const useFallback = (reason?: string) => {
-      console.warn("Geolocation unavailable, using fallback:", reason);
+      console.warn("[Geo] Using fallback. Reason:", reason);
       setState({
         ...FALLBACK,
         error: null,
@@ -45,29 +48,34 @@ export const useGeolocation = (enabled: boolean = false) => {
       });
     }, 12000);
 
-    const isNative = Capacitor.isNativePlatform();
 
     if (isNative) {
       let watchId: string | undefined;
 
       const startWatch = async () => {
         try {
+          console.log("[Geo] Importing @capacitor/geolocation...");
           const { Geolocation } = await import("@capacitor/geolocation");
+          console.log("[Geo] Plugin imported, requesting permissions...");
           const permResult = await Geolocation.requestPermissions();
+          console.log("[Geo] Permission result:", JSON.stringify(permResult));
           if (permResult.location === "denied") {
             clearTimeout(fallbackTimer);
             useFallback("Location permission denied");
             return;
           }
 
+          console.log("[Geo] Starting watchPosition...");
           watchId = await Geolocation.watchPosition(
             { enableHighAccuracy: true, timeout: 10000 },
             (position, err) => {
               clearTimeout(fallbackTimer);
               if (err || !position) {
+                console.warn("[Geo] watchPosition error:", err?.message);
                 useFallback(err?.message);
                 return;
               }
+              console.log("[Geo] Got position:", position.coords.latitude, position.coords.longitude);
               setState({
                 latitude: position.coords.latitude,
                 longitude: position.coords.longitude,
@@ -77,7 +85,9 @@ export const useGeolocation = (enabled: boolean = false) => {
               });
             }
           );
+          console.log("[Geo] watchId:", watchId);
         } catch (e: any) {
+          console.error("[Geo] startWatch error:", e);
           clearTimeout(fallbackTimer);
           useFallback(e?.message);
         }
