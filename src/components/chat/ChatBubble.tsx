@@ -90,10 +90,10 @@ const ChatBubble = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.97 }}
+      initial={{ opacity: 0, y: 6, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: "spring", damping: 20, stiffness: 300 }}
-      className={`flex ${reaction ? "mb-5" : "mb-[3px]"} group relative ${isMine ? "justify-end" : "justify-start"}`}
+      transition={{ type: "spring", damping: 25, stiffness: 350 }}
+      className={`flex ${reaction ? "mb-5" : "mb-[2px]"} group relative ${isMine ? "justify-end pl-12" : "justify-start pr-12"}`}
       onContextMenu={(e) => {
         e.preventDefault();
         if (isMine && onDelete) setShowDelete((v) => !v);
@@ -122,32 +122,32 @@ const ChatBubble = ({
           </div>
         </div>
       ) : isGif && parsed ? (
-        <div className={`relative max-w-[80%] rounded-[18px] overflow-hidden shadow-sm ${
+        <div className={`relative max-w-[75%] rounded-[20px] overflow-hidden shadow-sm ${
           isMine
-            ? "bg-[hsl(var(--us-navy))] rounded-br-[4px]"
-            : "bg-card border border-border/40 rounded-bl-[4px]"
+            ? "rounded-br-[6px]"
+            : "rounded-bl-[6px]"
         }`}>
           <img src={parsed.url} alt="GIF" className="w-full max-h-60 object-cover" loading="lazy" />
           <div className="flex items-center justify-end gap-1 px-3 pb-[6px] pt-[2px]">
-            <span className={`text-[10px] leading-none ${isMine ? "text-white/40" : "text-muted-foreground/70"}`}>{time}</span>
+            <span className={`text-[10px] leading-none ${isMine ? "text-white/60" : "text-muted-foreground/70"}`}>{time}</span>
             {isMine && (
-              read ? <CheckCheck className="w-[15px] h-[15px] text-[hsl(var(--us-sage))]" /> : <Check className="w-[15px] h-[15px] text-white/35" />
+              read ? <CheckCheck className="w-[14px] h-[14px] text-[hsl(var(--us-sage))]" /> : <Check className="w-[14px] h-[14px] text-white/40" />
             )}
           </div>
         </div>
       ) : (
-      <div className={`relative max-w-[80%] rounded-[18px] overflow-hidden shadow-sm ${
+      <div className={`relative max-w-[75%] rounded-[20px] overflow-hidden ${
         isMine
-          ? "bg-[hsl(var(--us-navy))] text-white rounded-br-[4px]"
-          : "bg-card text-foreground border border-border/40 rounded-bl-[4px]"
+          ? "bg-gradient-to-br from-[hsl(210,100%,52%)] to-[hsl(210,100%,42%)] text-white rounded-br-[6px] shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
+          : "bg-[hsl(var(--secondary))] text-foreground rounded-bl-[6px] shadow-[0_1px_1px_rgba(0,0,0,0.06)]"
       }`}>
         {/* Quoted reply */}
         {replyTo && (
           <div className={`mx-2 mt-2 px-3 py-2 rounded-xl border-l-[3px] ${
-            isMine ? "bg-white/10 border-l-white/40" : "bg-secondary/80 border-l-[hsl(var(--us-coral))]"
+            isMine ? "bg-white/15 border-l-white/50" : "bg-background/60 border-l-[hsl(210,100%,52%)]"
           }`}>
-            <p className={`text-[11px] font-semibold mb-0.5 ${isMine ? "text-white/70" : "text-[hsl(var(--us-coral))]"}`}>{replyTo.senderName}</p>
-            <p className={`text-[11px] line-clamp-2 ${isMine ? "text-white/45" : "text-muted-foreground"}`}>{replyTo.content}</p>
+            <p className={`text-[11px] font-semibold mb-0.5 ${isMine ? "text-white/80" : "text-[hsl(210,100%,52%)]"}`}>{replyTo.senderName}</p>
+            <p className={`text-[11px] line-clamp-2 ${isMine ? "text-white/50" : "text-muted-foreground"}`}>{replyTo.content}</p>
           </div>
         )}
 
@@ -220,17 +220,19 @@ const ChatBubble = ({
         )}
 
         {content && content !== "📷 Photo" && !isSpecial && !isSticker && !isGif && (
-          <p className="text-[14.5px] leading-[1.35] break-words px-3 pt-1.5 pb-0">
+          <p className="text-[15px] leading-[1.3] break-words px-3 pt-2 pb-0.5">
             {renderContentWithLinks(content)}
           </p>
         )}
 
         {isPhotoOnly && !content && <div className="px-3 py-0.5" />}
 
-        <div className="flex items-center justify-end gap-1 px-3 pb-[6px] pt-[2px]">
-          <span className={`text-[10px] leading-none ${isMine ? "text-white/40" : "text-muted-foreground/70"}`}>{time}</span>
+        <div className="flex items-center justify-end gap-1 px-3 pb-[5px] pt-[1px]">
+          <span className={`text-[10px] leading-none ${isMine ? "text-white/50" : "text-muted-foreground/60"}`}>{time}</span>
           {isMine && (
-            read ? <CheckCheck className="w-[15px] h-[15px] text-[hsl(var(--us-sage))]" /> : <Check className="w-[15px] h-[15px] text-white/35" />
+            read
+              ? <CheckCheck className="w-[14px] h-[14px] text-white/70" />
+              : <Check className="w-[14px] h-[14px] text-white/40" />
           )}
         </div>
       </div>

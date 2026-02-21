@@ -333,9 +333,9 @@ const Chat = () => {
   const msgMap = new Map(messages.map((m) => [m.id, m]));
 
   return (
-    <div className="h-[100dvh] max-w-lg mx-auto relative flex flex-col overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(var(--us-cream)) 0%, hsl(30 20% 93%) 100%)' }}>
-      {/* Subtle wallpaper pattern */}
-      <div className="fixed inset-0 max-w-lg mx-auto pointer-events-none opacity-[0.03] dark:opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
+    <div className="h-[100dvh] max-w-lg mx-auto relative flex flex-col overflow-hidden bg-background">
+      {/* Clean iMessage-style background */}
+      <div className="fixed inset-0 max-w-lg mx-auto pointer-events-none bg-background" />
       
       <ChatHeader
         partnerName={partnerName}
@@ -371,7 +371,7 @@ const Chat = () => {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 px-3 pt-12 pb-24 overflow-y-auto space-y-0.5 relative z-10">
+      <main className="flex-1 px-3 pt-14 pb-24 overflow-y-auto space-y-0 relative z-10">
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center pt-20">
             <div className="text-center">
@@ -388,8 +388,8 @@ const Chat = () => {
 
         {grouped.map((group) => (
           <div key={group.date}>
-            <div className="flex justify-center my-4">
-              <span className="text-[11px] font-medium text-white bg-[hsl(var(--us-navy)/0.7)] backdrop-blur-md px-4 py-1.5 rounded-lg shadow-sm">
+            <div className="flex justify-center my-3">
+              <span className="text-[11px] font-medium text-muted-foreground bg-secondary/80 backdrop-blur-md px-3.5 py-1 rounded-full">
                 {group.date}
               </span>
             </div>
@@ -436,7 +436,7 @@ const Chat = () => {
             exit={{ opacity: 0, y: 8 }}
             className="flex justify-start mb-1"
           >
-            <div className="bg-card border border-border/40 rounded-[18px] rounded-bl-[4px] px-4 py-3 shadow-sm">
+            <div className="bg-secondary rounded-[20px] rounded-bl-[6px] px-4 py-2.5 shadow-sm">
               <div className="flex items-center gap-1">
                 <motion.span
                   animate={{ opacity: [0.3, 1, 0.3] }}
