@@ -46,9 +46,22 @@ const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupP
       return;
     }
 
-    // Send push notification only (no chat message)
+    // Send both a chat message AND push notification for reliability
     try {
-      await supabase.functions.invoke("send-push-notification", {
+      // Chat message so partner sees it in-app
+      await supabase.from("messages").insert({
+        sender_id: user.id,
+        receiver_id: profile.partner_id,
+        content: "💋 I've started a Kiss Chase game! Open the app and join me! 🏃‍♂️",
+        message_type: "text",
+      } as any);
+    } catch (e) {
+      console.warn("Chat message failed:", e);
+    }
+
+    // Push notification for when app is closed
+    try {
+      const { data: pushResult, error: pushError } = await supabase.functions.invoke("send-push-notification", {
         body: {
           recipientUserId: profile.partner_id,
           title: "💋 Kiss Chase!",
@@ -56,12 +69,21 @@ const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupP
           data: { route: "/kiss-chase" },
         },
       });
+
+      if (pushError) {
+        console.warn("Push notification error:", pushError);
+        toast.success("Invite sent via chat! (Push notification unavailable)");
+      } else if (pushResult?.sent === 0) {
+        toast.success("Invite sent via chat! Tell your partner to open the app 💋");
+      } else {
+        toast.success("Invite sent to your partner! 💋");
+      }
     } catch (e) {
       console.warn("Push notification failed:", e);
+      toast.success("Invite sent via chat! 💋");
     }
 
     setInviteSent(true);
-    toast.success("Invite sent to your partner! 💋");
   };
 
   const hasPartner = !!profile?.partner_id;
