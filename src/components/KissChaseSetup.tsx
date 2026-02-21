@@ -36,12 +36,28 @@ const KissChaseSetup = ({ onStart }: KissChaseSetupProps) => {
       toast.error("Link your partner first in Profile");
       return;
     }
+    // Send chat message
     await supabase.from("messages").insert({
       sender_id: user.id,
       receiver_id: profile.partner_id,
       content: "💋 I've started a Kiss Chase game! Open the app and join me! 🏃‍♂️",
       message_type: "text",
     } as any);
+
+    // Send push notification so partner gets alerted even if app is closed
+    try {
+      await supabase.functions.invoke("send-push-notification", {
+        body: {
+          recipientUserId: profile.partner_id,
+          title: "💋 Kiss Chase!",
+          body: `${profile.username || "Your partner"} wants to play Kiss Chase! Open the app to join.`,
+          data: { route: "/kiss-chase" },
+        },
+      });
+    } catch (e) {
+      console.warn("Push notification failed:", e);
+    }
+
     setInviteSent(true);
     toast.success("Invite sent to your partner! 💋");
   };
