@@ -22,6 +22,7 @@ import DailyPromptCard from "@/components/DailyPromptCard";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
   const rows: (FeedItem | [FeedItem, FeedItem])[] = [];
