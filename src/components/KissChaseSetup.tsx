@@ -20,11 +20,20 @@ const timeOptions = [
   { label: "1 hour", value: 60 },
 ];
 
-interface KissChaseSetupProps {
-  onStart: (reward: string, timeMinutes: number) => void;
+interface PartnerGame {
+  reward: string;
+  timeMinutes: number;
+  startedBy: string;
+  startedAt: number;
 }
 
-const KissChaseSetup = ({ onStart }: KissChaseSetupProps) => {
+interface KissChaseSetupProps {
+  onStart: (reward: string, timeMinutes: number) => void;
+  partnerGame?: PartnerGame | null;
+  onJoinPartner?: () => void;
+}
+
+const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupProps) => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [selectedReward, setSelectedReward] = useState<string | null>("task");
@@ -91,6 +100,33 @@ const KissChaseSetup = ({ onStart }: KissChaseSetupProps) => {
             Your partner's location will be shown on the map. Find them before time runs out!
           </p>
         </motion.div>
+
+        {/* Partner started — join banner */}
+        {partnerGame && onJoinPartner && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-r from-us-coral/20 to-us-terracotta/20 border-2 border-us-coral/40 rounded-2xl p-5 text-center space-y-3"
+          >
+            <motion.span
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="text-4xl inline-block"
+            >
+              💋
+            </motion.span>
+            <p className="text-sm font-bold text-foreground">Your partner started a Kiss Chase!</p>
+            <p className="text-xs text-muted-foreground">
+              {partnerGame.timeMinutes} min • {partnerGame.reward} reward
+            </p>
+            <Button
+              onClick={onJoinPartner}
+              className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-us-coral to-us-terracotta text-primary-foreground"
+            >
+              Join the Chase! 🏃‍♂️
+            </Button>
+          </motion.div>
+        )}
 
         {/* Partner status */}
         {!hasPartner && (

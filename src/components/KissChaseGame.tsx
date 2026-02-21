@@ -75,13 +75,10 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
 
   const [timeLeft, setTimeLeft] = useState(timeMinutes * 60);
   const [distance, setDistance] = useState<number | null>(null);
-  const [waitingForPartner, setWaitingForPartner] = useState(hasPartner);
+  const [waitingForPartner, setWaitingForPartner] = useState(false);
   const caught = useRef(false);
 
-  // Clear waiting state when partner position arrives
-  useEffect(() => {
-    if (partnerPos && waitingForPartner) setWaitingForPartner(false);
-  }, [partnerPos, waitingForPartner]);
+  // No longer need to wait — session sync ensures both partners are playing
 
   // Timer
   useEffect(() => {
@@ -135,29 +132,8 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
     );
   }
 
-  if (hasPartner && waitingForPartner) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <motion.div
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-          className="text-5xl"
-        >
-          💋
-        </motion.div>
-        <h2 className="font-display text-xl font-bold">Waiting for partner…</h2>
-        <p className="text-muted-foreground text-sm max-w-xs">
-          Your partner needs to open Kiss Chase too so you can see each other's real location!
-        </p>
-        <button
-          onClick={onQuit}
-          className="mt-4 px-6 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium"
-        >
-          Go Back
-        </button>
-      </div>
-    );
-  }
+
+
 
   if (geo.error) {
     return (
