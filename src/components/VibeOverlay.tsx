@@ -22,12 +22,30 @@ const VibeOverlay = () => {
   const [incomingVibe, setIncomingVibe] = useState<IncomingVibe | null>(null);
   const [floaters, setFloaters] = useState<FloatingEmoji[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const processedVibes = useRef(new Set<string>());
 
   useEffect(() => {
     if (!user || !profile?.partner_id) return;
 
-    const channel = supabase
-      .channel("vibe-incoming")
+    const partnerId = profile.partner_id;
+    const channelName = `vibe-${[user.id, partnerId].sort().join("-")}`;
+
+    // Primary: broadcast channel (instant, no DB dependency)
+    const broadcastChannel = supabase
+      .channel(channelName)
+      .on("broadcast", { event: "vibe" }, ({ payload }) => {
+        if (payload.senderId === partnerId) {
+          const key = `${payload.senderId}-${payload.ts}`;
+          if (processedVibes.current.has(key)) return;
+          processedVibes.current.add(key);
+          triggerVibeAnimation(payload.emoji, payload.label);
+        }
+      })
+      .subscribe();
+
+    // Backup: postgres_changes for when broadcast misses
+    const dbChannel = supabase
+      .channel("vibe-db-incoming")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
@@ -36,8 +54,11 @@ const VibeOverlay = () => {
           if (
             msg.message_type === "vibe" &&
             msg.receiver_id === user.id &&
-            msg.sender_id === profile.partner_id
+            msg.sender_id === partnerId
           ) {
+            const key = `${msg.sender_id}-${msg.created_at}`;
+            if (processedVibes.current.has(key)) return;
+            processedVibes.current.add(key);
             try {
               const data = JSON.parse(msg.content);
               triggerVibeAnimation(data.emoji, data.label);
@@ -50,28 +71,31 @@ const VibeOverlay = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(broadcastChannel);
+      supabase.removeChannel(dbChannel);
     };
   }, [user, profile?.partner_id]);
 
   const triggerVibeAnimation = (emoji: string, label: string) => {
+    // Dismiss any existing overlay first
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
     setIncomingVibe({ emoji, label });
 
-    const newFloaters: FloatingEmoji[] = Array.from({ length: 22 }, (_, i) => ({
+    const newFloaters: FloatingEmoji[] = Array.from({ length: 30 }, (_, i) => ({
       id: `${Date.now()}-${i}`,
       emoji,
-      x: Math.random() * 90,
-      delay: Math.random() * 1.2,
-      size: 28 + Math.random() * 40,
-      duration: 2.5 + Math.random() * 2,
+      x: Math.random() * 95,
+      delay: Math.random() * 1.5,
+      size: 24 + Math.random() * 52,
+      duration: 2 + Math.random() * 2.5,
     }));
     setFloaters(newFloaters);
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setIncomingVibe(null);
       setFloaters([]);
-    }, 4500);
+    }, 5500);
   };
 
   const dismiss = () => {
@@ -89,18 +113,27 @@ const VibeOverlay = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[200] overflow-hidden"
+          className="fixed inset-0 z-[9999] overflow-hidden pointer-events-auto"
           onClick={dismiss}
         >
-          {/* Soft blurred backdrop */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          {/* Dark blurred backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-md"
+          />
 
-          {/* Floating emojis rising up */}
+          {/* Dramatic emoji shower — falling from top + rising from bottom */}
           {floaters.map((f) => (
             <motion.span
               key={f.id}
-              initial={{ opacity: 1, scale: 0.5 }}
-              animate={{ y: "-110vh", opacity: [1, 1, 0.3, 0], scale: [0.5, 1.3, 1] }}
+              initial={{ opacity: 0, scale: 0.3, y: f.delay > 0.75 ? "110vh" : "-10vh" }}
+              animate={{
+                y: f.delay > 0.75 ? "-20vh" : "110vh",
+                opacity: [0, 1, 1, 0.5, 0],
+                scale: [0.3, 1.2, 1, 0.8],
+                rotate: [0, (Math.random() - 0.5) * 60],
+              }}
               transition={{
                 duration: f.duration,
                 delay: f.delay,
@@ -109,8 +142,9 @@ const VibeOverlay = () => {
               className="absolute"
               style={{
                 fontSize: f.size,
-                left: `${f.x}vw`,
-                bottom: "-5vh",
+                left: `${f.x}%`,
+                top: f.delay > 0.75 ? undefined : 0,
+                bottom: f.delay > 0.75 ? 0 : undefined,
               }}
             >
               {f.emoji}
@@ -120,21 +154,21 @@ const VibeOverlay = () => {
           {/* Central dramatic message */}
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none">
             <motion.span
-              initial={{ scale: 0, rotate: -15 }}
-              animate={{ scale: [0, 1.5, 1], rotate: [-15, 8, 0] }}
-              transition={{ duration: 0.6, ease: "backOut" }}
-              style={{ fontSize: 96, display: "block" }}
+              initial={{ scale: 0, rotate: -20 }}
+              animate={{ scale: [0, 2, 1.3], rotate: [-20, 10, 0] }}
+              transition={{ duration: 0.7, ease: "backOut" }}
+              style={{ fontSize: 110, display: "block" }}
             >
               {incomingVibe.emoji}
             </motion.span>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
               className="text-center px-6"
             >
-              <p className="text-white text-2xl font-bold drop-shadow-lg">
+              <p className="text-white text-xl font-semibold drop-shadow-lg">
                 Your partner sent you a
               </p>
               <p className="text-white text-4xl font-black drop-shadow-lg mt-1">
@@ -145,8 +179,8 @@ const VibeOverlay = () => {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.2, duration: 0.5 }}
-              className="text-white/60 text-sm mt-6"
+              transition={{ delay: 1.5, duration: 0.5 }}
+              className="text-white/50 text-sm mt-8"
             >
               Tap anywhere to dismiss
             </motion.p>

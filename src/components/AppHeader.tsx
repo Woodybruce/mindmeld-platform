@@ -40,9 +40,28 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
     haptics.success();
 
     if (user && profile?.partner_id) {
+      const partnerId = profile.partner_id;
+      const channelName = `vibe-${[user.id, partnerId].sort().join("-")}`;
+      const ts = Date.now();
+
+      // Send via broadcast for instant delivery
+      const channel = supabase.channel(channelName);
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          channel.send({
+            type: "broadcast",
+            event: "vibe",
+            payload: { senderId: user.id, emoji, label, ts },
+          });
+          // Clean up after sending
+          setTimeout(() => supabase.removeChannel(channel), 2000);
+        }
+      });
+
+      // Also persist to DB (backup + history)
       await supabase.from("messages").insert({
         sender_id: user.id,
-        receiver_id: profile.partner_id,
+        receiver_id: partnerId,
         content: JSON.stringify({ emoji, label }),
         message_type: "vibe",
       } as any);

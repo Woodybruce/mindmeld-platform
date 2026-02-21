@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MapPin, Heart, Timer, Trophy, ArrowLeft, Zap } from "lucide-react";
+import { MapPin, Heart, Timer, Trophy, ArrowLeft, Zap, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const rewardOptions = [
   { id: "task", label: "Task Favour", desc: "Loser does a chore of winner's choice", icon: "🧹", color: "from-blue-400 to-blue-600" },
@@ -23,8 +26,27 @@ interface KissChaseSetupProps {
 
 const KissChaseSetup = ({ onStart }: KissChaseSetupProps) => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [selectedReward, setSelectedReward] = useState<string | null>("task");
   const [selectedTime, setSelectedTime] = useState<number>(30);
+  const [inviteSent, setInviteSent] = useState(false);
+
+  const sendInviteToPartner = async () => {
+    if (!user || !profile?.partner_id) {
+      toast.error("Link your partner first in Profile");
+      return;
+    }
+    await supabase.from("messages").insert({
+      sender_id: user.id,
+      receiver_id: profile.partner_id,
+      content: "💋 I've started a Kiss Chase game! Open the app and join me! 🏃‍♂️",
+      message_type: "text",
+    } as any);
+    setInviteSent(true);
+    toast.success("Invite sent to your partner! 💋");
+  };
+
+  const hasPartner = !!profile?.partner_id;
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
@@ -53,6 +75,54 @@ const KissChaseSetup = ({ onStart }: KissChaseSetupProps) => {
             Your partner's location will be shown on the map. Find them before time runs out!
           </p>
         </motion.div>
+
+        {/* Partner status */}
+        {!hasPartner && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-destructive/10 border border-destructive/20 rounded-2xl p-4 text-center"
+          >
+            <p className="text-sm font-semibold text-destructive">No partner linked</p>
+            <p className="text-xs text-muted-foreground mt-1">Go to Profile and link your partner's email to play together with real locations.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/profile")}
+              className="mt-3"
+            >
+              Go to Profile
+            </Button>
+          </motion.div>
+        )}
+
+        {hasPartner && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-[hsl(var(--us-sage))]/10 border border-[hsl(var(--us-sage))]/20 rounded-2xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[hsl(var(--us-sage))]" />
+                  Partner linked ✓
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Both of you need the game open to see live locations</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={sendInviteToPartner}
+                disabled={inviteSent}
+                className="gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" />
+                {inviteSent ? "Sent!" : "Invite"}
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Time selection */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -117,10 +187,12 @@ const KissChaseSetup = ({ onStart }: KissChaseSetupProps) => {
             className="w-full h-14 rounded-2xl text-lg font-semibold bg-gradient-to-r from-us-coral to-us-terracotta text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             <MapPin className="w-5 h-5 mr-2" />
-            Start the Chase!
+            {hasPartner ? "Start the Chase!" : "Practice Mode (Simulated)"}
           </Button>
           <p className="text-center text-xs text-muted-foreground mt-2">
-            Location permission will be requested
+            {hasPartner
+              ? "Location permission will be requested • Make sure your partner opens the game too!"
+              : "Playing with a simulated partner • Link your partner for real locations"}
           </p>
         </motion.div>
       </div>

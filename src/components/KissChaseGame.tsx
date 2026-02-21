@@ -115,15 +115,16 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
 
   if (!effectiveLat || !effectiveLng) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6">
-        <div className="flex items-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-            className="w-16 h-16 rounded-full border-4 border-us-coral border-t-transparent"
-          />
-          <p className="ml-4 text-muted-foreground">Waiting for partner…</p>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+          className="w-16 h-16 rounded-full border-4 border-us-coral border-t-transparent"
+        />
+        <p className="text-foreground font-semibold">Finding your location…</p>
+        <p className="text-sm text-muted-foreground max-w-[260px]">
+          Make sure you've allowed location access. On iPhone, go to Settings → Privacy → Location Services → Us.
+        </p>
         <button
           onClick={onQuit}
           className="mt-4 px-6 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium"

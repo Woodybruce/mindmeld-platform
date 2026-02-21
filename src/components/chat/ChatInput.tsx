@@ -241,20 +241,20 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
             </>
           ) : (
             <>
-              <div className="flex-1 flex items-center rounded-full bg-secondary border border-border/30 overflow-hidden min-h-[56px]">
+              <div className="flex-1 flex items-center rounded-full bg-secondary/80 border border-border/40 overflow-hidden min-h-[44px]">
                 <button
                   onClick={() => setAttachOpen((v) => !v)}
-                  className="pl-4 pr-2 py-4 text-muted-foreground hover:text-foreground transition-all flex-shrink-0"
+                  className="pl-3 pr-1 py-3 text-muted-foreground hover:text-foreground transition-all flex-shrink-0"
                 >
-                  <Plus className={`w-6 h-6 transition-transform duration-200 ${attachOpen ? "rotate-45 text-[hsl(var(--us-coral))]" : ""}`} />
+                  <Plus className={`w-5.5 h-5.5 transition-transform duration-200 ${attachOpen ? "rotate-45 text-[hsl(210,100%,52%)]" : ""}`} />
                 </button>
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => { setInput(e.target.value); onTyping?.(); }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Message"
-                  className="flex-1 bg-transparent py-4 px-2 text-base text-foreground placeholder:text-muted-foreground/60 outline-none font-body"
+                  placeholder="iMessage"
+                  className="flex-1 bg-transparent py-3 px-2 text-[15px] text-foreground placeholder:text-muted-foreground/50 outline-none font-body"
                 />
               </div>
 
@@ -262,23 +262,23 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                 <button
                   onClick={handleSend}
                   disabled={sending}
-                  className="w-14 h-14 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground disabled:opacity-40 shadow-lg flex-shrink-0 active:scale-95 transition-transform"
+                  className="w-10 h-10 rounded-full bg-[hsl(210,100%,52%)] flex items-center justify-center text-white disabled:opacity-40 shadow-sm flex-shrink-0 active:scale-95 transition-transform"
                 >
-                  {sending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+                  {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 </button>
               ) : (
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={() => cameraInputRef.current?.click()}
-                    className="w-14 h-14 rounded-full bg-[hsl(var(--us-navy))]/80 flex items-center justify-center text-primary-foreground shadow-lg active:scale-95 transition-transform"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all"
                   >
-                    <Camera className="w-6 h-6" />
+                    <Camera className="w-5.5 h-5.5" />
                   </button>
                   <button
                     onClick={startRecording}
-                    className="w-14 h-14 rounded-full bg-[hsl(var(--us-navy))] flex items-center justify-center text-primary-foreground shadow-lg active:scale-95 transition-transform"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all"
                   >
-                    <Mic className="w-6 h-6" />
+                    <Mic className="w-5.5 h-5.5" />
                   </button>
                 </div>
               )}
