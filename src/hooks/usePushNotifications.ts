@@ -1,8 +1,9 @@
 /**
- * Push Notifications hook — registers device token with FCM via Capacitor
- * and stores it in the device_tokens table.
+ * Push Notifications hook — registers for push permissions via Capacitor,
+ * then receives the real FCM token from the native layer (injected via
+ * a custom DOM event from AppDelegate's MessagingDelegate).
  *
- * Call once near the app root (e.g. in Index.tsx or App.tsx).
+ * Call once near the app root (e.g. in Index.tsx).
  * On web this is a silent no-op.
  */
 
@@ -22,7 +23,6 @@ export function usePushNotifications() {
 
     const setup = async () => {
       try {
-        // Dynamic import so web builds don't fail
         const { PushNotifications } = await import("@capacitor/push-notifications");
 
         // Request permission
@@ -32,60 +32,49 @@ export function usePushNotifications() {
           return;
         }
 
-        // Register with APNs / FCM
+        // Register with APNs / FCM — triggers native token flow
         await PushNotifications.register();
 
-        // Listen for the token
-        const tokenListener = await PushNotifications.addListener(
-          "registration",
-          async (token) => {
-            console.log("[Push] Token:", token.value);
-            registeredRef.current = true;
+        // Listen for the REAL FCM token injected by AppDelegate via MessagingDelegate
+        const handleFcmToken = async (e: Event) => {
+          const token = (e as CustomEvent).detail as string;
+          if (!token || registeredRef.current) return;
+          console.log("[Push] FCM token:", token);
+          registeredRef.current = true;
 
-            const platform = Capacitor.getPlatform(); // 'ios' | 'android'
+          const platform = Capacitor.getPlatform(); // 'ios' | 'android'
 
-            // Upsert token
-            await supabase.from("device_tokens").upsert(
-              {
-                user_id: user.id,
-                token: token.value,
-                platform,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id,token" }
-            );
-          }
-        );
+          await supabase.from("device_tokens").upsert(
+            {
+              user_id: user.id,
+              token,
+              platform,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,token" }
+          );
+        };
 
-        // Handle registration errors
-        const errorListener = await PushNotifications.addListener(
-          "registrationError",
-          (err) => {
-            console.error("[Push] Registration error:", err);
-          }
-        );
+        window.addEventListener("fcmToken", handleFcmToken);
 
         // Handle incoming notifications while app is in foreground
         const foregroundListener = await PushNotifications.addListener(
           "pushNotificationReceived",
           (notification) => {
             console.log("[Push] Foreground notification:", notification);
-            // Could show an in-app toast here
           }
         );
 
-        // Handle notification tap (app opened from notification)
+        // Handle notification tap
         const actionListener = await PushNotifications.addListener(
           "pushNotificationActionPerformed",
           (action) => {
             console.log("[Push] Action performed:", action);
-            // Could navigate to chat, etc. based on action.notification.data
           }
         );
 
         cleanup = () => {
-          tokenListener.remove();
-          errorListener.remove();
+          window.removeEventListener("fcmToken", handleFcmToken);
           foregroundListener.remove();
           actionListener.remove();
         };
