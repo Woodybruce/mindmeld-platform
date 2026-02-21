@@ -6,16 +6,85 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Get an OAuth2 access token from the service account JSON */
+async function getAccessToken(serviceAccount: {
+  client_email: string;
+  private_key: string;
+  token_uri: string;
+}): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const payload = {
+    iss: serviceAccount.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: serviceAccount.token_uri,
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const encode = (obj: unknown) =>
+    btoa(JSON.stringify(obj))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+  const unsignedToken = `${encode(header)}.${encode(payload)}`;
+
+  // Import the RSA private key
+  const pemBody = serviceAccount.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\s/g, "");
+  const binaryKey = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryKey,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  const sig = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  const jwt = `${unsignedToken}.${sig}`;
+
+  // Exchange JWT for access token
+  const res = await fetch(serviceAccount.token_uri, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+
+  const data = await res.json();
+  if (!data.access_token) {
+    throw new Error(`Failed to get access token: ${JSON.stringify(data)}`);
+  }
+  return data.access_token;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const FCM_SERVER_KEY = Deno.env.get("FCM_SERVER_KEY");
-    if (!FCM_SERVER_KEY) {
-      throw new Error("FCM_SERVER_KEY is not configured");
+    const serviceAccountJson = Deno.env.get("FCM_SERVICE_ACCOUNT");
+    if (!serviceAccountJson) {
+      throw new Error("FCM_SERVICE_ACCOUNT secret is not configured");
     }
+
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    const projectId = serviceAccount.project_id;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -47,32 +116,51 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send to each token via FCM HTTP v1 (legacy API)
+    // Get OAuth2 access token for FCM v1 API
+    const accessToken = await getAccessToken(serviceAccount);
+    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
+    // Send to each token via FCM HTTP v1 API
     const results = await Promise.allSettled(
       tokens.map(async ({ token }) => {
-        const res = await fetch("https://fcm.googleapis.com/fcm/send", {
+        const res = await fetch(fcmUrl, {
           method: "POST",
           headers: {
-            Authorization: `key=${FCM_SERVER_KEY}`,
+            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            to: token,
-            notification: {
-              title,
-              body: body || "",
-              sound: "default",
-              badge: 1,
+            message: {
+              token,
+              notification: {
+                title,
+                body: body || "",
+              },
+              data: data || {},
+              apns: {
+                payload: {
+                  aps: {
+                    sound: "default",
+                    badge: 1,
+                  },
+                },
+              },
+              android: {
+                priority: "HIGH",
+                notification: {
+                  sound: "default",
+                },
+              },
             },
-            data: data || {},
-            priority: "high",
           }),
         });
 
         const result = await res.json();
 
-        // Remove invalid tokens
-        if (result.failure && result.results?.[0]?.error === "NotRegistered") {
+        // Remove invalid tokens (UNREGISTERED or NOT_FOUND)
+        if (result.error?.details?.some((d: any) =>
+          d.errorCode === "UNREGISTERED" || d.errorCode === "NOT_FOUND"
+        )) {
           await supabase
             .from("device_tokens")
             .delete()
