@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { Geolocation } from "@capacitor/geolocation";
 import { Capacitor } from "@capacitor/core";
 
 interface GeolocationState {
@@ -35,15 +34,28 @@ export const useGeolocation = (enabled: boolean = false) => {
       });
     };
 
-    // Use Capacitor Geolocation on native, browser API on web
-    if (Capacitor.isNativePlatform()) {
+    // Timeout: if no position after 12s, use fallback
+    const fallbackTimer = setTimeout(() => {
+      setState((prev) => {
+        if (prev.loading) {
+          console.warn("Geolocation timed out, using fallback");
+          return { ...FALLBACK, error: null, loading: false };
+        }
+        return prev;
+      });
+    }, 12000);
+
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative) {
       let watchId: string | undefined;
 
       const startWatch = async () => {
         try {
-          // Request permission first on native
+          const { Geolocation } = await import("@capacitor/geolocation");
           const permResult = await Geolocation.requestPermissions();
           if (permResult.location === "denied") {
+            clearTimeout(fallbackTimer);
             useFallback("Location permission denied");
             return;
           }
@@ -51,6 +63,7 @@ export const useGeolocation = (enabled: boolean = false) => {
           watchId = await Geolocation.watchPosition(
             { enableHighAccuracy: true, timeout: 10000 },
             (position, err) => {
+              clearTimeout(fallbackTimer);
               if (err || !position) {
                 useFallback(err?.message);
                 return;
@@ -65,6 +78,7 @@ export const useGeolocation = (enabled: boolean = false) => {
             }
           );
         } catch (e: any) {
+          clearTimeout(fallbackTimer);
           useFallback(e?.message);
         }
       };
@@ -72,19 +86,24 @@ export const useGeolocation = (enabled: boolean = false) => {
       startWatch();
 
       return () => {
+        clearTimeout(fallbackTimer);
         if (watchId) {
-          Geolocation.clearWatch({ id: watchId });
+          import("@capacitor/geolocation").then(({ Geolocation }) =>
+            Geolocation.clearWatch({ id: watchId! })
+          );
         }
       };
     } else {
-      // Web fallback
+      // Web / Capacitor remote URL fallback
       if (!navigator.geolocation) {
+        clearTimeout(fallbackTimer);
         useFallback("Geolocation not supported");
         return;
       }
 
       const watchId = navigator.geolocation.watchPosition(
         (position) => {
+          clearTimeout(fallbackTimer);
           setState({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
@@ -94,12 +113,16 @@ export const useGeolocation = (enabled: boolean = false) => {
           });
         },
         (err) => {
+          clearTimeout(fallbackTimer);
           useFallback(err.message);
         },
         { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
       );
 
-      return () => navigator.geolocation.clearWatch(watchId);
+      return () => {
+        clearTimeout(fallbackTimer);
+        navigator.geolocation.clearWatch(watchId);
+      };
     }
   }, [enabled]);
 
