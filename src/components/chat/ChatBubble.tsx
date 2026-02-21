@@ -35,6 +35,8 @@ const ChatImage = ({ src, alt }: { src: string; alt: string }) => {
 };
 import { toast } from "sonner";
 
+const TAPBACK_REACTIONS = ["❤️", "👍", "👎", "😂", "‼️", "❓"];
+
 interface ChatBubbleProps {
   id: string;
   content: string;
@@ -50,6 +52,8 @@ interface ChatBubbleProps {
   onSavePollToList?: (question: string, options: string[]) => void;
   onSaveEventToCalendar?: (event: { title: string; date: string; time?: string; location?: string }) => void;
   onDelete?: (id: string) => void;
+  onReact?: (msgId: string, emoji: string) => void;
+  reaction?: string | null;
   userId?: string;
 }
 
@@ -74,9 +78,10 @@ const tryParseJSON = (str: string) => {
 
 const ChatBubble = ({
   id, content, imageUrl, audioUrl, isMine, time, read,
-  messageType, replyTo, onSwipeReply, onPollVote, onSavePollToList, onSaveEventToCalendar, onDelete, userId,
+  messageType, replyTo, onSwipeReply, onPollVote, onSavePollToList, onSaveEventToCalendar, onDelete, onReact, reaction, userId,
 }: ChatBubbleProps) => {
   const [showDelete, setShowDelete] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
   const isPhotoOnly = (!content || content === "📷 Photo") && imageUrl;
   const isSpecial = messageType === "location" || messageType === "poll" || messageType === "event";
   const isSticker = messageType === "sticker";
@@ -88,14 +93,16 @@ const ChatBubble = ({
       initial={{ opacity: 0, y: 8, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", damping: 20, stiffness: 300 }}
-      className={`flex mb-[3px] group relative ${isMine ? "justify-end" : "justify-start"}`}
+      className={`flex ${reaction ? "mb-5" : "mb-[3px]"} group relative ${isMine ? "justify-end" : "justify-start"}`}
       onContextMenu={(e) => {
-        if (isMine && onDelete) {
-          e.preventDefault();
-          setShowDelete((v) => !v);
-        }
+        e.preventDefault();
+        if (isMine && onDelete) setShowDelete((v) => !v);
+        else setShowReactions((v) => !v);
       }}
-      onClick={() => showDelete && setShowDelete(false)}
+      onDoubleClick={() => {
+        if (!isMine && onReact) onReact(id, "❤️");
+      }}
+      onClick={() => { showDelete && setShowDelete(false); showReactions && setShowReactions(false); }}
     >
       {!isMine && onSwipeReply && (
         <button onClick={() => onSwipeReply(id)} className="self-center mr-1 opacity-0 group-hover:opacity-50 active:opacity-80 transition-opacity">
@@ -233,6 +240,38 @@ const ChatBubble = ({
         <button onClick={() => onSwipeReply(id)} className="self-center ml-1 opacity-0 group-hover:opacity-50 active:opacity-80 transition-opacity">
           <Reply className="w-3.5 h-3.5 text-muted-foreground" />
         </button>
+      )}
+
+      {/* Reaction badge */}
+      {reaction && (
+        <div className={`absolute -bottom-3 ${isMine ? "right-3" : "left-3"} z-10`}>
+          <span className="text-base bg-card border border-border/50 rounded-full px-1.5 py-0.5 shadow-sm">
+            {reaction}
+          </span>
+        </div>
+      )}
+
+      {/* Tapback reactions picker */}
+      {showReactions && !isMine && onReact && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="absolute -top-10 left-0 z-20 flex items-center gap-0.5 bg-card/95 backdrop-blur-xl border border-border/50 rounded-full px-2 py-1 shadow-xl"
+        >
+          {TAPBACK_REACTIONS.map((emoji) => (
+            <button
+              key={emoji}
+              onClick={(e) => {
+                e.stopPropagation();
+                onReact(id, emoji);
+                setShowReactions(false);
+              }}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary active:scale-110 transition-all text-lg"
+            >
+              {emoji}
+            </button>
+          ))}
+        </motion.div>
       )}
 
       {/* Delete confirmation */}

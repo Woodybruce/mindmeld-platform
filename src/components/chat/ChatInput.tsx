@@ -13,9 +13,11 @@ interface ChatInputProps {
   sending: boolean;
   replyingTo?: { id: string; content: string; senderName: string } | null;
   onCancelReply?: () => void;
+  onTyping?: () => void;
+  onStopTyping?: () => void;
 }
 
-const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyingTo, onCancelReply }: ChatInputProps) => {
+const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyingTo, onCancelReply, onTyping, onStopTyping }: ChatInputProps) => {
   const [input, setInput] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -63,6 +65,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
 
   const handleSend = async () => {
     if ((!input.trim() && imageFiles.length === 0 && !galleryUrl) || sending) return;
+    onStopTyping?.();
     const content = input.trim();
     setInput("");
     const currentGalleryUrl = galleryUrl;
@@ -220,7 +223,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
       <div className="bg-background/95 backdrop-blur-xl border-t border-border/30 px-3 py-3 safe-area-bottom">
         <div className="flex items-end gap-2 max-w-lg mx-auto">
           <input type="file" ref={fileInputRef} accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
-          <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
+          <input type="file" ref={cameraInputRef} accept="image/*" className="hidden" onChange={handleImageSelect} />
 
           {recording ? (
             <>
@@ -248,7 +251,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                 <input
                   type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => { setInput(e.target.value); onTyping?.(); }}
                   onKeyDown={handleKeyDown}
                   placeholder="Message"
                   className="flex-1 bg-transparent py-4 px-2 text-base text-foreground placeholder:text-muted-foreground/60 outline-none font-body"
