@@ -44,19 +44,29 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
       const channelName = `vibe-${[user.id, partnerId].sort().join("-")}`;
       const ts = Date.now();
 
-      // Send via broadcast for instant delivery
+      // Get or create the shared vibe channel — VibeOverlay may already
+      // be subscribed to it, so we must NOT remove it after sending.
       const channel = supabase.channel(channelName);
-      channel.subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          channel.send({
-            type: "broadcast",
-            event: "vibe",
-            payload: { senderId: user.id, emoji, label, ts },
-          });
-          // Clean up after sending
-          setTimeout(() => supabase.removeChannel(channel), 2000);
-        }
-      });
+      
+      // If already subscribed (VibeOverlay owns it), just send directly
+      if ((channel as any).state === "joined") {
+        channel.send({
+          type: "broadcast",
+          event: "vibe",
+          payload: { senderId: user.id, emoji, label, ts },
+        });
+      } else {
+        // Subscribe then send, but don't remove — let VibeOverlay manage lifecycle
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            channel.send({
+              type: "broadcast",
+              event: "vibe",
+              payload: { senderId: user.id, emoji, label, ts },
+            });
+          }
+        });
+      }
 
       // Also persist to DB (backup + history)
       await supabase.from("messages").insert({
