@@ -200,6 +200,29 @@ const Chat = () => {
       }
 
       setReplyingTo(null);
+
+      // Send push notification when partner may not have the app open
+      if (!partnerOnline) {
+        const displayContent = audioBlob
+          ? "🎤 Voice message"
+          : imageFiles && imageFiles.length > 0
+          ? "📷 Photo"
+          : galleryImageUrl
+          ? "📷 Photo"
+          : content;
+        try {
+          await supabase.functions.invoke("send-push-notification", {
+            body: {
+              recipientUserId: partnerId,
+              title: profile?.username || "Your partner",
+              body: displayContent || "New message",
+              data: { route: "/chat" },
+            },
+          });
+        } catch (e) {
+          console.warn("Chat push notification failed:", e);
+        }
+      }
     } finally {
       setSending(false);
     }
@@ -217,6 +240,23 @@ const Chat = () => {
       content: JSON.stringify(payload),
       message_type: type,
     } as any);
+
+    // Push notification for special messages
+    if (!partnerOnline) {
+      const labels: Record<string, string> = { poll: "📊 Poll", location: "📍 Location", event: "📅 Event", sticker: "😄 Sticker" };
+      try {
+        await supabase.functions.invoke("send-push-notification", {
+          body: {
+            recipientUserId: partnerId,
+            title: profile?.username || "Your partner",
+            body: labels[type] || "New message",
+            data: { route: "/chat" },
+          },
+        });
+      } catch (e) {
+        console.warn("Special message push failed:", e);
+      }
+    }
   };
 
   const handlePollVote = async (msgId: string, optionIdx: number) => {
