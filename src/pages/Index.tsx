@@ -43,6 +43,7 @@ const layoutItems = (items: FeedItem[]) => {
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
   useWidgetSync();
+  usePushNotifications();
   const { user, profile } = useAuth();
   const { data: backendFeedItems = [] } = useFeedContent(2);
   
