@@ -394,13 +394,21 @@ const Chat = () => {
               </span>
             </div>
             <AnimatePresence>
-              {group.msgs.map((msg) => {
+              {group.msgs.map((msg, idx) => {
                 const isMine = msg.sender_id === user.id;
                 const time = new Date(msg.created_at).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
                 const replyMsg = msg.reply_to_id ? msgMap.get(msg.reply_to_id) : null;
                 const replyTo = replyMsg
                   ? { content: replyMsg.content, senderName: replyMsg.sender_id === user.id ? "You" : partnerName }
                   : null;
+
+                // iMessage-style grouping: consecutive messages from same sender
+                const prevMsg = group.msgs[idx - 1];
+                const nextMsg = group.msgs[idx + 1];
+                const sameSenderAsPrev = prevMsg && prevMsg.sender_id === msg.sender_id;
+                const sameSenderAsNext = nextMsg && nextMsg.sender_id === msg.sender_id;
+                const isLastInGroup = !sameSenderAsNext;
+                const isFirstInGroup = !sameSenderAsPrev;
 
                 return (
                   <ChatBubble
@@ -422,6 +430,8 @@ const Chat = () => {
                     onReact={handleReact}
                     reaction={reactions[msg.id] || null}
                     userId={user.id}
+                    isFirstInGroup={isFirstInGroup}
+                    isLastInGroup={isLastInGroup}
                   />
                 );
               })}
