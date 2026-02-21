@@ -14,7 +14,8 @@ export function useUnreadMessages() {
         .from("messages")
         .select("*", { count: "exact", head: true })
         .eq("receiver_id", user.id)
-        .eq("read", false);
+        .eq("read", false)
+        .neq("message_type", "vibe");
       setCount(c || 0);
     };
 
