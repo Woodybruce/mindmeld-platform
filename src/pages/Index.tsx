@@ -50,13 +50,14 @@ const Index = () => {
   const { data: backendFeedItems = [] } = useFeedContent(2);
   
 
-  const [onboardingDone, setOnboardingDone] = useState(() => {
-    return localStorage.getItem("us-onboarding-done") === "true";
-  });
+  const onboardingDone = !!(
+    profile?.username &&
+    user?.email &&
+    profile.username.toLowerCase() !== user.email.toLowerCase()
+  ) || localStorage.getItem("us-onboarding-done") === "true";
 
   const handleOnboardingComplete = () => {
     localStorage.setItem("us-onboarding-done", "true");
-    setOnboardingDone(true);
   };
 
   if (user && !onboardingDone) {
