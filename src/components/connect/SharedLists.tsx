@@ -405,7 +405,8 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     const items = t.defaultItems.map((text, i) => {
       const isHeading = text.startsWith("## ");
       const itemText = isHeading ? text.slice(3).trim() : text;
-      return { id: `${Date.now()}-${i}`, text: itemText, done: false, isHeading: isHeading || undefined };
+      // Default non-heading items to done=true (meaning "selected/included")
+      return { id: `${Date.now()}-${i}`, text: itemText, done: isHeading ? false : true, isHeading: isHeading || undefined };
     });
     setPreviewTemplate(templateId);
     setPreviewItems(items);
@@ -422,7 +423,8 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       template: t.id,
       createdAt: new Date().toISOString(),
       maxItems: (t as any).maxItems || undefined,
-      items: previewItems.filter(item => !item.done || item.isHeading).map(item => ({ ...item, done: false })),
+      // Keep items that are ticked (done=true means "selected") + headings; reset done to false for the actual list
+      items: previewItems.filter(item => item.done || item.isHeading).map(item => ({ ...item, done: false })),
     };
     const updated = [newList, ...lists];
     onUpdate(updated);
@@ -442,7 +444,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     const text = previewNewItem.trim();
     const isHeading = text.startsWith("## ");
     const itemText = isHeading ? text.slice(3).trim() : text;
-    setPreviewItems(prev => [...prev, { id: `preview-${Date.now()}`, text: itemText, done: false, isHeading: isHeading || undefined }]);
+    setPreviewItems(prev => [...prev, { id: `preview-${Date.now()}`, text: itemText, done: isHeading ? false : true, isHeading: isHeading || undefined }]);
     setPreviewNewItem("");
   };
 
@@ -755,7 +757,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                     </button>
                   </div>
 
-                  <p className="text-xs text-muted-foreground">Add or remove items before creating your list.</p>
+                  <p className="text-xs text-muted-foreground">Tick items to include them. Untick to exclude.</p>
 
                   <div className="rounded-xl border border-border/50 bg-card overflow-hidden max-h-80 overflow-y-auto">
                     <div className="px-4 py-3 space-y-1">
@@ -792,7 +794,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                   }`}>
                                     {item.done && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
                                   </div>
-                                  <span className={`text-sm ${item.done ? "text-muted-foreground" : "text-foreground"}`}>{item.text}</span>
+                                  <span className={`text-sm ${!item.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{item.text}</span>
                                 </button>
                               )}
                               <button
