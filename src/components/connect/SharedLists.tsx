@@ -475,9 +475,14 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       return;
     }
     const text = previewNewItem.trim();
-    const isHeading = text.startsWith("## ");
-    const itemText = isHeading ? text.slice(3).trim() : text;
-    setPreviewItems(prev => [...prev, { id: `preview-${Date.now()}`, text: itemText, done: isHeading ? false : true, isHeading: isHeading || undefined }]);
+    setPreviewItems(prev => [...prev, { id: `preview-${Date.now()}`, text, done: true, isHeading: undefined }]);
+    setPreviewNewItem("");
+  };
+
+  const addPreviewHeading = () => {
+    if (!previewNewItem.trim()) return;
+    const text = previewNewItem.trim();
+    setPreviewItems(prev => [...prev, { id: `preview-${Date.now()}`, text, done: false, isHeading: true }]);
     setPreviewNewItem("");
   };
 
@@ -546,9 +551,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       return;
     }
     const text = inputText.trim();
-    const isHeading = text.startsWith("## ");
-    const itemText = isHeading ? text.slice(3).trim() : text;
-    const newItem = { id: Date.now().toString(), text: itemText, done: false, isHeading: isHeading || undefined };
+    const newItem = { id: Date.now().toString(), text, done: false, isHeading: undefined };
 
     const updated = lists.map((l) => {
       if (l.id !== listId) return l;
@@ -910,13 +913,13 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                     </div>
                   </div>
 
-                  {/* Add item to end */}
+                  {/* Add item / heading to end */}
                   <div className="flex gap-2">
                     <input
                       value={previewNewItem}
                       onChange={(e) => setPreviewNewItem(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addPreviewItem()}
-                      placeholder={(t as any).maxItems ? `Add item or "## Heading"… (${nonHeadingCount}/${(t as any).maxItems})` : 'Add item or "## Heading"…'}
+                      placeholder={(t as any).maxItems ? `Add item… (${nonHeadingCount}/${(t as any).maxItems})` : 'Add item…'}
                       className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                     <button
@@ -926,6 +929,15 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                       <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                  {!(t as any).maxItems && (
+                    <button
+                      onClick={addPreviewHeading}
+                      disabled={!previewNewItem.trim()}
+                      className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors px-1 disabled:opacity-30"
+                    >
+                      <Plus className="w-3 h-3" /> Add as subheading
+                    </button>
+                  )}
 
                   <button
                     onClick={confirmTemplate}
