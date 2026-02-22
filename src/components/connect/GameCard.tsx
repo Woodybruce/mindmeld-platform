@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
@@ -11,7 +12,7 @@ interface GameCardProps {
   delay?: number;
 }
 
-const GameCard = ({ title, description, emoji, players, gradient, onClick, delay = 0 }: GameCardProps) => (
+const GameCard = forwardRef<HTMLButtonElement, GameCardProps>(({ title, description, emoji, players, gradient, onClick, delay = 0 }, ref) => (
   <motion.button
     initial={{ opacity: 0, y: 12 }}
     animate={{ opacity: 1, y: 0 }}
@@ -29,6 +30,8 @@ const GameCard = ({ title, description, emoji, players, gradient, onClick, delay
       <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
     </div>
   </motion.button>
-);
+));
+
+GameCard.displayName = "GameCard";
 
 export default GameCard;
