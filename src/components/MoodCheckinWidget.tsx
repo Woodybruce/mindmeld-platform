@@ -36,7 +36,7 @@ const MoodCheckinWidget = () => {
       .eq("check_date", today)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setMyMood((data as any).mood);
+        if (data) setMyMood(data.mood);
       });
 
     // Fetch partner mood
@@ -48,7 +48,7 @@ const MoodCheckinWidget = () => {
         .eq("check_date", today)
         .maybeSingle()
         .then(({ data }) => {
-          if (data) setPartnerMood((data as any).mood);
+          if (data) setPartnerMood(data.mood);
         });
     }
   }, [user, profile, today]);
@@ -62,7 +62,7 @@ const MoodCheckinWidget = () => {
         "postgres_changes",
         { event: "*", schema: "public", table: "mood_checkins", filter: `user_id=eq.${profile.partner_id}` },
         (payload) => {
-          const row = payload.new as any;
+          const row = payload.new as { user_id: string; mood: string };
           if (row?.check_date === today) setPartnerMood(row.mood);
         }
       )
@@ -78,7 +78,7 @@ const MoodCheckinWidget = () => {
     const { error } = await supabase
       .from("mood_checkins")
       .upsert(
-        { user_id: user.id, mood: emoji, check_date: today } as any,
+        { user_id: user.id, mood: emoji, check_date: today },
         { onConflict: "user_id,check_date" }
       );
 
