@@ -411,7 +411,7 @@ const Chat = () => {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 px-3 pt-14 pb-24 overflow-y-auto space-y-0 relative z-10">
+      <main className="flex-1 px-3 pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-4 overflow-y-auto space-y-0 relative z-10">
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center pt-20">
             <div className="text-center">
