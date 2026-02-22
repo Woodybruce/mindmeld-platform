@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 interface Announcement {
   id: string;
@@ -63,6 +64,16 @@ const AnnouncementsWidget = () => {
       setText("");
       setComposing(false);
       setEmoji("📌");
+      // Notify partner
+      if (profile?.partner_id) {
+        notifyPartner({
+          partnerId: profile.partner_id,
+          title: `${emoji} New update from ${profile?.username || "your partner"}`,
+          body: text.trim().slice(0, 100),
+          route: "/",
+          senderId: user.id,
+        });
+      }
     }
   };
 
