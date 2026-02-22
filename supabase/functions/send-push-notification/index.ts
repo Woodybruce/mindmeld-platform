@@ -90,7 +90,10 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { recipientUserId, title, body, data } = await req.json();
+    const { recipientUserId, title, body, data: rawData } = await req.json();
+    // FCM v1 requires all data values to be strings
+    const data = rawData ? Object.fromEntries(Object.entries(rawData).map(([k, v]) => [k, String(v)])) : undefined;
+    console.log("Push request:", { recipientUserId, title, body, data });
 
     if (!recipientUserId || !title) {
       return new Response(
@@ -156,6 +159,7 @@ Deno.serve(async (req) => {
         });
 
         const result = await res.json();
+        console.log("FCM response for token:", token.slice(-8), result);
 
         // Remove invalid tokens (UNREGISTERED or NOT_FOUND)
         if (result.error?.details?.some((d: any) =>
