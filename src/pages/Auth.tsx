@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Heart, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type Mode = "login" | "signup";
 
 const Auth = () => {
-  const { user, loading: authLoading, signInWithPassword, signUp } = useAuth();
+  const { user, loading: authLoading, signInWithPassword, signUp, linkPartnerByCode, profile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const inviteCode = searchParams.get("invite") || "";
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +21,17 @@ const Auth = () => {
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+
+  // Auto-link partner when logged in with invite code
+  useEffect(() => {
+    if (user && inviteCode && profile && !profile.partner_id) {
+      linkPartnerByCode(inviteCode).then((success) => {
+        if (success) {
+          toast.success("Partner linked! 🎉");
+        }
+      });
+    }
+  }, [user, inviteCode, profile]);
 
   if (authLoading) {
     return (
