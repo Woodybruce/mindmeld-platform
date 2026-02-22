@@ -4,22 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { UserList } from "@/components/connect/SharedLists";
 import { notifyPartner } from "@/lib/notifyPartner";
 
-const defaultLongTermDreams: UserList = {
-  id: "default-long-term-dreams",
-  name: "Our Long-Term Dreams",
-  icon: "⭐",
-  template: "long-term-dreams",
-  createdAt: new Date().toISOString(),
-  items: [
-    { id: "ltg-h1", text: "Our Dreams", done: false, isHeading: true },
-    { id: "ltg-d1", text: "Buy our dream home together", done: false },
-    { id: "ltg-d2", text: "Travel the world — visit 10 countries", done: false },
-    { id: "ltg-d3", text: "Start a business or passion project together", done: false },
-    { id: "ltg-d4", text: "Get married or renew our vows", done: false },
-    { id: "ltg-d5", text: "Build financial freedom and retire early", done: false },
-    { id: "ltg-h2", text: "How we'll achieve them", done: false, isHeading: true },
-  ],
-};
 
 function dbRowToList(row: any): UserList {
   return {
@@ -50,57 +34,7 @@ export function useSharedLists() {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      let result = data.map(dbRowToList);
-
-      // Ensure long-term dreams exists for current user
-      const hasLTD = result.some((l) => l.template === "long-term-dreams" || l.template === "long-term-goals");
-      if (!hasLTD) {
-        // Create it in DB
-        const { data: inserted } = await supabase.from("shared_lists").insert({
-          user_id: user.id,
-          name: defaultLongTermDreams.name,
-          icon: defaultLongTermDreams.icon,
-          template: "long-term-dreams",
-          items: JSON.parse(JSON.stringify(defaultLongTermDreams.items)),
-        } as any).select().single();
-        if (inserted) result = [dbRowToList(inserted), ...result];
-      }
-
-      // Migrate from localStorage if user has local lists but none in DB yet
-      const ownLists = result.filter((l) => true); // all visible (own + partner)
-      if (ownLists.length <= 1) {
-        const stored = localStorage.getItem("userLists");
-        if (stored) {
-          try {
-            const localLists: UserList[] = JSON.parse(stored);
-            const toMigrate = localLists.filter(
-              (ll) => !result.some((r) => r.template && r.template === ll.template)
-            );
-            if (toMigrate.length > 0) {
-              const inserts = toMigrate.map((ll) => ({
-                user_id: user.id,
-                name: ll.name,
-                icon: ll.icon,
-                template: ll.template || null,
-                max_items: ll.maxItems || null,
-                items: JSON.parse(JSON.stringify(ll.items)),
-                ai_suggestable: ll.aiSuggestable || false,
-                score_data: ll.scoreData ? JSON.parse(JSON.stringify(ll.scoreData)) : null,
-              }));
-              const { data: migrated } = await supabase
-                .from("shared_lists")
-                .insert(inserts as any)
-                .select();
-              if (migrated) {
-                result = [...migrated.map(dbRowToList), ...result];
-              }
-              // Clear localStorage after migration
-              localStorage.removeItem("userLists");
-            }
-          } catch {}
-        }
-      }
-
+      const result = data.map(dbRowToList);
       setLists(result);
     }
     setLoading(false);

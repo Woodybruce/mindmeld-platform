@@ -23,15 +23,8 @@ const KissChasePage = () => {
     broadcastStart(selectedReward, selectedTime);
     setPhase("playing");
 
-    // Auto-notify partner via chat message + push notification
+    // Auto-notify partner via push notification only (no chat message)
     if (user && profile?.partner_id) {
-      supabase.from("messages").insert({
-        sender_id: user.id,
-        receiver_id: profile.partner_id,
-        content: "💋 I've started a Kiss Chase game! Open the app and join me! 🏃‍♂️",
-        message_type: "text",
-      } as any).then(() => {});
-
       supabase.functions.invoke("send-push-notification", {
         body: {
           recipientUserId: profile.partner_id,

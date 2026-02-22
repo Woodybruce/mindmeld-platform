@@ -314,7 +314,7 @@ const Profile = () => {
             try {
               const { data: { user: currentUser } } = await supabase.auth.getUser();
               if (currentUser) {
-                const uid = currentUser.id;
+              const uid = currentUser.id;
                 await Promise.all([
                   supabase.from("messages").delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`),
                   supabase.from("couple_photos").delete().eq("user_id", uid),
@@ -327,8 +327,10 @@ const Profile = () => {
                   supabase.from("shared_folders").delete().eq("user_id", uid),
                   supabase.from("calendar_events").delete().eq("user_id", uid),
                   supabase.from("mood_checkins").delete().eq("user_id", uid),
-                  supabase.from("profiles").update({ anniversary_date: null } as any).eq("id", uid),
+                  supabase.from("shared_lists").delete().eq("user_id", uid),
+                  supabase.from("weekly_tasks").delete().eq("user_id", uid),
                   supabase.from("content_likes").delete().eq("user_id", uid),
+                  supabase.from("profiles").update({ anniversary_date: null } as any).eq("id", uid),
                 ]);
               }
             } catch (e) {
