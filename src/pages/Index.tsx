@@ -23,6 +23,8 @@ import PartnerInviteCard from "@/components/PartnerInviteCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import RecentActivityWidget from "@/components/RecentActivityWidget";
+import AnnouncementsWidget from "@/components/AnnouncementsWidget";
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
   const rows: (FeedItem | [FeedItem, FeedItem])[] = [];
@@ -88,6 +90,12 @@ const Index = () => {
 
         {/* Lists summary — below calendar */}
         <ListsSummaryWidget />
+
+        {/* Shared announcements board */}
+        <AnnouncementsWidget />
+
+        {/* Recent activity feed */}
+        <RecentActivityWidget />
 
         {/* Games carousel */}
         <GamesCarousel />

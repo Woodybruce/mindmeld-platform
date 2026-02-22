@@ -113,6 +113,33 @@ export type Database = {
         }
         Relationships: []
       }
+      couple_announcements: {
+        Row: {
+          content: string
+          created_at: string
+          emoji: string | null
+          id: string
+          pinned: boolean
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          pinned?: boolean
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          pinned?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       couple_photos: {
         Row: {
           caption: string | null
