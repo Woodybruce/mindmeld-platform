@@ -32,17 +32,14 @@ export function useWeeklyTasks() {
     if (!user) { setLoading(false); return; }
     setLoading(true);
 
-    // Fetch current week (Mon-Sun)
+    // Fetch today + 6 days ahead
     const now = new Date();
-    const dayOfWeek = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-    monday.setHours(0, 0, 0, 0);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
+    now.setHours(0, 0, 0, 0);
+    const endDate = new Date(now);
+    endDate.setDate(now.getDate() + 6);
 
-    const startStr = monday.toISOString().split("T")[0];
-    const endStr = sunday.toISOString().split("T")[0];
+    const startStr = now.toISOString().split("T")[0];
+    const endStr = endDate.toISOString().split("T")[0];
 
     const { data, error } = await supabase
       .from("weekly_tasks")
@@ -122,23 +119,21 @@ export function useWeeklyTasks() {
     return tasks.filter((t) => t.scheduled_date === todayStr);
   }, [tasks]);
 
-  // Get the week dates (Mon-Sun)
+  // Get the week ahead (today + 6 days)
   const getWeekDates = useCallback(() => {
     const now = new Date();
-    const dayOfWeek = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-    monday.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
+    const todayStr = now.toISOString().split("T")[0];
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     const dates: { date: Date; dateStr: string; label: string; isToday: boolean }[] = [];
-    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
     for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
+      const d = new Date(now);
+      d.setDate(now.getDate() + i);
       const dateStr = d.toISOString().split("T")[0];
-      const isToday = dateStr === now.toISOString().split("T")[0];
-      dates.push({ date: d, dateStr, label: dayNames[i], isToday });
+      const isToday = dateStr === todayStr;
+      dates.push({ date: d, dateStr, label: dayNames[d.getDay()], isToday });
     }
     return dates;
   }, []);
