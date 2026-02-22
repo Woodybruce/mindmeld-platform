@@ -78,7 +78,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
 
       // Send push notification for when partner's app is closed
       try {
-        await supabase.functions.invoke("send-push-notification", {
+        const pushRes = await supabase.functions.invoke("send-push-notification", {
           body: {
             recipientUserId: partnerId,
             title: `${emoji} ${label}!`,
@@ -86,8 +86,9 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
             data: { type: "vibe", emoji, label },
           },
         });
+        console.log("Vibe push result:", pushRes.data, pushRes.error);
       } catch (e) {
-        console.warn("Vibe push notification failed:", e);
+        console.error("Vibe push notification failed:", e);
       }
     }
 
