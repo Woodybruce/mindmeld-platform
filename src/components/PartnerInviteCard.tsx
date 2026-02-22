@@ -12,7 +12,6 @@ const PartnerInviteCard = () => {
   const [linking, setLinking] = useState(false);
   const [mode, setMode] = useState<"link" | "email">("link");
 
-  // Already linked
   if (profile?.partner_id) return null;
 
   const inviteUrl = `${window.location.origin}/auth?invite=${profile?.partner_code || ""}`;
@@ -41,17 +40,16 @@ const PartnerInviteCard = () => {
   const handleLinkEmail = async () => {
     if (!email.trim()) return;
     setLinking(true);
-    const success = await linkPartnerByEmail(email.trim());
-    if (success) {
+    const result = await linkPartnerByEmail(email.trim());
+    if (result.success) {
       toast.success("Partner linked! 🎉");
       setEmail("");
     } else {
-      toast.error("Partner not found. They need to sign up first.");
+      toast.error(result.error || "Failed to link partner.");
     }
     setLinking(false);
   };
 
-  // Simple QR code using a public API
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteUrl)}`;
 
   return (
@@ -65,7 +63,6 @@ const PartnerInviteCard = () => {
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Invite Your Partner</span>
       </div>
 
-      {/* Toggle */}
       <div className="flex gap-1 mb-3 bg-secondary rounded-xl p-0.5">
         <button
           onClick={() => setMode("link")}
