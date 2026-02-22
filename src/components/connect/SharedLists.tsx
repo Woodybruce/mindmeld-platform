@@ -125,18 +125,27 @@ const challengesListDefaultItems = [
 const templates = [
   // Pinned
   {
-    id: "long-term-goals",
-    name: "Our Long-Term Goals",
+    id: "long-term-dreams",
+    name: "Our Long-Term Dreams",
     icon: "⭐",
-    description: "5 major life goals to celebrate together",
+    description: "Dream big together — your shared vision for the future",
     gradient: "bg-gradient-to-br from-us-gold/20 to-us-cream/25",
     lucideIcon: Target,
-    category: "pinned" as const,
+    category: "core" as const,
     defaultItems: [
-      "## Our 5 Long-Term Goals",
+      "## Our Dreams",
+      "Buy our dream home together",
+      "Travel the world — visit 10 countries",
+      "Start a business or passion project together",
+      "Get married or renew our vows",
+      "Build financial freedom and retire early",
+      "Have or grow our family",
+      "Write a book or create something lasting",
+      "Live abroad for a year",
+      "Complete a big physical challenge together",
+      "Give back — volunteer or start a charity",
       "## How we'll achieve them",
     ],
-    maxItems: 5,
   },
   // Core templates
   {
@@ -488,16 +497,16 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     );
     onUpdate(updated);
 
-    // Celebrate completing a long-term goal
-    if (isCompleting && list?.template === "long-term-goals") {
+    // Celebrate completing a long-term dream
+    if (isCompleting && list?.template === "long-term-dreams") {
       const updatedList = updated.find((l) => l.id === listId);
       const doneCount = updatedList?.items.filter((i) => i.done && !i.isHeading).length || 0;
       const totalGoals = updatedList?.items.filter((i) => !i.isHeading).length || 0;
       toast({
-        title: doneCount === totalGoals ? "🎉 All goals achieved!" : "🌟 Goal achieved!",
+        title: doneCount === totalGoals ? "🎉 All dreams achieved!" : "🌟 Dream achieved!",
         description: doneCount === totalGoals
-          ? "You've completed all your long-term goals together! Time to dream bigger!"
-          : `${doneCount}/${totalGoals} goals completed — keep going!`,
+          ? "You've completed all your long-term dreams together! Time to dream bigger!"
+          : `${doneCount}/${totalGoals} dreams completed — keep going!`,
       });
     }
   };
@@ -1078,7 +1087,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
 
                             const isEditing = editingItem?.listId === list.id && editingItem?.itemId === item.id;
                             nonHeadingIndex++;
-                            const itemNumber = list.template === "long-term-goals" ? nonHeadingIndex : null;
+                            const itemNumber = list.template === "long-term-dreams" ? nonHeadingIndex : null;
 
                             return (
                               <div key={item.id} className="group">
@@ -1324,35 +1333,18 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                     <p className="text-[11px] text-muted-foreground text-center pt-2">Max {list.maxItems} dreams — remove one to add another</p>
                   )}
 
-                  {/* AI Suggest button for dream lists */}
-                  {list.maxItems && list.items.length < list.maxItems && (
-                    <button
-                      onClick={() => suggestDreams(list.id)}
-                      disabled={suggestingFor === list.id}
-                      className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent/50 py-2 mt-2 text-xs font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
-                    >
-                      {suggestingFor === list.id ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
-                      ) : (
-                        <><Sparkles className="w-3.5 h-3.5" /> Suggest dreams with AI</>
-                      )}
-                    </button>
-                  )}
-
-                  {/* AI Suggest button for suggestable lists (e.g. daily to-do) */}
-                  {list.aiSuggestable && !list.maxItems && (
-                    <button
-                      onClick={() => suggestTasks(list.id)}
-                      disabled={suggestingFor === list.id}
-                      className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent/50 py-2 mt-2 text-xs font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
-                    >
-                      {suggestingFor === list.id ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
-                      ) : (
-                        <><Sparkles className="w-3.5 h-3.5" /> Suggest tasks with AI</>
-                      )}
-                    </button>
-                  )}
+                  {/* AI Suggest button — available on all lists */}
+                  <button
+                    onClick={() => suggestTasks(list.id)}
+                    disabled={suggestingFor === list.id}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent/50 py-2 mt-2 text-xs font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                  >
+                    {suggestingFor === list.id ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
+                    ) : (
+                      <><Sparkles className="w-3.5 h-3.5" /> Ask AI for suggestions</>
+                    )}
+                  </button>
                 </div>
 
                 {/* Completed items toggle */}

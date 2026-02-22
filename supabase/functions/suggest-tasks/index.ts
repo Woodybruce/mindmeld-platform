@@ -15,7 +15,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const existing = existingItems.length > 0
-      ? `They already have these items: ${existingItems.join(", ")}. Suggest different ones.`
+      ? `They already have these items: ${existingItems.join(", ")}. Suggest different ones that complement what they already have.`
       : "";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -29,11 +29,11 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a relationship coach helping a couple plan their day together. Suggest practical, meaningful daily tasks that strengthen their bond. Mix relationship-focused items (check-ins, affection) with practical shared tasks. Keep items short and actionable (under 10 words each).",
+            content: `You are a relationship coach helping a couple with their shared lists. Based on the list name and context, suggest relevant, meaningful items that strengthen their bond. Keep items short and actionable (under 12 words each). Match the tone and theme of the list — if it's about intimacy, suggest intimacy items; if it's about challenges, suggest challenge-related items; if it's about dreams, suggest aspirational dreams; if it's about communication, suggest communication practices. Be creative and specific, not generic.`,
           },
           {
             role: "user",
-            content: `Suggest 5 daily to-do items for a couple's "${listName}" list. ${existing}`,
+            content: `Suggest 5 items for a couple's "${listName}" list. ${existing}`,
           },
         ],
         tools: [
@@ -41,7 +41,7 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "suggest_tasks",
-              description: "Return exactly 5 daily couple task suggestions",
+              description: "Return exactly 5 list item suggestions relevant to the list theme",
               parameters: {
                 type: "object",
                 properties: {

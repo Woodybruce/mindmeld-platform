@@ -4,15 +4,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { UserList } from "@/components/connect/SharedLists";
 import { notifyPartner } from "@/lib/notifyPartner";
 
-const defaultLongTermGoals: UserList = {
-  id: "default-long-term-goals",
-  name: "Our Long-Term Goals",
+const defaultLongTermDreams: UserList = {
+  id: "default-long-term-dreams",
+  name: "Our Long-Term Dreams",
   icon: "⭐",
-  template: "long-term-goals",
+  template: "long-term-dreams",
   createdAt: new Date().toISOString(),
-  maxItems: 5,
   items: [
-    { id: "ltg-h1", text: "Our 5 Long-Term Goals", done: false, isHeading: true },
+    { id: "ltg-h1", text: "Our Dreams", done: false, isHeading: true },
+    { id: "ltg-d1", text: "Buy our dream home together", done: false },
+    { id: "ltg-d2", text: "Travel the world — visit 10 countries", done: false },
+    { id: "ltg-d3", text: "Start a business or passion project together", done: false },
+    { id: "ltg-d4", text: "Get married or renew our vows", done: false },
+    { id: "ltg-d5", text: "Build financial freedom and retire early", done: false },
     { id: "ltg-h2", text: "How we'll achieve them", done: false, isHeading: true },
   ],
 };
@@ -48,17 +52,16 @@ export function useSharedLists() {
     if (!error && data) {
       let result = data.map(dbRowToList);
 
-      // Ensure long-term goals exists for current user
-      const hasLTG = result.some((l) => l.template === "long-term-goals");
-      if (!hasLTG) {
+      // Ensure long-term dreams exists for current user
+      const hasLTD = result.some((l) => l.template === "long-term-dreams" || l.template === "long-term-goals");
+      if (!hasLTD) {
         // Create it in DB
         const { data: inserted } = await supabase.from("shared_lists").insert({
           user_id: user.id,
-          name: defaultLongTermGoals.name,
-          icon: defaultLongTermGoals.icon,
-          template: "long-term-goals",
-          max_items: 5,
-          items: JSON.parse(JSON.stringify(defaultLongTermGoals.items)),
+          name: defaultLongTermDreams.name,
+          icon: defaultLongTermDreams.icon,
+          template: "long-term-dreams",
+          items: JSON.parse(JSON.stringify(defaultLongTermDreams.items)),
         } as any).select().single();
         if (inserted) result = [dbRowToList(inserted), ...result];
       }
