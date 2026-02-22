@@ -20,7 +20,7 @@ const AnniversaryCountdown = () => {
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
-        const d = (data as any)?.anniversary_date;
+        const d = data?.anniversary_date;
         if (d) {
           setAnniversaryDate(d);
           setDateInput(d);
@@ -33,7 +33,7 @@ const AnniversaryCountdown = () => {
     setSaving(true);
     await supabase
       .from("profiles")
-      .update({ anniversary_date: dateInput } as any)
+      .update({ anniversary_date: dateInput })
       .eq("id", user.id);
     setAnniversaryDate(dateInput);
     setEditing(false);
