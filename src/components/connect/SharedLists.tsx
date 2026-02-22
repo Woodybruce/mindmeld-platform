@@ -501,6 +501,8 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     setExpandedId(newList.id);
   };
 
+  const [showCelebration, setShowCelebration] = useState(false);
+
   const toggleItem = (listId: string, itemId: string) => {
     const list = lists.find((l) => l.id === listId);
     const item = list?.items.find((i) => i.id === itemId);
@@ -511,17 +513,27 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     );
     onUpdate(updated);
 
-    // Celebrate completing a long-term dream
-    if (isCompleting && list?.template === "long-term-dreams") {
+    if (isCompleting) {
       const updatedList = updated.find((l) => l.id === listId);
-      const doneCount = updatedList?.items.filter((i) => i.done && !i.isHeading).length || 0;
-      const totalGoals = updatedList?.items.filter((i) => !i.isHeading).length || 0;
-      toast({
-        title: doneCount === totalGoals ? "🎉 All dreams achieved!" : "🌟 Dream achieved!",
-        description: doneCount === totalGoals
-          ? "You've completed all your long-term dreams together! Time to dream bigger!"
-          : `${doneCount}/${totalGoals} dreams completed — keep going!`,
-      });
+      const countable = updatedList?.items.filter((i) => !i.isHeading) || [];
+      const doneCount = countable.filter((i) => i.done).length;
+      const totalCount = countable.length;
+
+      // Celebrate completing a long-term dream
+      if (list?.template === "long-term-dreams") {
+        toast({
+          title: doneCount === totalCount ? "🎉 All dreams achieved!" : "🌟 Dream achieved!",
+          description: doneCount === totalCount
+            ? "You've completed all your long-term dreams together! Time to dream bigger!"
+            : `${doneCount}/${totalCount} dreams completed — keep going!`,
+        });
+      }
+
+      // Dramatic celebration when ALL Sex To Do items are completed
+      if ((list?.template === "sex-todo" || list?.name?.toLowerCase().includes("sex to do")) && doneCount === totalCount && totalCount > 0) {
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 5000);
+      }
     }
   };
 
@@ -699,7 +711,62 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 relative">
+      {/* Sex To Do completion celebration */}
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md"
+            onClick={() => setShowCelebration(false)}
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -20 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="text-center space-y-4 p-8"
+            >
+              <motion.div
+                animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 1.2 }}
+                className="text-8xl"
+              >
+                👏
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <h2 className="font-display text-3xl font-bold text-foreground">You did it all! 🔥</h2>
+                <p className="text-muted-foreground mt-2 text-sm">
+                  Every single bucket list challenge — complete!<br />
+                  Time to start a new round? 😏
+                </p>
+              </motion.div>
+              <motion.div
+                className="flex justify-center gap-2 text-4xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
+                {["🎉", "🔥", "👏", "💥", "🎊"].map((emoji, i) => (
+                  <motion.span
+                    key={i}
+                    animate={{ y: [0, -20, 0] }}
+                    transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15 }}
+                  >
+                    {emoji}
+                  </motion.span>
+                ))}
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Template picker (preview mode only, or always-visible below) */}
       <AnimatePresence>
         {showTemplates && previewTemplate && (
