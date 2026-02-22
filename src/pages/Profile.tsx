@@ -41,8 +41,8 @@ const Profile = () => {
     if (!user) return;
     supabase.from("profiles").select("*").eq("id", user.id).single()
       .then(({ data }) => {
-        if (data && (data as any).phone_number) {
-          setPhoneNumber((data as any).phone_number);
+        if (data && data.phone_number) {
+          setPhoneNumber(data.phone_number);
         }
       });
     // Check if Outlook is connected
@@ -106,13 +106,13 @@ const Profile = () => {
   const handleLinkPartner = async () => {
     if (!partnerEmail.trim()) return;
     setLinking(true);
-    const success = await linkPartnerByEmail(partnerEmail.trim());
-    if (success) {
+    const result = await linkPartnerByEmail(partnerEmail.trim());
+    if (result.success) {
       toast.success("Partner linked! 🎉");
       setShowLinkInput(false);
       setPartnerEmail("");
     } else {
-      toast.error("Partner not found or already linked to someone else");
+      toast.error(result.error || "Failed to link partner.");
     }
     setLinking(false);
   };
