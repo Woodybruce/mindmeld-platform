@@ -21,6 +21,7 @@ export interface ListItem {
   done: boolean;
   isHeading?: boolean;
   isObservation?: boolean;
+  sectionType?: "task" | "observation";
   attachments?: ListItemAttachment[];
 }
 
@@ -49,30 +50,30 @@ export interface UserList {
 }
 
 const sexListDefaultItems = [
-  "## What we feel is a good sex life",
-  ">> Not valued on frequency",
-  ">> Intimate and connected",
-  ">> More pleasure focused",
-  ">> More novelty and variety",
-  ">> Playful and fun",
-  ">> Relaxed / easy / no pressure",
-  ">> Built on trust and communication",
-  ">> Equal and reciprocal",
-  ">> Open to exploration",
-  "## What are our motivations for sex?",
-  ">> Pleasure and enjoyment",
-  ">> Fun and playfulness",
-  ">> Feeling closer together",
-  ">> Emotional connection",
+  "##>> What we feel is a good sex life",
+  "Not valued on frequency",
+  "Intimate and connected",
+  "More pleasure focused",
+  "More novelty and variety",
+  "Playful and fun",
+  "Relaxed / easy / no pressure",
+  "Built on trust and communication",
+  "Equal and reciprocal",
+  "Open to exploration",
+  "##>> What are our motivations for sex?",
+  "Pleasure and enjoyment",
+  "Fun and playfulness",
+  "Feeling closer together",
+  "Emotional connection",
   "## Preferences — What we enjoy",
   "Oral sex",
   "Toys",
   "Flirting and teasing",
   "Massage leading to intimacy",
-  "## Preferences — What we'd rather skip",
+  "##>> Preferences — What we'd rather skip",
   "## Our Top 10 Priorities",
   "## How do we hit our priorities",
-  "## Ideas & Resources",
+  "##>> Ideas & Resources",
 ];
 
 const togetherListDefaultItems = [
@@ -96,16 +97,16 @@ const togetherListDefaultItems = [
 ];
 
 const challengesListDefaultItems = [
-  "## Our challenges in our relationship",
-  ">> Communication styles",
-  ">> Feeling judged or criticised",
-  ">> Physical and emotional availability",
-  ">> Feeling safe to be vulnerable",
-  ">> Trust and reassurance",
-  ">> Managing stress and external pressures",
-  ">> Being present (phone use, distractions)",
-  ">> Intimacy and connection",
-  ">> Balancing family responsibilities",
+  "##>> Our challenges in our relationship",
+  "Communication styles",
+  "Feeling judged or criticised",
+  "Physical and emotional availability",
+  "Feeling safe to be vulnerable",
+  "Trust and reassurance",
+  "Managing stress and external pressures",
+  "Being present (phone use, distractions)",
+  "Intimacy and connection",
+  "Balancing family responsibilities",
   "## What we are doing to solve them",
   "Open up to one another without conditions",
   "Set healthy boundaries together",
@@ -179,12 +180,12 @@ const templates = [
     lucideIcon: Heart,
     category: "core" as const,
     defaultItems: [
-      "## What intimacy means to us",
-      ">> Feeling emotionally safe with each other",
-      ">> Physical affection beyond just sex",
-      ">> Being vulnerable without fear of judgment",
-      ">> Prioritising quality time alone together",
-      ">> Feeling desired and wanted",
+      "##>> What intimacy means to us",
+      "Feeling emotionally safe with each other",
+      "Physical affection beyond just sex",
+      "Being vulnerable without fear of judgment",
+      "Prioritising quality time alone together",
+      "Feeling desired and wanted",
       "## Daily intimacy habits",
       "10-second kiss when we leave or reunite",
       "Hold hands or touch when sitting together",
@@ -198,11 +199,11 @@ const templates = [
       "Try a new date experience monthly",
       "Read or listen to a relationship book together",
       "Share fantasies without judgment",
-      "## Barriers to intimacy we want to address",
-      ">> Stress and tiredness from daily life",
-      ">> Screen time eating into couple time",
-      ">> Feeling disconnected after conflict",
-      ">> Not making time for just us",
+      "##>> Barriers to intimacy we want to address",
+      "Stress and tiredness from daily life",
+      "Screen time eating into couple time",
+      "Feeling disconnected after conflict",
+      "Not making time for just us",
     ],
   },
   {
@@ -214,20 +215,20 @@ const templates = [
     lucideIcon: Heart,
     category: "core" as const,
     defaultItems: [
-      "## Our communication ground rules",
-      ">> Listen to understand, not to respond",
-      ">> No raising voices — pause if it escalates",
-      ">> Use 'I feel…' instead of 'You always…'",
-      ">> No bringing up past arguments in new ones",
-      ">> Put phones down during important conversations",
-      ">> It's okay to say 'I need a moment' before responding",
-      ">> Never go to bed on an argument without acknowledgement",
-      "## How we prefer to communicate",
-      ">> Face-to-face for important topics",
-      ">> Quick texts for daily check-ins and 'thinking of you'",
+      "##>> Our communication ground rules",
+      "Listen to understand, not to respond",
+      "No raising voices — pause if it escalates",
+      "Use 'I feel…' instead of 'You always…'",
+      "No bringing up past arguments in new ones",
+      "Put phones down during important conversations",
+      "It's okay to say 'I need a moment' before responding",
+      "Never go to bed on an argument without acknowledgement",
+      "##>> How we prefer to communicate",
+      "Face-to-face for important topics",
+      "Quick texts for daily check-ins and 'thinking of you'",
       "Weekly relationship check-in (even 10 minutes)",
       "Share appreciations and gratitude regularly",
-      ">> Ask 'Is now a good time?' before heavy topics",
+      "Ask 'Is now a good time?' before heavy topics",
       "## How we repair after conflict",
       "Acknowledge each other's feelings first",
       "Apologise with specifics, not just 'sorry'",
@@ -387,6 +388,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
   const [suggestingFor, setSuggestingFor] = useState<string | null>(null);
   const [addingSubheading, setAddingSubheading] = useState<string | null>(null);
   const [subheadingText, setSubheadingText] = useState("");
+  const [subheadingType, setSubheadingType] = useState<"task" | "observation">("task");
 
   const [showCompleted, setShowCompleted] = useState<Record<string, boolean>>({});
   const [editingItem, setEditingItem] = useState<{ listId: string; itemId: string } | null>(null);
@@ -422,11 +424,14 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       return;
     }
     // Open preview step so user can add items before creating
+    let currentSectionType: "task" | "observation" = "task";
     const items = t.defaultItems.map((text, i) => {
-      const isHeading = text.startsWith("## ");
-      const isObservation = text.startsWith(">> ");
-      const itemText = isHeading ? text.slice(3).trim() : isObservation ? text.slice(3).trim() : text;
-      return { id: `${Date.now()}-${i}`, text: itemText, done: isHeading ? false : true, isHeading: isHeading || undefined, isObservation: isObservation || undefined };
+      const isObsHeading = text.startsWith("##>> ");
+      const isHeading = isObsHeading || text.startsWith("## ");
+      const itemText = isObsHeading ? text.slice(5).trim() : isHeading ? text.slice(3).trim() : text;
+      if (isHeading) currentSectionType = isObsHeading ? "observation" : "task";
+      const isObservation = !isHeading && currentSectionType === "observation";
+      return { id: `${Date.now()}-${i}`, text: itemText, done: isHeading ? false : true, isHeading: isHeading || undefined, isObservation: isObservation || undefined, sectionType: isHeading ? currentSectionType : undefined };
     });
     setShowTemplates(true);
     setPreviewTemplate(templateId);
@@ -552,7 +557,10 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       return;
     }
     const text = inputText.trim();
-    const newItem = { id: Date.now().toString(), text, done: false, isHeading: undefined };
+    // Inherit observation from the heading's sectionType
+    const heading = afterHeadingId ? list?.items.find(i => i.id === afterHeadingId) : null;
+    const isObservation = heading?.sectionType === "observation" || undefined;
+    const newItem = { id: Date.now().toString(), text, done: false, isHeading: undefined, isObservation };
 
     const updated = lists.map((l) => {
       if (l.id !== listId) return l;
@@ -1165,7 +1173,12 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 ) : (
                                   <ChevronDown className="w-3 h-3 text-primary flex-shrink-0" />
                                 )}
-                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">{section.heading.text.replace(/^##\s*/, '')}</span>
+                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">
+                                  {section.heading.text.replace(/^##\s*/, '')}
+                                  {section.heading.sectionType === "observation" && (
+                                    <span className="ml-1.5 text-[10px] font-normal normal-case text-muted-foreground">💭</span>
+                                  )}
+                                </span>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); removeItem(list.id, section.heading!.id); }}
                                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
@@ -1186,7 +1199,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                             return (
                               <div key={item.id} className="group">
                                 <div className="flex items-center gap-2.5">
-                                  {item.isObservation ? (
+                                  {(item.isObservation || section.heading?.sectionType === "observation") ? (
                                     <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-muted-foreground">
                                       💭
                                     </span>
@@ -1335,7 +1348,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 value={sectionNewItem[sectionInputKey] || ""}
                                 onChange={(e) => setSectionNewItem(prev => ({ ...prev, [sectionInputKey]: e.target.value }))}
                                 onKeyDown={(e) => e.key === "Enter" && addItem(list.id, headingId!)}
-                                placeholder="Add item…"
+                                placeholder={section.heading?.sectionType === "observation" ? "Add observation…" : "Add item…"}
                                 className="flex-1 rounded-lg border border-border/60 bg-background px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                               <button
@@ -1393,7 +1406,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                         {!list.maxItems && (
                           addingSubheading !== list.id && (
                             <button
-                              onClick={() => setAddingSubheading(list.id)}
+                              onClick={() => { setAddingSubheading(list.id); setSubheadingType("task"); }}
                               className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
                             >
                               <Plus className="w-3 h-3" /> Add subheading
@@ -1402,46 +1415,62 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                         )}
                       </div>
                       {!list.maxItems && addingSubheading === list.id && (
-                        <div className="flex gap-2">
-                          <input
-                            autoFocus
-                            value={subheadingText}
-                            onChange={(e) => setSubheadingText(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && subheadingText.trim()) {
-                                const updated = lists.map((l) =>
-                                  l.id === list.id
-                                    ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true }] }
-                                    : l
-                                );
-                                onUpdate(updated);
-                                setSubheadingText("");
-                                setAddingSubheading(null);
-                              } else if (e.key === "Escape") {
-                                setSubheadingText("");
-                                setAddingSubheading(null);
-                              }
-                            }}
-                            placeholder="Subheading name…"
-                            className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
-                          <button
-                            onClick={() => {
-                              if (subheadingText.trim()) {
-                                const updated = lists.map((l) =>
-                                  l.id === list.id
-                                    ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true }] }
-                                    : l
-                                );
-                                onUpdate(updated);
-                                setSubheadingText("");
-                                setAddingSubheading(null);
-                              }
-                            }}
-                            className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <input
+                              autoFocus
+                              value={subheadingText}
+                              onChange={(e) => setSubheadingText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && subheadingText.trim()) {
+                                  const updated = lists.map((l) =>
+                                    l.id === list.id
+                                      ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true, sectionType: subheadingType }] }
+                                      : l
+                                  );
+                                  onUpdate(updated);
+                                  setSubheadingText("");
+                                  setAddingSubheading(null);
+                                } else if (e.key === "Escape") {
+                                  setSubheadingText("");
+                                  setAddingSubheading(null);
+                                }
+                              }}
+                              placeholder="Subheading name…"
+                              className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                            <button
+                              onClick={() => {
+                                if (subheadingText.trim()) {
+                                  const updated = lists.map((l) =>
+                                    l.id === list.id
+                                      ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true, sectionType: subheadingType }] }
+                                      : l
+                                  );
+                                  onUpdate(updated);
+                                  setSubheadingText("");
+                                  setAddingSubheading(null);
+                                }
+                              }}
+                              className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="flex gap-2 px-1">
+                            <button
+                              onClick={() => setSubheadingType("task")}
+                              className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${subheadingType === "task" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                              ☑️ Task section
+                            </button>
+                            <button
+                              onClick={() => setSubheadingType("observation")}
+                              className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${subheadingType === "observation" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                              💭 Observation section
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
