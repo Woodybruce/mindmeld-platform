@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, X, Send, Flame, Heart, Loader2, Sparkles, Pencil } from "lucide-react";
+import { Plus, Check, X, Send, Flame, Heart, Loader2, Sparkles, Pencil, MoreHorizontal, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -66,6 +66,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
   const [editText, setEditText] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -345,15 +346,34 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
               ) : (
                 <span className="text-sm text-foreground flex-1">{item}</span>
               )}
-              <button
-                onClick={() => { setEditingIdx(i); setEditText(item); }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-              >
-                <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-              </button>
-              <button onClick={() => removeItem(i)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                <X className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => setOpenActionMenu(openActionMenu === `item-${i}` ? null : `item-${i}`)}
+                  className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                >
+                  <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                </button>
+                {openActionMenu === `item-${i}` && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                      <button
+                        onClick={() => { setEditingIdx(i); setEditText(item); setOpenActionMenu(null); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" /> Edit
+                      </button>
+                      <div className="border-t border-border my-1" />
+                      <button
+                        onClick={() => { removeItem(i); setOpenActionMenu(null); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </motion.div>
           ))}
 

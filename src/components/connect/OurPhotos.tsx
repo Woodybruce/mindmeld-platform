@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ImageIcon, X, MessageCircle, Upload, Loader2, Camera } from "lucide-react";
+import { ImageIcon, X, MessageCircle, Upload, Loader2, Camera, MoreHorizontal, Trash2 } from "lucide-react";
 import { SkeletonPhotoGrid } from "@/components/SkeletonCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,7 @@ const OurPhotos = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const partnerId = profile?.partner_id;
@@ -181,13 +182,30 @@ const OurPhotos = () => {
                 className="absolute inset-0 w-full h-full object-cover"
                 loading="lazy"
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] text-white font-medium">{photo.sender_name}</p>
-                  {photo.source === "chat" ? (
-                    <MessageCircle className="w-3 h-3 text-white/70" />
-                  ) : (
-                    <Upload className="w-3 h-3 text-white/70" />
+              <div className="absolute top-1.5 right-1.5">
+                <div className="relative">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setOpenActionMenu(openActionMenu === photo.id ? null : photo.id); }}
+                    className="p-1 rounded-md bg-foreground/40 backdrop-blur-sm hover:bg-foreground/60 transition-colors"
+                  >
+                    <MoreHorizontal className="w-3.5 h-3.5 text-white" />
+                  </button>
+                  {openActionMenu === photo.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenActionMenu(null); }} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
+                        <div className="px-3 py-1.5 text-[11px] text-muted-foreground">
+                          {photo.sender_name} · {photo.source === "chat" ? "Chat" : "Upload"}
+                        </div>
+                        <div className="border-t border-border my-1" />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedPhoto(photo); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" /> View
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

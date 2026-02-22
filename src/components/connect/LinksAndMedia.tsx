@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Plus, Link2, Trash2 } from "lucide-react";
+import { ExternalLink, Plus, Link2, Trash2, MoreHorizontal } from "lucide-react";
 
 interface SharedLink {
   id: string;
@@ -16,6 +16,7 @@ const LinksAndMedia = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newUrl, setNewUrl] = useState("");
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   const addLink = () => {
     if (!newTitle.trim() || !newUrl.trim()) return;
@@ -96,15 +97,37 @@ const LinksAndMedia = () => {
                   <span className="text-[11px] text-muted-foreground">· {link.addedBy} · {link.addedAt}</span>
                 </div>
               </div>
-              <button
-                onClick={() => removeLink(link.id)}
-                className="opacity-0 group-hover:opacity-100 p-1 transition-opacity"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-              </button>
-              <a href={link.url} target="_blank" rel="noopener noreferrer" className="p-1">
-                <ExternalLink className="w-4 h-4 text-muted-foreground/40 hover:text-primary" />
-              </a>
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => setOpenActionMenu(openActionMenu === link.id ? null : link.id)}
+                  className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                >
+                  <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                </button>
+                {openActionMenu === link.id && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setOpenActionMenu(null)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" /> Open link
+                      </a>
+                      <div className="border-t border-border my-1" />
+                      <button
+                        onClick={() => { removeLink(link.id); setOpenActionMenu(null); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>

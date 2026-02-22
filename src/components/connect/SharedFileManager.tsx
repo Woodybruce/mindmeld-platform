@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FolderOpen, Plus, Upload, Trash2, FileText, Image, File, Music,
-  Video, X, ChevronRight, ArrowLeft, Download, FolderPlus,
+  Video, X, ChevronRight, ArrowLeft, Download, FolderPlus, MoreHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,6 +50,7 @@ const SharedFileManager = () => {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   const activeFolder = folderStack.length > 0 ? folderStack[folderStack.length - 1] : null;
   const currentParentId = activeFolder?.id || null;
@@ -274,12 +275,29 @@ const SharedFileManager = () => {
                     {count} file{count !== 1 ? "s" : ""}{subCount > 0 ? ` · ${subCount} folder${subCount !== 1 ? "s" : ""}` : ""}
                   </p>
                   <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/40" />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }}
-                    className="absolute bottom-3 right-3 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                  </button>
+                  <div className="absolute bottom-3 right-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenActionMenu(openActionMenu === `subfolder-${folder.id}` ? null : `subfolder-${folder.id}`)}
+                        className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      >
+                        <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                      {openActionMenu === `subfolder-${folder.id}` && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                          <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                            <button
+                              onClick={() => { deleteFolder(folder.id); setOpenActionMenu(null); }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete folder
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </motion.button>
               );
             })}
@@ -313,12 +331,34 @@ const SharedFileManager = () => {
                     {formatSize(f.file_size)} · {new Date(f.created_at).toLocaleDateString("default", { day: "numeric", month: "short" })}
                   </p>
                 </div>
-                <button onClick={() => downloadFile(f)} className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Download className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                </button>
-                <button onClick={() => deleteFile(f)} className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                </button>
+                <div className="relative flex-shrink-0">
+                  <button
+                    onClick={() => setOpenActionMenu(openActionMenu === `file-${f.id}` ? null : `file-${f.id}`)}
+                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  {openActionMenu === `file-${f.id}` && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                        <button
+                          onClick={() => { downloadFile(f); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5 text-muted-foreground" /> Download
+                        </button>
+                        <div className="border-t border-border my-1" />
+                        <button
+                          onClick={() => { deleteFile(f); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
@@ -400,12 +440,29 @@ const SharedFileManager = () => {
                   {count} file{count !== 1 ? "s" : ""}{subCount > 0 ? ` · ${subCount} folder${subCount !== 1 ? "s" : ""}` : ""}
                 </p>
                 <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/40" />
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }}
-                  className="absolute bottom-3 right-3 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                </button>
+                <div className="absolute bottom-3 right-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenActionMenu(openActionMenu === `rootfolder-${folder.id}` ? null : `rootfolder-${folder.id}`)}
+                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                    >
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    {openActionMenu === `rootfolder-${folder.id}` && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                        <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                          <button
+                            onClick={() => { deleteFolder(folder.id); setOpenActionMenu(null); }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete folder
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </motion.button>
             );
           })}

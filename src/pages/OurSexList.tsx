@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Plus, X, Check, Lock, ExternalLink, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Plus, X, Check, Lock, ExternalLink, CheckCircle2, MoreHorizontal, Trash2 } from "lucide-react";
 
 interface CheckItem {
   id: string;
@@ -83,6 +83,7 @@ const OurSexList = () => {
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newText, setNewText] = useState("");
   const [newUrl, setNewUrl] = useState("");
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -187,9 +188,27 @@ const OurSexList = () => {
                   {item.done && <Check className="w-3 h-3 text-primary-foreground" />}
                 </div>
                 <p className={`text-sm flex-1 ${item.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{item.text}</p>
-                <button onClick={(e) => { e.stopPropagation(); removeCheckItem("goodSexLife", item.id); }} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id)}
+                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  {openActionMenu === item.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                        <button
+                          onClick={() => { removeCheckItem("goodSexLife", item.id); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.button>
             ))}
             {addingTo === "goodSexLife" ? <InlineInput placeholder="Add a value…" onSubmit={() => addCheckItem("goodSexLife")} value={newText} onChange={setNewText} /> : <AddButton label="Add value" sectionKey="goodSexLife" />}
@@ -208,9 +227,27 @@ const OurSexList = () => {
                   {item.done && <Check className="w-3 h-3 text-primary-foreground" />}
                 </div>
                 <p className={`text-sm flex-1 ${item.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{item.text}</p>
-                <button onClick={(e) => { e.stopPropagation(); removeCheckItem("motivations", item.id); }} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id)}
+                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  {openActionMenu === item.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                        <button
+                          onClick={() => { removeCheckItem("motivations", item.id); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.button>
             ))}
             {addingTo === "motivations" ? <InlineInput placeholder="Add motivation…" onSubmit={() => addCheckItem("motivations")} value={newText} onChange={setNewText} /> : <AddButton label="Add motivation" sectionKey="motivations" />}
@@ -225,9 +262,27 @@ const OurSexList = () => {
               <motion.div key={item.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
                 className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 group">
                 <p className="text-sm text-foreground flex-1">{item.text}</p>
-                <button onClick={() => removeTextItem("dontLike", item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                <div className="relative flex-shrink-0">
+                  <button
+                    onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id)}
+                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  {openActionMenu === item.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                        <button
+                          onClick={() => { removeTextItem("dontLike", item.id); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.div>
             ))}
             {addingTo === "dontLike" ? <InlineInput placeholder="Add boundary…" onSubmit={() => addTextItem("dontLike")} value={newText} onChange={setNewText} /> : <AddButton label="Add boundary" sectionKey="dontLike" />}
@@ -243,9 +298,27 @@ const OurSexList = () => {
                 className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 group">
                 <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                 <p className="text-sm text-foreground flex-1">{item.text}</p>
-                <button onClick={() => removeTextItem("likeOrHaveLiked", item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                <div className="relative flex-shrink-0">
+                  <button
+                    onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id)}
+                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  {openActionMenu === item.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                        <button
+                          onClick={() => { removeTextItem("likeOrHaveLiked", item.id); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.div>
             ))}
             {addingTo === "likeOrHaveLiked" ? <InlineInput placeholder="Add preference…" onSubmit={() => addTextItem("likeOrHaveLiked")} value={newText} onChange={setNewText} /> : <AddButton label="Add preference" sectionKey="likeOrHaveLiked" />}
@@ -261,9 +334,27 @@ const OurSexList = () => {
                 className="flex items-center gap-3 rounded-xl border border-us-gold/20 bg-us-gold/5 px-4 py-3 group">
                 <span className="text-xs font-bold text-muted-foreground w-5 text-center flex-shrink-0">{i + 1}</span>
                 <p className="text-sm text-foreground flex-1">{item.text}</p>
-                <button onClick={() => removeTextItem("topPriorities", item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                <div className="relative flex-shrink-0">
+                  <button
+                    onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id)}
+                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  {openActionMenu === item.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                        <button
+                          onClick={() => { removeTextItem("topPriorities", item.id); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.div>
             ))}
             {data.topPriorities.length < 10 && (
@@ -286,9 +377,27 @@ const OurSexList = () => {
                   {item.done && <Check className="w-3 h-3 text-primary-foreground" />}
                 </div>
                 <p className={`text-sm flex-1 ${item.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{item.text}</p>
-                <button onClick={(e) => { e.stopPropagation(); removeCheckItem("hitPriorities", item.id); }} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id)}
+                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  {openActionMenu === item.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                        <button
+                          onClick={() => { removeCheckItem("hitPriorities", item.id); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.button>
             ))}
             {addingTo === "hitPriorities" ? <InlineInput placeholder="Add an action…" onSubmit={() => addCheckItem("hitPriorities")} value={newText} onChange={setNewText} /> : <AddButton label="Add action" sectionKey="hitPriorities" />}
@@ -304,9 +413,37 @@ const OurSexList = () => {
                 className="flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-3 group">
                 <ExternalLink className="w-4 h-4 text-primary flex-shrink-0" />
                 <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex-1 truncate">{link.label}</a>
-                <button onClick={() => removeLink(link.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                <div className="relative flex-shrink-0">
+                  <button
+                    onClick={() => setOpenActionMenu(openActionMenu === link.id ? null : link.id)}
+                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  {openActionMenu === link.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setOpenActionMenu(null)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" /> Open link
+                        </a>
+                        <div className="border-t border-border my-1" />
+                        <button
+                          onClick={() => { removeLink(link.id); setOpenActionMenu(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.div>
             ))}
             {addingTo === "ideas" ? (

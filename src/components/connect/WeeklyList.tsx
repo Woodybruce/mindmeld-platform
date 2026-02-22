@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2, Pencil, Paperclip, CalendarPlus, Image } from "lucide-react";
+import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2, Pencil, Paperclip, CalendarPlus, Image, MoreHorizontal } from "lucide-react";
 import { useWeeklyTasks, TaskAttachment } from "@/hooks/useWeeklyTasks";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +30,7 @@ const WeeklyList = () => {
   // Event picker state
   const [eventPickerTaskId, setEventPickerTaskId] = useState<string | null>(null);
   const [eventDate, setEventDate] = useState("");
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   const toggleDay = (dateStr: string) => {
     setExpandedDays((prev) => {
@@ -270,40 +271,46 @@ const WeeklyList = () => {
                             )}
 
                             {!isEditing && (
-                              <>
+                              <div className="relative flex-shrink-0">
                                 <button
-                                  onClick={() => { setEditingTaskId(task.id); setEditText(task.text); }}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                  title="Edit"
+                                  onClick={() => setOpenActionMenu(openActionMenu === task.id ? null : task.id)}
+                                  className="p-1.5 rounded-md hover:bg-secondary transition-colors"
                                 >
-                                  <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                  <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    setAttachingTaskId(task.id);
-                                    fileInputRef.current?.click();
-                                  }}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                  title="Attach photo/file"
-                                >
-                                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                                </button>
-                                <button
-                                  onClick={() => setEventPickerTaskId(
-                                    eventPickerTaskId === task.id ? null : task.id
-                                  )}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                  title="Create event"
-                                >
-                                  <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                                </button>
-                                <button
-                                  onClick={() => deleteTask(task.id)}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                                </button>
-                              </>
+                                {openActionMenu === task.id && (
+                                  <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                                    <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                                      <button
+                                        onClick={() => { setEditingTaskId(task.id); setEditText(task.text); setOpenActionMenu(null); }}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                      >
+                                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" /> Edit
+                                      </button>
+                                      <button
+                                        onClick={() => { setAttachingTaskId(task.id); fileInputRef.current?.click(); setOpenActionMenu(null); }}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                      >
+                                        <Paperclip className="w-3.5 h-3.5 text-muted-foreground" /> Attach file
+                                      </button>
+                                      <button
+                                        onClick={() => { setEventPickerTaskId(eventPickerTaskId === task.id ? null : task.id); setOpenActionMenu(null); }}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                      >
+                                        <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground" /> Create event
+                                      </button>
+                                      <div className="border-t border-border my-1" />
+                                      <button
+                                        onClick={() => { deleteTask(task.id); setOpenActionMenu(null); }}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             )}
                           </div>
 
