@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Instagram, ExternalLink } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 import { AnimatePresence, motion } from "framer-motion";
 import LocationComposer from "./LocationComposer";
 import PollComposer from "./PollComposer";
@@ -111,8 +112,37 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
+  const openCamera = useCallback(async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { Camera: CapCamera, CameraResultType, CameraSource } = await import("@capacitor/camera");
+        const photo = await CapCamera.getPhoto({
+          quality: 80,
+          resultType: CameraResultType.DataUrl,
+          source: CameraSource.Camera,
+          allowEditing: false,
+        });
+        if (photo.dataUrl) {
+          // Convert data URL to File
+          const res = await fetch(photo.dataUrl);
+          const blob = await res.blob();
+          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: "image/jpeg" });
+          setImageFiles((prev) => [...prev, file]);
+          setImagePreviews((prev) => [...prev, photo.dataUrl!]);
+          setGalleryUrl(null);
+        }
+      } catch (e: any) {
+        console.warn("[Camera] Capacitor camera error:", e);
+        // Fall back to file input
+        cameraInputRef.current?.click();
+      }
+    } else {
+      cameraInputRef.current?.click();
+    }
+  }, []);
+
   const attachActions = [
-    { icon: Camera, label: "Camera", gradient: "from-[hsl(var(--us-coral))] to-[hsl(var(--us-terracotta))]", onClick: () => { cameraInputRef.current?.click(); setAttachOpen(false); } },
+    { icon: Camera, label: "Camera", gradient: "from-[hsl(var(--us-coral))] to-[hsl(var(--us-terracotta))]", onClick: () => { openCamera(); setAttachOpen(false); } },
     { icon: Paperclip, label: "Media", gradient: "from-[hsl(var(--us-navy))] to-[hsl(220,40%,35%)]", onClick: () => { fileInputRef.current?.click(); setAttachOpen(false); } },
     { icon: MapPin, label: "Location", gradient: "from-[hsl(var(--us-coral))] to-[hsl(0,60%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setLocationOpen(true), 100); } },
     { icon: BarChart3, label: "Poll", gradient: "from-[hsl(var(--us-gold))] to-[hsl(30,70%,45%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setPollOpen(true), 100); } },
@@ -269,7 +299,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
               ) : (
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
-                    onClick={() => cameraInputRef.current?.click()}
+                    onClick={openCamera}
                     className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all"
                   >
                     <Camera className="w-5.5 h-5.5" />
