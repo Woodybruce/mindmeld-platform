@@ -5,6 +5,7 @@ import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, T
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { notifyPartner } from "@/lib/notifyPartner";
 import SexBucketList from "./SexBucketList";
 
 export interface ListItemAttachment {
@@ -356,7 +357,7 @@ interface SharedListsProps {
 
 const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, initialExpandedId }: SharedListsProps) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const addToWeeklyList = async (text: string) => {
     if (!user) {
@@ -447,6 +448,19 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     };
     const updated = [newList, ...lists];
     onUpdate(updated);
+
+    // Notify partner about the new list
+    if (user && profile?.partner_id) {
+      notifyPartner({
+        partnerId: profile.partner_id,
+        title: `${t.icon} New list created`,
+        body: `${profile.username || "Your partner"} started "${t.name}" — go add yours!`,
+        route: "/us?tab=lists",
+        chatMessage: `${t.icon} I just created our "${t.name}" list — come check it out and add yours!`,
+        senderId: user.id,
+      });
+    }
+
     setShowTemplates(false);
     setPreviewTemplate(null);
     setPreviewItems([]);
