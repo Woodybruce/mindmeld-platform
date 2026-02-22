@@ -92,7 +92,7 @@ const togetherListDefaultItems = [
   "A European city break",
   "A beach holiday",
   "A road trip adventure",
-  "## Things we have done together",
+  "##>> Things we have done together",
   "Add your first memory here…",
 ];
 
@@ -147,7 +147,7 @@ const templates = [
       "Live abroad for a year",
       "Complete a big physical challenge together",
       "Give back — volunteer or start a charity",
-      "## How we'll achieve them",
+      "##>> How we'll achieve them",
     ],
   },
   // Core templates
