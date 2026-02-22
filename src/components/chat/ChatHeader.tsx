@@ -62,9 +62,10 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
       <div className="flex items-center gap-2 px-2 py-1 max-w-lg mx-auto">
         <button
           onClick={() => navigate("/")}
-          className="w-10 h-10 -ml-1 rounded-full flex items-center justify-center text-white/80 hover:text-white active:bg-white/10 transition-colors flex-shrink-0"
+          onTouchEnd={(e) => { e.preventDefault(); navigate("/"); }}
+          className="w-12 h-12 -ml-1 rounded-full flex items-center justify-center text-white/80 hover:text-white active:bg-white/10 transition-colors flex-shrink-0 touch-manipulation"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-6 h-6" />
         </button>
         <Avatar className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden">
           {avatarUrl && <AvatarImage src={avatarUrl} alt={partnerName} className="object-cover w-full h-full" />}
