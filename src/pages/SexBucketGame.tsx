@@ -131,27 +131,20 @@ const SexBucketGame = () => {
       const { error } = await supabase.from("calendar_events").insert(events as any);
       if (error) throw error;
 
-      // Also add to weekly tasks for any that fall within this week
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const weekEnd = new Date(today);
-      weekEnd.setDate(today.getDate() + 6);
-
+      // Add ALL scheduled items as weekly tasks on their scheduled date
+      // (rollover_weekly_tasks will move undone ones to the next day automatically)
       for (const item of drawn) {
         const idx = drawn.indexOf(item);
         const dateStr = scheduleDates[idx];
         if (!dateStr) continue;
-        const itemDate = new Date(dateStr);
-        if (itemDate >= today && itemDate <= weekEnd) {
-          const taskDate = itemDate.toISOString().split("T")[0];
-          await supabase.from("weekly_tasks").insert({
-            user_id: user.id,
-            text: `🔥 ${item.text}`,
-            scheduled_date: taskDate,
-            sort_order: 999,
-            source: "sex-bucket",
-          } as any);
-        }
+        const taskDate = new Date(dateStr).toISOString().split("T")[0];
+        await supabase.from("weekly_tasks").insert({
+          user_id: user.id,
+          text: `🔥 ${item.text}`,
+          scheduled_date: taskDate,
+          sort_order: 999,
+          source: "sex-bucket",
+        } as any);
       }
 
       toast({ title: "🔥 Challenge scheduled!", description: `${events.length} items added to your calendar` });
