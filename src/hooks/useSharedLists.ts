@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UserList } from "@/components/connect/SharedLists";
-import { notifyPartner } from "@/lib/notifyPartner";
 
 
 function dbRowToList(row: any): UserList {
@@ -66,15 +65,6 @@ export function useSharedLists() {
     } as any).select().single();
     if (data) {
       setLists((prev) => [dbRowToList(data), ...prev]);
-      // Notify partner about new list
-      if (profile?.partner_id) {
-        notifyPartner({
-          partnerId: profile.partner_id,
-          title: `${list.icon} New list: ${list.name}`,
-          body: `${profile?.username || "Your partner"} created a new shared list`,
-          route: "/us?tab=lists",
-        });
-      }
       return data.id as string;
     }
   }, [user, profile]);
