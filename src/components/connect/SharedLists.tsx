@@ -713,6 +713,12 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                           idx === previewItems.length - 1 ||
                           previewItems[idx + 1]?.isHeading
                         );
+                        // Also show add button after a heading if the section is empty (next item is heading or end of list)
+                        const isEmptySectionHeading = item.isHeading && (
+                          idx === previewItems.length - 1 ||
+                          previewItems[idx + 1]?.isHeading
+                        );
+                        const showAddButton = isLastBeforeNextHeading || isEmptySectionHeading;
                         // Find the heading this item belongs to for the inline add
                         const findSectionHeadingIndex = () => {
                           for (let j = idx; j >= 0; j--) {
@@ -751,7 +757,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                               </button>
                             </div>
                             {/* Inline add button after last item in each section */}
-                            {isLastBeforeNextHeading && (
+                            {showAddButton && (
                               <div className="pl-9 py-1">
                                 {previewAddingAfter === idx ? (
                                   <div className="flex gap-1.5">
