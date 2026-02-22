@@ -5,6 +5,7 @@ import KissChaseResult from "@/components/KissChaseResult";
 import { useGameSession } from "@/hooks/useGameSession";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiInvoke } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 type GamePhase = "setup" | "playing" | "result";
 
@@ -23,13 +24,21 @@ const KissChasePage = () => {
     broadcastStart(selectedReward, selectedTime);
     setPhase("playing");
 
-    // Auto-notify partner via push notification only (no chat message)
     if (user && profile?.partner_id) {
+      const displayName = profile.username || "Your partner";
+
+      supabase.from("messages").insert({
+        sender_id: user.id,
+        receiver_id: profile.partner_id,
+        content: `💋 ${displayName} started a Kiss Chase! Open the app and join before time runs out! 🏃‍♂️`,
+        message_type: "text",
+      } as any).then(() => {});
+
       apiInvoke("send-push-notification", {
         body: {
           recipientUserId: profile.partner_id,
           title: "💋 Kiss Chase!",
-          body: `${profile.username || "Your partner"} started a Kiss Chase! Tap to join.`,
+          body: `${displayName} started a Kiss Chase! Tap to join.`,
           data: { route: "/kiss-chase" },
         },
       }).then(() => {});
