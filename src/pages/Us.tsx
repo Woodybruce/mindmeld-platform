@@ -60,15 +60,15 @@ const Us = () => {
         {/* Lists — default tab */}
         <TabsContent value="lists" className="mt-4 space-y-5">
           <WeeklyList />
-          {/* Long-Term Goals pinned above other lists */}
-          {userLists.filter((l) => l.template === "long-term-goals").length > 0 && (
+          {/* Long-Term Dreams pinned above other lists */}
+          {userLists.filter((l) => l.template === "long-term-dreams" || l.template === "long-term-goals").length > 0 && (
             <SharedLists
-              lists={userLists.filter((l) => l.template === "long-term-goals")}
+              lists={userLists.filter((l) => l.template === "long-term-dreams" || l.template === "long-term-goals")}
               allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
               hideNewButton
               initialExpandedId={listId}
               onUpdate={(updated) => {
-                const others = userLists.filter((l) => l.template !== "long-term-goals");
+                const others = userLists.filter((l) => l.template !== "long-term-dreams" && l.template !== "long-term-goals");
                 handleBulkUpdate([...updated, ...others]);
               }}
             />
@@ -76,11 +76,11 @@ const Us = () => {
           <div className="border-t border-border/50 pt-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Our Lists</p>
             <SharedLists
-              lists={userLists.filter((l) => l.template !== "long-term-goals")}
+              lists={userLists.filter((l) => l.template !== "long-term-dreams" && l.template !== "long-term-goals")}
               allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
               initialExpandedId={listId}
               onUpdate={(updated) => {
-                const pinned = userLists.filter((l) => l.template === "long-term-goals");
+                const pinned = userLists.filter((l) => l.template === "long-term-dreams" || l.template === "long-term-goals");
                 handleBulkUpdate([...pinned, ...updated]);
               }}
             />

@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2, Eye, EyeOff, Pencil, Paperclip, CalendarPlus, Image } from "lucide-react";
+import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2, Pencil, Paperclip, CalendarPlus, Image } from "lucide-react";
 import { useWeeklyTasks, TaskAttachment } from "@/hooks/useWeeklyTasks";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { toast } from "@/hooks/use-toast";
@@ -142,10 +142,9 @@ const WeeklyList = () => {
         )}
         <button
           onClick={() => setShowAllDays((v) => !v)}
-          className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground"
-          title={showAllDays ? "Show today only" : "Show all days"}
+          className="rounded-lg px-2.5 py-1 text-[11px] font-semibold border border-border hover:bg-secondary transition-colors text-muted-foreground"
         >
-          {showAllDays ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          {showAllDays ? "Today" : "Week"}
         </button>
       </div>
 
