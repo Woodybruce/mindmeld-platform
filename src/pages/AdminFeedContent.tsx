@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { apiInvoke } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
@@ -88,7 +89,7 @@ const AdminFeedContent = () => {
     if (!editing) return;
     setAiGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-feed-content", {
+      const { data, error } = await apiInvoke("generate-feed-content", {
         body: { type: editing.type, description: aiPrompt.trim() || undefined },
       });
       if (error) throw error;

@@ -25,7 +25,7 @@ const withAffiliateTag = (url?: string): string | undefined => {
 };
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
 
@@ -148,7 +148,7 @@ const DiscoverTogether = () => {
     if (!force) { const c = cacheGet(key); if (c) { setExperiences(c); setLoaded(p => ({ ...p, experiences: true })); return; } }
     setLoading(p => ({ ...p, experiences: true }));
     try {
-      const { data } = await supabase.functions.invoke("suggest-experiences", { body: { city: "London" } });
+      const { data } = await apiInvoke("suggest-experiences", { body: { city: "London" } });
       if (data?.experiences?.length) { setExperiences(data.experiences); cacheSet(key, data.experiences); }
     } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, experiences: false })); setLoaded(p => ({ ...p, experiences: true })); }
   }, []);
@@ -158,7 +158,7 @@ const DiscoverTogether = () => {
     if (!force) { const c = cacheGet(key); if (c) { setProducts(c); setLoaded(p => ({ ...p, products: true })); return; } }
     setLoading(p => ({ ...p, products: true }));
     try {
-      const { data } = await supabase.functions.invoke("suggest-products", { body: { category: cat } });
+      const { data } = await apiInvoke("suggest-products", { body: { category: cat } });
       if (data?.products?.length) { setProducts(data.products); cacheSet(key, data.products); }
     } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, products: false })); setLoaded(p => ({ ...p, products: true })); }
   }, []);
@@ -168,7 +168,7 @@ const DiscoverTogether = () => {
     if (!force) { const c = cacheGet(key); if (c) { setIntimacy(c); setLoaded(p => ({ ...p, intimacy: true })); return; } }
     setLoading(p => ({ ...p, intimacy: true }));
     try {
-      const { data } = await supabase.functions.invoke("suggest-intimacy", { body: {} });
+      const { data } = await apiInvoke("suggest-intimacy", { body: {} });
       if (data?.products?.length) { setIntimacy(data.products); cacheSet(key, data.products); }
     } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, intimacy: false })); setLoaded(p => ({ ...p, intimacy: true })); }
   }, []);
@@ -178,7 +178,7 @@ const DiscoverTogether = () => {
     if (!force) { const c = cacheGet(key); if (c) { setTravel(c); setLoaded(p => ({ ...p, travel: true })); return; } }
     setLoading(p => ({ ...p, travel: true }));
     try {
-      const { data } = await supabase.functions.invoke("suggest-travel", { body: {} });
+      const { data } = await apiInvoke("suggest-travel", { body: {} });
       if (data?.destinations?.length) { setTravel(data.destinations); cacheSet(key, data.destinations); }
     } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, travel: false })); setLoaded(p => ({ ...p, travel: true })); }
   }, []);

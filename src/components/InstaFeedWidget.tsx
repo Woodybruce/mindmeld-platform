@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, Instagram, Plus, X, Heart, ChevronLeft, ChevronRight, Trash2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiInvoke } from "@/lib/api";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 
@@ -114,7 +115,7 @@ const InstaFeedWidget = () => {
   const fetchEmbed = useCallback(async (url: string, id: string) => {
     if (embedCache[id]) return;
     try {
-      const { data } = await supabase.functions.invoke("instagram-oembed", {
+      const { data } = await apiInvoke("instagram-oembed", {
         body: { url },
       });
       if (data && !data.error) {

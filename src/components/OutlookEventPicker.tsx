@@ -48,11 +48,10 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
       const headers = {
         Authorization: `Bearer ${session.access_token}`,
         "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       };
 
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
+        `/api/sync-outlook-calendar`,
         {
           method: "POST",
           headers,
@@ -74,7 +73,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
         if (sharedNotImported.length > 0) {
           // Auto-import shared events in the background
           fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
+            `/api/sync-outlook-calendar`,
             {
               method: "POST",
               headers,
@@ -175,13 +174,12 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
 
       const eventsToImport = Array.from(selected).map((i) => events[i]);
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-outlook-calendar`,
+        `/api/sync-outlook-calendar`,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${session.access_token}`,
             "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({ mode: "import", events: eventsToImport }),
         }

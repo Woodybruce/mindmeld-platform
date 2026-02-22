@@ -34,13 +34,12 @@ const OutlookCallback = () => {
         }
 
         const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/microsoft-oauth-callback`,
+          `/api/microsoft-oauth-callback`,
           {
             method: "POST",
             headers: {
               Authorization: `Bearer ${session.access_token}`,
               "Content-Type": "application/json",
-              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             },
             body: JSON.stringify({
               code,

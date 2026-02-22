@@ -29,12 +29,8 @@ const GifPicker = ({ open, onClose, onSelect }: GifPickerProps) => {
     setLoading(true);
     setError("");
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-gifs?q=${encodeURIComponent(q)}`;
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-      });
+      const url = `/api/search-gifs?q=${encodeURIComponent(q)}`;
+      const res = await fetch(url);
 
       if (!res.ok) throw new Error("Failed to fetch GIFs");
       const result = await res.json();

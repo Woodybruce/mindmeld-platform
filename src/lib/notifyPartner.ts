@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { apiInvoke } from "@/lib/api";
 
 /**
  * Fire-and-forget push notification + optional chat message to partner.
@@ -14,7 +15,7 @@ export async function notifyPartner(opts: {
   const { partnerId, title, body, route, chatMessage, senderId } = opts;
 
   // Push notification
-  supabase.functions.invoke("send-push-notification", {
+  apiInvoke("send-push-notification", {
     body: {
       recipientUserId: partnerId,
       title,

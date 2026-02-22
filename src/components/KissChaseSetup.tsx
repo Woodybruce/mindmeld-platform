@@ -5,6 +5,7 @@ import { MapPin, Heart, Timer, Trophy, ArrowLeft, Zap, Send } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { apiInvoke } from "@/lib/api";
 import { toast } from "sonner";
 
 const rewardOptions = [
@@ -61,7 +62,7 @@ const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupP
 
     // Push notification for when app is closed
     try {
-      const { data: pushResult, error: pushError } = await supabase.functions.invoke("send-push-notification", {
+      const { data: pushResult, error: pushError } = await apiInvoke("send-push-notification", {
         body: {
           recipientUserId: profile.partner_id,
           title: "💋 Kiss Chase!",

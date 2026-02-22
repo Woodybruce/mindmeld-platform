@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ExternalLink, Plus, X, BookOpen, Rss, Loader2, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiInvoke } from "@/lib/api";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
@@ -52,7 +53,7 @@ const SubstackFeedWidget = () => {
     if (newsletters.length === 0) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("fetch-substack-feed", {
+      const { data, error } = await apiInvoke("fetch-substack-feed", {
         body: { newsletters },
       });
       if (error) throw error;

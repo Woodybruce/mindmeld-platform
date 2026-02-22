@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiInvoke } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
@@ -211,7 +212,7 @@ const Chat = () => {
           ? "📷 Photo"
           : content;
         try {
-          await supabase.functions.invoke("send-push-notification", {
+          await apiInvoke("send-push-notification", {
             body: {
               recipientUserId: partnerId,
               title: profile?.username || "Your partner",
@@ -245,7 +246,7 @@ const Chat = () => {
     if (!partnerOnline) {
       const labels: Record<string, string> = { poll: "📊 Poll", location: "📍 Location", event: "📅 Event", sticker: "😄 Sticker" };
       try {
-        await supabase.functions.invoke("send-push-notification", {
+        await apiInvoke("send-push-notification", {
           body: {
             recipientUserId: partnerId,
             title: profile?.username || "Your partner",

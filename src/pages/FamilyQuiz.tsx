@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Plus, X, Loader2, Sparkles, Users, ListPlus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
+import { apiInvoke } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import type { UserList } from "@/components/connect/SharedLists";
 
@@ -76,7 +76,7 @@ const FamilyQuiz = () => {
         categories: selectedCategories.map((id) => CATEGORIES.find((c) => c.id === id)!.label),
       };
 
-      const { data, error } = await supabase.functions.invoke("suggest-family-tasks", {
+      const { data, error } = await apiInvoke("suggest-family-tasks", {
         body: familyInfo,
       });
 

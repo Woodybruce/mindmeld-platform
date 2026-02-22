@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import usLogo from "@/assets/us-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiInvoke } from "@/lib/api";
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 
@@ -100,7 +101,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
       } as any);
 
       try {
-        await supabase.functions.invoke("send-push-notification", {
+        await apiInvoke("send-push-notification", {
           body: {
             recipientUserId: partnerId,
             title: `${emoji} ${label}!`,

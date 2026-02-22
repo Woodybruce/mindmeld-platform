@@ -4,7 +4,7 @@ import KissChaseGame from "@/components/KissChaseGame";
 import KissChaseResult from "@/components/KissChaseResult";
 import { useGameSession } from "@/hooks/useGameSession";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { apiInvoke } from "@/lib/api";
 
 type GamePhase = "setup" | "playing" | "result";
 
@@ -25,7 +25,7 @@ const KissChasePage = () => {
 
     // Auto-notify partner via push notification only (no chat message)
     if (user && profile?.partner_id) {
-      supabase.functions.invoke("send-push-notification", {
+      apiInvoke("send-push-notification", {
         body: {
           recipientUserId: profile.partner_id,
           title: "💋 Kiss Chase!",

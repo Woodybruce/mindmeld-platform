@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Bookmark, RefreshCw, ExternalLink, ListPlus, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiInvoke } from "@/lib/api";
 import { toast } from "sonner";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
@@ -91,7 +92,7 @@ const CuratedLinksWidget = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("suggest-articles");
+      const { data, error } = await apiInvoke("suggest-articles");
       if (error) throw error;
       if (data?.articles?.length) {
         setArticles(data.articles);

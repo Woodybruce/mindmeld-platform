@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShoppingBag, RefreshCw, Sparkles } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
 
@@ -92,7 +92,7 @@ const SuggestedProducts = () => {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke("suggest-products", {
+      const { data, error } = await apiInvoke("suggest-products", {
         body: { category },
       });
       if (error) throw error;

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart, Pencil, Search, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiInvoke } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { notifyPartner } from "@/lib/notifyPartner";
 import SexBucketList from "./SexBucketList";
@@ -591,7 +592,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       const existingDreams = list?.items.map((i) => i.text) || [];
       const existingLists = lists.filter((l) => l.id !== listId).map((l) => l.name);
 
-      const { data, error } = await supabase.functions.invoke("suggest-dreams", {
+      const { data, error } = await apiInvoke("suggest-dreams", {
         body: { existingDreams, existingLists },
       });
 
@@ -623,7 +624,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       const list = lists.find((l) => l.id === listId);
       const existingItems = list?.items.map((i) => i.text) || [];
 
-      const { data, error } = await supabase.functions.invoke("suggest-tasks", {
+      const { data, error } = await apiInvoke("suggest-tasks", {
         body: { existingItems, listName: list?.name || "Daily To-Do" },
       });
 

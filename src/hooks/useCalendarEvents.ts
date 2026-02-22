@@ -115,7 +115,7 @@ export function useCalendarEvents() {
   );
 
   const forwardUrl = forwardToken
-    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/inbound-calendar?token=${forwardToken}`
+    ? `/api/inbound-calendar?token=${forwardToken}`
     : null;
 
   return {
