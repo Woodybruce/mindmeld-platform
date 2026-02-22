@@ -139,7 +139,11 @@ struct UsWidgetEntryView: View {
                 mediumView(data)
             }
         } else {
-            VStack {
+            VStack(spacing: 8) {
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
                 Text("Us")
                     .font(.headline)
                 Text("Open the app to sync")
@@ -154,7 +158,10 @@ struct UsWidgetEntryView: View {
     func smallView(_ data: UsWidgetData) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("❤️")
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
                 Text("Us")
                     .font(.headline)
                     .fontWeight(.bold)
@@ -190,10 +197,13 @@ struct UsWidgetEntryView: View {
     // ── Medium widget ────────────────────────
     func mediumView(_ data: UsWidgetData) -> some View {
         HStack(spacing: 12) {
-            // Left: tasks
+            // Left: logo + tasks
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("❤️")
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
                     Text("Us")
                         .font(.headline)
                         .fontWeight(.bold)
@@ -217,35 +227,51 @@ struct UsWidgetEntryView: View {
 
             Divider()
 
-            // Right: next event
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Next Event")
+            // Right: quick links + next event
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Quick Links")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .textCase(.uppercase)
 
-                if let event = data.nextEvent {
-                    Text(event.subject)
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .lineLimit(2)
-                    Text(formatDate(event.date))
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("Nothing planned")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                Link(destination: URL(string: "us-app://chat")!) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "message.fill")
+                            .font(.caption2)
+                        Text("Chat")
+                            .font(.caption)
+                    }
+                }
+
+                Link(destination: URL(string: "us-app://lists")!) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "list.bullet")
+                            .font(.caption2)
+                        Text("Lists")
+                            .font(.caption)
+                    }
+                }
+
+                Link(destination: URL(string: "us-app://tasks")!) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.caption2)
+                        Text("Daily Tasks")
+                            .font(.caption)
+                    }
                 }
 
                 Spacer()
 
-                if data.streakDays > 0 {
-                    HStack(spacing: 2) {
-                        Text("🔥")
-                        Text("\(data.streakDays) day streak")
+                if let event = data.nextEvent {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(event.subject)
                             .font(.caption2)
-                            .foregroundColor(.orange)
+                            .fontWeight(.semibold)
+                            .lineLimit(1)
+                        Text(formatDate(event.date))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
                     }
                 }
             }

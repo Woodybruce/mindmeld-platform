@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Check, Trash2, CalendarDays, ChevronDown, ChevronRight, Loader2, Pencil, Paperclip, CalendarPlus, Image } from "lucide-react";
 import { useWeeklyTasks, TaskAttachment } from "@/hooks/useWeeklyTasks";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
 const WeeklyList = () => {
   const { tasks, loading, addTask, toggleTask, deleteTask, updateTaskText, updateTaskAttachments, getTasksForDate, getWeekDates } = useWeeklyTasks();
-  const { events } = useCalendarEvents();
+  const { events, addEvent } = useCalendarEvents();
+  const { user } = useAuth();
   const weekDates = getWeekDates();
   const [expandedDays, setExpandedDays] = useState<Set<string>>(() => {
     const todayStr = new Date().toISOString().split("T")[0];
@@ -90,12 +92,27 @@ const WeeklyList = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleAddEvent = (taskId: string, taskText: string) => {
+  const handleAddEvent = async (taskId: string, taskText: string) => {
     if (!eventDate) return;
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
     const newAttachment: TaskAttachment = { type: "event", name: taskText, date: eventDate };
     updateTaskAttachments(taskId, [...(task.attachments || []), newAttachment]);
+
+    // Also create a calendar event so it appears on the shared calendar
+    try {
+      const startTime = new Date(eventDate).toISOString();
+      const endTime = new Date(new Date(eventDate).getTime() + 60 * 60 * 1000).toISOString();
+      await addEvent({
+        subject: taskText,
+        start_time: startTime,
+        end_time: endTime,
+        is_all_day: false,
+      });
+    } catch (e) {
+      console.warn("Failed to create calendar event:", e);
+    }
+
     setEventPickerTaskId(null);
     setEventDate("");
   };
@@ -236,6 +253,13 @@ const WeeklyList = () => {
                                 className={`flex-1 text-sm cursor-text hover:text-primary/80 transition-colors ${task.done ? "text-muted-foreground line-through" : "text-foreground"}`}
                               >
                                 {task.text}
+                              </span>
+                            )}
+
+                            {/* Show time from event attachment */}
+                            {!isEditing && task.attachments?.some(a => a.type === "event" && a.date) && (
+                              <span className="text-[10px] text-muted-foreground">
+                                {new Date(task.attachments.find(a => a.type === "event" && a.date)!.date!).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" })}
                               </span>
                             )}
 
