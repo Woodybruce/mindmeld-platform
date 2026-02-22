@@ -20,6 +20,7 @@ interface AuthContextType {
   signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   linkPartnerByEmail: (email: string) => Promise<boolean>;
+  linkPartnerByCode: (code: string) => Promise<boolean>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -100,11 +101,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
+  const linkPartnerByCode = async (code: string): Promise<boolean> => {
+    const { data, error } = await supabase.rpc("link_partner" as any, { _partner_code: code });
+    if (error || !data) return false;
+    await refreshProfile();
+    return true;
+  };
+
   // App-wide presence tracking
   const partnerOnline = usePresence(user?.id, profile?.partner_id ?? undefined);
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, partnerOnline, signUp, signInWithPassword, signOut, linkPartnerByEmail, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, partnerOnline, signUp, signInWithPassword, signOut, linkPartnerByEmail, linkPartnerByCode, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
