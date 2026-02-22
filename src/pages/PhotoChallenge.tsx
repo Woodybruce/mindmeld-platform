@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Camera, Shuffle, Check, Upload, Image, X, Loader2 } from "lucide-react";
+import { notifyPartner } from "@/lib/notifyPartner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -31,7 +32,13 @@ const challenges = [
 
 const PhotoChallenge = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+
+  useEffect(() => {
+    if (profile?.partner_id) {
+      notifyPartner({ partnerId: profile.partner_id, title: "📸 Photo Challenge!", body: `${profile.username || "Your partner"} started a Photo Challenge`, route: "/photo-challenge" });
+    }
+  }, []);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<number, string>>({});
