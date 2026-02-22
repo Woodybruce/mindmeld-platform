@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Swords, RotateCcw, Trophy, Flame } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 type Player = "Player 1" | "Player 2";
 
@@ -40,7 +42,14 @@ const dares = [
 
 const DareDuel = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [phase, setPhase] = useState<"setup" | "playing" | "complete">("setup");
+
+  useEffect(() => {
+    if (profile?.partner_id) {
+      notifyPartner({ partnerId: profile.partner_id, title: "⚔️ Dare Duel!", body: `${profile.username || "Your partner"} started a Dare Duel`, route: "/dare-duel" });
+    }
+  }, []);
   const [currentPlayer, setCurrentPlayer] = useState<Player>("Player 1");
   const [scores, setScores] = useState<Record<Player, number>>({ "Player 1": 0, "Player 2": 0 });
   const [currentDare, setCurrentDare] = useState<string | null>(null);

@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Shuffle, RotateCcw, Sparkles, Heart } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 interface Card {
   category: string;
@@ -112,7 +114,14 @@ const CATEGORIES = Object.keys(deck);
 
 const DesignMyNight = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [phase, setPhase] = useState<"intro" | "drawing" | "result">("intro");
+
+  useEffect(() => {
+    if (profile?.partner_id) {
+      notifyPartner({ partnerId: profile.partner_id, title: "🌙 Design My Night!", body: `${profile.username || "Your partner"} started Design My Night`, route: "/design-my-night" });
+    }
+  }, []);
   const [drawn, setDrawn] = useState<Card[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealed, setRevealed] = useState<boolean[]>([]);

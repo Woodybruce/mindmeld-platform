@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Shuffle, Heart, Flame } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 const truths = [
   "What's your favourite memory of us together?",
@@ -51,7 +53,14 @@ const dares = [
 
 const TruthOrDare = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [mode, setMode] = useState<"truth" | "dare" | null>(null);
+
+  useEffect(() => {
+    if (profile?.partner_id) {
+      notifyPartner({ partnerId: profile.partner_id, title: "😈 Truth or Dare!", body: `${profile.username || "Your partner"} started Truth or Dare`, route: "/truth-or-dare" });
+    }
+  }, []);
   const [current, setCurrent] = useState<string | null>(null);
   const [used, setUsed] = useState<Set<string>>(new Set());
 

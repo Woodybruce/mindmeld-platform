@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Flame, ChevronRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 const questions: [string, string][] = [
   ["Be tied up by your partner", "Be the one doing the tying"],
@@ -34,7 +36,14 @@ const questions: [string, string][] = [
 
 const WouldYouRather = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [index, setIndex] = useState(() => Math.floor(Math.random() * questions.length));
+
+  useEffect(() => {
+    if (profile?.partner_id) {
+      notifyPartner({ partnerId: profile.partner_id, title: "🔥 Would You Rather!", body: `${profile.username || "Your partner"} started Spicy Would You Rather`, route: "/would-you-rather" });
+    }
+  }, []);
   const [picked, setPicked] = useState<Record<number, 0 | 1>>({});
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
 
