@@ -526,7 +526,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
 
     if (isCompleting) {
       const updatedList = updated.find((l) => l.id === listId);
-      const countable = updatedList?.items.filter((i) => !i.isHeading) || [];
+      const countable = updatedList?.items.filter((i) => !i.isHeading && !i.isObservation) || [];
       const doneCount = countable.filter((i) => i.done).length;
       const totalCount = countable.length;
 
@@ -833,7 +833,17 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                           <div key={item.id}>
                             <div className="flex items-center gap-2.5 py-1 group">
                               {item.isHeading ? (
-                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">{item.text.replace(/^##\s*/, '')}</span>
+                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">
+                                  {item.text.replace(/^##\s*/, '')}
+                                  {item.sectionType === "observation" && (
+                                    <span className="ml-1.5 text-[10px] font-normal normal-case text-muted-foreground">💭</span>
+                                  )}
+                                </span>
+                              ) : item.isObservation ? (
+                                <div className="flex items-center gap-2.5 flex-1 text-left">
+                                  <span className="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center text-muted-foreground">💭</span>
+                                  <span className="text-sm text-foreground">{item.text}</span>
+                                </div>
                               ) : (
                                 <button
                                   onClick={() => {
@@ -860,7 +870,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                             </div>
                             {/* Inline add button after last item in each section */}
                             {showAddButton && (
-                              <div className="pl-9 py-1">
+                              <div className="py-1">
                                 {previewAddingAfter === idx ? (
                                   <div className="flex gap-1.5">
                                     <input
@@ -1018,7 +1028,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
         const completionPct = getCompletionPercent(list);
         const nextMilestone = list.scoreData ? getNextMilestone(list) : null;
 
-        const countable = list.items.filter((i) => !i.isHeading);
+        const countable = list.items.filter((i) => !i.isHeading && !i.isObservation);
         const totalCountable = countable.length;
         const query = searchQuery[list.id]?.toLowerCase() || "";
 
