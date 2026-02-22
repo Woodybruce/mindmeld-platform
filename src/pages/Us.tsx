@@ -21,77 +21,16 @@ import OurEvents from "@/components/connect/OurEvents";
 import SharedFileManager from "@/components/connect/SharedFileManager";
 import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
 import PartnerQuizBanner from "@/components/connect/PartnerQuizBanner";
-
-const mockFiles = [
-  { name: "Holiday Itinerary.pdf", type: "pdf", updated: "2 days ago" },
-  { name: "Wedding Mood Board", type: "folder", updated: "5 days ago" },
-  { name: "Apartment Shortlist.docx", type: "doc", updated: "1 week ago" },
-  { name: "Us — Summer 2025", type: "image", updated: "2 weeks ago" },
-  { name: "Budget Tracker.xlsx", type: "doc", updated: "3 weeks ago" },
-];
-
-const fileIcon = (type: string) => {
-  switch (type) {
-    case "pdf": return <FileText className="w-5 h-5 text-destructive" />;
-    case "image": return <Image className="w-5 h-5 text-us-gold" />;
-    case "folder": return <FolderOpen className="w-5 h-5 text-us-sage" />;
-    default: return <File className="w-5 h-5 text-primary" />;
-  }
-};
-
-const defaultLists: UserList[] = [
-  {
-    id: "default-long-term-goals",
-    name: "Our Long-Term Goals",
-    icon: "⭐",
-    template: "long-term-goals",
-    createdAt: new Date().toISOString(),
-    maxItems: 5,
-    items: [
-      { id: "ltg-h1", text: "Our 5 Long-Term Goals", done: false, isHeading: true },
-      { id: "ltg-h2", text: "How we'll achieve them", done: false, isHeading: true },
-    ],
-  },
-];
+import { useSharedLists } from "@/hooks/useSharedLists";
 
 const Us = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "lists";
   const listId = searchParams.get("listId") || null;
-  
-  const [userLists, setUserLists] = useState<UserList[]>([]);
+
+  const { lists: userLists, loading: listsLoading, handleBulkUpdate } = useSharedLists();
   const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
-
-  useEffect(() => {
-    const stored = localStorage.getItem("userLists");
-    let parsed: UserList[] = stored ? JSON.parse(stored) : [];
-
-    // One-time fix: reset falsely completed items from template creation bug
-    const fixKey = "lists-done-fix-v1";
-    if (!localStorage.getItem(fixKey) && parsed.length > 0) {
-      parsed = parsed.map(list => ({
-        ...list,
-        items: list.items.map(item => ({ ...item, done: false })),
-      }));
-      localStorage.setItem(fixKey, "1");
-      localStorage.setItem("userLists", JSON.stringify(parsed));
-    }
-
-    // Ensure Long-Term Goals always exists
-    const hasLTG = parsed.some((l) => l.template === "long-term-goals");
-    if (!hasLTG) {
-      parsed = [...parsed, ...defaultLists.filter((d) => d.template === "long-term-goals")];
-      localStorage.setItem("userLists", JSON.stringify(parsed));
-    }
-    setUserLists(parsed);
-  }, []);
-
-  const handleListsUpdate = (updated: UserList[]) => {
-    setUserLists(updated);
-    localStorage.setItem("userLists", JSON.stringify(updated));
-  };
-
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
@@ -118,7 +57,7 @@ const Us = () => {
             </TabsTrigger>
           </TabsList>
 
-        {/* Lists — default tab, imported from OneNote */}
+        {/* Lists — default tab */}
         <TabsContent value="lists" className="mt-4 space-y-5">
           <WeeklyList />
           {/* Long-Term Goals pinned above other lists */}
@@ -130,7 +69,7 @@ const Us = () => {
               initialExpandedId={listId}
               onUpdate={(updated) => {
                 const others = userLists.filter((l) => l.template !== "long-term-goals");
-                handleListsUpdate([...updated, ...others]);
+                handleBulkUpdate([...updated, ...others]);
               }}
             />
           )}
@@ -142,7 +81,7 @@ const Us = () => {
               initialExpandedId={listId}
               onUpdate={(updated) => {
                 const pinned = userLists.filter((l) => l.template === "long-term-goals");
-                handleListsUpdate([...pinned, ...updated]);
+                handleBulkUpdate([...pinned, ...updated]);
               }}
             />
           </div>
@@ -166,7 +105,6 @@ const Us = () => {
 
         {/* Admin — Events, Photos & Files */}
         <TabsContent value="admin" className="mt-4 space-y-6">
-
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-us-gold" />

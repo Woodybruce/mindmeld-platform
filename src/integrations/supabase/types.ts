@@ -629,6 +629,48 @@ export type Database = {
           },
         ]
       }
+      shared_lists: {
+        Row: {
+          ai_suggestable: boolean
+          created_at: string
+          icon: string
+          id: string
+          items: Json
+          max_items: number | null
+          name: string
+          score_data: Json | null
+          template: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_suggestable?: boolean
+          created_at?: string
+          icon?: string
+          id?: string
+          items?: Json
+          max_items?: number | null
+          name: string
+          score_data?: Json | null
+          template?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_suggestable?: boolean
+          created_at?: string
+          icon?: string
+          id?: string
+          items?: Json
+          max_items?: number | null
+          name?: string
+          score_data?: Json | null
+          template?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
