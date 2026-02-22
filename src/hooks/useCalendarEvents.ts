@@ -44,8 +44,8 @@ export function useCalendarEvents() {
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data && (data as any).calendar_forward_token) {
-          setForwardToken((data as any).calendar_forward_token);
+        if (data && data.calendar_forward_token) {
+          setForwardToken(data.calendar_forward_token);
         }
       });
   }, [user]);
