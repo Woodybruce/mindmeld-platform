@@ -1343,7 +1343,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
 
                           {/* Per-section add item input */}
                           {headingId && !isSectionCollapsed && (!list.maxItems || list.items.filter(i => !i.isHeading).length < list.maxItems) && (
-                            <div className="flex gap-1.5 pl-7 pt-1 pb-1">
+                            <div className="flex gap-1.5 pt-1 pb-1">
                               <input
                                 value={sectionNewItem[sectionInputKey] || ""}
                                 onChange={(e) => setSectionNewItem(prev => ({ ...prev, [sectionInputKey]: e.target.value }))}
