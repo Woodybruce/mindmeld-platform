@@ -1,23 +1,14 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ListChecks, ChevronRight, Check, Circle } from "lucide-react";
-import type { UserList } from "@/components/connect/SharedLists";
+import { ListChecks, ChevronRight, Check } from "lucide-react";
+import { useSharedLists } from "@/hooks/useSharedLists";
 
 export const ListsSummaryWidget = () => {
   const navigate = useNavigate();
-  const [lists, setLists] = useState<UserList[]>([]);
+  const { lists, loading } = useSharedLists();
 
-  useEffect(() => {
-    const stored = localStorage.getItem("userLists");
-    if (stored) {
-      try { setLists(JSON.parse(stored)); } catch {}
-    }
-  }, []);
+  if (loading || lists.length === 0) return null;
 
-  if (lists.length === 0) return null;
-
-  // Show up to 3 lists with their completion stats
   const summaries = lists.map((list) => {
     const checkableItems = list.items.filter((i) => !i.isHeading);
     const doneCount = checkableItems.filter((i) => i.done).length;
