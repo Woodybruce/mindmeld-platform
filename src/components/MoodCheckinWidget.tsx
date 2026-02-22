@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyPartner } from "@/lib/notifyPartner";
 
 const moods = [
   { emoji: "😊", label: "Happy" },
@@ -81,7 +82,17 @@ const MoodCheckinWidget = () => {
         { onConflict: "user_id,check_date" }
       );
 
-    if (error) console.error("Mood save error:", error);
+    if (error) {
+      console.error("Mood save error:", error);
+    } else if (profile?.partner_id) {
+      const moodLabel = moods.find(m => m.emoji === emoji)?.label || "";
+      notifyPartner({
+        partnerId: profile.partner_id,
+        title: `${emoji} ${profile?.username || "Your partner"} is feeling ${moodLabel}`,
+        body: "Tap to see their mood",
+        route: "/",
+      });
+    }
     setSaving(false);
   };
 
