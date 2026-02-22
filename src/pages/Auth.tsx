@@ -25,8 +25,8 @@ const Auth = () => {
   // Auto-link partner when logged in with invite code
   useEffect(() => {
     if (user && inviteCode && profile && !profile.partner_id) {
-      linkPartnerByCode(inviteCode).then((success) => {
-        if (success) {
+      linkPartnerByCode(inviteCode).then((result) => {
+        if (result.success) {
           toast.success("Partner linked! 🎉");
         }
       });
