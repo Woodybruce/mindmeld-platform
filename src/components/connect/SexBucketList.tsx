@@ -4,6 +4,7 @@ import { Plus, Check, X, Send, Flame, Heart, Loader2, Sparkles, Pencil } from "l
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { notifyPartner } from "@/lib/notifyPartner";
 import type { UserList, ListItem } from "./SharedLists";
 
 const SEX_BUCKET_IDEAS = [
@@ -141,6 +142,17 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
       toast({ title: "Error", description: "Could not send proposal", variant: "destructive" });
     } else {
       toast({ title: "🔥 Proposal sent!", description: "Your partner will pick their favourites" });
+      // Notify partner
+      if (profile?.partner_id) {
+        notifyPartner({
+          partnerId: profile.partner_id,
+          title: "🔥 Sex Bucket Challenge",
+          body: `${profile.username || "Your partner"} sent you a spicy proposal!`,
+          route: "/us?tab=lists",
+          chatMessage: "🔥 I just sent you a Sex Bucket Challenge — go pick your favourites!",
+          senderId: user.id,
+        });
+      }
       setItems([]);
       setMode("idle");
     }
