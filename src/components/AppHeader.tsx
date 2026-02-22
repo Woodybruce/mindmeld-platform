@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import usLogo from "@/assets/us-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const vibes = [
   { emoji: "🤗", label: "Hug" },
@@ -24,8 +25,22 @@ interface AppHeaderProps {
 const AppHeader = ({ subtitle }: AppHeaderProps) => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const unreadCount = useUnreadMessages();
   const [vibeOpen, setVibeOpen] = useState(false);
   const vibeRef = useRef<HTMLDivElement>(null);
+
+  const markAllRead = async () => {
+    if (!user) return;
+    haptics.light();
+    const { error } = await supabase
+      .from("messages")
+      .update({ read: true } as any)
+      .eq("receiver_id", user.id)
+      .eq("read", false);
+    if (!error) {
+      toast({ title: "✓ All notifications marked as read", duration: 2000 });
+    }
+  };
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -143,9 +158,14 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
             </AnimatePresence>
           </div>
 
-          <button className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative">
+          <button
+            onClick={markAllRead}
+            className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative"
+          >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-us-coral" />
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-us-coral" />
+            )}
           </button>
           <button
             onClick={() => navigate("/profile")}
