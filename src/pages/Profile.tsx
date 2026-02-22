@@ -81,7 +81,7 @@ const Profile = () => {
   const savePhoneNumber = async () => {
     if (!user) return;
     setSavingPhone(true);
-    const { error } = await supabase.from("profiles").update({ phone_number: phoneNumber.trim() || null } as any).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ phone_number: phoneNumber.trim() || null }).eq("id", user.id);
     if (error) {
       toast.error("Failed to save phone number");
     } else {
@@ -330,7 +330,7 @@ const Profile = () => {
                   supabase.from("shared_lists").delete().eq("user_id", uid),
                   supabase.from("weekly_tasks").delete().eq("user_id", uid),
                   supabase.from("content_likes").delete().eq("user_id", uid),
-                  supabase.from("profiles").update({ anniversary_date: null } as any).eq("id", uid),
+                  supabase.from("profiles").update({ anniversary_date: null }).eq("id", uid),
                 ]);
               }
             } catch (e) {
