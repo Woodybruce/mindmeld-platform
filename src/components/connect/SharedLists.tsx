@@ -20,6 +20,7 @@ export interface ListItem {
   text: string;
   done: boolean;
   isHeading?: boolean;
+  isObservation?: boolean;
   attachments?: ListItemAttachment[];
 }
 
@@ -701,7 +702,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
   };
 
   const getCompletionPercent = (list: UserList) => {
-    const countable = list.items.filter((i) => !i.isHeading);
+    const countable = list.items.filter((i) => !i.isHeading && !i.isObservation);
     if (countable.length === 0) return 0;
     return Math.round((countable.filter((i) => i.done).length / countable.length) * 100);
   };
@@ -1002,9 +1003,9 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
 
       {lists.map((list, i) => {
         const isExpanded = expandedId === list.id;
-        const doneCount = list.items.filter((i) => i.done && !i.isHeading).length;
-        const activeItems = list.items.filter((i) => !i.done || i.isHeading);
-        const completedItems = list.items.filter((i) => i.done && !i.isHeading);
+        const doneCount = list.items.filter((i) => i.done && !i.isHeading && !i.isObservation).length;
+        const activeItems = list.items.filter((i) => !i.done || i.isHeading || i.isObservation);
+        const completedItems = list.items.filter((i) => i.done && !i.isHeading && !i.isObservation);
         const isShowingCompleted = showCompleted[list.id] ?? false;
         const completionPct = getCompletionPercent(list);
         const nextMilestone = list.scoreData ? getNextMilestone(list) : null;
@@ -1185,7 +1186,11 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                             return (
                               <div key={item.id} className="group">
                                 <div className="flex items-center gap-2.5">
-                                  {itemNumber ? (
+                                  {item.isObservation ? (
+                                    <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                                      💭
+                                    </span>
+                                  ) : itemNumber ? (
                                     <button
                                       onClick={() => toggleItem(list.id, item.id)}
                                       className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold transition-colors ${
@@ -1350,7 +1355,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                     <p className="text-xs text-center text-muted-foreground py-2">All items completed! 🎉</p>
                   )}
 
-                  {/* Add item */}
+                  {/* Add item / observation */}
                   {(!list.maxItems || list.items.length < list.maxItems) && (
                     <div className="space-y-1.5 pt-2">
                       <div className="flex gap-2">
@@ -1364,61 +1369,80 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                         <button
                           onClick={() => addItem(list.id)}
                           className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                          title="Add as task"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      {!list.maxItems && (
-                        addingSubheading === list.id ? (
-                          <div className="flex gap-2">
-                            <input
-                              autoFocus
-                              value={subheadingText}
-                              onChange={(e) => setSubheadingText(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && subheadingText.trim()) {
-                                  const updated = lists.map((l) =>
-                                    l.id === list.id
-                                      ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true }] }
-                                      : l
-                                  );
-                                  onUpdate(updated);
-                                  setSubheadingText("");
-                                  setAddingSubheading(null);
-                                } else if (e.key === "Escape") {
-                                  setSubheadingText("");
-                                  setAddingSubheading(null);
-                                }
-                              }}
-                              placeholder="Subheading name…"
-                              className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                            />
+                      <div className="flex gap-3 px-1">
+                        <button
+                          onClick={() => {
+                            if (!newItemText.trim()) return;
+                            const newItem = { id: Date.now().toString(), text: newItemText.trim(), done: false, isObservation: true };
+                            const updated = lists.map((l) =>
+                              l.id === list.id ? { ...l, items: [...l.items, newItem] } : l
+                            );
+                            onUpdate(updated);
+                            setNewItemText("");
+                          }}
+                          disabled={!newItemText.trim()}
+                          className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors disabled:opacity-30"
+                        >
+                          💭 Add as observation
+                         </button>
+                        {!list.maxItems && (
+                          addingSubheading !== list.id && (
                             <button
-                              onClick={() => {
-                                if (subheadingText.trim()) {
-                                  const updated = lists.map((l) =>
-                                    l.id === list.id
-                                      ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true }] }
-                                      : l
-                                  );
-                                  onUpdate(updated);
-                                  setSubheadingText("");
-                                  setAddingSubheading(null);
-                                }
-                              }}
-                              className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                              onClick={() => setAddingSubheading(list.id)}
+                              className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
                             >
-                              <Plus className="w-3.5 h-3.5" />
+                              <Plus className="w-3 h-3" /> Add subheading
                             </button>
-                          </div>
-                        ) : (
+                          )
+                        )}
+                      </div>
+                      {!list.maxItems && addingSubheading === list.id && (
+                        <div className="flex gap-2">
+                          <input
+                            autoFocus
+                            value={subheadingText}
+                            onChange={(e) => setSubheadingText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && subheadingText.trim()) {
+                                const updated = lists.map((l) =>
+                                  l.id === list.id
+                                    ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true }] }
+                                    : l
+                                );
+                                onUpdate(updated);
+                                setSubheadingText("");
+                                setAddingSubheading(null);
+                              } else if (e.key === "Escape") {
+                                setSubheadingText("");
+                                setAddingSubheading(null);
+                              }
+                            }}
+                            placeholder="Subheading name…"
+                            className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
                           <button
-                            onClick={() => setAddingSubheading(list.id)}
-                            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors px-1"
+                            onClick={() => {
+                              if (subheadingText.trim()) {
+                                const updated = lists.map((l) =>
+                                  l.id === list.id
+                                    ? { ...l, items: [...l.items, { id: Date.now().toString(), text: subheadingText.trim(), done: false, isHeading: true }] }
+                                    : l
+                                );
+                                onUpdate(updated);
+                                setSubheadingText("");
+                                setAddingSubheading(null);
+                              }
+                            }}
+                            className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
                           >
-                            <Plus className="w-3 h-3" /> Add subheading
+                            <Plus className="w-3.5 h-3.5" />
                           </button>
-                        )
+                        </div>
                       )}
                     </div>
                   )}
