@@ -407,7 +407,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       return;
     }
     if (existingTemplateIds.has(templateId)) {
-      toast({ title: `"${t.name}" already exists`, description: "You can only have one of each template.", duration: 3000 });
+      toast({ title: `"${t.name}" already exists`, description: "Delete the current list to re-use this template.", duration: 3000 });
       return;
     }
     // Open preview step so user can add items before creating
@@ -417,6 +417,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       // Default non-heading items to done=true (meaning "selected/included")
       return { id: `${Date.now()}-${i}`, text: itemText, done: isHeading ? false : true, isHeading: isHeading || undefined };
     });
+    setShowTemplates(true);
     setPreviewTemplate(templateId);
     setPreviewItems(items);
     setPreviewNewItem("");
@@ -676,79 +677,15 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
 
   return (
     <div className="space-y-3">
-      {/* Template picker */}
+      {/* Template picker (preview mode only, or always-visible below) */}
       <AnimatePresence>
-        {showTemplates && (
+        {showTemplates && previewTemplate && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="space-y-3 overflow-hidden"
           >
-            {!previewTemplate && (
-              <>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose a template</p>
-                  <button onClick={() => setShowTemplates(false)} className="text-xs text-muted-foreground hover:text-foreground">
-                    Cancel
-                  </button>
-                </div>
-
-                {/* Core templates */}
-                {templates.filter(t => t.category !== "suggested" && !existingTemplateIds.has(t.id)).map((t, i) => (
-                  <motion.button
-                    key={t.id}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.06 }}
-                    onClick={() => createFromTemplate(t.id)}
-                    className={`w-full flex items-center gap-3 rounded-xl p-3.5 text-left ${t.gradient} border border-border/30 hover:scale-[1.01] transition-transform`}
-                  >
-                    <span className="text-xl">{t.icon}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.description}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </motion.button>
-                ))}
-
-                {/* More templates */}
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">More Templates</p>
-
-                <SexBucketList lists={lists} onUpdate={(updated) => { onUpdate(updated); setShowTemplates(false); }} />
-
-                {templates.filter(t => t.category === "suggested" && !existingTemplateIds.has(t.id)).map((t, i) => (
-                  <motion.button
-                    key={t.id}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.06 }}
-                    onClick={() => createFromTemplate(t.id)}
-                    className={`w-full flex items-center gap-3 rounded-xl p-3.5 text-left ${t.gradient} border border-border/30 hover:scale-[1.01] transition-transform`}
-                  >
-                    <span className="text-xl">{t.icon}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.description}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </motion.button>
-                ))}
-
-                <button
-                  onClick={() => { setShowTemplates(false); setCreatingBlank(true); }}
-                  className="w-full flex items-center gap-3 rounded-xl p-3.5 text-left bg-secondary/50 border border-border/30 hover:bg-secondary transition-colors"
-                >
-                  <span className="text-xl">📝</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">Blank List</p>
-                    <p className="text-xs text-muted-foreground">Start from scratch</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </button>
-              </>
-            )}
 
             {/* Template preview — add/remove items before creating */}
             {previewTemplate && (() => {
@@ -761,7 +698,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                       <span className="text-lg">{t.icon}</span>
                       <p className="text-sm font-bold text-foreground">{t.name}</p>
                     </div>
-                    <button onClick={() => { setPreviewTemplate(null); setPreviewItems([]); }} className="text-xs text-muted-foreground hover:text-foreground">
+                    <button onClick={() => { setPreviewTemplate(null); setPreviewItems([]); setShowTemplates(false); }} className="text-xs text-muted-foreground hover:text-foreground">
                       ← Back
                     </button>
                   </div>
@@ -1471,16 +1408,84 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
         );
       })}
 
-      {/* Create new — at bottom */}
+      {/* Always-visible templates section */}
       {!hideNewButton && !showTemplates && !creatingBlank && (
-        <motion.button
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={() => setShowTemplates(true)}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card p-4 text-sm font-medium text-primary hover:bg-muted/50 transition-colors"
-        >
-          <Plus className="w-4 h-4" /> New List
-        </motion.button>
+        <div className="space-y-3 pt-2">
+          <div className="border-t border-border/50 pt-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Templates</p>
+          </div>
+
+          {/* Core templates */}
+          {templates.filter(t => t.category !== "suggested").map((t, i) => {
+            const isUsed = existingTemplateIds.has(t.id);
+            return (
+              <motion.button
+                key={t.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.06 }}
+                onClick={() => !isUsed && createFromTemplate(t.id)}
+                disabled={isUsed}
+                className={`w-full flex items-center gap-3 rounded-xl p-3.5 text-left ${t.gradient} border border-border/30 transition-all ${
+                  isUsed ? "opacity-40 cursor-not-allowed" : "hover:scale-[1.01] cursor-pointer"
+                }`}
+              >
+                <span className="text-xl">{t.icon}</span>
+                <div className="flex-1">
+                  <p className={`text-sm font-semibold ${isUsed ? "text-muted-foreground" : "text-foreground"}`}>{t.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isUsed ? "Delete current list to re-use this template" : t.description}
+                  </p>
+                </div>
+                {!isUsed && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+              </motion.button>
+            );
+          })}
+
+          {/* More templates */}
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">More Templates</p>
+
+          <SexBucketList lists={lists} onUpdate={onUpdate} />
+
+          {templates.filter(t => t.category === "suggested").map((t, i) => {
+            const isUsed = existingTemplateIds.has(t.id);
+            return (
+              <motion.button
+                key={t.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.06 }}
+                onClick={() => !isUsed && createFromTemplate(t.id)}
+                disabled={isUsed}
+                className={`w-full flex items-center gap-3 rounded-xl p-3.5 text-left ${t.gradient} border border-border/30 transition-all ${
+                  isUsed ? "opacity-40 cursor-not-allowed" : "hover:scale-[1.01] cursor-pointer"
+                }`}
+              >
+                <span className="text-xl">{t.icon}</span>
+                <div className="flex-1">
+                  <p className={`text-sm font-semibold ${isUsed ? "text-muted-foreground" : "text-foreground"}`}>{t.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isUsed ? "Delete current list to re-use this template" : t.description}
+                  </p>
+                </div>
+                {!isUsed && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+              </motion.button>
+            );
+          })}
+
+          {/* Blank list option */}
+          <button
+            onClick={() => setCreatingBlank(true)}
+            className="w-full flex items-center gap-3 rounded-xl p-3.5 text-left bg-secondary/50 border border-border/30 hover:bg-secondary transition-colors"
+          >
+            <span className="text-xl">📝</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Blank List</p>
+              <p className="text-xs text-muted-foreground">Start from scratch</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
       )}
     </div>
   );
