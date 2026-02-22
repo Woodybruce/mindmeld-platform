@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart, Pencil, Search, ClipboardList } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart, Pencil, Search, ClipboardList, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiInvoke } from "@/lib/api";
@@ -407,6 +407,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
   const [eventPickerItem, setEventPickerItem] = useState<{ listId: string; itemId: string } | null>(null);
   const [eventDate, setEventDate] = useState("");
   const [sectionNewItem, setSectionNewItem] = useState<Record<string, string>>({});
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   const existingTemplateIds = new Set([
     ...lists.filter(l => l.template).map(l => l.template!),
@@ -1254,49 +1255,52 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                     </span>
                                   )}
                                   {!isEditing && (
-                                    <>
+                                    <div className="relative flex-shrink-0">
                                       <button
-                                        onClick={() => { setEditingItem({ listId: list.id, itemId: item.id }); setEditText(item.text); }}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                        title="Edit"
+                                        onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id)}
+                                        className="p-1.5 rounded-md hover:bg-secondary transition-colors"
                                       >
-                                        <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                                        <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                                       </button>
-                                      <button
-                                        onClick={() => {
-                                          setAttachingItemId({ listId: list.id, itemId: item.id });
-                                          fileInputRef.current?.click();
-                                        }}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                        title="Attach photo/file"
-                                      >
-                                        <Paperclip className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                                      </button>
-                                      <button
-                                        onClick={() => setEventPickerItem(
-                                          eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id
-                                            ? null
-                                            : { listId: list.id, itemId: item.id }
-                                        )}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                        title="Create event"
-                                      >
-                                        <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                                      </button>
-                                      <button
-                                        onClick={() => addToWeeklyList(item.text)}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                        title="Add to weekly list"
-                                      >
-                                        <ClipboardList className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                                      </button>
-                                      <button
-                                        onClick={() => removeItem(list.id, item.id)}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                                      </button>
-                                    </>
+                                      {openActionMenu === item.id && (
+                                        <>
+                                          <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
+                                          <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                                            <button
+                                              onClick={() => { setEditingItem({ listId: list.id, itemId: item.id }); setEditText(item.text); setOpenActionMenu(null); }}
+                                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                            >
+                                              <Pencil className="w-3.5 h-3.5 text-muted-foreground" /> Edit
+                                            </button>
+                                            <button
+                                              onClick={() => { setAttachingItemId({ listId: list.id, itemId: item.id }); fileInputRef.current?.click(); setOpenActionMenu(null); }}
+                                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                            >
+                                              <Paperclip className="w-3.5 h-3.5 text-muted-foreground" /> Attach file
+                                            </button>
+                                            <button
+                                              onClick={() => { setEventPickerItem(eventPickerItem?.listId === list.id && eventPickerItem?.itemId === item.id ? null : { listId: list.id, itemId: item.id }); setOpenActionMenu(null); }}
+                                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                            >
+                                              <CalendarPlus className="w-3.5 h-3.5 text-muted-foreground" /> Add event
+                                            </button>
+                                            <button
+                                              onClick={() => { addToWeeklyList(item.text); setOpenActionMenu(null); }}
+                                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                            >
+                                              <ClipboardList className="w-3.5 h-3.5 text-muted-foreground" /> Add to weekly
+                                            </button>
+                                            <div className="border-t border-border my-1" />
+                                            <button
+                                              onClick={() => { removeItem(list.id, item.id); setOpenActionMenu(null); }}
+                                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
 
