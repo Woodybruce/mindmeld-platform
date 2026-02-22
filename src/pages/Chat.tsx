@@ -62,7 +62,7 @@ const Chat = () => {
     if (!user) return;
     supabase.from("profiles").select("*").eq("id", user.id).single()
       .then(({ data }) => {
-        if ((data as any)?.phone_number) setPartnerPhone((data as any).phone_number);
+        if (data?.phone_number) setPartnerPhone(data.phone_number);
       });
   }, [user]);
 
