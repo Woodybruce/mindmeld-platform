@@ -96,6 +96,7 @@ const Us = () => {
           <GameCard title="Dare Duel" description="Take turns setting daring challenges — loser strips." emoji="⚔️" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-coral/20 to-us-gold/15" onClick={() => navigate("/dare-duel")} delay={0.24} />
           <GameCard title="Spicy Would You Rather" description="Steamy dilemmas — pick your fantasy, reveal together." emoji="🔥" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-coral/20 to-us-blush/20" onClick={() => navigate("/would-you-rather")} delay={0.32} />
           <GameCard title="Photo Challenge" description="Saucy couple photo tasks — share to your private album." emoji="📸" players="2 players · Anywhere" gradient="bg-gradient-to-br from-us-blush/20 to-us-coral/10" onClick={() => navigate("/photo-challenge")} delay={0.4} />
+          <GameCard title="Sex Bucket Challenge" description="5 random picks from your bucket list — schedule & do them!" emoji="🪣" players="2 players · Anywhere" gradient="bg-gradient-to-br from-destructive/15 to-us-coral/20" onClick={() => navigate("/sex-bucket-game")} delay={0.48} />
         </TabsContent>
 
         {/* Photos */}
