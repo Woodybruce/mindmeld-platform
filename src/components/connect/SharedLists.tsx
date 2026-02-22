@@ -394,11 +394,20 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
   const [eventDate, setEventDate] = useState("");
   const [sectionNewItem, setSectionNewItem] = useState<Record<string, string>>({});
 
+  const existingTemplateIds = new Set([
+    ...lists.filter(l => l.template).map(l => l.template!),
+    ...(allExistingTemplates || []),
+  ]);
+
   const createFromTemplate = (templateId: string) => {
     const t = templates.find((t) => t.id === templateId)!;
     if ((t as any).navigateTo) {
       setShowTemplates(false);
       navigate((t as any).navigateTo);
+      return;
+    }
+    if (existingTemplateIds.has(templateId)) {
+      toast({ title: `"${t.name}" already exists`, description: "You can only have one of each template.", duration: 3000 });
       return;
     }
     // Open preview step so user can add items before creating
@@ -686,7 +695,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                 </div>
 
                 {/* Core templates */}
-                {templates.filter(t => t.category !== "suggested" && !(allExistingTemplates || lists.map(l => l.template)).includes(t.id)).map((t, i) => (
+                {templates.filter(t => t.category !== "suggested" && !existingTemplateIds.has(t.id)).map((t, i) => (
                   <motion.button
                     key={t.id}
                     initial={{ opacity: 0, x: -8 }}
@@ -709,7 +718,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
 
                 <SexBucketList lists={lists} onUpdate={(updated) => { onUpdate(updated); setShowTemplates(false); }} />
 
-                {templates.filter(t => t.category === "suggested" && !(allExistingTemplates || lists.map(l => l.template)).includes(t.id)).map((t, i) => (
+                {templates.filter(t => t.category === "suggested" && !existingTemplateIds.has(t.id)).map((t, i) => (
                   <motion.button
                     key={t.id}
                     initial={{ opacity: 0, x: -8 }}
