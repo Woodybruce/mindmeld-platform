@@ -8,6 +8,12 @@ interface Profile {
   username: string | null;
   partner_id: string | null;
   partner_code: string | null;
+  phone_number: string | null;
+}
+
+interface LinkResult {
+  success: boolean;
+  error?: string;
 }
 
 interface AuthContextType {
@@ -19,8 +25,8 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  linkPartnerByEmail: (email: string) => Promise<boolean>;
-  linkPartnerByCode: (code: string) => Promise<boolean>;
+  linkPartnerByEmail: (email: string) => Promise<LinkResult>;
+  linkPartnerByCode: (code: string) => Promise<LinkResult>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -41,10 +47,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, username, partner_id, partner_code")
+      .select("id, username, partner_id, partner_code, phone_number")
       .eq("id", userId)
       .single();
-    if (data) setProfile(data as any as Profile);
+    if (data) {
+      setProfile({
+        id: data.id,
+        username: data.username,
+        partner_id: data.partner_id,
+        partner_code: data.partner_code,
+        phone_number: (data as any).phone_number ?? null,
+      });
+    }
   };
 
   const refreshProfile = async () => {
@@ -94,21 +108,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfile(null);
   };
 
-  const linkPartnerByEmail = async (email: string): Promise<boolean> => {
-    const { data, error } = await supabase.rpc("link_partner_by_email" as any, { _partner_email: email });
-    if (error || !data) return false;
+  const linkPartnerByEmail = async (email: string): Promise<LinkResult> => {
+    if (profile?.partner_id) {
+      return { success: false, error: "You already have a partner linked." };
+    }
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !trimmedEmail.includes("@")) {
+      return { success: false, error: "Please enter a valid email address." };
+    }
+    if (trimmedEmail === user?.email?.toLowerCase()) {
+      return { success: false, error: "You can't link with your own account." };
+    }
+    const { data, error } = await supabase.rpc("link_partner_by_email", { _partner_email: trimmedEmail });
+    if (error) {
+      console.error("link_partner_by_email error:", error);
+      return { success: false, error: "Something went wrong. Please try again." };
+    }
+    if (!data) {
+      return { success: false, error: "Could not find that account, or they already have a partner linked." };
+    }
     await refreshProfile();
-    return true;
+    return { success: true };
   };
 
-  const linkPartnerByCode = async (code: string): Promise<boolean> => {
-    const { data, error } = await supabase.rpc("link_partner" as any, { _partner_code: code });
-    if (error || !data) return false;
+  const linkPartnerByCode = async (code: string): Promise<LinkResult> => {
+    if (profile?.partner_id) {
+      return { success: false, error: "You already have a partner linked." };
+    }
+    const trimmedCode = code.trim();
+    if (!trimmedCode) {
+      return { success: false, error: "Please enter a valid invite code." };
+    }
+    const { data, error } = await supabase.rpc("link_partner", { _partner_code: trimmedCode });
+    if (error) {
+      console.error("link_partner error:", error);
+      return { success: false, error: "Something went wrong. Please try again." };
+    }
+    if (!data) {
+      return { success: false, error: "Invalid invite code. Ask your partner to share their code from their profile." };
+    }
     await refreshProfile();
-    return true;
+    return { success: true };
   };
 
-  // App-wide presence tracking
   const partnerOnline = usePresence(user?.id, profile?.partner_id ?? undefined);
 
   return (
