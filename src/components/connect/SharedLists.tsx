@@ -124,6 +124,30 @@ const challengesListDefaultItems = [
 ];
 
 const templates = [
+  // Pinned
+  {
+    id: "long-term-dreams",
+    name: "Our Long-Term Dreams",
+    icon: "⭐",
+    description: "Dream big together — your shared vision for the future",
+    gradient: "bg-gradient-to-br from-us-gold/20 to-us-cream/25",
+    lucideIcon: Target,
+    category: "core" as const,
+    defaultItems: [
+      "## Our Dreams",
+      "Buy our dream home together",
+      "Travel the world — visit 10 countries",
+      "Start a business or passion project together",
+      "Get married or renew our vows",
+      "Build financial freedom and retire early",
+      "Have or grow our family",
+      "Write a book or create something lasting",
+      "Live abroad for a year",
+      "Complete a big physical challenge together",
+      "Give back — volunteer or start a charity",
+      "## How we'll achieve them",
+    ],
+  },
   // Core templates
   {
     id: "sex-list",
