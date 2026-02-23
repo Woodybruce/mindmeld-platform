@@ -649,7 +649,9 @@ Return ONLY valid JSON with these fields:
           {
             role: "system",
             content: `You are a date night gift recommender for couples. Suggest 4 romantic date night experience gifts or vouchers available on Amazon UK (gift vouchers, experience boxes, date night kits, spa day gift sets, cocktail kits, restaurant voucher cards, cooking class kits, cinema gift sets).
-For bookingUrl use Amazon.co.uk search: "https://www.amazon.co.uk/s?k=SEARCH+TERM&tag=woodybruce-21"
+You MUST suggest REAL, SPECIFIC products that actually exist on Amazon UK. Use the exact brand name and full product title.
+For bookingUrl use: "https://www.amazon.co.uk/s?k=EXACT+BRAND+AND+PRODUCT+NAME&tag=woodybruce-21"
+The search term must be specific enough to find the exact product (e.g. "Buyagift+Spa+Day+for+Two+Gift+Experience" not just "spa+day+gift").
 Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
           },
           {
@@ -708,10 +710,10 @@ Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
 
       if (!experiences || experiences.length === 0) {
         experiences = [
-          { name: "Romantic Dining Experience Gift Box", venue: "Amazon UK", price: "\u00A349.99", description: "Voucher for a luxury couples dinner", category: "Restaurant", emoji: "\u{1F37D}\uFE0F", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=romantic+dining+experience+gift+voucher&tag=woodybruce-21", duration: "3 hours" },
-          { name: "Couples Spa Day Gift Set", venue: "Amazon UK", price: "\u00A335.00", description: "Luxurious spa day for two gift set", category: "Spa", emoji: "\u{1F6C1}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=couples+spa+day+gift+set&tag=woodybruce-21", duration: "Half day" },
-          { name: "Cocktail Making Kit for Two", venue: "Amazon UK", price: "\u00A329.99", description: "Make craft cocktails together at home", category: "Class", emoji: "\u{1F379}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=cocktail+making+kit+for+two&tag=woodybruce-21", duration: "2 hours" },
-          { name: "Adventure Experience Gift Voucher", venue: "Amazon UK", price: "\u00A359.99", description: "Thrilling couples adventure day out", category: "Activity", emoji: "\u{1F3AF}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=couples+adventure+experience+gift+voucher&tag=woodybruce-21", duration: "Full day" },
+          { name: "Buyagift Dinner for Two Gift Experience", venue: "Amazon UK", price: "\u00A349.99", description: "Voucher for a luxury couples dinner", category: "Restaurant", emoji: "\u{1F37D}\uFE0F", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=Buyagift+Dinner+for+Two+Gift+Experience&tag=woodybruce-21", duration: "3 hours" },
+          { name: "Sanctuary Spa Gift Set Luxury Bath", venue: "Amazon UK", price: "\u00A335.00", description: "Luxurious spa day for two gift set", category: "Spa", emoji: "\u{1F6C1}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=Sanctuary+Spa+Gift+Set+Luxury+Bath&tag=woodybruce-21", duration: "Half day" },
+          { name: "VonShef Cocktail Making Set Parisian", venue: "Amazon UK", price: "\u00A329.99", description: "Make craft cocktails together at home", category: "Class", emoji: "\u{1F379}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=VonShef+Cocktail+Making+Set+Parisian&tag=woodybruce-21", duration: "2 hours" },
+          { name: "Virgin Experience Days Adventure for Two", venue: "Amazon UK", price: "\u00A359.99", description: "Thrilling couples adventure day out", category: "Activity", emoji: "\u{1F3AF}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=Virgin+Experience+Days+Adventure+for+Two&tag=woodybruce-21", duration: "Full day" },
         ];
       }
 
@@ -796,7 +798,9 @@ Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
             role: "system",
             content: `You are a product recommender for a couples wellness app. Suggest 4 romantic and intimate products on Amazon UK.
 Include: couples massage oils, candles, bath sets, card games, lingerie, massage candles, couples vibrators, sensual gift sets.
-For productUrl: "https://www.amazon.co.uk/s?k=SEARCH+TERM&tag=woodybruce-21"
+You MUST suggest REAL, SPECIFIC products that actually exist on Amazon UK. Use the exact brand name and full product title.
+For productUrl: "https://www.amazon.co.uk/s?k=EXACT+BRAND+AND+PRODUCT+NAME&tag=woodybruce-21"
+The search term must be specific enough to find the exact product (e.g. "Lelo+Sona+2+Cruise" not just "couples+vibrator").
 For imageSearchTerm: provide a 3-5 word Amazon search that would find a real photo of this product.
 Keep descriptions under 60 chars.`,
           },
@@ -877,17 +881,17 @@ Keep descriptions under 60 chars.`,
             role: "system",
             content: `You are a product recommendation engine for a couples/relationship app.
 Suggest 4 SPECIFIC, REAL products that actually exist on Amazon UK. Use exact product names and real brands.
-CRITICAL: For productUrl, you MUST provide a direct Amazon product page URL in this format:
-"https://www.amazon.co.uk/dp/ASIN?tag=woodybruce-21" where ASIN is the real 10-character Amazon product ID (e.g. B09V3KXJPB).
-Do NOT use search URLs (/s?k=...). Only use direct product links (/dp/ASIN).
-If you don't know the exact ASIN, use a realistic one \u2014 the affiliate tag must always be "woodybruce-21".
+For productUrl use: "https://www.amazon.co.uk/s?k=EXACT+BRAND+AND+FULL+PRODUCT+NAME&tag=woodybruce-21"
+The search term must be specific enough to find the exact product (e.g. "Lelo+Sona+2+Cruise+Clitoral+Stimulator" or "Yankee+Candle+Wedding+Day+Large+Jar").
+Do NOT use generic search terms. Always use the full brand + product name so the search returns the exact item.
+The affiliate tag must always be "woodybruce-21".
 Use realistic GBP prices, short descriptions (max 60 chars).
 For imageKeyword: provide a single concrete noun for an Unsplash photo (e.g. "candles", "wine", "map", "massage oil", "board game").
 Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books, Stationery, Dining.`,
           },
           {
             role: "user",
-            content: `Suggest 4 specific real Amazon UK products for couples. Category hint: ${category}. Use real product names, brands, and direct /dp/ASIN links. Make them varied and gift-worthy.`,
+            content: `Suggest 4 specific real Amazon UK products for couples. Category hint: ${category}. Use real brand names and full product titles. Make them varied and gift-worthy.`,
           },
         ],
         [
