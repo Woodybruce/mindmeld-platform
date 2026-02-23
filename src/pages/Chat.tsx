@@ -326,7 +326,7 @@ const Chat = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background max-w-lg mx-auto relative flex flex-col">
-        <header className="sticky top-0 z-50 bg-[hsl(var(--us-navy))] text-white">
+        <header className="sticky top-0 z-50 bg-[hsl(var(--us-navy))] text-white safe-area-top">
           <div className="flex items-center gap-3 px-4 py-2.5">
             <button onClick={() => navigate("/")} className="w-9 h-9 rounded-full flex items-center justify-center text-white/80">
               <ArrowLeft className="w-5 h-5" />

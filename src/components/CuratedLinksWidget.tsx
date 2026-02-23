@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { apiInvoke } from "@/lib/api";
 import { toast } from "sonner";
 import { useContentLikes } from "@/hooks/useContentLikes";
+import { useSharedLists } from "@/hooks/useSharedLists";
 import LikeButton from "@/components/LikeButton";
 
 interface Article {
@@ -61,6 +62,7 @@ const CuratedLinksWidget = () => {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("article");
+  const { addList: addSharedList } = useSharedLists();
 
   useEffect(() => {
     if (!user) return;
@@ -119,11 +121,9 @@ const CuratedLinksWidget = () => {
     fetchArticles(); 
   }, []);
 
-  const saveArticleAsList = (article: Article) => {
+  const saveArticleAsList = async (article: Article) => {
     toast.info(`"${article.title}" saved — open Lists to view key points`, { duration: 3000 });
-    const stored = localStorage.getItem("userLists");
-    const lists = stored ? JSON.parse(stored) : [];
-    lists.push({
+    await addSharedList({
       id: `article-${Date.now()}`,
       name: article.title,
       icon: article.emoji,
@@ -136,7 +136,6 @@ const CuratedLinksWidget = () => {
         { id: `i2-${Date.now()}`, text: article.description, done: false },
       ],
     });
-    localStorage.setItem("userLists", JSON.stringify(lists));
   };
 
   // Combine articles + saved links and shuffle — reshuffles on refresh or mount

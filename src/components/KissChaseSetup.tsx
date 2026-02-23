@@ -92,7 +92,7 @@ const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupP
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
         <div className="flex items-center gap-3 px-4 py-3">
           <button onClick={() => navigate("/")} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
             <ArrowLeft className="w-5 h-5" />

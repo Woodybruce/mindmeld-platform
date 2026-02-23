@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, X, Loader2, Sparkles, Users, ListPlus } from "lucide-r
 import { Progress } from "@/components/ui/progress";
 import { apiInvoke } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
+import { useSharedLists } from "@/hooks/useSharedLists";
 import type { UserList } from "@/components/connect/SharedLists";
 
 interface FamilyMember {
@@ -27,6 +28,7 @@ type Step = "members" | "categories" | "generating" | "results";
 
 const FamilyQuiz = () => {
   const navigate = useNavigate();
+  const { addList } = useSharedLists();
   const [step, setStep] = useState<Step>("members");
   const [members, setMembers] = useState<FamilyMember[]>([
     { id: "p1", name: "", age: "", role: "parent" },
@@ -95,13 +97,11 @@ const FamilyQuiz = () => {
     }
   };
 
-  const saveAsList = () => {
+  const saveAsList = async () => {
     const allItems = generatedTasks.flatMap((cat) => [
       { id: `heading-${Date.now()}-${cat.category}`, text: cat.category, done: false, isHeading: true },
       ...cat.tasks.map((text, i) => ({ id: `fam-${Date.now()}-${cat.category}-${i}`, text, done: false })),
     ]);
-    const stored = localStorage.getItem("userLists");
-    const lists: UserList[] = stored ? JSON.parse(stored) : [];
     const newList: UserList = {
       id: `family-${Date.now()}`,
       name: "Family To-Do List",
@@ -109,8 +109,9 @@ const FamilyQuiz = () => {
       createdAt: new Date().toISOString(),
       items: allItems,
       aiSuggestable: true,
+      template: "family",
     };
-    localStorage.setItem("userLists", JSON.stringify([newList, ...lists]));
+    await addList(newList);
     toast({ title: "Family list created ✓", description: `${allItems.length} tasks added` });
     navigate("/us?tab=lists");
   };
@@ -119,7 +120,7 @@ const FamilyQuiz = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
         <div className="px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate("/us?tab=quizzes")} className="p-1 -ml-1">
             <ArrowLeft className="w-5 h-5 text-foreground" />

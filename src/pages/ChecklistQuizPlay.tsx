@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronRight, ChevronLeft, Check, Flame, ListPlus } from "lu
 import { checklistQuizzes } from "@/data/checklistQuizData";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
+import { useSharedLists } from "@/hooks/useSharedLists";
 import type { UserList, ScoreSnapshot } from "@/components/connect/SharedLists";
 import { Slider } from "@/components/ui/slider";
 
@@ -18,6 +19,7 @@ const ChecklistQuizPlay = () => {
   const [searchParams] = useSearchParams();
   const isRetest = searchParams.get("retest") === "true";
   const navigate = useNavigate();
+  const { lists: sharedLists, addList, updateList: updateSharedList } = useSharedLists();
   const quiz = checklistQuizzes.find((q) => q.id === quizId);
 
   const [gender, setGender] = useState<"women" | "men" | null>(null);
@@ -75,7 +77,7 @@ const ChecklistQuizPlay = () => {
   if (quiz.hasGenderPerspective && !gender) {
     return (
       <div className="min-h-screen bg-background max-w-lg mx-auto">
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
           <div className="px-4 py-3 flex items-center gap-3">
             <button onClick={() => navigate("/us")} className="p-1 -ml-1">
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -127,19 +129,16 @@ const ChecklistQuizPlay = () => {
       s.items.filter((i) => i.type === "checkbox")
     ).length;
 
-    // Handle retest: update existing list's score data
     if (isRetest && retestListId) {
-      const stored = localStorage.getItem("userLists");
-      const lists: UserList[] = stored ? JSON.parse(stored) : [];
-      const listIdx = lists.findIndex((l) => l.id === retestListId);
-      if (listIdx >= 0 && lists[listIdx].scoreData) {
+      const existingList = sharedLists.find((l) => l.id === retestListId);
+      if (existingList && existingList.scoreData) {
         const newSnapshot: ScoreSnapshot = {
           takenAt: new Date().toISOString(),
           answers: scoreAnswers,
           milestone: retestMilestone,
         };
-        lists[listIdx].scoreData!.snapshots.push(newSnapshot);
-        localStorage.setItem("userLists", JSON.stringify(lists));
+        const updatedSnapshots = [...existingList.scoreData.snapshots, newSnapshot];
+        updateSharedList(existingList.id, { scoreData: { ...existingList.scoreData, snapshots: updatedSnapshots } });
         localStorage.removeItem("retestListId");
         localStorage.removeItem("retestMilestone");
         toast({ title: "Score updated ✓", description: `${retestMilestone}% milestone recorded!` });
@@ -150,7 +149,7 @@ const ChecklistQuizPlay = () => {
 
     return (
       <div className="min-h-screen bg-background max-w-lg mx-auto">
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
           <div className="px-4 py-3 flex items-center gap-3">
             <button onClick={() => navigate("/us")} className="p-1 -ml-1">
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -248,13 +247,11 @@ const ChecklistQuizPlay = () => {
           </p>
 
           <button
-            onClick={() => {
+            onClick={async () => {
               if (checkedTexts.length === 0) {
                 toast({ title: "No items selected", description: "Tick some items first!" });
                 return;
               }
-              const stored = localStorage.getItem("userLists");
-              const lists: UserList[] = stored ? JSON.parse(stored) : [];
               const initialSnapshot: ScoreSnapshot = {
                 takenAt: new Date().toISOString(),
                 answers: scoreAnswers,
@@ -274,7 +271,7 @@ const ChecklistQuizPlay = () => {
                   snapshots: [initialSnapshot],
                 },
               };
-              localStorage.setItem("userLists", JSON.stringify([newList, ...lists]));
+              await addList(newList);
               toast({ title: "List created ✓", description: `${checkedTexts.length} items added with score tracking` });
               navigate("/us?tab=lists");
             }}
@@ -297,7 +294,7 @@ const ChecklistQuizPlay = () => {
   // Section-by-section playthrough
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
         <div className="px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate("/us")} className="p-1 -ml-1">
             <ArrowLeft className="w-5 h-5 text-foreground" />

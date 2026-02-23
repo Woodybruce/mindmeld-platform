@@ -13,12 +13,14 @@ import {
 } from "@/lib/quizService";
 import type { PartnerAnswerMap } from "@/lib/quizService";
 import { toast } from "@/hooks/use-toast";
+import { useSharedLists } from "@/hooks/useSharedLists";
 import type { UserList } from "@/components/connect/SharedLists";
 
 const QuizPlay = () => {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { lists: sharedLists, addList, updateList: updateSharedList } = useSharedLists();
   const quiz = quizDefinitions.find((q) => q.id === quizId);
 
   const [currentQ, setCurrentQ] = useState(0);
@@ -98,33 +100,26 @@ const QuizPlay = () => {
     setLoading(false);
   };
 
-  const addToList = (text: string) => {
-    const stored = localStorage.getItem("userLists");
-    const lists: UserList[] = stored ? JSON.parse(stored) : [];
-    const together = lists.find((l) => l.id === "onenote-together");
+  const addToList = async (text: string) => {
+    const together = sharedLists.find((l) => l.template === "together-list" || l.name === "Our Together List");
     if (together) {
-      together.items.push({ id: Date.now().toString(), text, done: false });
+      const updatedItems = [...together.items, { id: Date.now().toString(), text, done: false }];
+      await updateSharedList(together.id, { items: updatedItems });
     } else {
-      lists.push({ id: "onenote-together", name: "Our Together List", icon: "💑", createdAt: new Date().toISOString(), items: [{ id: Date.now().toString(), text, done: false }] });
+      await addList({ id: `together-${Date.now()}`, name: "Our Together List", icon: "💑", createdAt: new Date().toISOString(), template: "together-list", items: [{ id: Date.now().toString(), text, done: false }] });
     }
-    localStorage.setItem("userLists", JSON.stringify(lists));
     toast({ title: "Added to Together List ✓", description: text });
   };
 
-  const createListFromQuiz = (actionItems: string[]) => {
-    const stored = localStorage.getItem("userLists");
-    const lists: UserList[] = stored ? JSON.parse(stored) : [];
-    const listId = `quiz-${quiz!.id}-${Date.now()}`;
+  const createListFromQuiz = async (actionItems: string[]) => {
     const newList: UserList = {
-      id: listId,
+      id: `quiz-${quiz!.id}-${Date.now()}`,
       name: `${quiz!.emoji} ${quiz!.title} Actions`,
       icon: quiz!.emoji,
       createdAt: new Date().toISOString(),
       items: actionItems.map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false })),
     };
-    const updated = [newList, ...lists];
-    localStorage.setItem("userLists", JSON.stringify(updated));
-    // Trigger update in Us page when navigating back
+    await addList(newList);
     toast({ title: "Action list created ✓", description: `${actionItems.length} items added to your Lists tab` });
     navigate("/us?tab=lists");
   };
@@ -133,7 +128,7 @@ const QuizPlay = () => {
     const actionItems = generateActionItems(quiz.id);
     return (
       <div className="min-h-screen bg-background max-w-lg mx-auto">
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
           <div className="px-4 py-3 flex items-center gap-3">
             <button onClick={() => navigate("/us")} className="p-1 -ml-1">
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -251,7 +246,7 @@ const QuizPlay = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
         <div className="px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate("/us")} className="p-1 -ml-1">
             <ArrowLeft className="w-5 h-5 text-foreground" />

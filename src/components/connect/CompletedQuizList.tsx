@@ -3,6 +3,7 @@ import { Check, ChevronRight, Trophy, Lightbulb, ListPlus } from "lucide-react";
 import type { CompletedQuiz } from "@/data/quizData";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { useSharedLists } from "@/hooks/useSharedLists";
 import type { UserList } from "@/components/connect/SharedLists";
 
 interface CompletedQuizListProps {
@@ -11,17 +12,16 @@ interface CompletedQuizListProps {
 
 const CompletedQuizList = ({ quizzes }: CompletedQuizListProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { lists: sharedLists, addList, updateList: updateSharedList } = useSharedLists();
 
-  const addToList = (text: string) => {
-    const stored = localStorage.getItem("userLists");
-    const lists: UserList[] = stored ? JSON.parse(stored) : [];
-    const together = lists.find((l) => l.id === "onenote-together");
+  const addToList = async (text: string) => {
+    const together = sharedLists.find((l) => l.template === "together-list" || l.name === "Our Together List");
     if (together) {
-      together.items.push({ id: Date.now().toString(), text, done: false });
+      const updatedItems = [...together.items, { id: Date.now().toString(), text, done: false }];
+      await updateSharedList(together.id, { items: updatedItems });
     } else {
-      lists.push({ id: "onenote-together", name: "Our Together List", icon: "💑", createdAt: new Date().toISOString(), items: [{ id: Date.now().toString(), text, done: false }] });
+      await addList({ id: `together-${Date.now()}`, name: "Our Together List", icon: "💑", createdAt: new Date().toISOString(), template: "together-list", items: [{ id: Date.now().toString(), text, done: false }] });
     }
-    localStorage.setItem("userLists", JSON.stringify(lists));
     toast({ title: "Added to Together List ✓", description: text });
   };
 

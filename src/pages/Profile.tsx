@@ -8,6 +8,7 @@ import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
+import { useSharedLists } from "@/hooks/useSharedLists";
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
@@ -33,9 +34,8 @@ const Profile = () => {
   const quizCount = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("completedQuizzes") || "[]").length; } catch { return 0; }
   }, []);
-  const listCount = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem("userLists") || "[]").length; } catch { return 0; }
-  }, []);
+  const { lists: sharedListsData } = useSharedLists();
+  const listCount = sharedListsData.length;
 
   useEffect(() => {
     if (!user) return;
@@ -126,7 +126,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
         <div className="flex items-center justify-between px-4 py-3">
           <h1 className="font-display text-xl font-bold tracking-tight text-foreground">Profile</h1>
           <button className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">

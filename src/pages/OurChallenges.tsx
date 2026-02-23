@@ -106,7 +106,7 @@ const OurChallenges = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto pb-8">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
         <div className="px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate("/us")} className="p-1 -ml-1">
             <ArrowLeft className="w-5 h-5 text-foreground" />
