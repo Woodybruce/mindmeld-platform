@@ -39,17 +39,16 @@ const SexBucketGame = () => {
     }
   }, []);
 
-  // Find the sex-todo list
   useEffect(() => {
-    const sexTodoList = lists.find((l) => l.template === "sex-todo" || l.name?.toLowerCase().includes("sex to do"));
-    if (lists.length === 0) return; // still loading
+    const ideasList = lists.find((l) => l.template === "sex-bucket-ideas" || l.name?.toLowerCase().includes("sex bucket challenge ideas"));
+    if (lists.length === 0) return;
 
-    if (!sexTodoList || sexTodoList.items.filter((i) => !i.isHeading && !i.done).length < 5) {
+    if (!ideasList || ideasList.items.filter((i) => !i.isHeading && !i.done).length < 5) {
       setPhase("no-list");
       return;
     }
 
-    const available = sexTodoList.items
+    const available = ideasList.items
       .filter((i) => !i.isHeading && !i.done)
       .map((i) => i.text);
     setAllItems(available);
@@ -190,9 +189,9 @@ const SexBucketGame = () => {
             className="text-center py-16 space-y-4"
           >
             <Flame className="w-16 h-16 mx-auto text-muted-foreground/30" />
-            <h2 className="font-display text-xl font-bold text-foreground">No Sex To Do list yet</h2>
+            <h2 className="font-display text-xl font-bold text-foreground">No Sex Bucket Challenge Ideas list yet</h2>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-              Complete the Sex Bucket Challenge first — propose items to your partner, they pick their favourites, and you'll get a shared list to play with.
+              Create a Sex Bucket Challenge Ideas list first with at least 5 items — the game will randomly draw from it.
             </p>
             <button
               onClick={() => navigate("/us?tab=lists")}
