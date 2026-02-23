@@ -90,7 +90,20 @@ All routes are defined in `server/routes.ts`:
 - Development: `npm run dev` (starts Express + Vite on port 5000)
 - The workflow "Start application" runs `npm run dev`
 
+## List System
+- Lists stored in Supabase `shared_lists` table (not localStorage)
+- `useSharedLists` hook is the canonical way to read/write lists
+- `status` and `createdBy` metadata stored inside `score_data._listMeta` JSONB (no schema changes needed)
+- Template lists require partner to add items before going live (`status: "pending_partner"` → `"active"`)
+- Sex Bucket Challenge uses separate `bucket_list_proposals` table for its proposal flow
+- Sex Bucket Game draws from the `sex-bucket-ideas` template list
+
 ## Recent Changes
+- 2026-02-23: Partner-must-contribute flow for all template lists
+  - Template lists now require both partners to add items before going live
+  - Fixed all quiz/widget pages to save lists to Supabase instead of localStorage
+  - Added safe-area-top to all sub-page headers for iPhone notch/Dynamic Island
+  - Sex Bucket Game now draws from "Sex Bucket Challenge Ideas" list
 - 2026-02-22: Migrated from Lovable/Supabase Edge Functions to Replit Express server
   - Created Express server infrastructure
   - Ported 18 Edge Functions to Express API routes

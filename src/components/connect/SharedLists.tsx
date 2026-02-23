@@ -39,15 +39,14 @@ export interface UserList {
   items: ListItem[];
   createdAt: string;
   template?: string;
-  /** Maximum number of items allowed */
   maxItems?: number;
-  /** Whether AI suggestions are available */
   aiSuggestable?: boolean;
-  /** For checklist quizzes: score sections stored separately */
   scoreData?: {
     sections: { title: string; items: { id: string; text: string; type: string; choices?: string[] }[] }[];
     snapshots: ScoreSnapshot[];
   };
+  status?: "pending_partner" | "active";
+  createdBy?: string;
 }
 
 const sexListDefaultItems = [
@@ -408,6 +407,10 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
   const [eventDate, setEventDate] = useState("");
   const [sectionNewItem, setSectionNewItem] = useState<Record<string, string>>({});
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
+  const [reviewingListId, setReviewingListId] = useState<string | null>(null);
+  const [reviewItems, setReviewItems] = useState<ListItem[]>([]);
+  const [reviewNewItem, setReviewNewItem] = useState("");
+  const [reviewAddingAfter, setReviewAddingAfter] = useState<number | null>(null);
 
   const existingTemplateIds = new Set([
     ...lists.filter(l => l.template).map(l => l.template!),
@@ -451,20 +454,20 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       template: t.id,
       createdAt: new Date().toISOString(),
       maxItems: (t as any).maxItems || undefined,
-      // Keep items that are ticked (done=true means "selected") + headings; reset done to false for the actual list
       items: previewItems.filter(item => item.done || item.isHeading).map(item => ({ ...item, done: false })),
+      status: "pending_partner",
+      createdBy: user?.id,
     };
     const updated = [newList, ...lists];
     onUpdate(updated);
 
-    // Notify partner about the new list
     if (user && profile?.partner_id) {
       notifyPartner({
         partnerId: profile.partner_id,
-        title: `${t.icon} New list created`,
-        body: `${profile.username || "Your partner"} started "${t.name}" — go add yours!`,
+        title: `${t.icon} New list — add yours!`,
+        body: `${profile.username || "Your partner"} started "${t.name}" — add your items to make it live!`,
         route: "/us?tab=lists",
-        chatMessage: `${t.icon} I just created our "${t.name}" list — come check it out and add yours!`,
+        chatMessage: `${t.icon} I just started our "${t.name}" list — go add your items so we can make it live!`,
         senderId: user.id,
       });
     }
@@ -472,7 +475,42 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     setShowTemplates(false);
     setPreviewTemplate(null);
     setPreviewItems([]);
-    setExpandedId(newList.id);
+    toast({ title: `${t.icon} List sent to partner`, description: "They'll add their items before it goes live" });
+  };
+
+  const startReviewingList = (list: UserList) => {
+    setReviewingListId(list.id);
+    setReviewItems([...list.items]);
+    setReviewNewItem("");
+    setReviewAddingAfter(null);
+  };
+
+  const confirmPartnerReview = () => {
+    if (!reviewingListId) return;
+    const list = lists.find(l => l.id === reviewingListId);
+    if (!list) return;
+    const updatedList: UserList = {
+      ...list,
+      items: reviewItems,
+      status: "active",
+    };
+    onUpdate(lists.map(l => l.id === reviewingListId ? updatedList : l));
+
+    if (user && profile?.partner_id && list.createdBy) {
+      notifyPartner({
+        partnerId: list.createdBy,
+        title: `${list.icon} ${list.name} is live!`,
+        body: `${profile.username || "Your partner"} added their items — your list is now active!`,
+        route: "/us?tab=lists",
+        chatMessage: `${list.icon} I've added my items to "${list.name}" — it's live now! 🎉`,
+        senderId: user.id,
+      });
+    }
+
+    setReviewingListId(null);
+    setReviewItems([]);
+    setExpandedId(reviewingListId);
+    toast({ title: `${list.icon} ${list.name} is live!`, description: "Both partners have added their items" });
   };
 
   const addPreviewItem = () => {
@@ -964,7 +1002,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                     onClick={confirmTemplate}
                     className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
-                    Create List
+                    Send to Partner
                   </button>
                 </div>
               );
@@ -1000,15 +1038,180 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
         )}
       </AnimatePresence>
 
-      {/* Sex Bucket Challenge pending proposal (shown outside template picker when not browsing templates) */}
       {!showTemplates && <SexBucketList lists={lists} onUpdate={onUpdate} pendingOnly />}
 
-      {/* Existing lists */}
-      {lists.length === 0 && !showTemplates && !creatingBlank && (
+      {!showTemplates && (() => {
+        const pendingLists = lists.filter(l => l.status === "pending_partner");
+        if (pendingLists.length === 0) return null;
+        return (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waiting for partner</p>
+            {pendingLists.map((list) => {
+              const isFromMe = list.createdBy === user?.id;
+              const isReviewing = reviewingListId === list.id;
+
+              if (isReviewing) {
+                return (
+                  <motion.div
+                    key={list.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="rounded-xl border-2 border-primary/40 bg-card overflow-hidden"
+                  >
+                    <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{list.icon}</span>
+                        <p className="text-sm font-bold text-foreground">{list.name}</p>
+                      </div>
+                      <button onClick={() => { setReviewingListId(null); setReviewItems([]); }} className="text-xs text-muted-foreground hover:text-foreground">
+                        ← Back
+                      </button>
+                    </div>
+                    <p className="px-4 pt-2 text-xs text-muted-foreground">Your partner's items are shown below. Add yours, then confirm to make the list live.</p>
+                    <div className="px-4 py-3 space-y-1 max-h-80 overflow-y-auto">
+                      {reviewItems.map((item, idx) => {
+                        const isLastBeforeNext = !item.isHeading && (idx === reviewItems.length - 1 || reviewItems[idx + 1]?.isHeading);
+                        const isEmptySection = item.isHeading && (idx === reviewItems.length - 1 || reviewItems[idx + 1]?.isHeading);
+                        const showAdd = isLastBeforeNext || isEmptySection;
+                        return (
+                          <div key={item.id}>
+                            <div className="flex items-center gap-2.5 py-1">
+                              {item.isHeading ? (
+                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">
+                                  {item.text}
+                                  {item.sectionType === "observation" && <span className="ml-1.5 text-[10px] font-normal normal-case text-muted-foreground">💭</span>}
+                                </span>
+                              ) : (
+                                <div className="flex items-center gap-2.5 flex-1">
+                                  <div className="w-5 h-5 rounded-md border border-muted-foreground/20 flex-shrink-0" />
+                                  <span className="text-sm text-foreground">{item.text}</span>
+                                </div>
+                              )}
+                              <button onClick={() => setReviewItems(prev => prev.filter(i => i.id !== item.id))} className="p-1 rounded-md hover:bg-destructive/10">
+                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                              </button>
+                            </div>
+                            {showAdd && (
+                              <div className="py-1">
+                                {reviewAddingAfter === idx ? (
+                                  <div className="flex gap-1.5">
+                                    <input
+                                      autoFocus
+                                      value={reviewNewItem}
+                                      onChange={(e) => setReviewNewItem(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" && reviewNewItem.trim()) {
+                                          const ni = { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false };
+                                          setReviewItems(prev => { const c = [...prev]; c.splice(idx + 1, 0, ni); return c; });
+                                          setReviewNewItem("");
+                                          setReviewAddingAfter(null);
+                                        }
+                                        if (e.key === "Escape") { setReviewAddingAfter(null); setReviewNewItem(""); }
+                                      }}
+                                      placeholder="Add your item…"
+                                      className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        if (!reviewNewItem.trim()) return;
+                                        const ni = { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false };
+                                        setReviewItems(prev => { const c = [...prev]; c.splice(idx + 1, 0, ni); return c; });
+                                        setReviewNewItem("");
+                                        setReviewAddingAfter(null);
+                                      }}
+                                      className="rounded-lg bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => { setReviewAddingAfter(idx); setReviewNewItem(""); }}
+                                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" /> Add item
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="px-4 py-3 space-y-2 border-t border-border/30">
+                      <div className="flex gap-2">
+                        <input
+                          value={reviewNewItem}
+                          onChange={(e) => setReviewNewItem(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && reviewNewItem.trim()) {
+                              setReviewItems(prev => [...prev, { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false }]);
+                              setReviewNewItem("");
+                            }
+                          }}
+                          placeholder="Add item…"
+                          className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!reviewNewItem.trim()) return;
+                            setReviewItems(prev => [...prev, { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false }]);
+                            setReviewNewItem("");
+                          }}
+                          className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={confirmPartnerReview}
+                        className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Confirm & Go Live
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              }
+
+              return (
+                <motion.div
+                  key={list.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-dashed border-primary/40 bg-primary/5 overflow-hidden"
+                >
+                  <div className="flex items-center gap-3 p-4">
+                    <span className="text-xl">{list.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{list.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isFromMe
+                          ? "Waiting for your partner to add their items…"
+                          : "Your partner started this list — tap to add yours!"}
+                      </p>
+                    </div>
+                    {!isFromMe && (
+                      <button
+                        onClick={() => startReviewingList(list)}
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+                      >
+                        Add mine
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {lists.filter(l => l.status !== "pending_partner").length === 0 && !showTemplates && !creatingBlank && (
         <div className="rounded-xl border border-border bg-card p-6 text-center">
           <ListChecks className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
           <h3 className="font-display text-base font-semibold text-foreground">No lists yet</h3>
-          <p className="text-sm text-muted-foreground mt-1">Create a list to get started.</p>
+          <p className="text-sm text-muted-foreground mt-1">Create a list from a template below to get started.</p>
         </div>
       )}
 
@@ -1021,7 +1224,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
         onChange={handleFileAttach}
       />
 
-      {lists.map((list, i) => {
+      {lists.filter(l => l.status !== "pending_partner").map((list, i) => {
         const isExpanded = expandedId === list.id;
         const doneCount = list.items.filter((i) => i.done && !i.isHeading && !i.isObservation).length;
         const activeItems = list.items.filter((i) => !i.done || i.isHeading || i.isObservation);
