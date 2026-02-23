@@ -386,6 +386,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
   const [newListName, setNewListName] = useState("");
   const [creatingBlank, setCreatingBlank] = useState(false);
   const [suggestingFor, setSuggestingFor] = useState<string | null>(null);
+  const [suggestingForPreview, setSuggestingForPreview] = useState(false);
   const [addingSubheading, setAddingSubheading] = useState<string | null>(null);
   const [subheadingText, setSubheadingText] = useState("");
   const [subheadingType, setSubheadingType] = useState<"task" | "observation">("task");
@@ -685,6 +686,66 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       toast({ title: "Couldn't generate suggestions", description: "Please try again shortly.", variant: "destructive" });
     } finally {
       setSuggestingFor(null);
+    }
+  };
+
+  const suggestPreviewItems = async (listName: string) => {
+    setSuggestingForPreview(true);
+    try {
+      const existingItems = previewItems.filter(i => !i.isHeading).map(i => i.text);
+      const { data, error } = await apiInvoke("suggest-tasks", {
+        body: { existingItems, listName },
+      });
+      if (error) throw error;
+      if (data?.tasks) {
+        const newItems = data.tasks.map((t: { text: string }, i: number) => ({
+          id: `ai-${Date.now()}-${i}`,
+          text: t.text,
+          done: true,
+        }));
+        setPreviewItems(prev => [...prev, ...newItems]);
+        toast({ title: "AI suggestions added ✨", description: `${newItems.length} items added — tick to include` });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Couldn't generate suggestions", description: "Please try again shortly.", variant: "destructive" });
+    } finally {
+      setSuggestingForPreview(false);
+    }
+  };
+
+  const suggestForBlankList = async (topic: string) => {
+    setSuggestingForPreview(true);
+    try {
+      const { data, error } = await apiInvoke("suggest-tasks", {
+        body: { existingItems: [], listName: topic },
+      });
+      if (error) throw error;
+      if (data?.tasks) {
+        const items = data.tasks.map((t: { text: string }, i: number) => ({
+          id: `ai-${Date.now()}-${i}`,
+          text: t.text,
+          done: false,
+        }));
+        const newList: UserList = {
+          id: Date.now().toString(),
+          name: topic,
+          icon: "✨",
+          createdAt: new Date().toISOString(),
+          items,
+        };
+        const updated = [newList, ...lists];
+        onUpdate(updated);
+        setCreatingBlank(false);
+        setNewListName("");
+        setExpandedId(newList.id);
+        toast({ title: "List generated ✨", description: `${items.length} items created from AI` });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Couldn't generate list", description: "Please try again shortly.", variant: "destructive" });
+    } finally {
+      setSuggestingForPreview(false);
     }
   };
 
@@ -999,6 +1060,18 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                   )}
 
                   <button
+                    onClick={() => suggestPreviewItems(t.name)}
+                    disabled={suggestingForPreview}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent/50 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                  >
+                    {suggestingForPreview ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4" /> Generate more with AI</>
+                    )}
+                  </button>
+
+                  <button
                     onClick={confirmTemplate}
                     className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
@@ -1018,21 +1091,34 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="flex gap-2 overflow-hidden"
+            className="space-y-2 overflow-hidden"
           >
-            <input
-              autoFocus
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && createBlankList()}
-              placeholder="List name…"
-              className="flex-1 rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            <button onClick={createBlankList} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground">
-              Create
-            </button>
-            <button onClick={() => { setCreatingBlank(false); setNewListName(""); }} className="rounded-xl bg-secondary px-3 py-2.5 text-sm text-muted-foreground">
-              ✕
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && createBlankList()}
+                placeholder="List name or topic…"
+                className="flex-1 rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <button onClick={createBlankList} disabled={!newListName.trim()} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50">
+                Create
+              </button>
+              <button onClick={() => { setCreatingBlank(false); setNewListName(""); }} className="rounded-xl bg-secondary px-3 py-2.5 text-sm text-muted-foreground">
+                ✕
+              </button>
+            </div>
+            <button
+              onClick={() => newListName.trim() && suggestForBlankList(newListName.trim())}
+              disabled={!newListName.trim() || suggestingForPreview}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent/50 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
+            >
+              {suggestingForPreview ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Generating list…</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> Generate with AI</>
+              )}
             </button>
           </motion.div>
         )}

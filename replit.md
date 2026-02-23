@@ -101,6 +101,9 @@ All routes are defined in `server/routes.ts`:
 ## Recent Changes
 - 2026-02-23: Partner-must-contribute flow for all template lists
   - Template lists now require both partners to add items before going live
+  - Family Quiz list now also requires partner approval before going live
+  - AI generate button on all template previews ("Generate more with AI")
+  - AI generate button on blank list creation (type topic, tap "Generate with AI")
   - Fixed all quiz/widget pages to save lists to Supabase instead of localStorage
   - Added safe-area-top to all sub-page headers for iPhone notch/Dynamic Island
   - Sex Bucket Game now draws from "Sex Bucket Challenge Ideas" list

@@ -6,6 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { apiInvoke } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { useSharedLists } from "@/hooks/useSharedLists";
+import { useAuth } from "@/contexts/AuthContext";
+import { notifyPartner } from "@/lib/notifyPartner";
 import type { UserList } from "@/components/connect/SharedLists";
 
 interface FamilyMember {
@@ -29,6 +31,7 @@ type Step = "members" | "categories" | "generating" | "results";
 const FamilyQuiz = () => {
   const navigate = useNavigate();
   const { addList } = useSharedLists();
+  const { user, profile } = useAuth();
   const [step, setStep] = useState<Step>("members");
   const [members, setMembers] = useState<FamilyMember[]>([
     { id: "p1", name: "", age: "", role: "parent" },
@@ -110,9 +113,23 @@ const FamilyQuiz = () => {
       items: allItems,
       aiSuggestable: true,
       template: "family",
+      status: "pending_partner",
+      createdBy: user?.id,
     };
     await addList(newList);
-    toast({ title: "Family list created ✓", description: `${allItems.length} tasks added` });
+
+    if (user && profile?.partner_id) {
+      notifyPartner({
+        partnerId: profile.partner_id,
+        title: "👨‍👩‍👧‍👦 New list — add yours!",
+        body: `${profile.username || "Your partner"} started "Family To-Do List" — add your items to make it live!`,
+        route: "/us?tab=lists",
+        chatMessage: `👨‍👩‍👧‍👦 I just started our "Family To-Do List" — go add your items so we can make it live!`,
+        senderId: user.id,
+      });
+    }
+
+    toast({ title: "👨‍👩‍👧‍👦 List sent to partner", description: "They'll add their items before it goes live" });
     navigate("/us?tab=lists");
   };
 
