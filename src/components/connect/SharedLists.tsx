@@ -1169,8 +1169,15 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 </span>
                               ) : (
                                 <div className="flex items-center gap-2.5 flex-1">
-                                  <div className="w-5 h-5 rounded-md border border-muted-foreground/20 flex-shrink-0" />
-                                  <span className="text-sm text-foreground">{item.text}</span>
+                                  <button
+                                    onClick={() => setReviewItems(prev => prev.map(i => i.id === item.id ? { ...i, done: !i.done } : i))}
+                                    className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${
+                                      item.done ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30 hover:border-primary/50"
+                                    }`}
+                                  >
+                                    {item.done && <Check className="w-3.5 h-3.5" />}
+                                  </button>
+                                  <span className={`text-sm ${item.done ? "text-foreground" : "text-muted-foreground"}`}>{item.text}</span>
                                 </div>
                               )}
                               <button onClick={() => setReviewItems(prev => prev.filter(i => i.id !== item.id))} className="p-1 rounded-md hover:bg-destructive/10">

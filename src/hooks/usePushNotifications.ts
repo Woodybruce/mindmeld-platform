@@ -65,11 +65,14 @@ export function usePushNotifications() {
           }
         );
 
-        // Handle notification tap
         const actionListener = await PushNotifications.addListener(
           "pushNotificationActionPerformed",
           (action) => {
             console.log("[Push] Action performed:", action);
+            const route = action.notification?.data?.route as string | undefined;
+            if (route) {
+              window.location.href = route;
+            }
           }
         );
 
