@@ -46,7 +46,9 @@ src/
 All routes are defined in `server/routes.ts`:
 - `GET /api/health` - Health check
 - `GET /api/search-gifs` - GIPHY search (needs GIPHY_API_KEY)
-- `POST /api/send-push-notification` - FCM push notifications (needs FCM_SERVICE_ACCOUNT)
+- `GET /api/vapid-public-key` - VAPID public key for web push
+- `POST /api/web-push-subscribe` - Register web push subscription
+- `POST /api/send-push-notification` - Push notifications (FCM native + Web Push)
 - `POST /api/instagram-oembed` - Instagram embed data (needs META_APP_TOKEN)
 - `POST /api/fetch-substack-feed` - Substack RSS fetching
 - `POST /api/send-password-reset` - Password reset via Supabase admin
@@ -78,10 +80,15 @@ All routes are defined in `server/routes.ts`:
 - `AI_GATEWAY_URL` - Custom AI gateway URL (defaults to OpenAI)
 - `AI_MODEL` - AI model to use (defaults to gpt-4o-mini)
 
+### Push Notifications
+- `VAPID_PUBLIC_KEY` - VAPID public key for Web Push
+- `VAPID_PRIVATE_KEY` - VAPID private key for Web Push
+- `VITE_VAPID_PUBLIC_KEY` - Same as VAPID_PUBLIC_KEY (exposed to frontend)
+- `FCM_SERVICE_ACCOUNT` - Firebase Cloud Messaging service account JSON (native)
+
 ### External Services (Optional)
 - `GIPHY_API_KEY` - GIPHY API key for GIF search
 - `META_APP_TOKEN` - Meta/Facebook app token for Instagram embeds
-- `FCM_SERVICE_ACCOUNT` - Firebase Cloud Messaging service account JSON
 - `MICROSOFT_CLIENT_ID` - Microsoft OAuth client ID
 - `MICROSOFT_CLIENT_SECRET` - Microsoft OAuth client secret
 - `SITE_URL` - Public site URL for password reset redirects
@@ -99,6 +106,14 @@ All routes are defined in `server/routes.ts`:
 - Sex Bucket Game draws from the `sex-bucket-ideas` template list
 
 ## Recent Changes
+- 2026-02-25: Web Push notifications + bug fixes
+  - Added Web Push API support (works in browser even when tab is closed)
+  - VAPID keys generated and configured for web push
+  - Custom push service worker (public/push-sw.js) handles push events and notification clicks
+  - send-push-notification route now handles both FCM (native) and Web Push (web) tokens
+  - Fixed Kiss Chase: removed chat message, sends push notification only, partner navigation works on tap
+  - Fixed push notification tap handler: now navigates to the correct page
+  - Fixed shared list partner review: items are now tappable checkboxes instead of dead divs
 - 2026-02-23: Partner-must-contribute flow for all template lists
   - Template lists now require both partners to add items before going live
   - Family Quiz list now also requires partner approval before going live

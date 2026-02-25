@@ -39,3 +39,10 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+VAPID_PUBLIC_KEY = "BA8x4ZjjNpnx9bkTw14fKMdgyrA96FRvutINZ2Hmpd83VNMd0MquFxil2xOKVyKBbPcAvNYw23HywR7WvCZgGoc"
+VAPID_PRIVATE_KEY = "pQ0r169JUjArzbGTSRbDY58tyZ4SizYHfEp8v-bGZV4"
+VITE_VAPID_PUBLIC_KEY = "BA8x4ZjjNpnx9bkTw14fKMdgyrA96FRvutINZ2Hmpd83VNMd0MquFxil2xOKVyKBbPcAvNYw23HywR7WvCZgGoc"

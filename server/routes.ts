@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import webpush from "web-push";
 
 async function callAI(messages: any[], tools?: any[], toolChoice?: any) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -311,17 +312,47 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // VAPID public key endpoint for web push
+  app.get("/api/vapid-public-key", (_req: Request, res: Response) => {
+    const key = process.env.VAPID_PUBLIC_KEY;
+    if (!key) return res.status(500).json({ error: "VAPID not configured" });
+    res.json({ publicKey: key });
+  });
+
+  // Web push subscription registration
+  app.post("/api/web-push-subscribe", async (req: Request, res: Response) => {
+    try {
+      const { userId, subscription } = req.body;
+      if (!userId || !subscription) {
+        return res.status(400).json({ error: "userId and subscription required" });
+      }
+
+      const supabaseUrl = process.env.SUPABASE_URL!;
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      const token = JSON.stringify(subscription);
+
+      await supabase.from("device_tokens").upsert(
+        {
+          user_id: userId,
+          token,
+          platform: "web",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,token" }
+      );
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Web push subscribe error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // 2. POST /api/send-push-notification
   app.post("/api/send-push-notification", async (req: Request, res: Response) => {
     try {
-      const serviceAccountJson = process.env.FCM_SERVICE_ACCOUNT;
-      if (!serviceAccountJson) {
-        throw new Error("FCM_SERVICE_ACCOUNT secret is not configured");
-      }
-
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      const projectId = serviceAccount.project_id;
-
       const supabaseUrl = process.env.SUPABASE_URL!;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -335,7 +366,7 @@ export function registerRoutes(app: Express): void {
 
       const { data: tokens, error: tokenError } = await supabase
         .from("device_tokens")
-        .select("token")
+        .select("token, platform")
         .eq("user_id", recipientUserId);
 
       if (tokenError) {
@@ -346,41 +377,83 @@ export function registerRoutes(app: Express): void {
         return res.json({ success: true, sent: 0, reason: "no_tokens" });
       }
 
-      const accessToken = await getAccessToken(serviceAccount);
-      const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+      const webTokens = tokens.filter(t => t.platform === "web");
+      const nativeTokens = tokens.filter(t => t.platform !== "web");
 
-      const results = await Promise.allSettled(
-        tokens.map(async ({ token }) => {
-          const fcmRes = await fetch(fcmUrl, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: {
-                token,
-                notification: { title, body: body || "" },
-                data: data || {},
-                apns: { payload: { aps: { sound: "default", badge: 1 } } },
-                android: { priority: "HIGH", notification: { sound: "default" } },
-              },
-            }),
-          });
+      const allResults: PromiseSettledResult<any>[] = [];
 
-          const result = await fcmRes.json();
+      // Send to web push subscriptions
+      if (webTokens.length > 0) {
+        const vapidPublic = process.env.VAPID_PUBLIC_KEY;
+        const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+        if (vapidPublic && vapidPrivate) {
+          webpush.setVapidDetails("mailto:app@us-app.com", vapidPublic, vapidPrivate);
 
-          if (result.error?.details?.some((d: any) =>
-            d.errorCode === "UNREGISTERED" || d.errorCode === "NOT_FOUND"
-          )) {
-            await supabase.from("device_tokens").delete().eq("token", token);
-          }
+          const webResults = await Promise.allSettled(
+            webTokens.map(async ({ token }) => {
+              try {
+                const subscription = JSON.parse(token);
+                await webpush.sendNotification(
+                  subscription,
+                  JSON.stringify({ title, body: body || "", data: data || {} })
+                );
+                return { success: true };
+              } catch (err: any) {
+                if (err.statusCode === 410 || err.statusCode === 404) {
+                  await supabase.from("device_tokens").delete().eq("token", token);
+                }
+                throw err;
+              }
+            })
+          );
+          allResults.push(...webResults);
+        }
+      }
 
-          return result;
-        })
-      );
+      // Send to native FCM tokens
+      if (nativeTokens.length > 0) {
+        const serviceAccountJson = process.env.FCM_SERVICE_ACCOUNT;
+        if (serviceAccountJson) {
+          const serviceAccount = JSON.parse(serviceAccountJson);
+          const projectId = serviceAccount.project_id;
+          const accessToken = await getAccessToken(serviceAccount);
+          const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
-      const sent = results.filter((r) => r.status === "fulfilled").length;
+          const nativeResults = await Promise.allSettled(
+            nativeTokens.map(async ({ token }) => {
+              const fcmRes = await fetch(fcmUrl, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  message: {
+                    token,
+                    notification: { title, body: body || "" },
+                    data: data || {},
+                    apns: { payload: { aps: { sound: "default", badge: 1 } } },
+                    android: { priority: "HIGH", notification: { sound: "default" } },
+                  },
+                }),
+              });
+
+              const result = await fcmRes.json();
+
+              if (result.error?.details?.some((d: any) =>
+                d.errorCode === "UNREGISTERED" || d.errorCode === "NOT_FOUND"
+              )) {
+                await supabase.from("device_tokens").delete().eq("token", token);
+              }
+
+              return result;
+            })
+          );
+          allResults.push(...nativeResults);
+        }
+      }
+
+      const sent = allResults.filter((r) => r.status === "fulfilled").length;
       res.json({ success: true, sent });
     } catch (error: any) {
       console.error("Push notification error:", error);
