@@ -559,7 +559,7 @@ const CuratedLinksWidget = () => {
               isTabLoading && !podcasts.length
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : podcasts.map((pod, i) => {
-                    const podKey = `pod-${pod.spotifyId}`;
+                    const podKey = `pod-${pod.appleId}`;
                     return (
                       <motion.div
                         key={podKey}
@@ -570,9 +570,7 @@ const CuratedLinksWidget = () => {
                       >
                         <button
                           onClick={() => {
-                            const embedUrl = pod.appleId
-                              ? `https://embed.podcasts.apple.com/us/podcast/id${pod.appleId}?theme=auto`
-                              : `https://open.spotify.com/embed/show/${pod.spotifyId}?utm_source=generator&theme=0`;
+                            const embedUrl = `https://embed.podcasts.apple.com/us/podcast/id${pod.appleId}?theme=auto`;
                             setPlayerModal({ type: "podcast", title: pod.title, embedUrl });
                           }}
                           className="w-full text-left"
@@ -601,10 +599,7 @@ const CuratedLinksWidget = () => {
                             mutual={isMutualLike(podKey)}
                             onToggle={() => toggleLike(podKey, pod.title)}
                           />
-                          <div className="flex items-center gap-1.5">
-                            <a href={`https://podcasts.apple.com/podcast/id${pod.appleId}`} target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[#8232D2]" data-testid={`podcast-apple-${i}`}>Apple</a>
-                            <a href={`https://open.spotify.com/show/${pod.spotifyId}`} target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[#1DB954]" data-testid={`podcast-spotify-${i}`}>Spotify</a>
-                          </div>
+                          <a href={`https://podcasts.apple.com/podcast/id${pod.appleId}`} target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[#8232D2]" data-testid={`podcast-apple-${i}`}>Apple Podcasts</a>
                         </div>
                       </motion.div>
                     );

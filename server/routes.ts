@@ -2238,7 +2238,7 @@ Focus on items available to buy on Amazon UK or experiences in the UK. Use REAL 
 Return a JSON object with an "items" array of 4-6 results.
 Each item MUST have: name (string), description (string, 1-2 sentences), category (string), emoji (string), type (one of "article","podcast","video","quote").
 For articles include: url (a real, working URL to the article), source (string).
-For podcasts include: spotifyShowName (string), host (string).
+For podcasts include: applePodcastsName (string, the podcast show name to search on Apple Podcasts), host (string).
 For videos include: youtubeSearchQuery (string to find it on YouTube), creator (string), duration (string).
 For quotes include: text (the full quote text), author (string).
 Focus on real, existing content about relationships, dating, couples, love, and communication.`;

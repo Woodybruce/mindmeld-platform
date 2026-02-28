@@ -21,7 +21,7 @@ interface AiItem {
   country?: string;
   url?: string;
   source?: string;
-  spotifyShowName?: string;
+  applePodcastsName?: string;
   host?: string;
   youtubeSearchQuery?: string;
   creator?: string;
@@ -110,8 +110,8 @@ const AiSearchBar = ({ section }: { section: "discover" | "foryou" }) => {
       safeOpen(item.url);
     } else if (item.type === "video" && item.youtubeSearchQuery) {
       safeOpen(`https://www.youtube.com/results?search_query=${encodeURIComponent(item.youtubeSearchQuery)}`);
-    } else if (item.type === "podcast" && item.spotifyShowName) {
-      safeOpen(`https://open.spotify.com/search/${encodeURIComponent(item.spotifyShowName)}/shows`);
+    } else if (item.type === "podcast" && item.applePodcastsName) {
+      safeOpen(`https://podcasts.apple.com/search?term=${encodeURIComponent(item.applePodcastsName)}`);
     } else if (item.type === "experience") {
       const q = [item.name, item.venue, item.city].filter(Boolean).join(" ");
       safeOpen(`https://www.google.com/search?q=${encodeURIComponent(q)}`);
@@ -140,7 +140,7 @@ const AiSearchBar = ({ section }: { section: "discover" | "foryou" }) => {
       case "experience": return "bg-rose-500/10 text-rose-500";
       case "travel": return "bg-sky-500/10 text-sky-500";
       case "article": return "bg-emerald-500/10 text-emerald-500";
-      case "podcast": return "bg-[#1DB954]/10 text-[#1DB954]";
+      case "podcast": return "bg-[#8232D2]/10 text-[#8232D2]";
       case "video": return "bg-red-500/10 text-red-500";
       case "quote": return "bg-violet-500/10 text-violet-500";
       default: return "bg-primary/10 text-primary";
@@ -153,7 +153,7 @@ const AiSearchBar = ({ section }: { section: "discover" | "foryou" }) => {
       case "experience": return "Find out more";
       case "travel": return "Explore";
       case "article": return "Read article";
-      case "podcast": return "Open on Spotify";
+      case "podcast": return "Open on Apple Podcasts";
       case "video": return "Watch on YouTube";
       default: return "";
     }
