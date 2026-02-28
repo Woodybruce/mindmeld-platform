@@ -1679,10 +1679,17 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
     try {
       const { playlistId, trackUri } = req.body;
       if (!playlistId || !trackUri) return res.status(400).json({ error: "playlistId and trackUri required" });
-      await spotifyApiFetch(`/playlists/${playlistId}/tracks`, {
+      const accessToken = await getSpotifyAccessToken();
+      const resp = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
         method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ uris: [trackUri] }),
       });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error("Spotify add track error:", resp.status, errText);
+        return res.status(resp.status).json({ error: errText });
+      }
       res.json({ success: true });
     } catch (e: any) {
       console.error("Spotify add track error:", e.message);
@@ -1694,10 +1701,17 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
     try {
       const { playlistId, trackUri } = req.body;
       if (!playlistId || !trackUri) return res.status(400).json({ error: "playlistId and trackUri required" });
-      await spotifyApiFetch(`/playlists/${playlistId}/tracks`, {
+      const accessToken = await getSpotifyAccessToken();
+      const resp = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ tracks: [{ uri: trackUri }] }),
       });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error("Spotify remove track error:", resp.status, errText);
+        return res.status(resp.status).json({ error: errText });
+      }
       res.json({ success: true });
     } catch (e: any) {
       console.error("Spotify remove track error:", e.message);

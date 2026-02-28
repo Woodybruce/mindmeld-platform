@@ -215,10 +215,21 @@ export default function SpotifyWidget() {
   async function addToPlaylist(track: SpotifyTrack) {
     if (!playlistId || !track.uri) return;
     try {
-      await apiInvoke("spotify/playlist/add", { body: { playlistId, trackUri: track.uri } });
-      toast.success(`Added "${track.name}"`);
-      setSearchResults(prev => prev.filter(t => t.id !== track.id));
-      fetchPlaylist();
+      const resp = await fetch("/api/spotify/playlist/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playlistId, trackUri: track.uri }),
+      });
+      if (resp.ok) {
+        toast.success(`Added "${track.name}"`);
+        setSearchResults(prev => prev.filter(t => t.id !== track.id));
+        fetchPlaylist();
+      } else if (resp.status === 403) {
+        window.open(track.spotifyUrl || `https://open.spotify.com/track/${track.id}`, "_blank");
+        toast("Opened in Spotify — add it to the playlist from there", { duration: 4000 });
+      } else {
+        toast.error("Couldn't add track");
+      }
     } catch {
       toast.error("Couldn't add track");
     }
@@ -227,9 +238,19 @@ export default function SpotifyWidget() {
   async function removeFromPlaylist(track: SpotifyTrack) {
     if (!playlistId || !track.uri) return;
     try {
-      await apiInvoke("spotify/playlist/remove", { body: { playlistId, trackUri: track.uri } });
-      setPlaylistTracks(prev => prev.filter(t => t.id !== track.id));
-      toast.success(`Removed "${track.name}"`);
+      const resp = await fetch("/api/spotify/playlist/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playlistId, trackUri: track.uri }),
+      });
+      if (resp.ok) {
+        setPlaylistTracks(prev => prev.filter(t => t.id !== track.id));
+        toast.success(`Removed "${track.name}"`);
+      } else if (resp.status === 403) {
+        toast("Remove it directly in Spotify — API restricted in dev mode", { duration: 4000 });
+      } else {
+        toast.error("Couldn't remove track");
+      }
     } catch {
       toast.error("Couldn't remove track");
     }
