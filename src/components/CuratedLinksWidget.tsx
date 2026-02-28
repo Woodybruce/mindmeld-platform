@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bookmark, RefreshCw, ExternalLink, ListPlus, Sparkles, BookOpen, Headphones, PlayCircle, Quote } from "lucide-react";
+import { Bookmark, RefreshCw, ExternalLink, ListPlus, Sparkles, BookOpen, Headphones, PlayCircle, Quote, X, ArrowLeft, Clock, Share2, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiInvoke } from "@/lib/api";
@@ -17,6 +17,22 @@ interface Article {
   emoji: string;
   url: string;
   imageHint: string;
+}
+
+interface OgMeta {
+  ogImage: string;
+  ogTitle: string;
+  ogDescription: string;
+  siteName: string;
+}
+
+interface ArticleContent {
+  title: string;
+  image: string;
+  siteName: string;
+  author: string;
+  content: string;
+  url: string;
 }
 
 interface Podcast {
@@ -110,6 +126,111 @@ const GRADIENT_PALETTES = [
   "from-violet-100 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/20",
 ];
 
+const ArticleImage = ({ url, ogMeta, emoji, onLoad }: { url: string; ogMeta?: OgMeta; emoji: string; onLoad?: () => void }) => {
+  const [failed, setFailed] = useState(false);
+  const imgSrc = ogMeta?.ogImage;
+
+  if (imgSrc && !failed) {
+    return (
+      <img
+        src={imgSrc}
+        alt=""
+        className="w-full h-full object-cover"
+        onError={() => setFailed(true)}
+        onLoad={onLoad}
+      />
+    );
+  }
+  return (
+    <div className="w-full h-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+      <img
+        src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(url)}&size=128`}
+        alt=""
+        className="w-12 h-12 object-contain rounded-xl"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+      />
+      <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-10 select-none">{emoji}</span>
+    </div>
+  );
+};
+
+const ArticleReaderModal = ({ article, ogMeta, onClose }: { article: ArticleContent | null; ogMeta?: OgMeta; onClose: () => void }) => {
+  if (!article) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm overflow-hidden"
+      data-testid="article-reader-modal"
+    >
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 flex-shrink-0 safe-area-top">
+          <button onClick={onClose} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="article-reader-close">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+              data-testid="article-reader-external"
+            >
+              Open original <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {(article.image || ogMeta?.ogImage) && (
+            <div className="w-full aspect-[2/1] bg-muted overflow-hidden relative">
+              <img
+                src={article.image || ogMeta?.ogImage || ""}
+                alt=""
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+            </div>
+          )}
+          <div className="px-5 py-4 max-w-2xl mx-auto">
+            <div className="flex items-center gap-2 mb-3">
+              <img
+                src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(article.url)}&size=64`}
+                alt=""
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-xs text-muted-foreground font-medium">{article.siteName}</span>
+              {article.author && <span className="text-xs text-muted-foreground">by {article.author}</span>}
+            </div>
+            <h1 className="text-xl font-display font-bold text-foreground leading-tight mb-4">{article.title}</h1>
+            {article.content ? (
+              <div
+                className="article-reader-content prose prose-sm dark:prose-invert max-w-none text-foreground/90 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: article.content }}
+              />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground mb-3">This article is best read on the original site</p>
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+                >
+                  Read on {article.siteName} <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
+          </div>
+          <div className="h-20" />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 const PodcastImage = ({ imageUrl, title }: { imageUrl?: string; title: string }) => {
   const [failed, setFailed] = useState(false);
   if (!imageUrl || failed) {
@@ -148,6 +269,10 @@ const CuratedLinksWidget = () => {
   const [loaded, setLoaded] = useState<Record<TabKey, boolean>>({ articles: false, podcasts: false, videos: false, quotes: false });
   const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
   const [expandedPodcast, setExpandedPodcast] = useState<string | null>(null);
+  const [ogMetaMap, setOgMetaMap] = useState<Record<string, OgMeta>>({});
+  const [readerArticle, setReaderArticle] = useState<ArticleContent | null>(null);
+  const [readerLoading, setReaderLoading] = useState(false);
+  const fetchedOgUrls = useRef(new Set<string>());
 
   useEffect(() => { setExpandedVideo(null); setExpandedPodcast(null); }, [activeTab]);
 
@@ -185,6 +310,36 @@ const CuratedLinksWidget = () => {
       }
     } finally { setLoading(p => ({ ...p, articles: false })); setLoaded(p => ({ ...p, articles: true })); }
   }, [articles.length]);
+
+  useEffect(() => {
+    if (!articles.length) return;
+    articles.forEach(a => {
+      if (fetchedOgUrls.current.has(a.url)) return;
+      fetchedOgUrls.current.add(a.url);
+      fetch(`/api/article-metadata?url=${encodeURIComponent(a.url)}`)
+        .then(r => r.json())
+        .then((meta: OgMeta) => {
+          if (meta.ogImage) {
+            setOgMetaMap(prev => ({ ...prev, [a.url]: meta }));
+          }
+        })
+        .catch(() => {});
+    });
+  }, [articles]);
+
+  const openArticleReader = useCallback(async (article: Article) => {
+    setReaderLoading(true);
+    try {
+      const resp = await fetch(`/api/article-content?url=${encodeURIComponent(article.url)}`);
+      if (!resp.ok) throw new Error("fetch failed");
+      const data: ArticleContent = await resp.json();
+      setReaderArticle(data);
+    } catch {
+      window.open(article.url, "_blank", "noopener,noreferrer");
+    } finally {
+      setReaderLoading(false);
+    }
+  }, []);
 
   const fetchPodcasts = useCallback(async (force = false) => {
     const key = "foryou-podcasts";
@@ -224,9 +379,9 @@ const CuratedLinksWidget = () => {
 
   useEffect(() => {
     const v = localStorage.getItem("foryou-cache-v");
-    if (v !== "2") {
+    if (v !== "3") {
       ["foryou-articles", "foryou-podcasts", "foryou-videos", "foryou-quotes", "curated-articles"].forEach(k => localStorage.removeItem(k));
-      localStorage.setItem("foryou-cache-v", "2");
+      localStorage.setItem("foryou-cache-v", "3");
     }
     if (!loaded.articles) fetchArticles();
   }, []);
@@ -317,9 +472,17 @@ const CuratedLinksWidget = () => {
             transition={{ duration: 0.2 }}
           >
             {activeTab === "articles" && (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide px-3 pb-1">
+              <div className="flex flex-col gap-3 px-3 pb-1">
                 {isTabLoading && !combinedArticles.length
-                  ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="animate-pulse rounded-xl bg-secondary/60 overflow-hidden">
+                        <div className="w-full h-40 bg-muted" />
+                        <div className="p-3 space-y-2">
+                          <div className="w-3/4 h-4 bg-muted rounded" />
+                          <div className="w-full h-3 bg-muted rounded" />
+                        </div>
+                      </div>
+                    ))
                   : combinedArticles.map((item, i) => {
                       if (item.kind === "link") {
                         const link = item.data;
@@ -329,67 +492,91 @@ const CuratedLinksWidget = () => {
                             href={link.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-shrink-0 w-48 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors overflow-hidden block"
+                            className="rounded-xl bg-secondary/50 hover:bg-secondary transition-colors overflow-hidden block"
                             data-testid={`saved-link-${link.id}`}
                           >
-                            <div className="w-full h-24 bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center relative">
-                              <img
-                                src={getFavicon(link.url) || ""}
-                                alt=""
-                                className="w-12 h-12 object-contain rounded-xl"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                              />
-                              <div className="absolute bottom-1.5 left-1.5">
-                                <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1">
-                                  <Bookmark className="w-2.5 h-2.5" /> Saved
-                                </span>
+                            <div className="flex items-center gap-3 p-3">
+                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Bookmark className="w-4 h-4 text-primary" />
                               </div>
-                            </div>
-                            <div className="p-2.5">
-                              <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{link.title || extractDomain(link.url)}</p>
-                              <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                                {extractDomain(link.url)} <ExternalLink className="w-2.5 h-2.5" />
-                              </p>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{link.title || extractDomain(link.url)}</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                                  <img src={getFavicon(link.url) || ""} alt="" className="w-3 h-3 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                                  {extractDomain(link.url)}
+                                </p>
+                              </div>
+                              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                             </div>
                           </a>
                         );
                       }
                       const article = item.data;
+                      const og = ogMetaMap[article.url];
+                      const hasImage = !!og?.ogImage;
                       return (
-                        <div key={`article-${i}`} className="flex-shrink-0 w-48 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors overflow-hidden">
-                          <div className="relative w-full h-24 bg-gradient-to-br from-secondary to-muted flex items-center justify-center overflow-hidden">
-                            <img
-                              src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(article.url)}&size=128`}
-                              alt=""
-                              className="w-12 h-12 object-contain"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                            />
-                            <span className="absolute inset-0 flex items-center justify-center text-4xl opacity-10 select-none">{article.emoji}</span>
-                            <div className="absolute bottom-1.5 left-1.5">
-                              <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{article.category}</span>
+                        <motion.div
+                          key={`article-${i}`}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.04 }}
+                          className="rounded-xl bg-secondary/50 overflow-hidden"
+                        >
+                          <button
+                            onClick={() => openArticleReader(article)}
+                            className="w-full text-left"
+                            data-testid={`article-link-${i}`}
+                            disabled={readerLoading}
+                          >
+                            <div className={`relative w-full overflow-hidden bg-muted ${hasImage ? "h-36" : "h-20"}`}>
+                              <ArticleImage url={article.url} ogMeta={og} emoji={article.emoji} />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                              <div className="absolute bottom-2 left-2.5 right-2.5">
+                                <span className="text-[9px] bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full font-medium">{article.category}</span>
+                              </div>
                             </div>
-                          </div>
-                          <a href={article.url} target="_blank" rel="noopener noreferrer" className="block p-2.5" data-testid={`article-link-${i}`}>
-                            <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{article.title}</p>
-                            <p className="text-[10px] text-muted-foreground mt-1">{article.source}</p>
-                          </a>
-                          <div className="px-2.5 pb-2 flex items-center justify-between">
+                            <div className="p-3">
+                              <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{article.title}</h4>
+                              <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{og?.ogDescription || article.description}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <img
+                                  src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(article.url)}&size=64`}
+                                  alt=""
+                                  className="w-3.5 h-3.5 rounded"
+                                />
+                                <span className="text-[10px] text-muted-foreground font-medium">{og?.siteName || article.source}</span>
+                                <ChevronRight className="w-3 h-3 text-muted-foreground/50 ml-auto" />
+                              </div>
+                            </div>
+                          </button>
+                          <div className="px-3 pb-2.5 flex items-center justify-between border-t border-border/30 pt-2">
                             <LikeButton
                               liked={isLikedByMe(article.url)}
                               partnerLiked={isLikedByPartner(article.url)}
                               mutual={isMutualLike(article.url)}
                               onToggle={() => toggleLike(article.url, article.title)}
                             />
-                            <button
-                              onClick={() => saveArticleAsList(article)}
-                              className="p-1.5 rounded-lg hover:bg-secondary transition-all"
-                              title="Save as list"
-                              data-testid={`save-article-${i}`}
-                            >
-                              <ListPlus className="w-3.5 h-3.5 text-primary" />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => saveArticleAsList(article)}
+                                className="p-1.5 rounded-lg hover:bg-secondary transition-all"
+                                title="Save as list"
+                                data-testid={`save-article-${i}`}
+                              >
+                                <ListPlus className="w-3.5 h-3.5 text-primary" />
+                              </button>
+                              <a
+                                href={article.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg hover:bg-secondary transition-all"
+                                title="Open in browser"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                              </a>
+                            </div>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
               </div>
@@ -622,12 +809,31 @@ const CuratedLinksWidget = () => {
 
       <div className="px-4 pb-2.5">
         <p className="text-[9px] text-muted-foreground/50">
-          {activeTab === "articles" && "Curated reads + your saved links · Tap to reshuffle"}
+          {activeTab === "articles" && "Tap to read in-app · Rich articles from top relationship sites"}
           {activeTab === "podcasts" && "Tap to play in-app · Also on Spotify & Apple Podcasts"}
           {activeTab === "videos" && "Tap to play inline · TED Talks play directly in-app"}
           {activeTab === "quotes" && "Share your favourite with your partner"}
         </p>
       </div>
+
+      {readerLoading && (
+        <div className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading article...</p>
+          </div>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {readerArticle && (
+          <ArticleReaderModal
+            article={readerArticle}
+            ogMeta={ogMetaMap[readerArticle.url]}
+            onClose={() => setReaderArticle(null)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -708,6 +708,140 @@ Return ONLY valid JSON with these fields:
     }
   });
 
+  // 7a-2. GET /api/article-metadata — fetch OG metadata for article URLs
+  const ogCache = new Map<string, { ogImage: string; ogTitle: string; ogDescription: string; siteName: string; ts: number }>();
+
+  app.get("/api/article-metadata", async (req: Request, res: Response) => {
+    const url = req.query.url as string;
+    if (!url) return res.status(400).json({ error: "url required" });
+
+    const cached = ogCache.get(url);
+    if (cached && Date.now() - cached.ts < 86400000) {
+      return res.json(cached);
+    }
+
+    try {
+      const resp = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; UsApp/1.0)" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!resp.ok) return res.json({ ogImage: "", ogTitle: "", ogDescription: "", siteName: "" });
+
+      const html = await resp.text();
+
+      const getMetaContent = (property: string): string => {
+        const patterns = [
+          new RegExp(`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']+)["']`, "i"),
+          new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*property=["']${property}["']`, "i"),
+          new RegExp(`<meta[^>]*name=["']${property}["'][^>]*content=["']([^"']+)["']`, "i"),
+          new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*name=["']${property}["']`, "i"),
+        ];
+        for (const p of patterns) {
+          const m = html.match(p);
+          if (m?.[1]) return m[1];
+        }
+        return "";
+      };
+
+      const result = {
+        ogImage: getMetaContent("og:image") || getMetaContent("twitter:image"),
+        ogTitle: getMetaContent("og:title") || html.match(/<title[^>]*>([^<]+)</i)?.[1]?.trim() || "",
+        ogDescription: getMetaContent("og:description") || getMetaContent("description"),
+        siteName: getMetaContent("og:site_name") || "",
+        ts: Date.now(),
+      };
+
+      ogCache.set(url, result);
+      res.json(result);
+    } catch (e) {
+      console.error("article-metadata error:", e);
+      res.json({ ogImage: "", ogTitle: "", ogDescription: "", siteName: "" });
+    }
+  });
+
+  // 7a-3. GET /api/article-content — extract readable article content
+  app.get("/api/article-content", async (req: Request, res: Response) => {
+    const url = req.query.url as string;
+    if (!url) return res.status(400).json({ error: "url required" });
+
+    try {
+      const resp = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; UsApp/1.0)" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!resp.ok) return res.status(502).json({ error: "Failed to fetch article" });
+
+      const html = await resp.text();
+
+      const getMetaContent = (property: string): string => {
+        const patterns = [
+          new RegExp(`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']+)["']`, "i"),
+          new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*property=["']${property}["']`, "i"),
+          new RegExp(`<meta[^>]*name=["']${property}["'][^>]*content=["']([^"']+)["']`, "i"),
+        ];
+        for (const p of patterns) {
+          const m = html.match(p);
+          if (m?.[1]) return m[1];
+        }
+        return "";
+      };
+
+      const ogImage = getMetaContent("og:image") || getMetaContent("twitter:image");
+      const ogTitle = getMetaContent("og:title") || html.match(/<title[^>]*>([^<]+)</i)?.[1]?.trim() || "";
+      const siteName = getMetaContent("og:site_name") || new URL(url).hostname.replace("www.", "");
+      const author = getMetaContent("author") || getMetaContent("article:author") || "";
+
+      let bodyHtml = html;
+      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      if (bodyMatch) bodyHtml = bodyMatch[1];
+
+      bodyHtml = bodyHtml.replace(/<script[\s\S]*?<\/script>/gi, "");
+      bodyHtml = bodyHtml.replace(/<style[\s\S]*?<\/style>/gi, "");
+      bodyHtml = bodyHtml.replace(/<nav[\s\S]*?<\/nav>/gi, "");
+      bodyHtml = bodyHtml.replace(/<footer[\s\S]*?<\/footer>/gi, "");
+      bodyHtml = bodyHtml.replace(/<header[\s\S]*?<\/header>/gi, "");
+      bodyHtml = bodyHtml.replace(/<aside[\s\S]*?<\/aside>/gi, "");
+      bodyHtml = bodyHtml.replace(/<form[\s\S]*?<\/form>/gi, "");
+      bodyHtml = bodyHtml.replace(/<iframe[\s\S]*?<\/iframe>/gi, "");
+      bodyHtml = bodyHtml.replace(/<button[\s\S]*?<\/button>/gi, "");
+      bodyHtml = bodyHtml.replace(/<!--[\s\S]*?-->/g, "");
+
+      const blocks: string[] = [];
+      const tagRx = /<(p|h[1-6]|blockquote|li)[\s>][^]*?<\/\1>/gi;
+      let m;
+      while ((m = tagRx.exec(bodyHtml)) !== null) {
+        let block = m[0];
+        block = block.replace(/<(?!\/?(?:p|h[1-6]|blockquote|ul|ol|li|strong|em|b|i|br|img)\b)[^>]+>/gi, "");
+        block = block.replace(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']*?)["'][^>]*\/?>/gi, (_, src, alt) => {
+          let imgSrc = src;
+          if (imgSrc.startsWith("/")) { try { imgSrc = new URL(imgSrc, url).href; } catch {} }
+          return `<img src="${imgSrc}" alt="${alt}" />`;
+        });
+        block = block.replace(/<img[^>]*src=["']([^"']+)["'][^>]*\/?>/gi, (_, src) => {
+          let imgSrc = src;
+          if (imgSrc.startsWith("/")) { try { imgSrc = new URL(imgSrc, url).href; } catch {} }
+          return `<img src="${imgSrc}" alt="" />`;
+        });
+        const text = block.replace(/<[^>]+>/g, "").trim();
+        if (text.length > 25) blocks.push(block);
+      }
+
+      let cleanText = blocks.join("\n");
+
+      res.json({
+        title: ogTitle,
+        image: ogImage,
+        siteName,
+        author,
+        content: cleanText.substring(0, 50000),
+        url,
+      });
+    } catch (e) {
+      console.error("article-content error:", e);
+      res.status(502).json({ error: "Failed to extract article content" });
+    }
+  });
+
   // 7b. GET /api/curated-podcasts
   app.get("/api/curated-podcasts", (_req: Request, res: Response) => {
     try {

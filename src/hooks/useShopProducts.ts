@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface ShopProduct {
   id: string;
@@ -113,12 +114,14 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
 ];
 
 export function useShopProducts() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [listId, setListId] = useState<string | null>(null);
   const seeded = useRef(false);
 
   const fetchProducts = useCallback(async () => {
+    if (!user) { setLoading(false); return; }
     setLoading(true);
     const { data, error } = await supabase
       .from("shared_lists")
@@ -126,6 +129,10 @@ export function useShopProducts() {
       .eq("name", SHOP_LIST_NAME)
       .limit(1)
       .maybeSingle();
+
+    if (error) {
+      console.error("Shop products fetch error:", error);
+    }
 
     if (data) {
       setListId(data.id);
@@ -138,18 +145,21 @@ export function useShopProducts() {
         id: crypto.randomUUID(),
         amazonUrl: ensureAffiliateTag(p.amazonUrl),
       }));
-      const { data: inserted } = await supabase
+      const { data: inserted, error: insertErr } = await supabase
         .from("shared_lists")
-        .insert({ name: SHOP_LIST_NAME, icon: "🛍️", items: seedProducts as any })
+        .insert({ name: SHOP_LIST_NAME, icon: "\uD83D\uDECD\uFE0F", items: seedProducts as any, user_id: user.id })
         .select("id")
         .single();
+      if (insertErr) {
+        console.error("Shop products seed error:", insertErr);
+      }
       if (inserted) {
         setListId(inserted.id);
         setProducts(seedProducts);
       }
     }
     setLoading(false);
-  }, []);
+  }, [user]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
@@ -159,16 +169,16 @@ export function useShopProducts() {
         .from("shared_lists")
         .update({ items: newProducts as any })
         .eq("id", listId);
-    } else {
+    } else if (user) {
       const { data } = await supabase
         .from("shared_lists")
-        .insert({ name: SHOP_LIST_NAME, icon: "🛍️", items: newProducts as any })
+        .insert({ name: SHOP_LIST_NAME, icon: "\uD83D\uDECD\uFE0F", items: newProducts as any, user_id: user.id })
         .select("id")
         .single();
       if (data) setListId(data.id);
     }
     setProducts(newProducts);
-  }, [listId]);
+  }, [listId, user]);
 
   const addProduct = useCallback(async (product: Omit<ShopProduct, "id">) => {
     const newProduct: ShopProduct = {

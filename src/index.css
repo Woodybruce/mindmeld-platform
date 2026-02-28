@@ -145,3 +145,52 @@ html {
   scroll-behavior: smooth;
   font-size: 18px;
 }
+
+.article-reader-content p {
+  margin-bottom: 1em;
+  line-height: 1.7;
+  font-size: 0.875rem;
+}
+.article-reader-content h1,
+.article-reader-content h2,
+.article-reader-content h3,
+.article-reader-content h4 {
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+.article-reader-content h1 { font-size: 1.5rem; }
+.article-reader-content h2 { font-size: 1.25rem; }
+.article-reader-content h3 { font-size: 1.1rem; }
+.article-reader-content blockquote {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 1em;
+  margin: 1em 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+.article-reader-content ul,
+.article-reader-content ol {
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+.article-reader-content li {
+  margin-bottom: 0.35em;
+  line-height: 1.6;
+  font-size: 0.875rem;
+}
+.article-reader-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1em 0;
+}
+.article-reader-content strong,
+.article-reader-content b {
+  font-weight: 600;
+}
+.article-reader-content em,
+.article-reader-content i {
+  font-style: italic;
+}
