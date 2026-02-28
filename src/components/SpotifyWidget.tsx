@@ -374,7 +374,7 @@ export default function SpotifyWidget() {
             data-testid="toggle-playlist"
           >
             <span className="text-xs font-semibold text-muted-foreground">
-              {playlistName} · {playlistTracks.length} songs
+              {playlistName || "Our Playlist"}
             </span>
             {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </button>
@@ -387,105 +387,18 @@ export default function SpotifyWidget() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="max-h-64 overflow-y-auto">
-                  {playlistTracks.length === 0 ? (
-                    <p className="px-4 py-4 text-xs text-muted-foreground text-center">No songs yet — search and add some!</p>
-                  ) : (
-                    playlistTracks.map((track) => (
-                      <div key={track.id}>
-                        {playingTrackId === track.id ? (
-                          <div className="px-4 py-2">
-                            <SpotifyEmbed trackId={track.id} compact />
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3 px-4 py-2 hover:bg-secondary/30 transition-colors group">
-                            {track.albumArt && <img src={track.albumArt} alt="" className="w-9 h-9 rounded flex-shrink-0" />}
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-foreground truncate">{track.name}</p>
-                              <p className="text-[11px] text-muted-foreground truncate">{track.artist} · {formatDuration(track.durationMs)}</p>
-                            </div>
-                            <button
-                              onClick={() => setPlayingTrackId(track.id)}
-                              className="w-7 h-7 rounded-full bg-[#1DB954] flex items-center justify-center text-white hover:scale-105 transition-transform shrink-0"
-                              data-testid={`play-track-${track.id}`}
-                            >
-                              <svg className="w-3.5 h-3.5 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                            </button>
-                            <button
-                              onClick={() => removeFromPlaylist(track)}
-                              className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"
-                              data-testid={`remove-track-${track.id}`}
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
+                <div className="px-2 pb-2">
+                  <iframe
+                    src={`https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator&theme=0`}
+                    width="100%"
+                    height="352"
+                    frameBorder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    className="rounded-xl"
+                    data-testid="spotify-playlist-embed"
+                  />
                 </div>
-
-                {!showSearch ? (
-                  <button
-                    onClick={() => setShowSearch(true)}
-                    className="w-full px-4 py-2.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#1DB954] hover:bg-[#1DB954]/5 transition-colors border-t border-border/30"
-                    data-testid="open-search-btn"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Songs
-                  </button>
-                ) : (
-                  <div className="border-t border-border/30 p-3 space-y-2">
-                    <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                        <input
-                          autoFocus
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && searchTracks()}
-                          placeholder="Search songs..."
-                          className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-[#1DB954]"
-                          data-testid="song-search-input"
-                        />
-                      </div>
-                      <button onClick={() => { setShowSearch(false); setSearchResults([]); setSearchQuery(""); }} className="p-1.5 text-muted-foreground hover:text-foreground">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    {searching && <div className="flex justify-center py-2"><Loader2 className="w-4 h-4 animate-spin text-[#1DB954]" /></div>}
-                    {searchResults.map((track) => (
-                      <div key={track.id}>
-                        {playingTrackId === track.id ? (
-                          <div className="py-1.5">
-                            <SpotifyEmbed trackId={track.id} compact />
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3 py-1.5">
-                            {track.albumArt && <img src={track.albumArt} alt="" className="w-8 h-8 rounded flex-shrink-0" />}
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-medium text-foreground truncate">{track.name}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{track.artist}</p>
-                            </div>
-                            <button
-                              onClick={() => setPlayingTrackId(track.id)}
-                              className="w-7 h-7 rounded-full bg-[#1DB954]/20 flex items-center justify-center text-[#1DB954] hover:scale-105 transition-transform shrink-0"
-                              data-testid={`preview-track-${track.id}`}
-                            >
-                              <svg className="w-3 h-3 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                            </button>
-                            <button
-                              onClick={() => addToPlaylist(track)}
-                              className="p-1 rounded-md bg-[#1DB954]/10 hover:bg-[#1DB954]/20 transition-colors"
-                              data-testid={`add-track-${track.id}`}
-                            >
-                              <Plus className="w-3.5 h-3.5 text-[#1DB954]" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>

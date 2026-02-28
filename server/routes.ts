@@ -1599,34 +1599,41 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
     try {
       const playlistId = req.query.playlistId as string;
       if (!playlistId) return res.status(400).json({ error: "playlistId required" });
-      const result = await spotifyRetry(async () => {
-        const spotify = await getUncachableSpotifyClient();
-        const playlist = await spotify.playlists.getPlaylist(playlistId);
-        const tracks = (playlist.tracks?.items || []).map((item: any) => {
-          const t = item.track;
-          return {
-            id: t?.id,
-            uri: t?.uri,
-            name: t?.name,
-            artist: t?.artists?.map((a: any) => a.name).join(", ") || "",
-            album: t?.album?.name || "",
-            albumArt: t?.album?.images?.[1]?.url || t?.album?.images?.[0]?.url || "",
-            spotifyUrl: t?.external_urls?.spotify || "",
-            addedAt: item.added_at,
-            durationMs: t?.duration_ms,
-          };
-        });
+      const playlist = await spotifyApiFetch(`/playlists/${playlistId}`);
+      let trackItems: any[] = [];
+      try {
+        if (playlist.tracks?.items?.length > 0) {
+          trackItems = playlist.tracks.items;
+        } else {
+          const tracksData = await spotifyApiFetch(`/playlists/${playlistId}/tracks?limit=100`);
+          trackItems = tracksData?.items || [];
+        }
+      } catch (tracksErr: any) {
+        console.warn("Could not fetch playlist tracks (may be restricted in dev mode):", tracksErr.message);
+      }
+      const tracks = trackItems.map((item: any) => {
+        const t = item.track;
         return {
-          id: playlist.id,
-          name: playlist.name,
-          description: playlist.description,
-          image: playlist.images?.[0]?.url || "",
-          spotifyUrl: playlist.external_urls?.spotify || "",
-          tracks,
-          total: playlist.tracks?.total || 0,
+          id: t?.id,
+          uri: t?.uri,
+          name: t?.name,
+          artist: t?.artists?.map((a: any) => a.name).join(", ") || "",
+          album: t?.album?.name || "",
+          albumArt: t?.album?.images?.[1]?.url || t?.album?.images?.[0]?.url || "",
+          spotifyUrl: t?.external_urls?.spotify || "",
+          addedAt: item.added_at,
+          durationMs: t?.duration_ms,
         };
       });
-      res.json(result);
+      res.json({
+        id: playlist.id,
+        name: playlist.name,
+        description: playlist.description,
+        image: playlist.images?.[0]?.url || "",
+        spotifyUrl: playlist.external_urls?.spotify || "",
+        tracks,
+        total: playlist.tracks?.total || tracks.length,
+      });
     } catch (e: any) {
       console.error("Spotify playlist error:", e.message);
       res.status(500).json({ error: e.message });
