@@ -95,7 +95,10 @@ const AiSearchBar = ({ section }: { section: "discover" | "foryou" }) => {
     try {
       const u = new URL(url);
       if (u.protocol === "https:" || u.protocol === "http:") {
-        window.open(url, "_blank", "noopener,noreferrer");
+        const opened = window.open(url, "_blank", "noopener,noreferrer");
+        if (!opened) {
+          window.location.href = url;
+        }
       }
     } catch {}
   };

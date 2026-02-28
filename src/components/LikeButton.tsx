@@ -15,9 +15,12 @@ const LikeButton = ({ liked, partnerLiked, mutual, onToggle, size = "sm" }: Like
 
   return (
     <div className="flex items-center gap-1 flex-shrink-0">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); haptics.light(); onToggle(); }}
-        className={`${padding} rounded-lg transition-all active:scale-90 ${
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); haptics.light(); onToggle(); } }}
+        className={`${padding} rounded-lg transition-all active:scale-90 cursor-pointer ${
           liked
             ? "text-destructive"
             : "text-muted-foreground hover:text-destructive/60"
@@ -25,7 +28,7 @@ const LikeButton = ({ liked, partnerLiked, mutual, onToggle, size = "sm" }: Like
         title={mutual ? "You both like this!" : liked ? "Unlike" : "Like"}
       >
         <Heart className={`${iconSize} ${liked ? "fill-current" : ""}`} />
-      </button>
+      </div>
       {partnerLiked && (
         <span className="text-[9px] text-muted-foreground whitespace-nowrap">
           {mutual ? "💕 Both" : "❤️ Partner"}

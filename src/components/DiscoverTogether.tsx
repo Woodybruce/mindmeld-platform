@@ -40,8 +40,24 @@ const getLink = (url?: string, name?: string): string => {
   if (tagged) return ensureSearchUrl(tagged, name || "couples gift");
   return amazonSearch(name || "couples gift");
 };
+
+const openExternalLink = (url: string) => {
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  if (!opened) {
+    window.location.href = url;
+  }
+};
+
+const getBrandLabel = (url?: string): string => {
+  if (!url) return "Buy on Amazon";
+  if (url.includes("coco-de-mer.com")) return "Shop Coco de Mer";
+  if (url.includes("agentprovocateur.com")) return "Shop Agent Provocateur";
+  if (url.includes("goop.com")) return "Shop goop";
+  if (url.includes("booking.com")) return "View on Booking.com";
+  return "Buy on Amazon";
+};
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane, ShoppingCart } from "lucide-react";
+import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane, ShoppingCart, Copy, Check } from "lucide-react";
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
@@ -324,9 +340,12 @@ const DiscoverTogether = () => {
                   )
                   : curatedProducts.map((product, i) => {
                       const id = `shop-${product.id}`;
+                      const link = getLink(product.amazonUrl, product.name);
                       return (
                         <motion.div key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                          className="flex-shrink-0 w-44 rounded-xl bg-secondary/50 overflow-hidden text-left transition-all hover:shadow-sm"
+                          className="flex-shrink-0 w-44 rounded-xl bg-secondary/50 overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
+                          onClick={() => openExternalLink(link)}
+                          data-testid={`card-${product.id}`}
                         >
                           <div className="relative w-full h-40 overflow-hidden">
                             <CardImage src={product.imageUrl || getCategoryImage(product.category)} emoji="🛍️" alt={product.name} />
@@ -343,17 +362,13 @@ const DiscoverTogether = () => {
                               {product.price && <p className="text-sm font-bold text-primary">{product.price}</p>}
                               <LikeButton liked={isLikedByMe(id)} partnerLiked={isLikedByPartner(id)} mutual={isMutualLike(id)} onToggle={() => toggleLike(id, product.name)} />
                             </div>
-                            <a
-                              href={getLink(product.amazonUrl, product.name)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
+                            <div
                               className={`mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${product.amazonUrl && isLuxuryBrand(product.amazonUrl) ? "bg-[#1a1a1a] text-white hover:bg-[#333]" : "bg-[#FF9900] text-black hover:bg-[#FFa820]"}`}
                               data-testid={`buy-${product.id}`}
                             >
                               <ShoppingCart className="w-3 h-3" />
-                              {product.amazonUrl?.includes("coco-de-mer.com") ? "Shop Coco de Mer" : product.amazonUrl?.includes("agentprovocateur.com") ? "Shop Agent Provocateur" : product.amazonUrl?.includes("goop.com") ? "Shop goop" : "Buy on Amazon"}
-                            </a>
+                              {getBrandLabel(product.amazonUrl)}
+                            </div>
                           </div>
                         </motion.div>
                       );
@@ -367,16 +382,13 @@ const DiscoverTogether = () => {
                     const img = getCategoryImage(exp.category || "Experiences");
                     const id = `exp-${exp.name}`;
                     return (
-                      <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => window.open(getLink(exp.bookingUrl, exp.name), "_blank", "noopener,noreferrer")}
-                        className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
+                      <motion.div key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+                        onClick={() => openExternalLink(getLink(exp.bookingUrl, exp.name))}
+                        className="group flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
                       >
-                        <div className="relative w-full h-36 overflow-hidden">
+                        <div className="relative w-full h-40 overflow-hidden">
                           <CardImage src={img} emoji={exp.emoji} alt={exp.name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                          <div className="absolute top-1.5 right-1.5">
-                            <ExternalLink className="w-3 h-3 text-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                           <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
                             <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{exp.category}</span>
                           </div>
@@ -391,8 +403,12 @@ const DiscoverTogether = () => {
                             </div>
                             <LikeButton liked={isLikedByMe(id)} partnerLiked={isLikedByPartner(id)} mutual={isMutualLike(id)} onToggle={() => toggleLike(id, exp.name)} />
                           </div>
+                          <div className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold bg-[#FF9900] text-black hover:bg-[#FFa820] transition-colors">
+                            <ShoppingCart className="w-3 h-3" />
+                            Buy on Amazon
+                          </div>
                         </div>
-                      </motion.button>
+                      </motion.div>
                     );
                   })
             )}
@@ -402,17 +418,15 @@ const DiscoverTogether = () => {
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : products.slice(0, 6).map((p, i) => {
                     const img = getCategoryImage(p.category);
+                    const link = getLink(p.productUrl, p.name);
                     return (
-                      <motion.button key={`${p.name}-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => window.open(getLink(p.productUrl, p.name), "_blank", "noopener,noreferrer")}
-                        className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
+                      <motion.div key={`${p.name}-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+                        onClick={() => openExternalLink(link)}
+                        className="group flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
                       >
-                        <div className="relative w-full h-36 overflow-hidden">
+                        <div className="relative w-full h-40 overflow-hidden">
                           <CardImage src={img} emoji={p.emoji} alt={p.name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                          <div className="absolute top-1.5 right-1.5">
-                            <ExternalLink className="w-3 h-3 text-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                           <div className="absolute bottom-1.5 left-1.5">
                             <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{p.category}</span>
                           </div>
@@ -424,8 +438,14 @@ const DiscoverTogether = () => {
                             <p className="text-xs font-bold text-primary">{p.price}</p>
                             <LikeButton liked={isLikedByMe(p.affiliateTag)} partnerLiked={isLikedByPartner(p.affiliateTag)} mutual={isMutualLike(p.affiliateTag)} onToggle={() => toggleLike(p.affiliateTag, p.name)} />
                           </div>
+                          <div
+                            className={`mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${p.productUrl && isLuxuryBrand(p.productUrl) ? "bg-[#1a1a1a] text-white hover:bg-[#333]" : "bg-[#FF9900] text-black hover:bg-[#FFa820]"}`}
+                          >
+                            <ShoppingCart className="w-3 h-3" />
+                            {getBrandLabel(p.productUrl)}
+                          </div>
                         </div>
-                      </motion.button>
+                      </motion.div>
                     );
                   })
             )}
@@ -435,17 +455,15 @@ const DiscoverTogether = () => {
                 ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : intimacy.slice(0, 6).map((item, i) => {
                     const img = getCategoryImage(item.category);
+                    const link = getLink(item.productUrl, item.name);
                     return (
-                      <motion.button key={`${item.name}-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => window.open(getLink(item.productUrl, item.name), "_blank", "noopener,noreferrer")}
-                        className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
+                      <motion.div key={`${item.name}-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+                        onClick={() => openExternalLink(link)}
+                        className="group flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
                       >
-                        <div className="relative w-full h-36 overflow-hidden">
+                        <div className="relative w-full h-40 overflow-hidden">
                           <CardImage src={img} emoji={item.emoji} alt={item.name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                          <div className="absolute top-1.5 right-1.5">
-                            <ExternalLink className="w-3 h-3 text-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                           <div className="absolute bottom-1.5 left-1.5">
                             <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{item.category}</span>
                           </div>
@@ -457,8 +475,14 @@ const DiscoverTogether = () => {
                             <p className="text-xs font-bold text-primary">{item.price}</p>
                             <LikeButton liked={isLikedByMe(item.affiliateTag)} partnerLiked={isLikedByPartner(item.affiliateTag)} mutual={isMutualLike(item.affiliateTag)} onToggle={() => toggleLike(item.affiliateTag, item.name)} />
                           </div>
+                          <div
+                            className={`mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${item.productUrl && isLuxuryBrand(item.productUrl) ? "bg-[#1a1a1a] text-white hover:bg-[#333]" : "bg-[#FF9900] text-black hover:bg-[#FFa820]"}`}
+                          >
+                            <ShoppingCart className="w-3 h-3" />
+                            {getBrandLabel(item.productUrl)}
+                          </div>
                         </div>
-                      </motion.button>
+                      </motion.div>
                     );
                   })
             )}
@@ -470,16 +494,13 @@ const DiscoverTogether = () => {
                     const img = getCategoryImage("Travel");
                     const id = `travel-${dest.destination}`;
                     return (
-                      <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => window.open(getLink(dest.bookingUrl, `${dest.name} ${dest.destination}`), "_blank", "noopener,noreferrer")}
-                        className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
+                      <motion.div key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+                        onClick={() => openExternalLink(getLink(dest.bookingUrl, `${dest.name} ${dest.destination}`))}
+                        className="group flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
                       >
-                        <div className="relative w-full h-36 overflow-hidden">
+                        <div className="relative w-full h-40 overflow-hidden">
                           <CardImage src={img} emoji={dest.emoji} alt={dest.name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                          <div className="absolute top-1.5 right-1.5">
-                            <ExternalLink className="w-3 h-3 text-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                           <div className="absolute bottom-1.5 left-1.5">
                             <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{dest.category}</span>
                           </div>
@@ -494,8 +515,12 @@ const DiscoverTogether = () => {
                             </div>
                             <LikeButton liked={isLikedByMe(id)} partnerLiked={isLikedByPartner(id)} mutual={isMutualLike(id)} onToggle={() => toggleLike(id, dest.name)} />
                           </div>
+                          <div className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold bg-primary/90 text-primary-foreground hover:bg-primary transition-colors">
+                            <Plane className="w-3 h-3" />
+                            View Details
+                          </div>
                         </div>
-                      </motion.button>
+                      </motion.div>
                     );
                   })
             )}
