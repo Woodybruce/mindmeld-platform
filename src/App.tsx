@@ -26,6 +26,7 @@ import DesignMyNight from "./pages/DesignMyNight";
 import FamilyQuiz from "./pages/FamilyQuiz";
 import SexBucketGame from "./pages/SexBucketGame";
 import AdminFeedContent from "./pages/AdminFeedContent";
+import Shop from "./pages/Shop";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import OutlookCallback from "./pages/OutlookCallback";
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="/family-quiz" element={<AuthGuard><FamilyQuiz /></AuthGuard>} />
               <Route path="/sex-bucket-game" element={<AuthGuard><SexBucketGame /></AuthGuard>} />
               <Route path="/admin/feed" element={<AuthGuard><AdminFeedContent /></AuthGuard>} />
+              <Route path="/shop" element={<AuthGuard><Shop /></AuthGuard>} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/outlook-callback" element={<OutlookCallback />} />

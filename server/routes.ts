@@ -1293,6 +1293,145 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
     }
   });
 
+  // POST /api/shop/generate — In-app shop product catalog
+  app.post("/api/shop/generate", async (req: Request, res: Response) => {
+    try {
+      const { category = "all" } = req.body || {};
+
+      const categoryHint = category === "all"
+        ? "Mix of categories: Date Night, Gifts, Wellness, Intimacy, Games, Home"
+        : `Focus on: ${category}`;
+
+      const data = await callAI(
+        [
+          {
+            role: "system",
+            content: `You are a premium product curator for a couples/relationship app shop.
+Generate 6 SPECIFIC, REAL products that couples would love. Use exact product names and real brands you know exist.
+Each product needs:
+- name: Full product name (real product that exists)
+- brand: Real brand name
+- price: Realistic GBP price as string like "£29.99"
+- description: Short one-line tagline (max 50 chars)
+- longDescription: 2-3 sentences about why couples would love this product, what makes it special
+- features: Array of 3-4 key highlights/features (short phrases)
+- category: One of: Date Night, Gifts, Wellness, Intimacy, Games, Home
+- emoji: Single relevant emoji
+- imageKeyword: A descriptive 2-3 word search term for finding a relevant lifestyle/product photo (e.g. "massage candles romantic", "couples board game", "silk pajamas luxury")
+- source: Where to buy - use "Amazon" for most products
+
+Make products feel premium and gift-worthy. Include a mix of price points from £15-£150.
+Products should be things couples would actually buy for each other or to enjoy together.`,
+          },
+          {
+            role: "user",
+            content: `Generate 6 premium product recommendations for couples. ${categoryHint}. Make them varied, real products from well-known brands.`,
+          },
+        ],
+        [
+          {
+            type: "function",
+            function: {
+              name: "generate_shop_products",
+              description: "Return 6 curated shop products for couples",
+              parameters: {
+                type: "object",
+                properties: {
+                  products: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string" },
+                        brand: { type: "string" },
+                        price: { type: "string" },
+                        description: { type: "string" },
+                        category: { type: "string" },
+                        emoji: { type: "string" },
+                        longDescription: { type: "string" },
+                        features: { type: "array", items: { type: "string" } },
+                        imageKeyword: { type: "string" },
+                        source: { type: "string" },
+                      },
+                      required: ["name", "brand", "price", "description", "category", "emoji", "longDescription", "features", "imageKeyword", "source"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["products"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        { type: "function", function: { name: "generate_shop_products" } }
+      );
+
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      let rawProducts: any[] = [];
+      if (toolCall?.function?.arguments) {
+        rawProducts = JSON.parse(toolCall.function.arguments).products || [];
+      }
+
+      const enriched: any[] = rawProducts.map((p: any, i: number) => ({
+        id: `shop-${category}-${Date.now()}-${i}`,
+        name: p.name,
+        brand: p.brand,
+        price: p.price,
+        description: p.description || "",
+        longDescription: p.longDescription || p.description || "",
+        features: p.features || [],
+        category: p.category || "Gifts",
+        emoji: p.emoji || "",
+        imageKeyword: p.imageKeyword || p.name,
+        buyUrl: buildAmazonUrl(p.name),
+        source: p.source || "Amazon",
+      }));
+
+      const catLower = category.toLowerCase();
+      if (catLower.includes("intimacy") || catLower === "all" || catLower.includes("mix")) {
+        const isIntimacy = catLower.includes("intimacy");
+        const luxuryPick = shuffle(LUXURY_INTIMACY_PRODUCTS).slice(0, isIntimacy ? 2 : 1);
+        luxuryPick.forEach((lp: any, i: number) => {
+          enriched.push({
+            id: `shop-luxury-${Date.now()}-${i}`,
+            name: lp.name,
+            brand: lp.brand,
+            price: lp.price,
+            description: lp.description,
+            longDescription: `Discover the ${lp.name} from ${lp.brand} — a premium selection curated for couples who appreciate luxury. ${lp.description}.`,
+            features: [`By ${lp.brand}`, "Premium quality", "Perfect for couples", "Luxury gifting"],
+            category: "Intimacy",
+            emoji: lp.emoji,
+            imageKeyword: `${lp.category} luxury couples`,
+            buyUrl: lp.productUrl,
+            source: lp.brand,
+          });
+        });
+      }
+
+      res.json({ products: shuffle(enriched) });
+    } catch (e: any) {
+      console.error("shop/generate error:", e);
+      // Return fallback products
+      const fallback = LUXURY_INTIMACY_PRODUCTS.slice(0, 4).map((lp, i) => ({
+        id: `shop-fallback-${i}`,
+        name: lp.name,
+        brand: lp.brand,
+        price: lp.price,
+        description: lp.description,
+        longDescription: `${lp.description}. A luxury product from ${lp.brand}, perfect for couples.`,
+        features: [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
+        category: lp.category,
+        emoji: lp.emoji,
+        imageKeyword: `${lp.category} luxury`,
+        buyUrl: lp.productUrl,
+        source: lp.brand,
+      }));
+      res.json({ products: fallback });
+    }
+  });
+
   // 13. POST /api/suggest-tasks
   app.post("/api/suggest-tasks", async (req: Request, res: Response) => {
     try {

@@ -139,6 +139,16 @@ All routes are defined in `server/routes.ts`:
   - Quotes tab: inspirational relationship quotes with gradient cards
   - New API routes: `/api/curated-podcasts`, `/api/curated-videos`, `/api/curated-quotes`
   - Each tab has its own caching, like/heart support, and refresh
+- 2026-02-28: In-app Shop page (`/shop`) with AI-curated product catalog
+  - Dedicated full-page shop at `/shop` route with 2-column product grid
+  - `POST /api/shop/generate` endpoint uses OpenAI to generate 6 rich product recommendations per category
+  - Product detail modal with image, long description, feature highlights, and prominent "Buy Now" button
+  - Buy button uses `document.createElement('a')` technique for reliable webview link opening
+  - Categories: For You, Date Night, Gifts, Wellness, Intimacy, Games, Home
+  - Luxury brand products (CdM, AP, goop) mixed into intimacy/all categories
+  - 30-minute client-side cache per category
+  - Accessible from Discover Together section via "Shop" button
+  - Like/heart support with partner mutual like indicators
 - 2026-02-28: Discover Together shop with curated products
   - `useShopProducts` hook stores curated products in `shared_lists` table as `__shop_products__` JSON items array
   - Admin page (AdminFeedContent.tsx) has "Shop Products" tab to add/edit/remove products

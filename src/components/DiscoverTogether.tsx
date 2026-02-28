@@ -57,7 +57,8 @@ const getBrandLabel = (url?: string): string => {
   return "Buy on Amazon";
 };
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane, ShoppingCart, Copy, Check } from "lucide-react";
+import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane, ShoppingCart, Copy, Check, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
@@ -153,6 +154,7 @@ const SkeletonCard = () => (
 );
 
 const DiscoverTogether = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>("shop");
   const [productCat, setProductCat] = useState("general");
   const [shopFilter, setShopFilter] = useState("all");
@@ -261,11 +263,22 @@ const DiscoverTogether = () => {
             <p className="text-[10px] text-muted-foreground">{activeTab === "shop" ? "Curated picks for couples" : "AI-curated for couples"}</p>
           </div>
         </div>
-        {activeTab !== "shop" && (
-          <button onClick={handleRefresh} disabled={isLoading} className="p-1.5 rounded-lg hover:bg-secondary transition-colors" data-testid="refresh-discover">
-            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isLoading ? "animate-spin" : ""}`} />
+        <div className="flex items-center gap-1.5">
+          {activeTab !== "shop" && (
+            <button onClick={handleRefresh} disabled={isLoading} className="p-1.5 rounded-lg hover:bg-secondary transition-colors" data-testid="refresh-discover">
+              <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isLoading ? "animate-spin" : ""}`} />
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/shop")}
+            className="flex items-center gap-1 text-[10px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+            data-testid="browse-shop"
+          >
+            <ShoppingBag className="w-3 h-3" />
+            Shop
+            <ChevronRight className="w-3 h-3" />
           </button>
-        )}
+        </div>
       </div>
 
       <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">

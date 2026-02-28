@@ -26,6 +26,7 @@ const LikeButton = ({ liked, partnerLiked, mutual, onToggle, size = "sm" }: Like
             : "text-muted-foreground hover:text-destructive/60"
         }`}
         title={mutual ? "You both like this!" : liked ? "Unlike" : "Like"}
+        data-testid="button-like"
       >
         <Heart className={`${iconSize} ${liked ? "fill-current" : ""}`} />
       </div>
