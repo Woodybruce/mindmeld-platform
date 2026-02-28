@@ -21,6 +21,7 @@ interface ShopProduct {
   category: string;
   emoji: string;
   imageKeyword: string;
+  imageUrl?: string | null;
   buyUrl: string;
   source: string;
 }
@@ -75,11 +76,25 @@ const getCategoryGradient = (cat: string) => {
   return CATEGORY_GRADIENTS[key] || "from-slate-900/80 via-gray-800/60 to-zinc-900/40";
 };
 
-const ProductImage = ({ category, brand, name }: { category: string; brand: string; name: string }) => {
+const ProductImage = ({ category, brand, imageUrl }: { category: string; brand: string; imageUrl?: string | null }) => {
+  const [failed, setFailed] = useState(false);
   const catKey = category.toLowerCase();
   const Icon = CATEGORY_ICONS[catKey] || ShoppingBag;
   const gradient = getCategoryGradient(category);
   const initials = brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+
+  if (imageUrl && !failed) {
+    return (
+      <img
+        src={imageUrl}
+        alt={brand}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        onError={() => setFailed(true)}
+        data-testid="product-image"
+      />
+    );
+  }
 
   return (
     <div className={`w-full h-full bg-gradient-to-br ${gradient} flex flex-col items-center justify-center p-4 relative`}>
@@ -137,7 +152,7 @@ const ProductDetailModal = ({
       >
         <div className="relative">
           <div className="w-full h-72 overflow-hidden rounded-t-3xl sm:rounded-t-3xl">
-            <ProductImage category={product.category} brand={product.brand} name={product.name} />
+            <ProductImage category={product.category} brand={product.brand} imageUrl={product.imageUrl} />
           </div>
 
           <button
@@ -377,7 +392,7 @@ const Shop = () => {
                       data-testid={`shop-product-${product.id}`}
                     >
                       <div className="relative w-full aspect-square overflow-hidden">
-                        <ProductImage category={product.category} brand={product.brand} name={product.name} />
+                        <ProductImage category={product.category} brand={product.brand} imageUrl={product.imageUrl} />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                         <div className="absolute top-2 right-2">
                           <LikeButton

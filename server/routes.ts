@@ -18,6 +18,22 @@ async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 const AMAZON_TAG = "woodybruce-21";
+const PEXELS_API_KEY = process.env.PEXELS_API_KEY || "";
+
+async function searchPexelsImage(query: string): Promise<string | null> {
+  if (!PEXELS_API_KEY) return null;
+  try {
+    const resp = await fetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=square`,
+      { headers: { Authorization: PEXELS_API_KEY } }
+    );
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.photos?.[0]?.src?.medium || null;
+  } catch {
+    return null;
+  }
+}
 
 function buildAmazonUrl(productName?: string): string {
   const name = productName || "couples gift";
@@ -1373,6 +1389,11 @@ Products should be things couples would actually buy for each other or to enjoy 
         rawProducts = JSON.parse(toolCall.function.arguments).products || [];
       }
 
+      const imagePromises = rawProducts.map((p: any) =>
+        searchPexelsImage(p.imageKeyword || p.name)
+      );
+      const images = await Promise.all(imagePromises);
+
       const enriched: any[] = rawProducts.map((p: any, i: number) => ({
         id: `shop-${category}-${Date.now()}-${i}`,
         name: p.name,
@@ -1384,6 +1405,7 @@ Products should be things couples would actually buy for each other or to enjoy 
         category: p.category || "Gifts",
         emoji: p.emoji || "",
         imageKeyword: p.imageKeyword || p.name,
+        imageUrl: images[i] || null,
         buyUrl: buildAmazonUrl(p.name),
         source: p.source || "Amazon",
       }));
@@ -1392,6 +1414,9 @@ Products should be things couples would actually buy for each other or to enjoy 
       if (catLower.includes("intimacy") || catLower === "all" || catLower.includes("mix")) {
         const isIntimacy = catLower.includes("intimacy");
         const luxuryPick = shuffle(LUXURY_INTIMACY_PRODUCTS).slice(0, isIntimacy ? 2 : 1);
+        const luxuryImages = await Promise.all(
+          luxuryPick.map((lp: any) => searchPexelsImage(`${lp.name} ${lp.brand} luxury`))
+        );
         luxuryPick.forEach((lp: any, i: number) => {
           enriched.push({
             id: `shop-luxury-${Date.now()}-${i}`,
@@ -1404,6 +1429,7 @@ Products should be things couples would actually buy for each other or to enjoy 
             category: "Intimacy",
             emoji: lp.emoji,
             imageKeyword: `${lp.category} luxury couples`,
+            imageUrl: luxuryImages[i] || null,
             buyUrl: lp.productUrl,
             source: lp.brand,
           });
