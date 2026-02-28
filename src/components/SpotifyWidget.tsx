@@ -64,8 +64,8 @@ export default function SpotifyWidget() {
     try {
       const { data, error } = await supabase
         .from("shared_lists")
-        .select("score_data")
-        .eq("game_type", "spotify_playlist")
+        .select("id, score_data")
+        .eq("name", "__spotify_playlist__")
         .limit(1)
         .maybeSingle();
       if (error) console.warn("Load playlist error:", error.message);
@@ -87,14 +87,16 @@ export default function SpotifyWidget() {
       const { data: existing } = await supabase
         .from("shared_lists")
         .select("id")
-        .eq("game_type", "spotify_playlist")
+        .eq("name", "__spotify_playlist__")
         .limit(1)
         .maybeSingle();
+
+      const scoreData = { playlistId: id, playlistName: name, spotifyUrl: url };
 
       if (existing) {
         const { error } = await supabase
           .from("shared_lists")
-          .update({ score_data: { playlistId: id, playlistName: name, spotifyUrl: url } })
+          .update({ score_data: scoreData })
           .eq("id", existing.id);
         if (error) console.error("Update playlist error:", error.message);
       } else {
@@ -102,8 +104,9 @@ export default function SpotifyWidget() {
           .from("shared_lists")
           .insert({
             user_id: user.id,
-            game_type: "spotify_playlist",
-            score_data: { playlistId: id, playlistName: name, spotifyUrl: url },
+            name: "__spotify_playlist__",
+            icon: "🎵",
+            score_data: scoreData,
           });
         if (error) console.error("Insert playlist error:", error.message);
       }
