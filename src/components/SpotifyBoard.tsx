@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { ExternalLink, Music } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ExternalLink, Music, ChevronDown, ChevronUp } from "lucide-react";
 import { apiInvoke } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import SpotifyEmbed from "./SpotifyEmbed";
 
 interface NowPlayingData {
@@ -33,18 +35,40 @@ const SpotifyIcon = ({ className }: { className?: string }) => (
 
 const SpotifyBoard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [nowPlaying, setNowPlaying] = useState<NowPlayingData | null>(null);
   const [recentTracks, setRecentTracks] = useState<RecentTrack[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [connected, setConnected] = useState(true);
+  const [playlistId, setPlaylistId] = useState<string | null>(null);
+  const [playlistName, setPlaylistName] = useState("");
+  const [playlistExpanded, setPlaylistExpanded] = useState(false);
 
   useEffect(() => {
     checkConnection();
     fetchData();
+    loadPlaylistId();
     const interval = setInterval(fetchNowPlaying, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  async function loadPlaylistId() {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from("shared_lists")
+        .select("score_data")
+        .eq("name", "__spotify_playlist__")
+        .limit(1)
+        .maybeSingle();
+      const pid = (data?.score_data as any)?.playlistId;
+      if (pid) {
+        setPlaylistId(pid);
+        setPlaylistName((data?.score_data as any)?.playlistName || "Our Playlist");
+      }
+    } catch {}
+  }
 
   async function checkConnection() {
     try {
@@ -178,6 +202,44 @@ const SpotifyBoard = () => {
           ) : (
             <p className="text-[12px] text-muted-foreground">Play something on Spotify to see it here</p>
           )}
+        </div>
+      )}
+
+      {playlistId && (
+        <div className="border-t border-border/30">
+          <button
+            onClick={() => setPlaylistExpanded(!playlistExpanded)}
+            className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary/50 transition-colors"
+            data-testid="toggle-home-playlist"
+          >
+            <span className="text-xs font-semibold text-muted-foreground">
+              {playlistName || "Our Playlist"}
+            </span>
+            {playlistExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
+          <AnimatePresence>
+            {playlistExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="px-2 pb-2">
+                  <iframe
+                    src={`https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator&theme=0`}
+                    width="100%"
+                    height="352"
+                    frameBorder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    className="rounded-xl"
+                    data-testid="spotify-home-playlist-embed"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </motion.div>
