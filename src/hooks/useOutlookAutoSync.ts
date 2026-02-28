@@ -40,7 +40,7 @@ export function useOutlookAutoSync(onSynced?: () => void) {
 
         const events = result.events || [];
         const toImport = events
-          .filter((e: any) => !e.already_imported)
+          .filter((e: any) => !e.already_imported && e.partner_invited)
           .map((e: any) => ({
             subject: e.subject,
             start_time: e.start_time,
