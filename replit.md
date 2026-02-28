@@ -139,31 +139,20 @@ All routes are defined in `server/routes.ts`:
   - Quotes tab: inspirational relationship quotes with gradient cards
   - New API routes: `/api/curated-podcasts`, `/api/curated-videos`, `/api/curated-quotes`
   - Each tab has its own caching, like/heart support, and refresh
-- 2026-02-28: In-app Shop page (`/shop`) with AI-curated product catalog
-  - Dedicated full-page shop at `/shop` route with 2-column product grid
-  - `POST /api/shop/generate` endpoint uses OpenAI to generate 6 rich product recommendations per category
-  - Product detail modal with image, long description, feature highlights, and prominent "Buy Now" button
-  - Buy button uses `document.createElement('a')` technique for reliable webview link opening
-  - Categories: For You, Date Night, Gifts, Wellness, Intimacy, Games, Home
-  - Luxury brand products (CdM, AP, goop) mixed into intimacy/all categories
+- 2026-02-28: Discover Together — unified shopping widget on home page
+  - Replaced old multi-tab DiscoverTogether + separate Shop page with single inline widget
+  - `DiscoverTogether` component (`src/components/DiscoverTogether.tsx`) is the unified product browser
+  - "Our Picks" tab: curated luxury products from CdM, AP, goop via `GET /api/shop/curated`
+  - AI-powered tabs: For You, Date Night, Gifts, Wellness, Intimacy, Games, Home via `POST /api/shop/generate`
+  - Real product images via Pexels API (`PEXELS_API_KEY` env var) with gradient fallbacks
+  - Product detail modal with image, description, features, and buy button
+  - Buy button uses `document.createElement('a')` for reliable webview link opening
+  - Brand-styled buy buttons: black for luxury brands, primary for Amazon
+  - `LUXURY_INTIMACY_PRODUCTS` in `server/routes.ts`: 19 products (8 CdM + 6 AP + 5 goop)
+  - All Amazon product links use search URLs (`/s?k=...&tag=woodybruce-21`)
   - 30-minute client-side cache per category
-  - Accessible from Discover Together section via "Shop" button
   - Like/heart support with partner mutual like indicators
-- 2026-02-28: Discover Together shop with curated products
-  - `useShopProducts` hook stores curated products in `shared_lists` table as `__shop_products__` JSON items array
-  - Admin page (AdminFeedContent.tsx) has "Shop Products" tab to add/edit/remove products
-  - Affiliate tag `woodybruce-21` auto-applied to all Amazon URLs
-  - Default "Our Picks" tab shows curated products (Amazon + Coco de Mer) with context-aware buttons
-  - Category filtering: All, Date Night, Gifts, Wellness, Games, Intimacy, Experiences
-  - Auto-seeds 8 default products if none exist on first load
-  - Other Discover Together tabs (Date Night, Gifts, Intimacy, Travel) remain AI-powered
-  - **Coco de Mer integration**: Intimacy tab always includes 2 luxury products (from `LUXURY_INTIMACY_PRODUCTS` array) mixed with 2 AI-suggested Amazon items
-  - `LUXURY_INTIMACY_PRODUCTS` array in `server/routes.ts` contains 19 products (8 Coco de Mer + 6 Agent Provocateur + 5 goop) with direct URLs
-  - Coco de Mer URLs preserved as-is (not converted to Amazon search); Amazon `/dp/` links converted to search URLs
-  - **Agent Provocateur integration**: 6 AP collection/category links (lingerie, bridal, nightwear, corsets, hosiery, gifts)
-  - **goop integration**: 5 couples-focused wellness categories (massage/intimacy, sexual health, bath & body, gifts, fragrance)
-  - Product buttons styled by source: black "Shop Coco de Mer" / "Shop Agent Provocateur" / "Shop goop" vs orange "Buy on Amazon"
-  - All Amazon product links use search URLs (`/s?k=...&tag=affiliate`) — direct `/dp/` links don't work from server IPs
+  - Separate `/shop` route removed — everything lives on home page
 - 2026-02-28: Outlook calendar auto-sync with shared events
   - `useOutlookAutoSync` hook runs on home page load, syncs every 15 minutes
   - Automatically fetches Outlook calendar events and imports new ones

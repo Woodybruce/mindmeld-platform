@@ -1,255 +1,354 @@
 import { useState, useEffect, useCallback } from "react";
-
-const AMAZON_TAG = "woodybruce-21";
-const CJ_PID = "7540258";
-
-const withAffiliateTag = (url?: string): string | undefined => {
-  if (!url) return undefined;
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes("amazon.co.uk") || u.hostname.includes("amazon.com")) {
-      u.searchParams.set("tag", AMAZON_TAG);
-      return u.toString();
-    }
-    if (u.hostname.includes("booking.com")) {
-      u.searchParams.set("affiliate_id", CJ_PID);
-      if (!u.searchParams.has("aid")) u.searchParams.set("aid", "356980");
-      return u.toString();
-    }
-    return url;
-  } catch {}
-  return undefined;
-};
-
-const amazonSearch = (name: string): string =>
-  `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
-
-const isLuxuryBrand = (url: string): boolean =>
-  url.includes("coco-de-mer.com") || url.includes("agentprovocateur.com") || url.includes("goop.com");
-
-const ensureSearchUrl = (url: string, name: string): string => {
-  if (isLuxuryBrand(url)) return url;
-  if (url.includes("/dp/") || url.includes("/gp/")) {
-    return amazonSearch(name);
-  }
-  return url;
-};
-
-const getLink = (url?: string, name?: string): string => {
-  const tagged = withAffiliateTag(url);
-  if (tagged) return ensureSearchUrl(tagged, name || "couples gift");
-  return amazonSearch(name || "couples gift");
-};
-
-const openExternalLink = (url: string) => {
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  if (!opened) {
-    window.location.href = url;
-  }
-};
-
-const getBrandLabel = (url?: string): string => {
-  if (!url) return "Buy on Amazon";
-  if (url.includes("coco-de-mer.com")) return "Shop Coco de Mer";
-  if (url.includes("agentprovocateur.com")) return "Shop Agent Provocateur";
-  if (url.includes("goop.com")) return "Shop goop";
-  if (url.includes("booking.com")) return "View on Booking.com";
-  return "Buy on Amazon";
-};
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane, ShoppingCart, Copy, Check, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { RefreshCw, ShoppingBag, Star, X, ChevronRight, Sparkles, Wine, Gift, Flower2, Flame, Gamepad2, Home, Heart as HeartIcon } from "lucide-react";
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
-import { useShopProducts, type ShopProduct } from "@/hooks/useShopProducts";
-import AiSearchBar from "@/components/AiSearchBar";
 
-interface Product { name: string; brand: string; price: string; description: string; category: string; emoji: string; affiliateTag: string; productUrl?: string; }
-interface Experience { name: string; venue: string; price: string; description: string; category: string; emoji: string; city: string; bookingUrl?: string; duration: string; }
-interface IntimacyItem { name: string; brand: string; price: string; description: string; category: string; emoji: string; affiliateTag: string; productUrl?: string; }
-interface TravelItem { name: string; destination: string; country: string; price: string; description: string; category: string; emoji: string; duration: string; bookingUrl?: string; }
+interface ShopProduct {
+  id: string;
+  name: string;
+  brand: string;
+  price: string;
+  originalPrice?: string;
+  description: string;
+  longDescription: string;
+  features: string[];
+  category: string;
+  emoji: string;
+  imageKeyword: string;
+  imageUrl?: string | null;
+  buyUrl: string;
+  source: string;
+}
 
-type TabKey = "shop" | "experiences" | "products" | "intimacy" | "travel";
+type ShopCategory = "our-picks" | "all" | "date-night" | "gifts" | "wellness" | "intimacy" | "games" | "home";
 
-interface Tab { key: TabKey; label: string; icon: React.ReactNode; colour: string; }
+const CATEGORY_TO_LABEL: Record<ShopCategory, string> = {
+  "our-picks": "Our Picks",
+  "all": "Mix of categories: Date Night, Gifts, Wellness, Intimacy, Games, Home",
+  "date-night": "Date Night",
+  "gifts": "Gifts",
+  "wellness": "Wellness",
+  "intimacy": "Intimacy",
+  "games": "Games",
+  "home": "Home",
+};
 
-const TABS: Tab[] = [
-  { key: "shop",        label: "Our Shopping List",  icon: <ShoppingCart className="w-3 h-3" />, colour: "from-primary/20 to-us-coral/20" },
-  { key: "experiences", label: "Date Night",  icon: <MapPin className="w-3 h-3" />,       colour: "from-us-coral/20 to-us-blush/30" },
-  { key: "products",    label: "Gifts",       icon: <ShoppingBag className="w-3 h-3" />,  colour: "from-us-gold/20 to-us-cream/40" },
-  { key: "intimacy",    label: "Intimacy",    icon: <Heart className="w-3 h-3" />,         colour: "from-us-blush/30 to-us-coral/10" },
-  { key: "travel",      label: "Travel",      icon: <Plane className="w-3 h-3" />,          colour: "from-us-sage/20 to-primary/10" },
+interface CategoryDef { key: ShopCategory; label: string; icon: typeof Sparkles; }
+
+const CATEGORIES: CategoryDef[] = [
+  { key: "our-picks", label: "Our Picks", icon: HeartIcon },
+  { key: "all", label: "For You", icon: Sparkles },
+  { key: "date-night", label: "Date Night", icon: Wine },
+  { key: "gifts", label: "Gifts", icon: Gift },
+  { key: "wellness", label: "Wellness", icon: Flower2 },
+  { key: "intimacy", label: "Intimacy", icon: Flame },
+  { key: "games", label: "Games", icon: Gamepad2 },
+  { key: "home", label: "Home", icon: Home },
 ];
 
-const PRODUCT_CATEGORIES: Record<string, { key: string; label: string }[]> = {
-  products: [
-    { key: "general", label: "All" },
-    { key: "date night", label: "Date Night" },
-    { key: "wellness", label: "Wellness" },
-    { key: "games", label: "Games" },
-  ],
+const CACHE_KEY = "discover_catalog_v1";
+const CACHE_TTL = 1000 * 60 * 30;
+
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  "date night": "from-rose-900/80 via-pink-800/60 to-amber-900/40",
+  "gifts": "from-violet-900/80 via-purple-800/60 to-pink-900/40",
+  "wellness": "from-emerald-900/80 via-teal-800/60 to-cyan-900/40",
+  "intimacy": "from-red-900/80 via-rose-800/60 to-pink-900/40",
+  "games": "from-blue-900/80 via-indigo-800/60 to-violet-900/40",
+  "home": "from-amber-900/80 via-orange-800/60 to-yellow-900/40",
+  "lingerie": "from-red-900/80 via-rose-800/60 to-pink-900/40",
+  "massage": "from-emerald-900/80 via-teal-800/60 to-cyan-900/40",
 };
 
-const SHOP_FILTERS = [
-  { key: "all", label: "All" },
-  { key: "Date Night", label: "Date Night" },
-  { key: "Gifts", label: "Gifts" },
-  { key: "Wellness", label: "Wellness" },
-  { key: "Games", label: "Games" },
-  { key: "Intimacy", label: "Intimacy" },
-  { key: "Experiences", label: "Experiences" },
-];
-
-const CATEGORY_PHOTOS: Record<string, string> = {
-  "Date Night": "photo-1414235077428-338989a2e8c0",
-  "Wellness": "photo-1544367567-0f2fcb009e0b",
-  "Travel": "photo-1488646953014-85cb44e25828",
-  "Intimacy": "photo-1518199266791-5375a83190b7",
-  "Experiences": "photo-1529543544282-ea57407bc2f3",
-  "Games": "photo-1610890716171-6b1bb98ffd09",
-  "Home": "photo-1555041469-a586c61ea9bc",
-  "Books": "photo-1512820790803-83ca734da794",
-  "Stationery": "photo-1497942304796-b8bc2cc898f3",
-  "Dining": "photo-1414235077428-338989a2e8c0",
-  "Massage": "photo-1544367567-0f2fcb009e0b",
-  "Candles": "photo-1602607109874-38f32b456bea",
-  "Lingerie": "photo-1518199266791-5375a83190b7",
-  "Vibrators": "photo-1518199266791-5375a83190b7",
-  "Bath": "photo-1552058544-f2b08422138a",
-  "Toys": "photo-1529543544282-ea57407bc2f3",
-  "Accessories": "photo-1518199266791-5375a83190b7",
-  "Bondage": "photo-1518199266791-5375a83190b7",
+const CATEGORY_ICONS: Record<string, typeof Wine> = {
+  "date night": Wine,
+  "gifts": Gift,
+  "wellness": Flower2,
+  "intimacy": Flame,
+  "games": Gamepad2,
+  "home": Home,
+  "lingerie": Flame,
+  "massage": Flower2,
 };
 
-const getCategoryImage = (category: string) => {
-  const photoId = CATEGORY_PHOTOS[category] || CATEGORY_PHOTOS["Experiences"];
-  return `https://images.unsplash.com/${photoId}?w=400&h=400&fit=crop&q=80`;
+const getCategoryGradient = (cat: string) => {
+  const key = cat.toLowerCase();
+  return CATEGORY_GRADIENTS[key] || "from-slate-900/80 via-gray-800/60 to-zinc-900/40";
 };
 
-const CACHE_TTL = 1000 * 60 * 60;
-
-const CardImage = ({ src, emoji, alt }: { src?: string; emoji: string; alt: string }) => {
+const ProductImage = ({ category, brand, imageUrl }: { category: string; brand: string; imageUrl?: string | null }) => {
   const [failed, setFailed] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(src);
+  const catKey = category.toLowerCase();
+  const Icon = CATEGORY_ICONS[catKey] || ShoppingBag;
+  const gradient = getCategoryGradient(category);
+  const initials = brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
-  useEffect(() => { setCurrentSrc(src); setFailed(false); }, [src]);
+  if (imageUrl && !failed) {
+    return (
+      <img
+        src={imageUrl}
+        alt={brand}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        onError={() => setFailed(true)}
+        data-testid="product-image"
+      />
+    );
+  }
 
-  if (!currentSrc || failed) return (
-    <div className="w-full h-full flex items-center justify-center bg-secondary/60">
-      <span className="text-5xl drop-shadow-sm">{emoji}</span>
+  return (
+    <div className={`w-full h-full bg-gradient-to-br ${gradient} flex flex-col items-center justify-center p-4 relative`}>
+      <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+        <Icon className="w-4 h-4 text-white/70" />
+      </div>
+      <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center mb-2">
+        <span className="text-lg font-bold text-white/90">{initials}</span>
+      </div>
+      <p className="text-[10px] text-white/50 text-center line-clamp-1 max-w-[90%]">{brand}</p>
     </div>
   );
-  return <img src={currentSrc} alt={alt} className="w-full h-full object-cover" loading="lazy" onError={() => setFailed(true)} />;
 };
 
-const SkeletonCard = () => (
-  <div className="flex-shrink-0 w-40 rounded-xl bg-secondary/50 overflow-hidden animate-pulse">
-    <div className="w-full h-36 bg-muted" />
-    <div className="p-2.5 space-y-2">
-      <div className="w-3/4 h-3 bg-muted rounded" />
-      <div className="w-1/2 h-2 bg-muted rounded" />
-    </div>
-  </div>
-);
+const openBuyLink = (url: string) => {
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
+const isLuxuryBrand = (source: string) => {
+  const s = source.toLowerCase();
+  return s.includes("coco de mer") || s.includes("agent provocateur") || s.includes("goop");
+};
+
+const getBuyLabel = (product: ShopProduct) => {
+  const s = product.source.toLowerCase();
+  if (s.includes("coco de mer")) return "Shop Coco de Mer";
+  if (s.includes("agent provocateur")) return "Shop Agent Provocateur";
+  if (s.includes("goop")) return "Shop goop";
+  return `Buy Now — ${product.price}`;
+};
+
+const ProductDetailModal = ({
+  product,
+  onClose,
+  liked,
+  partnerLiked,
+  mutual,
+  onToggleLike,
+}: {
+  product: ShopProduct;
+  onClose: () => void;
+  liked: boolean;
+  partnerLiked: boolean;
+  mutual: boolean;
+  onToggleLike: () => void;
+}) => {
+  const luxury = isLuxuryBrand(product.source);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="w-full max-w-lg bg-background rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative">
+          <div className="w-full h-72 overflow-hidden rounded-t-3xl sm:rounded-t-3xl">
+            <ProductImage category={product.category} brand={product.brand} imageUrl={product.imageUrl} />
+          </div>
+
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center"
+            data-testid="close-product-detail"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="absolute bottom-4 left-4 right-4">
+            <span className="text-xs bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full">{product.category}</span>
+          </div>
+        </div>
+
+        <div className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-foreground leading-tight">{product.name}</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">{product.brand}</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-xl font-bold text-primary">{product.price}</p>
+              {product.originalPrice && (
+                <p className="text-xs text-muted-foreground line-through">{product.originalPrice}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-1">
+              {[1,2,3,4,5].map(i => (
+                <Star key={i} className={`w-3.5 h-3.5 ${i <= 4 ? "text-amber-400 fill-amber-400" : "text-muted-foreground/30"}`} />
+              ))}
+              <span className="text-xs text-muted-foreground ml-1">4.0+</span>
+            </div>
+            <LikeButton liked={liked} partnerLiked={partnerLiked} mutual={mutual} onToggle={onToggleLike} size="sm" />
+          </div>
+
+          <p className="text-sm text-foreground/80 mt-4 leading-relaxed">{product.longDescription}</p>
+
+          {product.features.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Highlights</h3>
+              <div className="space-y-1.5">
+                {product.features.map((f, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                    <p className="text-sm text-foreground/70">{f}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 space-y-2.5 pb-4">
+            <button
+              onClick={() => openBuyLink(product.buyUrl)}
+              className={`w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform ${
+                luxury ? "bg-black text-white" : "bg-primary text-primary-foreground"
+              }`}
+              data-testid="buy-now-button"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              {getBuyLabel(product)}
+            </button>
+            <p className="text-[10px] text-center text-muted-foreground/60">
+              Opens in your browser
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const DiscoverTogether = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabKey>("shop");
-  const [productCat, setProductCat] = useState("general");
-  const [shopFilter, setShopFilter] = useState("all");
+  const [category, setCategory] = useState<ShopCategory>("our-picks");
+  const [products, setProducts] = useState<ShopProduct[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(null);
+  const [loadedCategories, setLoadedCategories] = useState<Set<string>>(new Set());
 
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [intimacy, setIntimacy] = useState<IntimacyItem[]>([]);
-  const [travel, setTravel] = useState<TravelItem[]>([]);
-  const [loading, setLoading] = useState<Record<string, boolean>>({ shop: false, experiences: false, products: false, intimacy: false, travel: false });
-  const [loaded, setLoaded] = useState<Record<string, boolean>>({ shop: true, experiences: false, products: false, intimacy: false, travel: false });
+  const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("shop");
 
-  const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("discover");
-  const { getActiveProducts: getCuratedProducts, loading: shopLoading } = useShopProducts();
-
-  const cacheGet = (key: string) => {
+  const getCached = useCallback((cat: string) => {
     try {
-      const raw = localStorage.getItem(key);
+      const raw = localStorage.getItem(`${CACHE_KEY}_${cat}`);
       if (!raw) return null;
       const { data, ts } = JSON.parse(raw);
       if (Date.now() - ts > CACHE_TTL) return null;
-      return data;
+      return data as ShopProduct[];
     } catch { return null; }
-  };
-  const cacheSet = (key: string, data: unknown) => {
-    try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch {}
-  };
-
-  const fetchExperiences = useCallback(async (force = false) => {
-    const key = "disc-experiences";
-    if (!force) { const c = cacheGet(key); if (c) { setExperiences(c); setLoaded(p => ({ ...p, experiences: true })); return; } }
-    setLoading(p => ({ ...p, experiences: true }));
-    try {
-      const { data } = await apiInvoke("suggest-experiences", { body: { city: "London" } });
-      if (data?.experiences?.length) { setExperiences(data.experiences); cacheSet(key, data.experiences); }
-    } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, experiences: false })); setLoaded(p => ({ ...p, experiences: true })); }
   }, []);
 
-  const fetchProducts = useCallback(async (cat = "general", force = false) => {
-    const key = `disc-products-${cat}`;
-    if (!force) { const c = cacheGet(key); if (c) { setProducts(c); setLoaded(p => ({ ...p, products: true })); return; } }
-    setLoading(p => ({ ...p, products: true }));
+  const setCache = useCallback((cat: string, data: ShopProduct[]) => {
     try {
-      const { data } = await apiInvoke("suggest-products", { body: { category: cat } });
-      if (data?.products?.length) { setProducts(data.products); cacheSet(key, data.products); }
-    } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, products: false })); setLoaded(p => ({ ...p, products: true })); }
+      localStorage.setItem(`${CACHE_KEY}_${cat}`, JSON.stringify({ data, ts: Date.now() }));
+    } catch {}
   }, []);
 
-  const fetchIntimacy = useCallback(async (force = false) => {
-    const key = "disc-intimacy";
-    if (!force) { const c = cacheGet(key); if (c) { setIntimacy(c); setLoaded(p => ({ ...p, intimacy: true })); return; } }
-    setLoading(p => ({ ...p, intimacy: true }));
-    try {
-      const { data } = await apiInvoke("suggest-intimacy", { body: {} });
-      if (data?.products?.length) { setIntimacy(data.products); cacheSet(key, data.products); }
-    } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, intimacy: false })); setLoaded(p => ({ ...p, intimacy: true })); }
-  }, []);
+  const fetchProducts = useCallback(async (cat: ShopCategory, force = false) => {
+    if (!force) {
+      const cached = getCached(cat);
+      if (cached) {
+        setProducts(prev => {
+          const existing = new Set(prev.map(p => p.id));
+          const newItems = cached.filter((p: ShopProduct) => !existing.has(p.id));
+          return [...prev, ...newItems];
+        });
+        setLoadedCategories(prev => new Set([...prev, cat]));
+        return;
+      }
+    }
 
-  const fetchTravel = useCallback(async (force = false) => {
-    const key = "disc-travel";
-    if (!force) { const c = cacheGet(key); if (c) { setTravel(c); setLoaded(p => ({ ...p, travel: true })); return; } }
-    setLoading(p => ({ ...p, travel: true }));
+    setLoading(true);
     try {
-      const { data } = await apiInvoke("suggest-travel", { body: {} });
-      if (data?.destinations?.length) { setTravel(data.destinations); cacheSet(key, data.destinations); }
-    } catch (e) { console.error(e); } finally { setLoading(p => ({ ...p, travel: false })); setLoaded(p => ({ ...p, travel: true })); }
-  }, []);
+      let fetchedProducts: ShopProduct[] = [];
 
+      if (cat === "our-picks") {
+        const { data } = await apiInvoke<{ products: ShopProduct[] }>("shop/curated", { method: "GET" });
+        fetchedProducts = data?.products || [];
+      } else {
+        const { data } = await apiInvoke<{ products: ShopProduct[] }>("shop/generate", {
+          body: { category: CATEGORY_TO_LABEL[cat] || cat },
+        });
+        fetchedProducts = data?.products || [];
+      }
+
+      if (fetchedProducts.length > 0) {
+        setCache(cat, fetchedProducts);
+        setProducts(prev => {
+          const existing = new Set(prev.map(p => p.id));
+          const newItems = fetchedProducts.filter(p => !existing.has(p.id));
+          return [...prev, ...newItems];
+        });
+        setLoadedCategories(prev => new Set([...prev, cat]));
+      }
+    } catch (err) {
+      console.error("Discover fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [getCached, setCache]);
 
   useEffect(() => {
-    const v = localStorage.getItem("disc-cache-v");
-    if (v !== "4") {
-      ["disc-experiences", "disc-intimacy", "disc-travel"].forEach(k => localStorage.removeItem(k));
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith("disc-products-")) localStorage.removeItem(k);
-      }
-      localStorage.setItem("disc-cache-v", "4");
+    if (!loadedCategories.has(category)) {
+      fetchProducts(category);
     }
-  }, []);
-  useEffect(() => { if (activeTab === "experiences" && !loaded.experiences) fetchExperiences(); }, [activeTab]);
-  useEffect(() => { if (activeTab === "products" && !loaded.products) fetchProducts(productCat); }, [activeTab]);
-  useEffect(() => { if (activeTab === "intimacy" && !loaded.intimacy) fetchIntimacy(); }, [activeTab]);
-  useEffect(() => { if (activeTab === "travel" && !loaded.travel) fetchTravel(); }, [activeTab]);
+  }, [category, loadedCategories, fetchProducts]);
+
+  const filteredProducts = (() => {
+    if (category === "our-picks") {
+      return products.filter(p => p.id.startsWith("curated-"));
+    }
+    if (category === "all") {
+      return products.filter(p => !p.id.startsWith("curated-"));
+    }
+    return products.filter(p => !p.id.startsWith("curated-") && p.category.toLowerCase().replace(/\s+/g, "-") === category);
+  })();
 
   const handleRefresh = () => {
-    if (activeTab === "shop") return;
-    if (activeTab === "experiences") fetchExperiences(true);
-    else if (activeTab === "products") fetchProducts(productCat, true);
-    else if (activeTab === "intimacy") fetchIntimacy(true);
-    else fetchTravel(true);
+    try { localStorage.removeItem(`${CACHE_KEY}_${category}`); } catch {}
+    if (category === "our-picks") {
+      setProducts(prev => prev.filter(p => !p.id.startsWith("curated-")));
+    } else {
+      setProducts(prev => prev.filter(p => {
+        if (p.id.startsWith("curated-")) return true;
+        if (category === "all") return false;
+        return p.category.toLowerCase().replace(/\s+/g, "-") !== category;
+      }));
+    }
+    setLoadedCategories(prev => {
+      const next = new Set(prev);
+      next.delete(category);
+      return next;
+    });
+    fetchProducts(category, true);
   };
-
-  const isLoading = activeTab === "shop" ? shopLoading : loading[activeTab];
-  const allCuratedProducts = getCuratedProducts();
-  const curatedProducts = shopFilter === "all" ? allCuratedProducts : getCuratedProducts(shopFilter);
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl overflow-hidden">
@@ -260,293 +359,142 @@ const DiscoverTogether = () => {
           </div>
           <div>
             <h3 className="font-display text-sm font-bold text-foreground">Discover Together</h3>
-            <p className="text-[10px] text-muted-foreground">{activeTab === "shop" ? "Curated picks for couples" : "AI-curated for couples"}</p>
+            <p className="text-[10px] text-muted-foreground">
+              {category === "our-picks" ? "Curated picks for couples" : "AI-curated for you both"}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          {activeTab !== "shop" && (
-            <button onClick={handleRefresh} disabled={isLoading} className="p-1.5 rounded-lg hover:bg-secondary transition-colors" data-testid="refresh-discover">
-              <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isLoading ? "animate-spin" : ""}`} />
-            </button>
-          )}
-          <button
-            onClick={() => navigate("/shop")}
-            className="flex items-center gap-1 text-[10px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
-            data-testid="browse-shop"
-          >
-            <ShoppingBag className="w-3 h-3" />
-            Shop
-            <ChevronRight className="w-3 h-3" />
-          </button>
-        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+          data-testid="refresh-discover"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
-              activeTab === tab.key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-            }`}
-            data-testid={`tab-${tab.key}`}
-          >
-            {tab.icon} {tab.label}
-          </button>
-        ))}
+        {CATEGORIES.map(cat => {
+          const Icon = cat.icon;
+          return (
+            <button
+              key={cat.key}
+              onClick={() => setCategory(cat.key)}
+              className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
+                category === cat.key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+              data-testid={`tab-${cat.key}`}
+            >
+              <Icon className="w-3 h-3" />
+              {cat.label}
+            </button>
+          );
+        })}
       </div>
 
-      {activeTab === "shop" && (
-        <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
-          {SHOP_FILTERS.filter(f => f.key === "all" || allCuratedProducts.some(p => p.category.toLowerCase() === f.key.toLowerCase())).map(cat => (
-            <button
-              key={cat.key}
-              onClick={() => setShopFilter(cat.key)}
-              className={`text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
-                shopFilter === cat.key ? "bg-accent text-accent-foreground" : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-              }`}
-              data-testid={`shop-filter-${cat.key}`}
-            >
-              {cat.label}
+      <div className="px-3 pb-3">
+        {loading && filteredProducts.length === 0 ? (
+          <div className="grid grid-cols-2 gap-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl bg-secondary/50 overflow-hidden animate-pulse">
+                <div className="w-full aspect-square bg-muted" />
+                <div className="p-2.5 space-y-1.5">
+                  <div className="w-3/4 h-2.5 bg-muted rounded" />
+                  <div className="w-1/2 h-2 bg-muted rounded" />
+                  <div className="w-1/3 h-3 bg-muted rounded mt-1" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <ShoppingBag className="w-8 h-8 text-muted-foreground/30 mb-2" />
+            <p className="text-xs text-muted-foreground">No products yet</p>
+            <button onClick={handleRefresh} className="mt-2 text-[10px] text-primary font-medium" data-testid="discover-load">
+              Load suggestions
             </button>
-          ))}
-        </div>
-      )}
-
-      {activeTab === "products" && (
-        <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
-          {PRODUCT_CATEGORIES.products.map(cat => (
-            <button
-              key={cat.key}
-              onClick={() => { setProductCat(cat.key); fetchProducts(cat.key); }}
-              className={`text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
-                productCat === cat.key ? "bg-accent text-accent-foreground" : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <AiSearchBar section="discover" />
-
-      <div className="pb-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab + (activeTab === "shop" ? shopFilter : "")}
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -12 }}
-            transition={{ duration: 0.2 }}
-            className="flex gap-3 overflow-x-auto scrollbar-hide px-3 pb-2"
-          >
-            {activeTab === "shop" && (
-              shopLoading
-                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-                : curatedProducts.length === 0
-                  ? (
-                    <div className="w-full text-center py-6">
-                      <ShoppingBag className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-                      <p className="text-xs text-muted-foreground">No products in this category yet</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <AnimatePresence mode="popLayout">
+                {filteredProducts.slice(0, 6).map((product, i) => (
+                  <motion.div
+                    key={product.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: i * 0.03 }}
+                    onClick={() => setSelectedProduct(product)}
+                    className="rounded-xl bg-secondary/40 overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
+                    data-testid={`discover-product-${product.id}`}
+                  >
+                    <div className="relative w-full aspect-square overflow-hidden">
+                      <ProductImage category={product.category} brand={product.brand} imageUrl={product.imageUrl} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                      <div className="absolute top-2 right-2">
+                        <LikeButton
+                          liked={isLikedByMe(product.id)}
+                          partnerLiked={isLikedByPartner(product.id)}
+                          mutual={isMutualLike(product.id)}
+                          onToggle={() => toggleLike(product.id, product.name)}
+                          size="sm"
+                        />
+                      </div>
+                      <div className="absolute bottom-2 left-2">
+                        <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">
+                          {product.category}
+                        </span>
+                      </div>
                     </div>
-                  )
-                  : curatedProducts.map((product, i) => {
-                      const id = `shop-${product.id}`;
-                      const link = getLink(product.amazonUrl, product.name);
-                      return (
-                        <motion.div key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                          className="flex-shrink-0 w-44 rounded-xl bg-secondary/50 overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
-                          onClick={() => openExternalLink(link)}
-                          data-testid={`card-${product.id}`}
-                        >
-                          <div className="relative w-full h-40 overflow-hidden">
-                            <CardImage src={product.imageUrl || getCategoryImage(product.category)} emoji="🛍️" alt={product.name} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                            <div className="absolute bottom-1.5 left-1.5">
-                              <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{product.category}</span>
-                            </div>
-                          </div>
-                          <div className="p-2.5">
-                            <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{product.name}</p>
-                            {product.brand && <p className="text-[10px] text-muted-foreground mt-0.5">{product.brand}</p>}
-                            {product.description && <p className="text-[10px] text-muted-foreground/70 mt-0.5 line-clamp-2">{product.description}</p>}
-                            <div className="flex items-center justify-between mt-2">
-                              {product.price && <p className="text-sm font-bold text-primary">{product.price}</p>}
-                              <LikeButton liked={isLikedByMe(id)} partnerLiked={isLikedByPartner(id)} mutual={isMutualLike(id)} onToggle={() => toggleLike(id, product.name)} />
-                            </div>
-                            <div
-                              className={`mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${product.amazonUrl && isLuxuryBrand(product.amazonUrl) ? "bg-[#1a1a1a] text-white hover:bg-[#333]" : "bg-[#FF9900] text-black hover:bg-[#FFa820]"}`}
-                              data-testid={`buy-${product.id}`}
-                            >
-                              <ShoppingCart className="w-3 h-3" />
-                              {getBrandLabel(product.amazonUrl)}
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })
+                    <div className="p-2.5">
+                      <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2">{product.name}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{product.brand}</p>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <p className="text-xs font-bold text-primary">{product.price}</p>
+                        <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+            {filteredProducts.length > 6 && (
+              <button
+                onClick={() => {
+                  const remaining = filteredProducts.slice(6);
+                  if (remaining.length > 0) setSelectedProduct(remaining[0]);
+                }}
+                className="w-full mt-2 py-2 text-[11px] font-semibold text-primary rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
+                data-testid="discover-show-more"
+              >
+                View all {filteredProducts.length} products
+              </button>
             )}
-
-            {activeTab === "experiences" && (
-              isLoading && !experiences.length
-                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-                : experiences.slice(0, 6).map((exp, i) => {
-                    const img = getCategoryImage(exp.category || "Experiences");
-                    const id = `exp-${exp.name}`;
-                    return (
-                      <motion.div key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => openExternalLink(getLink(exp.bookingUrl, exp.name))}
-                        className="group flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
-                      >
-                        <div className="relative w-full h-40 overflow-hidden">
-                          <CardImage src={img} emoji={exp.emoji} alt={exp.name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
-                            <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{exp.category}</span>
-                          </div>
-                        </div>
-                        <div className="p-2.5">
-                          <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{exp.name}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{exp.venue}</p>
-                          <div className="flex items-center justify-between mt-1.5">
-                            <div>
-                              <p className="text-xs font-bold text-primary">{exp.price}</p>
-                              <p className="text-[9px] text-muted-foreground">{exp.duration}</p>
-                            </div>
-                            <LikeButton liked={isLikedByMe(id)} partnerLiked={isLikedByPartner(id)} mutual={isMutualLike(id)} onToggle={() => toggleLike(id, exp.name)} />
-                          </div>
-                          <div className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold bg-[#FF9900] text-black hover:bg-[#FFa820] transition-colors">
-                            <ShoppingCart className="w-3 h-3" />
-                            Buy on Amazon
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })
+            {loading && (
+              <div className="flex items-center justify-center py-3">
+                <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin" />
+                <span className="text-[10px] text-muted-foreground ml-1.5">Finding more...</span>
+              </div>
             )}
-
-            {activeTab === "products" && (
-              isLoading && !products.length
-                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-                : products.slice(0, 6).map((p, i) => {
-                    const img = getCategoryImage(p.category);
-                    const link = getLink(p.productUrl, p.name);
-                    return (
-                      <motion.div key={`${p.name}-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => openExternalLink(link)}
-                        className="group flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
-                      >
-                        <div className="relative w-full h-40 overflow-hidden">
-                          <CardImage src={img} emoji={p.emoji} alt={p.name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                          <div className="absolute bottom-1.5 left-1.5">
-                            <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{p.category}</span>
-                          </div>
-                        </div>
-                        <div className="p-2.5">
-                          <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{p.brand}</p>
-                          <div className="flex items-center justify-between mt-1.5">
-                            <p className="text-xs font-bold text-primary">{p.price}</p>
-                            <LikeButton liked={isLikedByMe(p.affiliateTag)} partnerLiked={isLikedByPartner(p.affiliateTag)} mutual={isMutualLike(p.affiliateTag)} onToggle={() => toggleLike(p.affiliateTag, p.name)} />
-                          </div>
-                          <div
-                            className={`mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${p.productUrl && isLuxuryBrand(p.productUrl) ? "bg-[#1a1a1a] text-white hover:bg-[#333]" : "bg-[#FF9900] text-black hover:bg-[#FFa820]"}`}
-                          >
-                            <ShoppingCart className="w-3 h-3" />
-                            {getBrandLabel(p.productUrl)}
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })
-            )}
-
-            {activeTab === "intimacy" && (
-              isLoading && !intimacy.length
-                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-                : intimacy.slice(0, 6).map((item, i) => {
-                    const img = getCategoryImage(item.category);
-                    const link = getLink(item.productUrl, item.name);
-                    return (
-                      <motion.div key={`${item.name}-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => openExternalLink(link)}
-                        className="group flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
-                      >
-                        <div className="relative w-full h-40 overflow-hidden">
-                          <CardImage src={img} emoji={item.emoji} alt={item.name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                          <div className="absolute bottom-1.5 left-1.5">
-                            <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{item.category}</span>
-                          </div>
-                        </div>
-                        <div className="p-2.5">
-                          <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{item.name}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{item.brand}</p>
-                          <div className="flex items-center justify-between mt-1.5">
-                            <p className="text-xs font-bold text-primary">{item.price}</p>
-                            <LikeButton liked={isLikedByMe(item.affiliateTag)} partnerLiked={isLikedByPartner(item.affiliateTag)} mutual={isMutualLike(item.affiliateTag)} onToggle={() => toggleLike(item.affiliateTag, item.name)} />
-                          </div>
-                          <div
-                            className={`mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${item.productUrl && isLuxuryBrand(item.productUrl) ? "bg-[#1a1a1a] text-white hover:bg-[#333]" : "bg-[#FF9900] text-black hover:bg-[#FFa820]"}`}
-                          >
-                            <ShoppingCart className="w-3 h-3" />
-                            {getBrandLabel(item.productUrl)}
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })
-            )}
-
-            {activeTab === "travel" && (
-              isLoading && !travel.length
-                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-                : travel.slice(0, 6).map((dest, i) => {
-                    const img = getCategoryImage("Travel");
-                    const id = `travel-${dest.destination}`;
-                    return (
-                      <motion.div key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => openExternalLink(getLink(dest.bookingUrl, `${dest.name} ${dest.destination}`))}
-                        className="group flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm cursor-pointer"
-                      >
-                        <div className="relative w-full h-40 overflow-hidden">
-                          <CardImage src={img} emoji={dest.emoji} alt={dest.name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                          <div className="absolute bottom-1.5 left-1.5">
-                            <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{dest.category}</span>
-                          </div>
-                        </div>
-                        <div className="p-2.5">
-                          <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{dest.name}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{dest.destination}, {dest.country}</p>
-                          <div className="flex items-center justify-between mt-1.5">
-                            <div>
-                              <p className="text-xs font-bold text-primary">{dest.price}</p>
-                              <p className="text-[9px] text-muted-foreground">{dest.duration}</p>
-                            </div>
-                            <LikeButton liked={isLikedByMe(id)} partnerLiked={isLikedByPartner(id)} mutual={isMutualLike(id)} onToggle={() => toggleLike(id, dest.name)} />
-                          </div>
-                          <div className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold bg-primary/90 text-primary-foreground hover:bg-primary transition-colors">
-                            <Plane className="w-3 h-3" />
-                            View Details
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })
-            )}
-          </motion.div>
-        </AnimatePresence>
+          </>
+        )}
       </div>
 
-      <div className="px-4 pb-2.5 flex items-center gap-1">
-        <Sparkles className="w-2.5 h-2.5 text-muted-foreground/50" />
-        <p className="text-[9px] text-muted-foreground/50">
-          {activeTab === "shop" ? "Hand-picked · Tap ❤️ to save for later" : "AI-curated · Tap ❤️ to save for later"}
-        </p>
-      </div>
+      <AnimatePresence>
+        {selectedProduct && (
+          <ProductDetailModal
+            product={selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+            liked={isLikedByMe(selectedProduct.id)}
+            partnerLiked={isLikedByPartner(selectedProduct.id)}
+            mutual={isMutualLike(selectedProduct.id)}
+            onToggleLike={() => toggleLike(selectedProduct.id, selectedProduct.name)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

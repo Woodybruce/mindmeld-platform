@@ -1458,6 +1458,52 @@ Products should be things couples would actually buy for each other or to enjoy 
     }
   });
 
+  // GET /api/shop/curated — Return all luxury brand products with images
+  app.get("/api/shop/curated", async (_req: Request, res: Response) => {
+    try {
+      const imagePromises = LUXURY_INTIMACY_PRODUCTS.map((lp: any) =>
+        searchPexelsImage(`${lp.name} ${lp.brand} luxury`)
+      );
+      const images = await Promise.all(imagePromises);
+
+      const products = LUXURY_INTIMACY_PRODUCTS.map((lp: any, i: number) => ({
+        id: `curated-${i}`,
+        name: lp.name,
+        brand: lp.brand,
+        price: lp.price,
+        description: lp.description,
+        longDescription: `Discover the ${lp.name} from ${lp.brand} — a premium selection curated for couples who appreciate luxury. ${lp.description}.`,
+        features: [`By ${lp.brand}`, "Premium quality", "Perfect for couples", "Luxury gifting"],
+        category: lp.category,
+        emoji: lp.emoji,
+        imageKeyword: `${lp.category} luxury couples`,
+        imageUrl: images[i] || null,
+        buyUrl: lp.productUrl,
+        source: lp.brand,
+      }));
+
+      res.json({ products });
+    } catch (e: any) {
+      console.error("shop/curated error:", e);
+      const products = LUXURY_INTIMACY_PRODUCTS.map((lp: any, i: number) => ({
+        id: `curated-${i}`,
+        name: lp.name,
+        brand: lp.brand,
+        price: lp.price,
+        description: lp.description,
+        longDescription: `${lp.description}. A luxury product from ${lp.brand}, perfect for couples.`,
+        features: [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
+        category: lp.category,
+        emoji: lp.emoji,
+        imageKeyword: `${lp.category} luxury`,
+        imageUrl: null,
+        buyUrl: lp.productUrl,
+        source: lp.brand,
+      }));
+      res.json({ products });
+    }
+  });
+
   // 13. POST /api/suggest-tasks
   app.post("/api/suggest-tasks", async (req: Request, res: Response) => {
     try {
