@@ -3,6 +3,7 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import webpush from "web-push";
+import { getUncachableSpotifyClient } from "./spotify";
 
 async function callAI(messages: any[], tools?: any[], toolChoice?: any) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -1455,6 +1456,161 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
       console.error("Inbound calendar error:", err);
       const message = err instanceof Error ? err.message : "Unknown error";
       res.status(500).json({ error: message });
+    }
+  });
+
+  // ── Spotify routes ──
+
+  app.get("/api/spotify/now-playing", async (_req: Request, res: Response) => {
+    try {
+      const spotify = await getUncachableSpotifyClient();
+      const playback = await spotify.player.getCurrentlyPlayingTrack();
+      if (!playback || !playback.item) {
+        return res.json({ playing: false });
+      }
+      const track = playback.item as any;
+      res.json({
+        playing: true,
+        isPlaying: playback.is_playing,
+        track: {
+          id: track.id,
+          name: track.name,
+          artist: track.artists?.map((a: any) => a.name).join(", ") || "",
+          album: track.album?.name || "",
+          albumArt: track.album?.images?.[0]?.url || "",
+          spotifyUrl: track.external_urls?.spotify || "",
+          durationMs: track.duration_ms,
+          progressMs: playback.progress_ms,
+        },
+      });
+    } catch (e: any) {
+      console.error("Spotify now-playing error:", e.message);
+      res.json({ playing: false, error: e.message });
+    }
+  });
+
+  app.get("/api/spotify/search", async (req: Request, res: Response) => {
+    try {
+      const q = (req.query.q as string) || "";
+      if (!q.trim()) return res.json({ tracks: [] });
+      const spotify = await getUncachableSpotifyClient();
+      const results = await spotify.search(q, ["track"], undefined, 10);
+      const tracks = (results.tracks?.items || []).map((t: any) => ({
+        id: t.id,
+        uri: t.uri,
+        name: t.name,
+        artist: t.artists?.map((a: any) => a.name).join(", ") || "",
+        album: t.album?.name || "",
+        albumArt: t.album?.images?.[1]?.url || t.album?.images?.[0]?.url || "",
+        spotifyUrl: t.external_urls?.spotify || "",
+        previewUrl: t.preview_url || null,
+        durationMs: t.duration_ms,
+      }));
+      res.json({ tracks });
+    } catch (e: any) {
+      console.error("Spotify search error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/spotify/playlist", async (req: Request, res: Response) => {
+    try {
+      const playlistId = req.query.playlistId as string;
+      if (!playlistId) return res.status(400).json({ error: "playlistId required" });
+      const spotify = await getUncachableSpotifyClient();
+      const playlist = await spotify.playlists.getPlaylist(playlistId);
+      const tracks = (playlist.tracks?.items || []).map((item: any) => {
+        const t = item.track;
+        return {
+          id: t?.id,
+          uri: t?.uri,
+          name: t?.name,
+          artist: t?.artists?.map((a: any) => a.name).join(", ") || "",
+          album: t?.album?.name || "",
+          albumArt: t?.album?.images?.[1]?.url || t?.album?.images?.[0]?.url || "",
+          spotifyUrl: t?.external_urls?.spotify || "",
+          addedAt: item.added_at,
+          durationMs: t?.duration_ms,
+        };
+      });
+      res.json({
+        id: playlist.id,
+        name: playlist.name,
+        description: playlist.description,
+        image: playlist.images?.[0]?.url || "",
+        spotifyUrl: playlist.external_urls?.spotify || "",
+        tracks,
+        total: playlist.tracks?.total || 0,
+      });
+    } catch (e: any) {
+      console.error("Spotify playlist error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/spotify/playlist/create", async (req: Request, res: Response) => {
+    try {
+      const { name, description } = req.body;
+      const spotify = await getUncachableSpotifyClient();
+      const me = await spotify.currentUser.profile();
+      const playlist = await spotify.playlists.createPlaylist(me.id, {
+        name: name || "Us — Our Playlist 💕",
+        description: description || "Our shared couple playlist",
+        public: false,
+      });
+      res.json({ id: playlist.id, name: playlist.name, spotifyUrl: playlist.external_urls?.spotify || "" });
+    } catch (e: any) {
+      console.error("Spotify create playlist error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/spotify/playlist/add", async (req: Request, res: Response) => {
+    try {
+      const { playlistId, trackUri } = req.body;
+      if (!playlistId || !trackUri) return res.status(400).json({ error: "playlistId and trackUri required" });
+      const spotify = await getUncachableSpotifyClient();
+      await spotify.playlists.addItemsToPlaylist(playlistId, [trackUri]);
+      res.json({ success: true });
+    } catch (e: any) {
+      console.error("Spotify add track error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/spotify/playlist/remove", async (req: Request, res: Response) => {
+    try {
+      const { playlistId, trackUri } = req.body;
+      if (!playlistId || !trackUri) return res.status(400).json({ error: "playlistId and trackUri required" });
+      const spotify = await getUncachableSpotifyClient();
+      await spotify.playlists.removeItemsFromPlaylist(playlistId, { tracks: [{ uri: trackUri }] });
+      res.json({ success: true });
+    } catch (e: any) {
+      console.error("Spotify remove track error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/spotify/recently-played", async (_req: Request, res: Response) => {
+    try {
+      const spotify = await getUncachableSpotifyClient();
+      const recent = await spotify.player.getRecentlyPlayedTracks(10);
+      const tracks = (recent.items || []).map((item: any) => {
+        const t = item.track;
+        return {
+          id: t.id,
+          name: t.name,
+          artist: t.artists?.map((a: any) => a.name).join(", ") || "",
+          album: t.album?.name || "",
+          albumArt: t.album?.images?.[1]?.url || t.album?.images?.[0]?.url || "",
+          spotifyUrl: t.external_urls?.spotify || "",
+          playedAt: item.played_at,
+        };
+      });
+      res.json({ tracks });
+    } catch (e: any) {
+      console.error("Spotify recently-played error:", e.message);
+      res.json({ tracks: [] });
     }
   });
 }

@@ -244,7 +244,7 @@ const Chat = () => {
 
     // Push notification for special messages
     if (!partnerOnline) {
-      const labels: Record<string, string> = { poll: "📊 Poll", location: "📍 Location", event: "📅 Event", sticker: "😄 Sticker" };
+      const labels: Record<string, string> = { poll: "📊 Poll", location: "📍 Location", event: "📅 Event", sticker: "😄 Sticker", spotify: "🎵 Song" };
       try {
         await apiInvoke("send-push-notification", {
           body: {

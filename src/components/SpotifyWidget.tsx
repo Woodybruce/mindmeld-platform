@@ -1,0 +1,324 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Music, Play, Pause, Plus, Trash2, ExternalLink, Search, X, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+const SpotifyIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+);
+import { apiInvoke } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface SpotifyTrack {
+  id: string;
+  uri?: string;
+  name: string;
+  artist: string;
+  album: string;
+  albumArt: string;
+  spotifyUrl: string;
+  durationMs?: number;
+  progressMs?: number;
+  playedAt?: string;
+  addedAt?: string;
+}
+
+interface NowPlayingData {
+  playing: boolean;
+  isPlaying?: boolean;
+  track?: SpotifyTrack;
+}
+
+export default function SpotifyWidget() {
+  const { user, profile } = useAuth();
+  const [nowPlaying, setNowPlaying] = useState<NowPlayingData | null>(null);
+  const [playlistId, setPlaylistId] = useState<string | null>(null);
+  const [playlistTracks, setPlaylistTracks] = useState<SpotifyTrack[]>([]);
+  const [playlistName, setPlaylistName] = useState("");
+  const [playlistUrl, setPlaylistUrl] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+
+  useEffect(() => {
+    loadPlaylistId();
+    fetchNowPlaying();
+    const interval = setInterval(fetchNowPlaying, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (playlistId) fetchPlaylist();
+  }, [playlistId]);
+
+  async function loadPlaylistId() {
+    if (!user) { setLoading(false); return; }
+    try {
+      const { data } = await supabase
+        .from("shared_lists")
+        .select("score_data")
+        .eq("game_type", "spotify_playlist")
+        .limit(1)
+        .maybeSingle();
+      const pid = (data?.score_data as any)?.playlistId;
+      if (pid) setPlaylistId(pid);
+    } catch (e) {
+      // ignore
+    }
+    setLoading(false);
+  }
+
+  async function savePlaylistId(id: string, name: string, url: string) {
+    if (!user) return;
+    try {
+      await supabase.from("shared_lists").upsert(
+        {
+          user_id: user.id,
+          game_type: "spotify_playlist",
+          score_data: { playlistId: id, playlistName: name, spotifyUrl: url },
+        },
+        { onConflict: "user_id,game_type" }
+      );
+    } catch (e) {
+      // silently fail
+    }
+  }
+
+  async function fetchNowPlaying() {
+    try {
+      const { data } = await apiInvoke("spotify/now-playing", { method: "GET" });
+      setNowPlaying(data as NowPlayingData);
+    } catch {
+      setNowPlaying({ playing: false });
+    }
+  }
+
+  async function fetchPlaylist() {
+    if (!playlistId) return;
+    try {
+      const { data } = await apiInvoke(`spotify/playlist?playlistId=${playlistId}`, { method: "GET" });
+      if (data) {
+        const d = data as any;
+        setPlaylistTracks(d.tracks || []);
+        setPlaylistName(d.name || "Our Playlist");
+        setPlaylistUrl(d.spotifyUrl || "");
+      }
+    } catch (e) {
+      console.warn("Failed to load playlist:", e);
+    }
+  }
+
+  async function createPlaylist() {
+    setCreatingPlaylist(true);
+    try {
+      const coupleNames = profile?.username || "Us";
+      const { data } = await apiInvoke("spotify/playlist/create", {
+        body: { name: `${coupleNames} — Our Playlist 💕`, description: "Songs we love together" },
+      });
+      if (data) {
+        const d = data as any;
+        setPlaylistId(d.id);
+        setPlaylistName(d.name);
+        setPlaylistUrl(d.spotifyUrl);
+        await savePlaylistId(d.id, d.name, d.spotifyUrl);
+        toast.success("Playlist created!");
+      }
+    } catch (e) {
+      toast.error("Couldn't create playlist");
+    }
+    setCreatingPlaylist(false);
+  }
+
+  async function searchTracks() {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    try {
+      const { data } = await apiInvoke(`spotify/search?q=${encodeURIComponent(searchQuery)}`, { method: "GET" });
+      setSearchResults((data as any)?.tracks || []);
+    } catch {
+      toast.error("Search failed");
+    }
+    setSearching(false);
+  }
+
+  async function addToPlaylist(track: SpotifyTrack) {
+    if (!playlistId || !track.uri) return;
+    try {
+      await apiInvoke("spotify/playlist/add", { body: { playlistId, trackUri: track.uri } });
+      toast.success(`Added "${track.name}"`);
+      setSearchResults(prev => prev.filter(t => t.id !== track.id));
+      fetchPlaylist();
+    } catch {
+      toast.error("Couldn't add track");
+    }
+  }
+
+  async function removeFromPlaylist(track: SpotifyTrack) {
+    if (!playlistId || !track.uri) return;
+    try {
+      await apiInvoke("spotify/playlist/remove", { body: { playlistId, trackUri: track.uri } });
+      setPlaylistTracks(prev => prev.filter(t => t.id !== track.id));
+      toast.success(`Removed "${track.name}"`);
+    } catch {
+      toast.error("Couldn't remove track");
+    }
+  }
+
+  function formatDuration(ms?: number) {
+    if (!ms) return "";
+    const min = Math.floor(ms / 60000);
+    const sec = Math.floor((ms % 60000) / 1000);
+    return `${min}:${sec.toString().padStart(2, "0")}`;
+  }
+
+  if (loading) return null;
+
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-border/30">
+        <div className="flex items-center gap-2">
+          <SpotifyIcon className="w-5 h-5 text-[#1DB954]" />
+          <span className="text-sm font-bold text-foreground">Spotify</span>
+        </div>
+        {playlistUrl && (
+          <a href={playlistUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground hover:text-[#1DB954] flex items-center gap-1">
+            Open in Spotify <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
+      </div>
+
+      {nowPlaying?.playing && nowPlaying.track && (
+        <div className="px-4 py-3 bg-[#1DB954]/5 border-b border-border/30">
+          <p className="text-[10px] uppercase tracking-wider font-semibold text-[#1DB954] mb-2 flex items-center gap-1.5">
+            {nowPlaying.isPlaying ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+            {nowPlaying.isPlaying ? "Now Playing" : "Paused"}
+          </p>
+          <a href={nowPlaying.track.spotifyUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group" data-testid="now-playing-link">
+            {nowPlaying.track.albumArt && (
+              <img src={nowPlaying.track.albumArt} alt="" className="w-12 h-12 rounded-lg shadow-md flex-shrink-0" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground truncate group-hover:text-[#1DB954] transition-colors">{nowPlaying.track.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{nowPlaying.track.artist}</p>
+            </div>
+          </a>
+        </div>
+      )}
+
+      {!playlistId ? (
+        <div className="px-4 py-6 text-center">
+          <Music className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm font-semibold text-foreground mb-1">Create your shared playlist</p>
+          <p className="text-xs text-muted-foreground mb-3">Add songs together that you both love</p>
+          <button
+            onClick={createPlaylist}
+            disabled={creatingPlaylist}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#1DB954] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1DB954]/90 transition-colors disabled:opacity-50"
+            data-testid="create-playlist-btn"
+          >
+            {creatingPlaylist ? <Loader2 className="w-4 h-4 animate-spin" /> : <SpotifyIcon className="w-4 h-4" />}
+            Create Playlist
+          </button>
+        </div>
+      ) : (
+        <div>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary/50 transition-colors"
+            data-testid="toggle-playlist"
+          >
+            <span className="text-xs font-semibold text-muted-foreground">
+              {playlistName} · {playlistTracks.length} songs
+            </span>
+            {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
+
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="max-h-64 overflow-y-auto">
+                  {playlistTracks.length === 0 ? (
+                    <p className="px-4 py-4 text-xs text-muted-foreground text-center">No songs yet — search and add some!</p>
+                  ) : (
+                    playlistTracks.map((track) => (
+                      <div key={track.id} className="flex items-center gap-3 px-4 py-2 hover:bg-secondary/30 transition-colors group">
+                        {track.albumArt && <img src={track.albumArt} alt="" className="w-9 h-9 rounded flex-shrink-0" />}
+                        <div className="min-w-0 flex-1">
+                          <a href={track.spotifyUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground truncate block hover:text-[#1DB954]">{track.name}</a>
+                          <p className="text-[11px] text-muted-foreground truncate">{track.artist} · {formatDuration(track.durationMs)}</p>
+                        </div>
+                        <button
+                          onClick={() => removeFromPlaylist(track)}
+                          className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"
+                          data-testid={`remove-track-${track.id}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {!showSearch ? (
+                  <button
+                    onClick={() => setShowSearch(true)}
+                    className="w-full px-4 py-2.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#1DB954] hover:bg-[#1DB954]/5 transition-colors border-t border-border/30"
+                    data-testid="open-search-btn"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Songs
+                  </button>
+                ) : (
+                  <div className="border-t border-border/30 p-3 space-y-2">
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <input
+                          autoFocus
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && searchTracks()}
+                          placeholder="Search songs..."
+                          className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-[#1DB954]"
+                          data-testid="song-search-input"
+                        />
+                      </div>
+                      <button onClick={() => { setShowSearch(false); setSearchResults([]); setSearchQuery(""); }} className="p-1.5 text-muted-foreground hover:text-foreground">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {searching && <div className="flex justify-center py-2"><Loader2 className="w-4 h-4 animate-spin text-[#1DB954]" /></div>}
+                    {searchResults.map((track) => (
+                      <div key={track.id} className="flex items-center gap-3 py-1.5">
+                        {track.albumArt && <img src={track.albumArt} alt="" className="w-8 h-8 rounded flex-shrink-0" />}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground truncate">{track.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{track.artist}</p>
+                        </div>
+                        <button
+                          onClick={() => addToPlaylist(track)}
+                          className="p-1 rounded-md bg-[#1DB954]/10 hover:bg-[#1DB954]/20 transition-colors"
+                          data-testid={`add-track-${track.id}`}
+                        >
+                          <Plus className="w-3.5 h-3.5 text-[#1DB954]" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
+  );
+}

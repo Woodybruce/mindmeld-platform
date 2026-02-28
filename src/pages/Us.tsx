@@ -22,6 +22,7 @@ import SharedFileManager from "@/components/connect/SharedFileManager";
 import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
 import PartnerQuizBanner from "@/components/connect/PartnerQuizBanner";
 import { useSharedLists } from "@/hooks/useSharedLists";
+import SpotifyWidget from "@/components/SpotifyWidget";
 
 const Us = () => {
   const navigate = useNavigate();
@@ -59,6 +60,7 @@ const Us = () => {
 
         {/* Lists — default tab */}
         <TabsContent value="lists" className="mt-4 space-y-5">
+          <SpotifyWidget />
           <WeeklyList />
           <div className="border-t border-border/50 pt-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Our Lists</p>

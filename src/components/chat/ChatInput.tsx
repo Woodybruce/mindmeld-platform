@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from "react";
-import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Instagram, ExternalLink } from "lucide-react";
+import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Instagram, ExternalLink, Music } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { AnimatePresence, motion } from "framer-motion";
 import LocationComposer from "./LocationComposer";
 import PollComposer from "./PollComposer";
 import EventComposer from "./EventComposer";
 import StickerPicker from "./StickerPicker";
+import SpotifySongPicker from "./SpotifySongPicker";
 
 interface ChatInputProps {
   onSend: (content: string, imageFiles?: File[] | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => Promise<void>;
@@ -30,6 +31,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
   const [stickerOpen, setStickerOpen] = useState(false);
   const [instagramOpen, setInstagramOpen] = useState(false);
   const [instagramUrl, setInstagramUrl] = useState("");
+  const [spotifyOpen, setSpotifyOpen] = useState(false);
   
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -149,6 +151,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
     { icon: CalendarPlus, label: "Event", gradient: "from-[hsl(var(--us-blush))] to-[hsl(350,50%,55%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setEventOpen(true), 100); } },
     { icon: Smile, label: "Stickers", gradient: "from-[hsl(40,80%,55%)] to-[hsl(30,90%,50%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setStickerOpen(true), 100); } },
     { icon: Instagram, label: "Instagram", gradient: "from-[hsl(330,70%,55%)] to-[hsl(30,90%,55%)]", onClick: () => { setAttachOpen(false); setTimeout(() => setInstagramOpen(true), 100); } },
+    { icon: Music, label: "Song", gradient: "from-[#1DB954] to-[#158a3e]", onClick: () => { setAttachOpen(false); setTimeout(() => setSpotifyOpen(true), 100); } },
   ];
 
   return (
@@ -321,6 +324,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
       <PollComposer open={pollOpen} onClose={() => setPollOpen(false)} onSend={(data) => onSendSpecial?.("poll", data)} />
       <EventComposer open={eventOpen} onClose={() => setEventOpen(false)} onSend={(data) => onSendSpecial?.("event", data)} />
       <StickerPicker open={stickerOpen} onClose={() => setStickerOpen(false)} onSelect={(sticker) => onSendSpecial?.("sticker", { emoji: sticker })} />
+      <SpotifySongPicker open={spotifyOpen} onClose={() => setSpotifyOpen(false)} onSend={(data) => onSendSpecial?.("spotify", data)} />
 
       {/* Instagram link composer */}
       <AnimatePresence>

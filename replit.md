@@ -105,6 +105,14 @@ All routes are defined in `server/routes.ts`:
 - Sex Bucket Challenge uses separate `bucket_list_proposals` table for its proposal flow
 - Sex Bucket Game draws from the `sex-bucket-ideas` template list
 
+## Spotify Integration
+- Replit Spotify connector provides API access (single account, not per-user OAuth)
+- `server/spotify.ts` — Spotify client using `@spotify/web-api-ts-sdk`
+- API routes: `/api/spotify/now-playing`, `/api/spotify/search`, `/api/spotify/playlist` (CRUD), `/api/spotify/recently-played`
+- `SpotifyWidget` on Us page (Lists tab) — shows now-playing, shared playlist with search & add
+- Playlist ID stored in `shared_lists` table with `game_type: "spotify_playlist"` (no extra tables needed)
+- Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as card in `ChatBubble`
+
 ## Recent Changes
 - 2026-02-25: Web Push notifications + bug fixes
   - Added Web Push API support (works in browser even when tab is closed)
