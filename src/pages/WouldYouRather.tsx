@@ -39,11 +39,7 @@ const WouldYouRather = () => {
   const { profile } = useAuth();
   const [index, setIndex] = useState(() => Math.floor(Math.random() * questions.length));
 
-  useEffect(() => {
-    if (profile?.partner_id) {
-      notifyPartner({ partnerId: profile.partner_id, title: "🔥 Would You Rather!", body: `${profile.username || "Your partner"} started Spicy Would You Rather`, route: "/would-you-rather" });
-    }
-  }, []);
+  const [notified, setNotified] = useState(false);
   const [picked, setPicked] = useState<Record<number, 0 | 1>>({});
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
 
@@ -52,7 +48,13 @@ const WouldYouRather = () => {
   const isRevealed = revealed.has(index);
 
   const pick = (option: 0 | 1) => {
-    if (!hasPicked) setPicked((prev) => ({ ...prev, [index]: option }));
+    if (!hasPicked) {
+      setPicked((prev) => ({ ...prev, [index]: option }));
+      if (!notified && profile?.partner_id) {
+        setNotified(true);
+        notifyPartner({ partnerId: profile.partner_id, title: "🔥 Would You Rather!", body: `${profile.username || "Your partner"} started Spicy Would You Rather`, route: "/would-you-rather" });
+      }
+    }
   };
 
   const reveal = () => {

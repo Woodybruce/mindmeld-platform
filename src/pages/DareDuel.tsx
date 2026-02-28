@@ -45,11 +45,7 @@ const DareDuel = () => {
   const { profile } = useAuth();
   const [phase, setPhase] = useState<"setup" | "playing" | "complete">("setup");
 
-  useEffect(() => {
-    if (profile?.partner_id) {
-      notifyPartner({ partnerId: profile.partner_id, title: "⚔️ Dare Duel!", body: `${profile.username || "Your partner"} started a Dare Duel`, route: "/dare-duel" });
-    }
-  }, []);
+  const [notified, setNotified] = useState(false);
   const [currentPlayer, setCurrentPlayer] = useState<Player>("Player 1");
   const [scores, setScores] = useState<Record<Player, number>>({ "Player 1": 0, "Player 2": 0 });
   const [currentDare, setCurrentDare] = useState<string | null>(null);
@@ -72,6 +68,10 @@ const DareDuel = () => {
   const startGame = () => {
     drawDare();
     setPhase("playing");
+    if (!notified && profile?.partner_id) {
+      setNotified(true);
+      notifyPartner({ partnerId: profile.partner_id, title: "⚔️ Dare Duel!", body: `${profile.username || "Your partner"} started a Dare Duel`, route: "/dare-duel" });
+    }
   };
 
   const handleDone = () => {
@@ -116,6 +116,7 @@ const DareDuel = () => {
     setUsed(new Set());
     setRound(1);
     setDuelResult(null);
+    setNotified(false);
   };
 
   const winner = scores["Player 1"] > scores["Player 2"] ? "Player 1" : scores["Player 2"] > scores["Player 1"] ? "Player 2" : null;

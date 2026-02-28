@@ -150,7 +150,7 @@ html {
 .article-reader-content p {
   margin-bottom: 1em;
   line-height: 1.7;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 .article-reader-content h1,
 .article-reader-content h2,
@@ -179,7 +179,7 @@ html {
 .article-reader-content li {
   margin-bottom: 0.35em;
   line-height: 1.6;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 .article-reader-content img {
   max-width: 100%;
