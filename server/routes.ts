@@ -3,7 +3,7 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import webpush from "web-push";
-import { getUncachableSpotifyClient, invalidateSpotifyCache } from "./spotify";
+import { getUncachableSpotifyClient, invalidateSpotifyCache, getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected } from "./spotify";
 
 async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
@@ -1472,6 +1472,38 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
   });
 
   // ── Spotify routes ──
+
+  app.get("/api/spotify/auth", (req: Request, res: Response) => {
+    const protocol = req.headers["x-forwarded-proto"] || "https";
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    const redirectUri = `${protocol}://${host}/api/spotify/callback`;
+    res.redirect(getSpotifyAuthUrl(redirectUri));
+  });
+
+  app.get("/api/spotify/callback", async (req: Request, res: Response) => {
+    const code = req.query.code as string;
+    const error = req.query.error as string;
+    if (error) {
+      return res.status(400).send(`Spotify auth error: ${error}`);
+    }
+    if (!code) {
+      return res.status(400).send("Missing code parameter");
+    }
+    try {
+      const protocol = req.headers["x-forwarded-proto"] || "https";
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      const redirectUri = `${protocol}://${host}/api/spotify/callback`;
+      await exchangeSpotifyCode(code, redirectUri);
+      res.send("<html><body><h2>Spotify connected!</h2><p>You can close this tab and go back to the app.</p><script>setTimeout(()=>window.close(),2000)</script></body></html>");
+    } catch (e: any) {
+      console.error("Spotify callback error:", e.message);
+      res.status(500).send(`Spotify auth failed: ${e.message}`);
+    }
+  });
+
+  app.get("/api/spotify/status", (_req: Request, res: Response) => {
+    res.json({ connected: isSpotifyConnected() });
+  });
 
   app.get("/api/spotify/now-playing", async (_req: Request, res: Response) => {
     try {
