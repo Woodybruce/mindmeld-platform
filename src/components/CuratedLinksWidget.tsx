@@ -276,6 +276,35 @@ const CuratedLinksWidget = () => {
 
   useEffect(() => { setExpandedVideo(null); setExpandedPodcast(null); }, [activeTab]);
 
+  const touchRef = useRef<{ startX: number; startY: number; startTime: number } | null>(null);
+  const TAB_ORDER: TabKey[] = ["articles", "podcasts", "videos", "quotes"];
+
+  const swipeToTab = useCallback((direction: "left" | "right") => {
+    setActiveTab(prev => {
+      const idx = TAB_ORDER.indexOf(prev);
+      if (direction === "left" && idx < TAB_ORDER.length - 1) return TAB_ORDER[idx + 1];
+      if (direction === "right" && idx > 0) return TAB_ORDER[idx - 1];
+      return prev;
+    });
+  }, []);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchRef.current = { startX: t.clientX, startY: t.clientY, startTime: Date.now() };
+  }, []);
+
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchRef.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchRef.current.startX;
+    const dy = t.clientY - touchRef.current.startY;
+    const dt = Date.now() - touchRef.current.startTime;
+    touchRef.current = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 400) {
+      swipeToTab(dx < 0 ? "left" : "right");
+    }
+  }, [swipeToTab]);
+
   const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("article");
   const { addList: addSharedList } = useSharedLists();
 
@@ -462,7 +491,7 @@ const CuratedLinksWidget = () => {
         ))}
       </div>
 
-      <div className="pb-3">
+      <div className="pb-3" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -807,12 +836,25 @@ const CuratedLinksWidget = () => {
         </AnimatePresence>
       </div>
 
+      <div className="flex items-center justify-center gap-1.5 py-2">
+        {TAB_ORDER.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`rounded-full transition-all duration-200 ${
+              activeTab === tab ? "w-4 h-1.5 bg-primary" : "w-1.5 h-1.5 bg-muted-foreground/30"
+            }`}
+            data-testid={`foryou-dot-${tab}`}
+          />
+        ))}
+      </div>
+
       <div className="px-4 pb-2.5">
-        <p className="text-[9px] text-muted-foreground/50">
-          {activeTab === "articles" && "Tap to read in-app · Rich articles from top relationship sites"}
-          {activeTab === "podcasts" && "Tap to play in-app · Also on Spotify & Apple Podcasts"}
-          {activeTab === "videos" && "Tap to play inline · TED Talks play directly in-app"}
-          {activeTab === "quotes" && "Share your favourite with your partner"}
+        <p className="text-[9px] text-muted-foreground/50 text-center">
+          {activeTab === "articles" && "Tap to read in-app · Swipe to browse"}
+          {activeTab === "podcasts" && "Tap to play in-app · Swipe to browse"}
+          {activeTab === "videos" && "Tap to play inline · Swipe to browse"}
+          {activeTab === "quotes" && "Share your favourite · Swipe to browse"}
         </p>
       </div>
 
