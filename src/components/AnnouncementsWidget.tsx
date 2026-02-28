@@ -185,8 +185,6 @@ const AnnouncementsWidget = () => {
     if (aPinned !== bPinned) return bPinned - aPinned;
     return b.time.getTime() - a.time.getTime();
   });
-  const visibleFeed = feed.slice(0, 2);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -254,8 +252,8 @@ const AnnouncementsWidget = () => {
         )}
       </AnimatePresence>
 
-      <div className="px-4 pb-4 pt-1 space-y-1.5">
-        {visibleFeed.length === 0 && !composing && (
+      <div className="px-4 pb-4 pt-1 space-y-1.5 max-h-[140px] overflow-y-auto scrollbar-hide">
+        {feed.length === 0 && !composing && (
           <button
             onClick={() => setComposing(true)}
             className="w-full py-4 text-center text-xs text-muted-foreground"
@@ -263,7 +261,7 @@ const AnnouncementsWidget = () => {
             No updates yet — tap + to post one
           </button>
         )}
-        {visibleFeed.map((item, i) => {
+        {feed.map((item, i) => {
           if (item.kind === "announcement") {
             const a = item.data as Announcement;
             const isOwn = a.user_id === user?.id;
