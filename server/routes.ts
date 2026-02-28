@@ -114,19 +114,24 @@ const CURATED_QUOTES = [
   { text: "The couples that are meant to be are the ones who go through everything that is meant to tear them apart and come out even stronger.", author: "Unknown", category: "Resilience" },
 ];
 
-const COCO_DE_MER_PRODUCTS = [
+const LUXURY_INTIMACY_PRODUCTS = [
   { name: "Roseravished Massage Oil", brand: "Coco de Mer", price: "\u00A345.00", description: "Luxurious rose-scented sensual massage oil", category: "Massage", emoji: "\u{1F339}", affiliateTag: "cdm-massage-oil", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-roseravished-massage-oil-100ml" },
   { name: "Enraptured Figment Massage Candle", brand: "Coco de Mer", price: "\u00A350.00", description: "Melts into warm sensual massage oil", category: "Candles", emoji: "\u{1F56F}\uFE0F", affiliateTag: "cdm-massage-candle", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-enraptured-figment-massage-candle-200g" },
   { name: "Pure Delight Orgasm Balm", brand: "Coco de Mer", price: "\u00A330.00", description: "Heighten sensation & pleasure for couples", category: "Accessories", emoji: "\u2728", affiliateTag: "cdm-orgasm-balm", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-pure-delight-orgasm-balm-20g" },
   { name: "Silk Blindfold", brand: "Coco de Mer", price: "\u00A385.00", description: "Luxury silk blindfold for sensory play", category: "Bondage", emoji: "\u{1F3AD}", affiliateTag: "cdm-blindfold", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-blindfold" },
   { name: "Roseravished Massage Candle", brand: "Coco de Mer", price: "\u00A350.00", description: "Rose-scented candle melts into massage oil", category: "Candles", emoji: "\u{1F339}", affiliateTag: "cdm-rose-candle", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-roseravished-massage-candle-200g" },
-  { name: "Enraptured Figment Massage Oil", brand: "Coco de Mer", price: "\u00A345.00", description: "Sultry figment-scented sensual massage oil", category: "Massage", emoji: "\u2728", affiliateTag: "cdm-figment-oil", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-enraptured-figment-massage-oil-100ml" },
   { name: "Celeste Quarter Cup Bra", brand: "Coco de Mer", price: "\u00A3195.00", description: "Luxury hand-crafted lace lingerie", category: "Lingerie", emoji: "\u{1F338}", affiliateTag: "cdm-celeste-bra", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-celeste-quarter-cup-bra" },
   { name: "Reina Playsuit", brand: "Coco de Mer", price: "\u00A3385.00", description: "Exquisite silk & lace bodysuit", category: "Lingerie", emoji: "\u{1F48E}", affiliateTag: "cdm-reina-playsuit", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-reina-playsuit" },
   { name: "Divine Glow Aqua Lubricant", brand: "Coco de Mer", price: "\u00A335.00", description: "Premium water-based intimate lubricant", category: "Accessories", emoji: "\u{1F4A7}", affiliateTag: "cdm-lubricant", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-divine-glow-aqua-lubricant-100ml" },
+  { name: "Luxury Lingerie Collection", brand: "Agent Provocateur", price: "From \u00A365", description: "Iconic luxury lingerie designed to empower", category: "Lingerie", emoji: "\u{1F525}", affiliateTag: "ap-lingerie", productUrl: "https://www.agentprovocateur.com/gb_en/lingerie" },
+  { name: "Bridal & Honeymoon Lingerie", brand: "Agent Provocateur", price: "From \u00A375", description: "Exquisite bridal intimates for your big day", category: "Lingerie", emoji: "\u{1F490}", affiliateTag: "ap-bridal", productUrl: "https://www.agentprovocateur.com/gb_en/bridal" },
+  { name: "Silk & Lace Nightwear", brand: "Agent Provocateur", price: "From \u00A385", description: "Sensual silk nightwear for luxurious evenings", category: "Lingerie", emoji: "\u{1F319}", affiliateTag: "ap-nightwear", productUrl: "https://www.agentprovocateur.com/gb_en/nightwear" },
+  { name: "Corsets & Basques", brand: "Agent Provocateur", price: "From \u00A3150", description: "Statement corsetry for unforgettable nights", category: "Lingerie", emoji: "\u2728", affiliateTag: "ap-corsets", productUrl: "https://www.agentprovocateur.com/gb_en/lingerie/corsets-basques" },
+  { name: "Hosiery & Suspenders", brand: "Agent Provocateur", price: "From \u00A325", description: "Luxurious stockings, tights & suspenders", category: "Accessories", emoji: "\u{1F451}", affiliateTag: "ap-hosiery", productUrl: "https://www.agentprovocateur.com/gb_en/hosiery" },
+  { name: "Luxury Gift Sets", brand: "Agent Provocateur", price: "From \u00A395", description: "Beautifully packaged intimate gift sets", category: "Accessories", emoji: "\u{1F381}", affiliateTag: "ap-gifts", productUrl: "https://www.agentprovocateur.com/gb_en/gifts" },
 ];
 
-const FALLBACK_PRODUCTS = COCO_DE_MER_PRODUCTS.slice(0, 4);
+const FALLBACK_PRODUCTS = LUXURY_INTIMACY_PRODUCTS.slice(0, 4);
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -1179,8 +1184,8 @@ Use exact brand names and real product titles. Keep descriptions under 60 chars.
         aiProducts = JSON.parse(toolCall.function.arguments).products || [];
       }
 
-      const cdmPicks = shuffle(COCO_DE_MER_PRODUCTS).slice(0, 2);
-      let amazonItems = aiProducts.filter((p: any) => !p.productUrl?.includes("coco-de-mer.com")).slice(0, 2);
+      const cdmPicks = shuffle(LUXURY_INTIMACY_PRODUCTS).slice(0, 2);
+      let amazonItems = aiProducts.filter((p: any) => !p.productUrl?.includes("coco-de-mer.com") && !p.productUrl?.includes("agentprovocateur.com")).slice(0, 2);
       if (amazonItems.length < 2) {
         amazonItems = [
           ...amazonItems,
@@ -1193,9 +1198,8 @@ Use exact brand names and real product titles. Keep descriptions under 60 chars.
       const enriched = await Promise.all(mixed.map(async (p: any) => {
         const searchTerm = p.imageSearchTerm || `${p.name} ${p.brand}`;
         const imageUrl = await fetchAmazonProductImage(searchTerm);
-        const url = (p.productUrl && p.productUrl.includes("coco-de-mer.com"))
-          ? p.productUrl
-          : buildAmazonUrl(p.name);
+        const isLuxuryBrand = p.productUrl && (p.productUrl.includes("coco-de-mer.com") || p.productUrl.includes("agentprovocateur.com"));
+        const url = isLuxuryBrand ? p.productUrl : buildAmazonUrl(p.name);
         return { ...p, productUrl: url, affiliateTag: AMAZON_TAG, imageUrl };
       }));
 

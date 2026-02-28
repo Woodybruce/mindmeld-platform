@@ -24,8 +24,11 @@ const withAffiliateTag = (url?: string): string | undefined => {
 const amazonSearch = (name: string): string =>
   `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
 
+const isLuxuryBrand = (url: string): boolean =>
+  url.includes("coco-de-mer.com") || url.includes("agentprovocateur.com");
+
 const ensureSearchUrl = (url: string, name: string): string => {
-  if (url.includes("coco-de-mer.com")) return url;
+  if (isLuxuryBrand(url)) return url;
   if (url.includes("/dp/") || url.includes("/gp/")) {
     return amazonSearch(name);
   }
@@ -345,11 +348,11 @@ const DiscoverTogether = () => {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className={`mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${product.amazonUrl?.includes("coco-de-mer.com") ? "bg-[#1a1a1a] text-white hover:bg-[#333]" : "bg-[#FF9900] text-black hover:bg-[#FFa820]"}`}
+                              className={`mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${product.amazonUrl && isLuxuryBrand(product.amazonUrl) ? "bg-[#1a1a1a] text-white hover:bg-[#333]" : "bg-[#FF9900] text-black hover:bg-[#FFa820]"}`}
                               data-testid={`buy-${product.id}`}
                             >
                               <ShoppingCart className="w-3 h-3" />
-                              {product.amazonUrl?.includes("coco-de-mer.com") ? "Shop Coco de Mer" : "Buy on Amazon"}
+                              {product.amazonUrl?.includes("coco-de-mer.com") ? "Shop Coco de Mer" : product.amazonUrl?.includes("agentprovocateur.com") ? "Shop Agent Provocateur" : "Buy on Amazon"}
                             </a>
                           </div>
                         </motion.div>

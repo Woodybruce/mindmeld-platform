@@ -49,7 +49,7 @@ const withAmazonTag = (url?: string, productName?: string): string => {
   if (url) {
     try {
       const u = new URL(url);
-      if (u.hostname.includes("coco-de-mer.com")) return url;
+      if (u.hostname.includes("coco-de-mer.com") || u.hostname.includes("agentprovocateur.com")) return url;
       if (u.pathname.includes("/dp/") || u.pathname.includes("/gp/")) {
         return searchFallback;
       }

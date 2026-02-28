@@ -21,7 +21,7 @@ const ensureAffiliateTag = (url: string, productName?: string): string => {
   if (!url) return "";
   try {
     const u = new URL(url);
-    if (u.hostname.includes("coco-de-mer.com")) return url;
+    if (u.hostname.includes("coco-de-mer.com") || u.hostname.includes("agentprovocateur.com")) return url;
     if (u.hostname.includes("amazon")) {
       if (u.pathname.includes("/dp/") || u.pathname.includes("/gp/")) {
         return `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || "couples gift")}&tag=${AMAZON_TAG}`;
@@ -116,6 +116,16 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     category: "Games",
     imageUrl: "https://m.media-amazon.com/images/I/61ynJ2CVQBL._AC_SL1000_.jpg",
     amazonUrl: "https://www.amazon.co.uk/s?k=Were+Not+Really+Strangers+Card+Game&tag=woodybruce-21",
+    active: true,
+  },
+  {
+    name: "Luxury Lingerie Collection",
+    brand: "Agent Provocateur",
+    price: "From £65",
+    description: "Iconic luxury lingerie designed to empower — browse the full collection",
+    category: "Intimacy",
+    imageUrl: "https://www.agentprovocateur.com/media/logo/stores/1/AP_logo_new.png",
+    amazonUrl: "https://www.agentprovocateur.com/gb_en/lingerie",
     active: true,
   },
 ];
