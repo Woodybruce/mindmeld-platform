@@ -31,7 +31,7 @@ const LikeButton = ({ liked, partnerLiked, mutual, onToggle, size = "sm" }: Like
         <Heart className={`${iconSize} ${liked ? "fill-current" : ""}`} />
       </div>
       {partnerLiked && (
-        <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
           {mutual ? "💕 Both" : "❤️ Partner"}
         </span>
       )}

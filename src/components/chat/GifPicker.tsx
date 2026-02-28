@@ -130,7 +130,7 @@ const GifPicker = ({ open, onClose, onSelect }: GifPickerProps) => {
           </div>
 
           {!loading && gifs.length > 0 && (
-            <p className="text-[10px] text-muted-foreground/40 text-center mt-3">Powered by GIPHY</p>
+            <p className="text-[12px] text-muted-foreground/40 text-center mt-3">Powered by GIPHY</p>
           )}
         </div>
       </motion.div>

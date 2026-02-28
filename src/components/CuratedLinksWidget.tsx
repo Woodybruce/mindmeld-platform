@@ -430,7 +430,7 @@ const CuratedLinksWidget = () => {
           </div>
           <div>
             <h3 className="font-display text-sm font-bold text-foreground">For You</h3>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               {activeTab === "articles" && "Reads & saved links"}
               {activeTab === "podcasts" && "Listen together in-app"}
               {activeTab === "videos" && "TED Talks & more"}
@@ -448,7 +448,7 @@ const CuratedLinksWidget = () => {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1 text-[12px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
               activeTab === tab.key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
             }`}
             data-testid={`foryou-tab-${tab.key}`}
@@ -490,7 +490,7 @@ const CuratedLinksWidget = () => {
                           </div>
                           <div className="p-2.5">
                             <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{link.title || extractDomain(link.url)}</p>
-                            <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                            <p className="text-[12px] text-muted-foreground mt-1 flex items-center gap-1">
                               <img src={getFavicon(link.url) || ""} alt="" className="w-3 h-3 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                               {extractDomain(link.url)}
                             </p>
@@ -519,18 +519,18 @@ const CuratedLinksWidget = () => {
                             <ArticleImage url={article.url} ogMeta={og} emoji={article.emoji} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                             <div className="absolute bottom-1.5 left-1.5">
-                              <span className="text-[9px] bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{article.category}</span>
+                              <span className="text-[11px] bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{article.category}</span>
                             </div>
                           </div>
                           <div className="p-2.5">
                             <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{article.title}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{og?.ogDescription || article.description}</p>
+                            <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-2">{og?.ogDescription || article.description}</p>
                             <div className="flex items-center gap-1.5 mt-1.5">
                               <img
                                 src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(article.url)}&size=64`}
                                 alt="" className="w-3 h-3 rounded"
                               />
-                              <span className="text-[9px] text-muted-foreground">{og?.siteName || article.source}</span>
+                              <span className="text-[11px] text-muted-foreground">{og?.siteName || article.source}</span>
                             </div>
                           </div>
                         </button>
@@ -582,7 +582,7 @@ const CuratedLinksWidget = () => {
                             <PodcastImage imageUrl={pod.imageUrl} title={pod.title} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                             <div className="absolute bottom-1.5 left-1.5">
-                              <span className="text-[9px] bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{pod.category}</span>
+                              <span className="text-[11px] bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{pod.category}</span>
                             </div>
                             <div className="absolute top-1.5 right-1.5">
                               <PlayCircle className="w-5 h-5 drop-shadow text-white/80" />
@@ -590,7 +590,7 @@ const CuratedLinksWidget = () => {
                           </div>
                           <div className="p-2.5">
                             <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{pod.title}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{pod.host} · {pod.duration}</p>
+                            <p className="text-[12px] text-muted-foreground mt-0.5">{pod.host} · {pod.duration}</p>
                           </div>
                         </button>
 
@@ -602,8 +602,8 @@ const CuratedLinksWidget = () => {
                             onToggle={() => toggleLike(podKey, pod.title)}
                           />
                           <div className="flex items-center gap-1.5">
-                            <a href={`https://podcasts.apple.com/podcast/id${pod.appleId}`} target="_blank" rel="noopener noreferrer" className="text-[9px] font-medium text-[#8232D2]" data-testid={`podcast-apple-${i}`}>Apple</a>
-                            <a href={`https://open.spotify.com/show/${pod.spotifyId}`} target="_blank" rel="noopener noreferrer" className="text-[9px] font-medium text-[#1DB954]" data-testid={`podcast-spotify-${i}`}>Spotify</a>
+                            <a href={`https://podcasts.apple.com/podcast/id${pod.appleId}`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-[#8232D2]" data-testid={`podcast-apple-${i}`}>Apple</a>
+                            <a href={`https://open.spotify.com/show/${pod.spotifyId}`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-[#1DB954]" data-testid={`podcast-spotify-${i}`}>Spotify</a>
                           </div>
                         </div>
                       </motion.div>
@@ -650,7 +650,7 @@ const CuratedLinksWidget = () => {
                         </button>
                         <div className="p-2.5">
                           <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{vid.title}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{vid.creator} · {vid.duration}</p>
+                          <p className="text-[12px] text-muted-foreground mt-0.5">{vid.creator} · {vid.duration}</p>
                         </div>
                         <div className="px-2.5 pb-2 flex items-center justify-between">
                           <LikeButton
@@ -659,7 +659,7 @@ const CuratedLinksWidget = () => {
                             mutual={isMutualLike(vid.youtubeId)}
                             onToggle={() => toggleLike(vid.youtubeId, vid.title)}
                           />
-                          <span className="text-[9px] text-muted-foreground/50">{vid.category}</span>
+                          <span className="text-[11px] text-muted-foreground/50">{vid.category}</span>
                         </div>
                       </motion.div>
                     );
@@ -688,7 +688,7 @@ const CuratedLinksWidget = () => {
                           <p className="text-[11px] font-serif italic text-foreground leading-relaxed relative z-10 line-clamp-5">
                             "{quote.text}"
                           </p>
-                          <p className="text-[10px] font-medium text-muted-foreground mt-2 relative z-10">
+                          <p className="text-[12px] font-medium text-muted-foreground mt-2 relative z-10">
                             — {quote.author}
                           </p>
                           <div className="mt-2 flex items-center justify-center">
@@ -708,7 +708,7 @@ const CuratedLinksWidget = () => {
       </div>
 
       <div className="px-4 pb-2.5">
-        <p className="text-[9px] text-muted-foreground/50">
+        <p className="text-[11px] text-muted-foreground/50">
           {activeTab === "articles" && "Tap to read in-app · Scroll for more"}
           {activeTab === "podcasts" && "Tap to play in-app · Scroll for more"}
           {activeTab === "videos" && "Tap to play inline · Scroll for more"}

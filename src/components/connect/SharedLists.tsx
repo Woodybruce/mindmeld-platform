@@ -937,7 +937,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">
                                   {item.text.replace(/^##\s*/, '')}
                                   {item.sectionType === "observation" && (
-                                    <span className="ml-1.5 text-[10px] font-normal normal-case text-muted-foreground">💭</span>
+                                    <span className="ml-1.5 text-[12px] font-normal normal-case text-muted-foreground">💭</span>
                                   )}
                                 </span>
                               ) : item.isObservation ? (
@@ -1165,7 +1165,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                               {item.isHeading ? (
                                 <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">
                                   {item.text}
-                                  {item.sectionType === "observation" && <span className="ml-1.5 text-[10px] font-normal normal-case text-muted-foreground">💭</span>}
+                                  {item.sectionType === "observation" && <span className="ml-1.5 text-[12px] font-normal normal-case text-muted-foreground">💭</span>}
                                 </span>
                               ) : (
                                 <div className="flex items-center gap-2.5 flex-1">
@@ -1484,7 +1484,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">
                                   {section.heading.text.replace(/^##\s*/, '')}
                                   {section.heading.sectionType === "observation" && (
-                                    <span className="ml-1.5 text-[10px] font-normal normal-case text-muted-foreground">💭</span>
+                                    <span className="ml-1.5 text-[12px] font-normal normal-case text-muted-foreground">💭</span>
                                   )}
                                 </span>
                                 <button
@@ -1640,7 +1640,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                         href={att.type === "event" ? undefined : att.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                                        className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                                       >
                                         {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
                                         {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}

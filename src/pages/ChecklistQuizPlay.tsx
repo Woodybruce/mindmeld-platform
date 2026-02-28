@@ -213,7 +213,7 @@ const ChecklistQuizPlay = () => {
                 </div>
               );
             })}
-            <p className="text-[10px] text-muted-foreground">This score will be saved with your list. Retest at 25%, 50%, 75% and 100% to track improvement.</p>
+            <p className="text-[12px] text-muted-foreground">This score will be saved with your list. Retest at 25%, 50%, 75% and 100% to track improvement.</p>
           </div>
 
           {/* Exploration items by section */}

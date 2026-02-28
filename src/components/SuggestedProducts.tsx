@@ -145,7 +145,7 @@ const SuggestedProducts = () => {
           </div>
           <div>
             <h3 className="font-display text-sm font-bold text-foreground">Picked for You</h3>
-            <p className="text-[10px] text-muted-foreground">AI-curated couple gifts & experiences</p>
+            <p className="text-[12px] text-muted-foreground">AI-curated couple gifts & experiences</p>
           </div>
         </div>
         <button onClick={() => fetchProducts(activeCategory, true)} disabled={loading} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
@@ -159,7 +159,7 @@ const SuggestedProducts = () => {
           <button
             key={cat.key}
             onClick={() => handleCategoryChange(cat.key)}
-            className={`text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
+            className={`text-[12px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
               activeCategory === cat.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -200,13 +200,13 @@ const SuggestedProducts = () => {
                       <ProductImage categoryImageUrl={categoryImg} emoji={p.emoji} name={p.name} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                       <div className="absolute bottom-1.5 left-1.5">
-                        <span className="text-[9px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{p.category}</span>
+                        <span className="text-[11px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">{p.category}</span>
                       </div>
                     </div>
                     {/* Product info */}
                     <div className="p-2.5">
                       <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{p.name}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{p.brand}</p>
+                      <p className="text-[12px] text-muted-foreground mt-0.5">{p.brand}</p>
                       <div className="flex items-center justify-between mt-1.5">
                         <p className="text-xs font-bold text-primary">{p.price}</p>
                         <LikeButton
@@ -218,7 +218,7 @@ const SuggestedProducts = () => {
                       </div>
                       {/* Amazon CTA */}
                       <div
-                        className="mt-2 flex items-center justify-center gap-1 bg-[#FF9900] hover:bg-[#e88b00] text-white text-[10px] font-semibold py-1.5 rounded-lg transition-colors"
+                        className="mt-2 flex items-center justify-center gap-1 bg-[#FF9900] hover:bg-[#e88b00] text-white text-[12px] font-semibold py-1.5 rounded-lg transition-colors"
                       >
                         <ShoppingBag className="w-3 h-3" />
                         <span>View on Amazon</span>
@@ -240,7 +240,7 @@ const SuggestedProducts = () => {
 
       <div className="px-4 pb-2.5 flex items-center gap-1">
         <ShoppingBag className="w-2.5 h-2.5 text-muted-foreground/50" />
-        <p className="text-[9px] text-muted-foreground/50">Sponsored · Curated for couples</p>
+        <p className="text-[11px] text-muted-foreground/50">Sponsored · Curated for couples</p>
       </div>
     </motion.div>
   );

@@ -42,7 +42,7 @@ export const ListsSummaryWidget = () => {
             <span className="text-base">{s.icon}</span>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{s.name}</p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 {s.doneCount}/{s.totalCount} completed
               </p>
             </div>
@@ -51,7 +51,7 @@ export const ListsSummaryWidget = () => {
                 {s.doneCount === s.totalCount ? (
                   <Check className="w-4 h-4 text-primary" />
                 ) : (
-                  <span className="text-[10px] font-bold text-muted-foreground">
+                  <span className="text-[12px] font-bold text-muted-foreground">
                     {Math.round((s.doneCount / s.totalCount) * 100)}%
                   </span>
                 )}

@@ -283,7 +283,7 @@ const DesignMyNight = () => {
                     className="space-y-3"
                   >
                     <span className="text-4xl block">{currentCard.emoji}</span>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">{currentCard.category}</p>
+                    <p className="text-[12px] font-bold uppercase tracking-widest text-foreground/50">{currentCard.category}</p>
                     <p className="font-display text-2xl font-bold text-foreground leading-snug">{currentCard.value}</p>
                   </motion.div>
                 )}
@@ -365,7 +365,7 @@ const DesignMyNight = () => {
                 >
                   <span className="text-2xl shrink-0">{card.emoji}</span>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/50">{card.category}</p>
+                    <p className="text-[12px] font-bold uppercase tracking-wider text-foreground/50">{card.category}</p>
                     <p className="text-sm font-bold text-foreground leading-snug">{card.value}</p>
                   </div>
                 </motion.div>

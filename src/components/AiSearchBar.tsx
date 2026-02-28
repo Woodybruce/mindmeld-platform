@@ -208,7 +208,7 @@ const AiSearchBar = ({ section }: { section: "discover" | "foryou" }) => {
             <button
               key={prompt}
               onClick={() => { setQuery(prompt); handleSearch(prompt); }}
-              className="flex-shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+              className="flex-shrink-0 text-[12px] px-2.5 py-1 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
               data-testid={`ai-quick-${prompt.slice(0, 10)}`}
             >
               {prompt}
@@ -225,12 +225,12 @@ const AiSearchBar = ({ section }: { section: "discover" | "foryou" }) => {
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
             </div>
-            <span className="text-[10px] text-muted-foreground">Finding the best recommendations...</span>
+            <span className="text-[12px] text-muted-foreground">Finding the best recommendations...</span>
           </motion.div>
         )}
 
         {searched && !loading && results.length === 0 && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground mt-3 px-1">
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[12px] text-muted-foreground mt-3 px-1">
             No results found. Try a different question.
           </motion.p>
         )}
@@ -256,25 +256,25 @@ const AiSearchBar = ({ section }: { section: "discover" | "foryou" }) => {
                       {item.type}
                     </span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
                   <div className="flex items-center gap-2 mt-1.5">
                     {item.price && <span className="text-[11px] font-bold text-primary">{item.price}</span>}
-                    {item.brand && <span className="text-[9px] text-muted-foreground">{item.brand}</span>}
-                    {item.venue && <span className="text-[9px] text-muted-foreground">{item.venue}</span>}
-                    {item.host && <span className="text-[9px] text-muted-foreground">{item.host}</span>}
-                    {item.creator && <span className="text-[9px] text-muted-foreground">{item.creator}</span>}
-                    {item.duration && <span className="text-[9px] text-muted-foreground">· {item.duration}</span>}
-                    {item.destination && <span className="text-[9px] text-muted-foreground">{item.destination}, {item.country}</span>}
-                    {item.source && <span className="text-[9px] text-muted-foreground">{item.source}</span>}
-                    {item.author && <span className="text-[9px] text-muted-foreground italic">— {item.author}</span>}
+                    {item.brand && <span className="text-[11px] text-muted-foreground">{item.brand}</span>}
+                    {item.venue && <span className="text-[11px] text-muted-foreground">{item.venue}</span>}
+                    {item.host && <span className="text-[11px] text-muted-foreground">{item.host}</span>}
+                    {item.creator && <span className="text-[11px] text-muted-foreground">{item.creator}</span>}
+                    {item.duration && <span className="text-[11px] text-muted-foreground">· {item.duration}</span>}
+                    {item.destination && <span className="text-[11px] text-muted-foreground">{item.destination}, {item.country}</span>}
+                    {item.source && <span className="text-[11px] text-muted-foreground">{item.source}</span>}
+                    {item.author && <span className="text-[11px] text-muted-foreground italic">— {item.author}</span>}
                   </div>
                   {item.type === "quote" && item.text && (
-                    <p className="text-[10px] italic text-foreground/70 mt-1 line-clamp-3">"{item.text}"</p>
+                    <p className="text-[12px] italic text-foreground/70 mt-1 line-clamp-3">"{item.text}"</p>
                   )}
                   {getActionLabel(item.type) && (
                     <button
                       onClick={() => openExternal(item)}
-                      className={`mt-2 inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${
+                      className={`mt-2 inline-flex items-center gap-1 text-[12px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${
                         item.type === "product"
                           ? "bg-[#FF9900] text-black hover:bg-[#FFa820]"
                           : "bg-primary/10 text-primary hover:bg-primary/20"

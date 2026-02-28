@@ -130,7 +130,7 @@ const AnniversaryCountdown = () => {
         <div className="flex items-center gap-4">
           <div className="text-center">
             <span className="text-3xl font-bold text-primary">{daysUntil}</span>
-            <p className="text-[10px] text-muted-foreground">days until</p>
+            <p className="text-[12px] text-muted-foreground">days until</p>
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-foreground">
@@ -139,7 +139,7 @@ const AnniversaryCountdown = () => {
             <p className="text-xs text-muted-foreground">
               {format(nextAnniversary, "d MMMM yyyy")}
             </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-[12px] text-muted-foreground mt-0.5">
               {totalDaysTogether.toLocaleString()} days together ❤️
             </p>
           </div>

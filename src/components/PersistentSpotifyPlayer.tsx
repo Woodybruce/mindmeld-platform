@@ -42,7 +42,7 @@ export default function PersistentSpotifyPlayer() {
         <div className="flex items-center justify-between px-3 py-1 bg-[#191414] border-t border-[#1DB954]/30">
           <div className="flex items-center gap-2">
             <SpotifyIcon className="w-3.5 h-3.5 text-[#1DB954]" />
-            <span className="text-[10px] text-white/60 font-medium uppercase tracking-wider">
+            <span className="text-[12px] text-white/60 font-medium uppercase tracking-wider">
               {player.type === "playlist" ? "Playlist" : "Now Playing"}
             </span>
           </div>

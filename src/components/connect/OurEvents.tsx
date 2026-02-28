@@ -203,7 +203,7 @@ const OurEvents = () => {
         {/* Day labels */}
         <div className="grid grid-cols-7 gap-0.5 text-center">
           {DAY_LABELS.map((d) => (
-            <span key={d} className="text-[10px] font-medium text-muted-foreground py-0.5">{d}</span>
+            <span key={d} className="text-[12px] font-medium text-muted-foreground py-0.5">{d}</span>
           ))}
         </div>
 
@@ -288,7 +288,7 @@ const OurEvents = () => {
                           <Clock className="w-3 h-3" /> {timeStr}
                         </span>
                         {event.source === "outlook" && (
-                          <span className="text-[10px] text-muted-foreground bg-secondary rounded px-1.5 py-0.5">Outlook</span>
+                          <span className="text-[12px] text-muted-foreground bg-secondary rounded px-1.5 py-0.5">Outlook</span>
                         )}
                       </div>
                       {event.location && (

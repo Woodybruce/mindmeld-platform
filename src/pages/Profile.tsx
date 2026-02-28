@@ -280,7 +280,7 @@ const Profile = () => {
                 Connect Outlook Account
               </button>
             )}
-            <p className="text-[10px] text-muted-foreground mt-1.5">
+            <p className="text-[12px] text-muted-foreground mt-1.5">
               Connect your Microsoft account to sync calendar events automatically.
             </p>
           </div>
@@ -293,15 +293,15 @@ const Profile = () => {
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="rounded-lg bg-secondary p-3">
               <span className="text-lg font-bold text-foreground">{listCount}</span>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Shared Lists</p>
+              <p className="text-[12px] text-muted-foreground mt-0.5">Shared Lists</p>
             </div>
             <div className="rounded-lg bg-secondary p-3">
               <span className="text-lg font-bold text-foreground">{quizCount}</span>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Quizzes Done</p>
+              <p className="text-[12px] text-muted-foreground mt-0.5">Quizzes Done</p>
             </div>
             <div className="rounded-lg bg-secondary p-3">
               <span className="text-lg font-bold text-foreground">0</span>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Games Played</p>
+              <p className="text-[12px] text-muted-foreground mt-0.5">Games Played</p>
             </div>
           </div>
         </div>

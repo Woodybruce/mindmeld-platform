@@ -278,7 +278,7 @@ const AnnouncementsWidget = () => {
                 <span className="text-base mt-0.5">{a.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground">{a.content}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <p className="text-[12px] text-muted-foreground mt-0.5">
                     {isOwn ? "You" : "Partner"} · {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}
                   </p>
                 </div>
@@ -311,9 +311,9 @@ const AnnouncementsWidget = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{a.label}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{a.detail}</p>
+                  <p className="text-[12px] text-muted-foreground truncate">{a.detail}</p>
                 </div>
-                <span className="text-[10px] text-muted-foreground/60 shrink-0 whitespace-nowrap">
+                <span className="text-[12px] text-muted-foreground/60 shrink-0 whitespace-nowrap">
                   {formatDistanceToNow(a.time, { addSuffix: true })}
                 </span>
               </motion.button>

@@ -93,7 +93,7 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                 ].map((f) => (
                   <div key={f.label} className="rounded-xl bg-card border border-border/50 p-3 text-center">
                     <span className="text-2xl">{f.icon}</span>
-                    <p className="text-[10px] text-muted-foreground mt-1 font-medium">{f.label}</p>
+                    <p className="text-[12px] text-muted-foreground mt-1 font-medium">{f.label}</p>
                   </div>
                 ))}
               </div>

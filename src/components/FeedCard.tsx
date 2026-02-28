@@ -101,7 +101,7 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
 
           {/* Tag pill */}
           <div className="absolute top-2.5 left-2.5">
-            <span className="bg-background/80 backdrop-blur-md text-[9px] font-bold uppercase tracking-wider text-foreground px-2 py-0.5 rounded-full">
+            <span className="bg-background/80 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-foreground px-2 py-0.5 rounded-full">
               {item.tag}
             </span>
           </div>
@@ -149,10 +149,10 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
     >
       <div className={size === "half" ? "p-3" : "p-4"}>
         <div className="flex items-center justify-between mb-1.5">
-          <span className={`text-[10px] font-semibold uppercase tracking-wider ${item.tagColor}`}>
+          <span className={`text-[12px] font-semibold uppercase tracking-wider ${item.tagColor}`}>
             {item.tag}
           </span>
-          <span className="text-[10px] text-muted-foreground">{item.timeAgo}</span>
+          <span className="text-[12px] text-muted-foreground">{item.timeAgo}</span>
         </div>
         {item.emoji && size === "half" && (
           <div className="text-center py-1">

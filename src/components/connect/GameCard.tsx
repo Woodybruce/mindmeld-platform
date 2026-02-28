@@ -25,7 +25,7 @@ const GameCard = forwardRef<HTMLButtonElement, GameCardProps>(({ title, descript
       <div className="flex-1">
         <h3 className="font-display text-base font-semibold text-foreground">{title}</h3>
         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-        <span className="text-[10px] text-muted-foreground mt-1 inline-block">{players}</span>
+        <span className="text-[12px] text-muted-foreground mt-1 inline-block">{players}</span>
       </div>
       <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
     </div>

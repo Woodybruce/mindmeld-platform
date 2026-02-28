@@ -273,7 +273,7 @@ export default function SpotifyWidget() {
           <span className="text-sm font-bold text-foreground">Spotify</span>
         </div>
         {playlistUrl && (
-          <a href={playlistUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground hover:text-[#1DB954] flex items-center gap-1">
+          <a href={playlistUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] text-muted-foreground hover:text-[#1DB954] flex items-center gap-1">
             Open in Spotify <ExternalLink className="w-3 h-3" />
           </a>
         )}
@@ -281,7 +281,7 @@ export default function SpotifyWidget() {
 
       {nowPlaying?.playing && nowPlaying.track && (
         <div className="px-4 py-3 bg-[#1DB954]/5 border-b border-border/30">
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-[#1DB954] mb-2 flex items-center gap-1.5">
+          <p className="text-[12px] uppercase tracking-wider font-semibold text-[#1DB954] mb-2 flex items-center gap-1.5">
             {nowPlaying.isPlaying ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
             {nowPlaying.isPlaying ? "Now Playing" : "Paused"}
           </p>

@@ -79,7 +79,7 @@ const PollComposer = ({ open, onClose, onSend }: PollComposerProps) => {
                 value={opt}
                 onChange={(e) => updateOption(i, e.target.value)}
                 placeholder={`Option ${i + 1}`}
-                className="flex-1 bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+                className="flex-1 bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[11px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
               />
               {options.length > 2 && (
                 <button onClick={() => removeOption(i)} className="p-1 text-muted-foreground hover:text-destructive">
@@ -93,7 +93,7 @@ const PollComposer = ({ open, onClose, onSend }: PollComposerProps) => {
         {options.length < 6 && (
           <button
             onClick={addOption}
-            className="flex items-center gap-2 text-[13px] text-primary font-medium hover:text-primary/80"
+            className="flex items-center gap-2 text-[11px] text-primary font-medium hover:text-primary/80"
           >
             <Plus className="w-4 h-4" /> Add option
           </button>

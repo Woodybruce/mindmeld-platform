@@ -90,7 +90,7 @@ const StreaksWidget = () => {
             <span className="text-2xl font-bold text-foreground">{data.taskStreak}</span>
             <Flame className={`w-3.5 h-3.5 ${data.taskStreak > 0 ? "text-orange-500" : "text-muted-foreground/30"}`} />
           </div>
-          <p className="text-[9px] text-muted-foreground mt-0.5">day streak</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">day streak</p>
         </div>
 
         <div className="rounded-xl bg-secondary p-3 text-center">
@@ -102,7 +102,7 @@ const StreaksWidget = () => {
             <span className="text-2xl font-bold text-foreground">{data.chatStreak}</span>
             <Flame className={`w-3.5 h-3.5 ${data.chatStreak > 0 ? "text-orange-500" : "text-muted-foreground/30"}`} />
           </div>
-          <p className="text-[9px] text-muted-foreground mt-0.5">day streak</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">day streak</p>
         </div>
       </div>
 
@@ -116,7 +116,7 @@ const StreaksWidget = () => {
         {maxStreak >= 7 && <Badge emoji="⚡" label="Week Streak" />}
         {maxStreak >= 30 && <Badge emoji="🌟" label="Month Streak" />}
         {data.totalMessages === 0 && data.totalTasks === 0 && (
-          <p className="text-[10px] text-muted-foreground py-1">Complete tasks & chat to earn badges!</p>
+          <p className="text-[12px] text-muted-foreground py-1">Complete tasks & chat to earn badges!</p>
         )}
       </div>
     </motion.div>
@@ -126,7 +126,7 @@ const StreaksWidget = () => {
 const Badge = ({ emoji, label }: { emoji: string; label: string }) => (
   <div className="flex-shrink-0 flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1">
     <span className="text-sm">{emoji}</span>
-    <span className="text-[10px] font-medium text-foreground whitespace-nowrap">{label}</span>
+    <span className="text-[12px] font-medium text-foreground whitespace-nowrap">{label}</span>
   </div>
 );
 

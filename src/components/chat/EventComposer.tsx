@@ -70,7 +70,7 @@ const EventComposer = ({ open, onClose, onSend }: EventComposerProps) => {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[13px] text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[11px] text-foreground outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
@@ -79,7 +79,7 @@ const EventComposer = ({ open, onClose, onSend }: EventComposerProps) => {
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[13px] text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[11px] text-foreground outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>

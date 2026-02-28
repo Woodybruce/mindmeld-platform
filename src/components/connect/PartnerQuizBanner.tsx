@@ -35,7 +35,7 @@ const PartnerQuizBanner = ({ quizTitle, quizEmoji, onDismiss }: PartnerQuizBanne
           <p className="text-[11px] text-muted-foreground truncate mt-0.5">{quizTitle}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-[10px] text-us-coral font-medium">
+          <span className="flex items-center gap-1 text-[12px] text-us-coral font-medium">
             <Sparkles className="w-3 h-3" /> Live
           </span>
           <button onClick={onDismiss} className="p-1 text-muted-foreground hover:text-foreground">

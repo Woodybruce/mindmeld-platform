@@ -112,7 +112,7 @@ export const PromptsPreview = () => {
     >
       <div className="bg-gradient-to-br from-us-blush/30 to-us-coral/10 rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${prompt.color}`}>{prompt.category}</span>
+          <span className={`text-[12px] font-bold uppercase tracking-wider ${prompt.color}`}>{prompt.category}</span>
           <button
             onClick={(e) => { e.stopPropagation(); setIdx((i) => i + 1); }}
             className="w-6 h-6 rounded-full bg-background/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
@@ -147,7 +147,7 @@ export const GamesPreview = () => (
             <span className="text-base">{g.emoji}</span>
             <span className="text-xs font-semibold text-foreground">{g.name}</span>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{g.desc}</p>
+          <p className="text-[12px] text-muted-foreground mt-0.5">{g.desc}</p>
         </div>
       ))}
     </div>

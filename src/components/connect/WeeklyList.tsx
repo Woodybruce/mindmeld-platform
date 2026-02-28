@@ -191,7 +191,7 @@ const WeeklyList = () => {
               <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center text-center flex-shrink-0 ${
                 isToday ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
               }`}>
-                <span className="text-[9px] font-semibold uppercase leading-none">{monthShort}</span>
+                <span className="text-[11px] font-semibold uppercase leading-none">{monthShort}</span>
                 <span className="text-sm font-bold leading-none">{dayNum}</span>
               </div>
               <div className="flex-1 min-w-0">
@@ -259,13 +259,13 @@ const WeeklyList = () => {
 
                             {/* Show time from event attachment */}
                             {!isEditing && task.attachments?.some(a => a.type === "event" && a.date) && (
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-[12px] text-muted-foreground">
                                 {new Date(task.attachments.find(a => a.type === "event" && a.date)!.date!).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" })}
                               </span>
                             )}
 
                             {task.source !== "manual" && !isEditing && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground uppercase tracking-wider">
+                              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground uppercase tracking-wider">
                                 {task.source}
                               </span>
                             )}
@@ -347,7 +347,7 @@ const WeeklyList = () => {
                                   href={att.type === "event" ? undefined : att.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                                  className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                   {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
                                   {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}
@@ -362,7 +362,7 @@ const WeeklyList = () => {
                     {/* Unadded calendar events */}
                     {unaddedCalEvents.length > 0 && (
                       <div className="pt-1 space-y-1">
-                        <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">From Calendar</p>
+                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">From Calendar</p>
                         {unaddedCalEvents.map((event) => (
                           <button
                             key={event.id}
@@ -371,7 +371,7 @@ const WeeklyList = () => {
                           >
                             <Plus className="w-4 h-4 text-primary flex-shrink-0" />
                             <span className="flex-1 text-sm text-muted-foreground group-hover:text-foreground transition-colors">{event.subject}</span>
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-[12px] text-muted-foreground">
                               {new Date(event.start_time).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" })}
                             </span>
                           </button>

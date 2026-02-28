@@ -101,7 +101,7 @@ const DailyListsWidget = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground truncate">{event.subject}</p>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                <div className="flex items-center gap-2 text-[12px] text-muted-foreground mt-0.5">
                   <span>{formatEventTime(event)}</span>
                   {event.location && (
                     <span className="flex items-center gap-0.5 truncate">
