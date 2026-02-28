@@ -19,6 +19,7 @@ import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
 import InstaFeedWidget from "@/components/InstaFeedWidget";
 import DailyPromptCard from "@/components/DailyPromptCard";
+import SpotifyBoard from "@/components/SpotifyBoard";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
@@ -85,6 +86,9 @@ const Index = () => {
 
         {/* Daily prompt */}
         <DailyPromptCard />
+
+        {/* Spotify */}
+        <SpotifyBoard />
 
         {/* Calendar */}
         <CalendarWidget />
