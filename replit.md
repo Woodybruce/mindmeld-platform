@@ -122,6 +122,14 @@ All routes are defined in `server/routes.ts`:
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes
+- 2026-02-28: Discover Together shop with curated Amazon products
+  - `useShopProducts` hook stores curated products in `shared_lists` table as `__shop_products__` JSON items array
+  - Admin page (AdminFeedContent.tsx) has "Shop Products" tab to add/edit/remove products
+  - Affiliate tag `woodybruce-21` auto-applied to all Amazon URLs
+  - Default "Our Picks" tab on Discover Together shows curated products with orange "Buy on Amazon" button
+  - Category filtering: All, Date Night, Gifts, Wellness, Games, Intimacy, Experiences
+  - Auto-seeds 8 default products if none exist on first load
+  - Other Discover Together tabs (Date Night, Gifts, Intimacy, Travel) remain AI-powered
 - 2026-02-28: Outlook calendar auto-sync with shared events
   - `useOutlookAutoSync` hook runs on home page load, syncs every 15 minutes
   - Automatically fetches Outlook calendar events and imports new ones
