@@ -22,63 +22,47 @@ export default function PersistentSpotifyPlayer() {
   return (
     <div className="fixed bottom-20 left-0 right-0 z-40 pointer-events-none safe-area-bottom">
       <div className="max-w-lg mx-auto px-3 pointer-events-auto">
-        <AnimatePresence mode="wait">
-          {player.minimized ? (
-            <motion.div
-              key="minimized"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="flex items-center gap-2 bg-[#191414] rounded-xl px-3 py-2 shadow-lg border border-[#1DB954]/30"
-            >
-              <SpotifyIcon className="w-4 h-4 text-[#1DB954] shrink-0" />
-              <span className="text-xs text-white/80 flex-1 truncate">Playing...</span>
-              <button onClick={maximize} className="p-1 text-white/60 hover:text-white" data-testid="maximize-player">
-                <ChevronUp className="w-4 h-4" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#191414] rounded-xl shadow-lg border border-[#1DB954]/30 overflow-hidden"
+        >
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <div className="flex items-center gap-2">
+              <SpotifyIcon className="w-3.5 h-3.5 text-[#1DB954]" />
+              <span className="text-[10px] text-white/60 font-medium uppercase tracking-wider">
+                {player.type === "playlist" ? "Playlist" : "Now Playing"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={player.minimized ? maximize : minimize} className="p-1 text-white/60 hover:text-white" data-testid="toggle-player-size">
+                {player.minimized ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
-              <button onClick={stop} className="p-1 text-white/60 hover:text-white" data-testid="close-player-mini">
+              <button onClick={stop} className="p-1 text-white/60 hover:text-white" data-testid="close-player">
                 <X className="w-4 h-4" />
               </button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="expanded"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="bg-[#191414] rounded-xl shadow-lg border border-[#1DB954]/30 overflow-hidden"
-            >
-              <div className="flex items-center justify-between px-3 py-1.5">
-                <div className="flex items-center gap-2">
-                  <SpotifyIcon className="w-3.5 h-3.5 text-[#1DB954]" />
-                  <span className="text-[10px] text-white/60 font-medium uppercase tracking-wider">
-                    {player.type === "playlist" ? "Playlist" : "Now Playing"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={minimize} className="p-1 text-white/60 hover:text-white" data-testid="minimize-player">
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button onClick={stop} className="p-1 text-white/60 hover:text-white" data-testid="close-player">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="px-1.5 pb-1.5">
-                <iframe
-                  src={embedUrl}
-                  width="100%"
-                  height={height}
-                  frameBorder="0"
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  className="rounded-lg"
-                  data-testid="persistent-spotify-embed"
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+          <div
+            className="px-1.5 overflow-hidden transition-all duration-300"
+            style={{
+              height: player.minimized ? 0 : height + 6,
+              paddingBottom: player.minimized ? 0 : 6,
+              opacity: player.minimized ? 0 : 1,
+            }}
+          >
+            <iframe
+              src={embedUrl}
+              width="100%"
+              height={height}
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              className="rounded-lg"
+              data-testid="persistent-spotify-embed"
+            />
+          </div>
+        </motion.div>
       </div>
     </div>
   );
