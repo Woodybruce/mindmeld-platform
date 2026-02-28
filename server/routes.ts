@@ -17,6 +17,14 @@ async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+const AMAZON_TAG = "woodybruce-21";
+function buildAmazonUrl(asin?: string, productName?: string): string {
+  if (asin && /^B[A-Z0-9]{9}$/i.test(asin)) {
+    return `https://www.amazon.co.uk/dp/${asin}?tag=${AMAZON_TAG}`;
+  }
+  return `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || "couples gift")}&tag=${AMAZON_TAG}`;
+}
+
 async function callAI(messages: any[], tools?: any[], toolChoice?: any) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
@@ -963,9 +971,8 @@ Return ONLY valid JSON with these fields:
             role: "system",
             content: `You are a date night gift recommender for couples. Suggest 4 romantic date night experience gifts or vouchers available on Amazon UK (gift vouchers, experience boxes, date night kits, spa day gift sets, cocktail kits, restaurant voucher cards, cooking class kits, cinema gift sets).
 You MUST suggest REAL, SPECIFIC products that actually exist on Amazon UK. Use the exact brand name and full product title.
-For bookingUrl use: "https://www.amazon.co.uk/s?k=EXACT+BRAND+AND+PRODUCT+NAME&tag=woodybruce-21"
-The search term must be specific enough to find the exact product (e.g. "Buyagift+Spa+Day+for+Two+Gift+Experience" not just "spa+day+gift").
-Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
+For asin: provide the real Amazon UK ASIN (the 10-character code starting with B, e.g. "B07MX6212N"). This MUST be a real ASIN for the exact product. If you are not sure of the ASIN, leave it empty.
+Keep descriptions under 60 chars.`,
           },
           {
             role: "user",
@@ -993,10 +1000,10 @@ Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
                         category: { type: "string", enum: ["Restaurant", "Bar", "Activity", "Spa", "Theatre", "Class", "Outdoor"] },
                         emoji: { type: "string" },
                         city: { type: "string" },
-                        bookingUrl: { type: "string" },
+                        asin: { type: "string", description: "Amazon UK ASIN (10-char code starting with B)" },
                         duration: { type: "string" },
                       },
-                      required: ["name", "venue", "price", "description", "category", "emoji", "city", "bookingUrl", "duration"],
+                      required: ["name", "venue", "price", "description", "category", "emoji", "city", "asin", "duration"],
                       additionalProperties: false,
                     },
                   },
@@ -1023,12 +1030,17 @@ Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
 
       if (!experiences || experiences.length === 0) {
         experiences = [
-          { name: "Buyagift Dinner for Two Gift Experience", venue: "Amazon UK", price: "\u00A349.99", description: "Voucher for a luxury couples dinner", category: "Restaurant", emoji: "\u{1F37D}\uFE0F", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=Buyagift+Dinner+for+Two+Gift+Experience&tag=woodybruce-21", duration: "3 hours" },
-          { name: "Sanctuary Spa Gift Set Luxury Bath", venue: "Amazon UK", price: "\u00A335.00", description: "Luxurious spa day for two gift set", category: "Spa", emoji: "\u{1F6C1}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=Sanctuary+Spa+Gift+Set+Luxury+Bath&tag=woodybruce-21", duration: "Half day" },
-          { name: "VonShef Cocktail Making Set Parisian", venue: "Amazon UK", price: "\u00A329.99", description: "Make craft cocktails together at home", category: "Class", emoji: "\u{1F379}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=VonShef+Cocktail+Making+Set+Parisian&tag=woodybruce-21", duration: "2 hours" },
-          { name: "Virgin Experience Days Adventure for Two", venue: "Amazon UK", price: "\u00A359.99", description: "Thrilling couples adventure day out", category: "Activity", emoji: "\u{1F3AF}", city: "UK", bookingUrl: "https://www.amazon.co.uk/s?k=Virgin+Experience+Days+Adventure+for+Two&tag=woodybruce-21", duration: "Full day" },
+          { name: "Buyagift Spa Day for Two Gift Experience", venue: "Amazon UK", price: "\u00A349.99", description: "Luxury couples spa day voucher", category: "Spa", emoji: "\u{1F6C1}", city: "UK", asin: "B00HROQKRC", duration: "Full day" },
+          { name: "VonShef Cocktail Making Set Parisian", venue: "Amazon UK", price: "\u00A329.99", description: "Make craft cocktails together at home", category: "Class", emoji: "\u{1F379}", city: "UK", asin: "B07MX6212N", duration: "2 hours" },
+          { name: "Buyagift Dinner for Two Gift Experience", venue: "Amazon UK", price: "\u00A349.99", description: "Voucher for a luxury couples dinner", category: "Restaurant", emoji: "\u{1F37D}\uFE0F", city: "UK", asin: "B00HROQK7A", duration: "3 hours" },
+          { name: "Virgin Experience Days Adventure for Two", venue: "Amazon UK", price: "\u00A359.99", description: "Thrilling couples adventure day out", category: "Activity", emoji: "\u{1F3AF}", city: "UK", asin: "B07WGJLZ8T", duration: "Full day" },
         ];
       }
+
+      experiences = experiences.map((e: any) => ({
+        ...e,
+        bookingUrl: buildAmazonUrl(e.asin, e.name),
+      }));
 
       res.json({ experiences });
     } catch (e: any) {
@@ -1112,8 +1124,7 @@ Always include &tag=woodybruce-21. Keep descriptions under 60 chars.`,
             content: `You are a product recommender for a couples wellness app. Suggest 4 romantic and intimate products on Amazon UK.
 Include: couples massage oils, candles, bath sets, card games, lingerie, massage candles, couples vibrators, sensual gift sets.
 You MUST suggest REAL, SPECIFIC products that actually exist on Amazon UK. Use the exact brand name and full product title.
-For productUrl: "https://www.amazon.co.uk/s?k=EXACT+BRAND+AND+PRODUCT+NAME&tag=woodybruce-21"
-The search term must be specific enough to find the exact product (e.g. "Lelo+Sona+2+Cruise" not just "couples+vibrator").
+For asin: provide the real Amazon UK ASIN (the 10-character code starting with B, e.g. "B07MX6212N"). This MUST be a real ASIN. If you are not sure, leave it empty.
 For imageSearchTerm: provide a 3-5 word Amazon search that would find a real photo of this product.
 Keep descriptions under 60 chars.`,
           },
@@ -1142,11 +1153,10 @@ Keep descriptions under 60 chars.`,
                         description: { type: "string" },
                         category: { type: "string", enum: ["Massage", "Candles", "Games", "Lingerie", "Bath", "Toys", "Accessories", "Vibrators", "Bondage"] },
                         emoji: { type: "string" },
-                        affiliateTag: { type: "string" },
+                        asin: { type: "string", description: "Amazon UK ASIN (10-char code starting with B)" },
                         imageSearchTerm: { type: "string" },
-                        productUrl: { type: "string" },
                       },
-                      required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageSearchTerm", "productUrl"],
+                      required: ["name", "brand", "price", "description", "category", "emoji", "asin", "imageSearchTerm"],
                       additionalProperties: false,
                     },
                   },
@@ -1173,7 +1183,7 @@ Keep descriptions under 60 chars.`,
       const enriched = await Promise.all(products.map(async (p: any) => {
         const searchTerm = p.imageSearchTerm || `${p.name} ${p.brand}`;
         const imageUrl = await fetchAmazonProductImage(searchTerm);
-        return { ...p, imageUrl };
+        return { ...p, productUrl: buildAmazonUrl(p.asin, p.name), affiliateTag: AMAZON_TAG, imageUrl };
       }));
 
       res.json({ products: enriched });
@@ -1194,10 +1204,7 @@ Keep descriptions under 60 chars.`,
             role: "system",
             content: `You are a product recommendation engine for a couples/relationship app.
 Suggest 4 SPECIFIC, REAL products that actually exist on Amazon UK. Use exact product names and real brands.
-For productUrl use: "https://www.amazon.co.uk/s?k=EXACT+BRAND+AND+FULL+PRODUCT+NAME&tag=woodybruce-21"
-The search term must be specific enough to find the exact product (e.g. "Lelo+Sona+2+Cruise+Clitoral+Stimulator" or "Yankee+Candle+Wedding+Day+Large+Jar").
-Do NOT use generic search terms. Always use the full brand + product name so the search returns the exact item.
-The affiliate tag must always be "woodybruce-21".
+For asin: provide the real Amazon UK ASIN (10-character code starting with B, e.g. "B07MX6212N"). This MUST be a real ASIN. If unsure, leave empty.
 Use realistic GBP prices, short descriptions (max 60 chars).
 For imageKeyword: provide a single concrete noun for an Unsplash photo (e.g. "candles", "wine", "map", "massage oil", "board game").
 Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Games, Home, Books, Stationery, Dining.`,
@@ -1227,11 +1234,10 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
                         description: { type: "string" },
                         category: { type: "string" },
                         emoji: { type: "string" },
-                        affiliateTag: { type: "string" },
+                        asin: { type: "string", description: "Amazon UK ASIN (10-char code starting with B)" },
                         imageKeyword: { type: "string", description: "Simple noun/phrase for Unsplash photo" },
-                        productUrl: { type: "string" },
                       },
-                      required: ["name", "brand", "price", "description", "category", "emoji", "affiliateTag", "imageKeyword", "productUrl"],
+                      required: ["name", "brand", "price", "description", "category", "emoji", "asin", "imageKeyword"],
                       additionalProperties: false,
                     },
                   },
@@ -1253,7 +1259,11 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
         throw new Error("No tool call response from AI");
       }
 
-      const enriched = (products || []).map((p: any) => ({ ...p }));
+      const enriched = (products || []).map((p: any) => ({
+        ...p,
+        productUrl: buildAmazonUrl(p.asin, p.name),
+        affiliateTag: AMAZON_TAG,
+      }));
       res.json({ products: enriched });
     } catch (e: any) {
       console.error("suggest-products error:", e);
@@ -1987,10 +1997,10 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
         ? `You are a shopping & experience advisor for couples.
 Return a JSON object with an "items" array of 4-6 results.
 Each item MUST have: name (string), description (string, 1-2 sentences), category (string), emoji (string), type (one of "product","experience","travel").
-For products also include: price (string like "£29.99"), brand (string), amazonSearchUrl (a full amazon.co.uk search URL for the product).
-For experiences also include: price (string), venue (string), city (string), duration (string).
+For products also include: price (string like "£29.99"), brand (string), asin (the 10-character Amazon UK ASIN starting with B — must be real; leave empty if unsure).
+For experiences also include: price (string), venue (string), city (string), duration (string), asin (Amazon UK ASIN if the experience is sold on Amazon, empty otherwise).
 For travel also include: destination (string), country (string), price (string), duration (string).
-Focus on items available to buy on Amazon UK or experiences in the UK.`
+Focus on items available to buy on Amazon UK or experiences in the UK. Use REAL product ASINs from Amazon UK.`
         : `You are a relationship media curator.
 Return a JSON object with an "items" array of 4-6 results.
 Each item MUST have: name (string), description (string, 1-2 sentences), category (string), emoji (string), type (one of "article","podcast","video","quote").
@@ -2016,7 +2026,14 @@ Focus on real, existing content about relationships, dating, couples, love, and 
         return res.status(500).json({ error: "Failed to parse AI response" });
       }
 
-      res.json({ items: parsed.items || [] });
+      const items = (parsed.items || []).map((item: any) => {
+        if ((item.type === "product" || item.type === "experience") && (item.asin || item.name)) {
+          item.amazonSearchUrl = buildAmazonUrl(item.asin, item.name);
+        }
+        return item;
+      });
+
+      res.json({ items });
     } catch (e: any) {
       console.error("AI search error:", e.message);
       if (e.status === 429) return res.status(429).json({ error: "Rate limited, try again shortly" });

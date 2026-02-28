@@ -191,6 +191,17 @@ const DiscoverTogether = () => {
   }, []);
 
 
+  useEffect(() => {
+    const v = localStorage.getItem("disc-cache-v");
+    if (v !== "2") {
+      ["disc-experiences", "disc-intimacy", "disc-travel"].forEach(k => localStorage.removeItem(k));
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("disc-products-")) localStorage.removeItem(k);
+      }
+      localStorage.setItem("disc-cache-v", "2");
+    }
+  }, []);
   useEffect(() => { if (activeTab === "experiences" && !loaded.experiences) fetchExperiences(); }, [activeTab]);
   useEffect(() => { if (activeTab === "products" && !loaded.products) fetchProducts(productCat); }, [activeTab]);
   useEffect(() => { if (activeTab === "intimacy" && !loaded.intimacy) fetchIntimacy(); }, [activeTab]);
