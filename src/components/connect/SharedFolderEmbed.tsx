@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, ExternalLink, Trash2, FolderOpen, Link2, X, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface EmbeddedFolder {
   id: string;
@@ -11,7 +13,7 @@ interface EmbeddedFolder {
   provider: string;
 }
 
-const STORAGE_KEY = "shared-folder-embeds";
+const GAME_TYPE = "shared_folder_embeds";
 
 /** Convert a share URL into an embeddable iframe URL */
 function toEmbedUrl(url: string): string | null {
@@ -63,28 +65,52 @@ function detectProvider(url: string): string {
 }
 
 const SharedFolderEmbed = () => {
+  const { user } = useAuth();
   const [folders, setFolders] = useState<EmbeddedFolder[]>([]);
+  const [rowId, setRowId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [newUrl, setNewUrl] = useState("");
   const [newLabel, setNewLabel] = useState("");
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const existing: EmbeddedFolder[] = JSON.parse(stored);
-      const updated = existing.map((f) => ({
-        ...f,
-        embedUrl: toEmbedUrl(f.url) || f.embedUrl,
-      }));
-      save(updated);
-      setFolders(updated);
-    }
-  }, []);
+    if (!user) return;
+    supabase
+      .from("shared_lists")
+      .select("id, score_data")
+      .eq("game_type", GAME_TYPE)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data: row }) => {
+        if (row) {
+          setRowId(row.id);
+          const sd = row.score_data as any;
+          if (Array.isArray(sd?.folders)) {
+            const updated = sd.folders.map((f: any) => ({
+              ...f,
+              embedUrl: toEmbedUrl(f.url) || f.embedUrl,
+            }));
+            setFolders(updated);
+          }
+        }
+      });
+  }, [user]);
 
-  const save = (next: EmbeddedFolder[]) => {
+  const save = async (next: EmbeddedFolder[]) => {
     setFolders(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    if (!user) return;
+    const payload = { folders: next } as any;
+    if (rowId) {
+      await supabase.from("shared_lists").update({ score_data: payload }).eq("id", rowId);
+    } else {
+      const { data: row } = await supabase.from("shared_lists").insert({
+        user_id: user.id,
+        game_type: GAME_TYPE,
+        name: "Shared Folders",
+        score_data: payload,
+      } as any).select("id").single();
+      if (row) setRowId(row.id);
+    }
   };
 
   const addFolder = () => {

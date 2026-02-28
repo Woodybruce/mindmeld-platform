@@ -138,18 +138,21 @@ const RecentActivityWidget = () => {
         });
       });
 
-      // Local lists changes
-      const stored = localStorage.getItem("userLists");
-      if (stored) {
+      // Shared lists from Supabase
+      const { data: recentLists } = await supabase
+        .from("shared_lists")
+        .select("id, name, created_at")
+        .order("created_at", { ascending: false })
+        .limit(2);
+      if (recentLists) {
         try {
-          const lists = JSON.parse(stored);
-          lists.slice(0, 2).forEach((l: any) => {
+          recentLists.forEach((l: any) => {
             items.push({
               id: `list-${l.id}`,
               type: "list",
               label: "List updated",
               detail: l.name,
-              time: new Date(l.createdAt || Date.now()),
+              time: new Date(l.created_at || Date.now()),
               route: "/us?tab=lists",
               icon: iconMap.list,
               color: colorMap.list,

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Plus, X, Check, Lock, ExternalLink, CheckCircle2, MoreHorizontal, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CheckItem {
   id: string;
@@ -30,7 +32,7 @@ interface SexListData {
   ideas: LinkItem[];
 }
 
-const STORAGE_KEY = "our-sex-list-data";
+const GAME_TYPE = "our_sex_list";
 
 const defaultData: SexListData = {
   goodSexLife: [
@@ -79,6 +81,8 @@ const uid = () => crypto.randomUUID().slice(0, 8);
 
 const OurSexList = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [rowId, setRowId] = useState<string | null>(null);
   const [data, setData] = useState<SexListData>(defaultData);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newText, setNewText] = useState("");
@@ -86,16 +90,36 @@ const OurSexList = () => {
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setData({ ...defaultData, ...parsed });
-    }
-  }, []);
+    if (!user) return;
+    supabase
+      .from("shared_lists")
+      .select("id, score_data")
+      .eq("game_type", GAME_TYPE)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data: row }) => {
+        if (row) {
+          setRowId(row.id);
+          const sd = row.score_data as any;
+          if (sd?.goodSexLife) setData({ ...defaultData, ...sd } as SexListData);
+        }
+      });
+  }, [user]);
 
-  const save = (next: SexListData) => {
+  const save = async (next: SexListData) => {
     setData(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    if (!user) return;
+    if (rowId) {
+      await supabase.from("shared_lists").update({ score_data: next as any }).eq("id", rowId);
+    } else {
+      const { data: row } = await supabase.from("shared_lists").insert({
+        user_id: user.id,
+        game_type: GAME_TYPE,
+        name: "Our Sex List",
+        score_data: next as any,
+      } as any).select("id").single();
+      if (row) setRowId(row.id);
+    }
   };
 
   const toggleCheck = (section: "goodSexLife" | "motivations" | "hitPriorities", id: string) => {

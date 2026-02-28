@@ -288,19 +288,20 @@ const Chat = () => {
     });
   };
 
-  const handleSavePollToList = useCallback((question: string, options: string[]) => {
-    const stored = localStorage.getItem("us-shared-lists");
-    const lists = stored ? JSON.parse(stored) : [];
-    const newList = {
-      id: Date.now().toString(),
-      name: question,
-      icon: "📊",
-      createdAt: new Date().toISOString(),
-      items: options.map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false })),
-    };
-    const updated = [newList, ...lists];
-    localStorage.setItem("us-shared-lists", JSON.stringify(updated));
-  }, []);
+  const handleSavePollToList = useCallback(async (question: string, options: string[]) => {
+    if (!user) return;
+    try {
+      await supabase.from("shared_lists").insert({
+        user_id: user.id,
+        name: question,
+        icon: "📊",
+        items: options.map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false })),
+      } as any);
+      toast.success("Saved to lists!");
+    } catch (e) {
+      toast.error("Failed to save to lists");
+    }
+  }, [user]);
 
   const handleSaveEventToCalendar = useCallback(async (event: { title: string; date: string; time?: string; location?: string }) => {
     try {
