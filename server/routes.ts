@@ -1308,6 +1308,13 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
       };
 
       if (mode === "import" && Array.isArray(body.events)) {
+        const { data: profileData } = await admin
+          .from("profiles")
+          .select("partner_id")
+          .eq("id", user.id)
+          .maybeSingle();
+        const partnerId = profileData?.partner_id || null;
+
         const rows = body.events.map((e: any) => ({
           user_id: user.id,
           subject: (e.subject || "Untitled").trim(),
@@ -1316,6 +1323,7 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
           is_all_day: e.is_all_day || false,
           location: e.location || null,
           source: "outlook",
+          partner_invited: !!e.partner_invited,
         }));
 
         const { data: existing } = await admin
@@ -1334,8 +1342,23 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
 
         let insertedCount = 0;
         for (const row of newRows) {
-          const { error: insertError } = await admin.from("calendar_events").insert(row);
+          const { partner_invited, ...insertRow } = row;
+          const { error: insertError } = await admin.from("calendar_events").insert(insertRow);
           if (!insertError) insertedCount++;
+
+          if (partner_invited && partnerId) {
+            const partnerRow = { ...insertRow, user_id: partnerId, source: "outlook-shared" };
+            const { data: partnerExisting } = await admin
+              .from("calendar_events")
+              .select("id")
+              .eq("user_id", partnerId)
+              .eq("subject", partnerRow.subject)
+              .eq("start_time", partnerRow.start_time)
+              .maybeSingle();
+            if (!partnerExisting) {
+              await admin.from("calendar_events").insert(partnerRow);
+            }
+          }
         }
 
         return res.json({ success: true, count: insertedCount });

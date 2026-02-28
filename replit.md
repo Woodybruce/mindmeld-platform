@@ -121,6 +121,11 @@ All routes are defined in `server/routes.ts`:
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes
+- 2026-02-28: Outlook calendar auto-sync with shared events
+  - `useOutlookAutoSync` hook runs on home page load, syncs every 15 minutes
+  - Automatically fetches Outlook calendar events and imports new ones
+  - Shared events (where partner is invited) are automatically added to partner's calendar too (source: "outlook-shared")
+  - Increased Express JSON body limit to 5MB to handle large calendar payloads
 - 2026-02-25: Web Push notifications + bug fixes
   - Added Web Push API support (works in browser even when tab is closed)
   - VAPID keys generated and configured for web push

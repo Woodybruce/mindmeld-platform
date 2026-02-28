@@ -39,9 +39,16 @@ export function useOutlookAutoSync(onSynced?: () => void) {
         if (result.error) return;
 
         const events = result.events || [];
-        const toImport = events.filter(
-          (e: any) => !e.already_imported
-        );
+        const toImport = events
+          .filter((e: any) => !e.already_imported)
+          .map((e: any) => ({
+            subject: e.subject,
+            start_time: e.start_time,
+            end_time: e.end_time,
+            is_all_day: e.is_all_day,
+            location: e.location,
+            partner_invited: e.partner_invited,
+          }));
 
         if (toImport.length > 0) {
           await fetch("/api/sync-outlook-calendar", {
