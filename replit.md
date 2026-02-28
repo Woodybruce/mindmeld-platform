@@ -139,14 +139,19 @@ All routes are defined in `server/routes.ts`:
   - Quotes tab: inspirational relationship quotes with gradient cards
   - New API routes: `/api/curated-podcasts`, `/api/curated-videos`, `/api/curated-quotes`
   - Each tab has its own caching, like/heart support, and refresh
-- 2026-02-28: Discover Together shop with curated Amazon products
+- 2026-02-28: Discover Together shop with curated products
   - `useShopProducts` hook stores curated products in `shared_lists` table as `__shop_products__` JSON items array
   - Admin page (AdminFeedContent.tsx) has "Shop Products" tab to add/edit/remove products
   - Affiliate tag `woodybruce-21` auto-applied to all Amazon URLs
-  - Default "Our Picks" tab on Discover Together shows curated products with orange "Buy on Amazon" button
+  - Default "Our Picks" tab shows curated products (Amazon + Coco de Mer) with context-aware buttons
   - Category filtering: All, Date Night, Gifts, Wellness, Games, Intimacy, Experiences
   - Auto-seeds 8 default products if none exist on first load
   - Other Discover Together tabs (Date Night, Gifts, Intimacy, Travel) remain AI-powered
+  - **Coco de Mer integration**: Intimacy tab always includes 2 Coco de Mer products (from `COCO_DE_MER_PRODUCTS` array) mixed with 2 AI-suggested Amazon items
+  - `COCO_DE_MER_PRODUCTS` array in `server/routes.ts` contains 9 real products with direct URLs
+  - Coco de Mer URLs preserved as-is (not converted to Amazon search); Amazon `/dp/` links converted to search URLs
+  - Product buttons styled by source: black "Shop Coco de Mer" vs orange "Buy on Amazon"
+  - All Amazon product links use search URLs (`/s?k=...&tag=affiliate`) — direct `/dp/` links don't work from server IPs
 - 2026-02-28: Outlook calendar auto-sync with shared events
   - `useOutlookAutoSync` hook runs on home page load, syncs every 15 minutes
   - Automatically fetches Outlook calendar events and imports new ones

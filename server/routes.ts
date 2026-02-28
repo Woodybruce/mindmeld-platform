@@ -114,12 +114,19 @@ const CURATED_QUOTES = [
   { text: "The couples that are meant to be are the ones who go through everything that is meant to tear them apart and come out even stronger.", author: "Unknown", category: "Resilience" },
 ];
 
-const FALLBACK_PRODUCTS = [
-  { name: "Couples Massage Oil Gift Set", brand: "Intimate Earth", price: "\u00A324.99", description: "Sensual massage oils for two", category: "Massage", emoji: "\u{1F486}", affiliateTag: "massage-oil-set", productUrl: "https://www.amazon.co.uk/s?k=couples+massage+oil+gift+set&tag=woodybruce-21" },
-  { name: "Couples Intimacy Card Game", brand: "Lovehoney", price: "\u00A314.99", description: "50 fun dares and questions for couples", category: "Games", emoji: "\u{1F0CF}", affiliateTag: "couples-game", productUrl: "https://www.amazon.co.uk/s?k=couples+intimacy+card+game&tag=woodybruce-21" },
-  { name: "Silk Chemise Lingerie Set", brand: "Bluebella", price: "\u00A339.99", description: "Elegant silk-feel lingerie for her", category: "Lingerie", emoji: "\u{1F338}", affiliateTag: "silk-lingerie", productUrl: "https://www.amazon.co.uk/s?k=silk+chemise+lingerie+set&tag=woodybruce-21" },
-  { name: "Scented Massage Candle", brand: "Jimmyjane", price: "\u00A328.00", description: "Melts into warm massage oil", category: "Candles", emoji: "\u{1F56F}\uFE0F", affiliateTag: "massage-candle", productUrl: "https://www.amazon.co.uk/s?k=scented+massage+candle+couples&tag=woodybruce-21" },
+const COCO_DE_MER_PRODUCTS = [
+  { name: "Roseravished Massage Oil", brand: "Coco de Mer", price: "\u00A345.00", description: "Luxurious rose-scented sensual massage oil", category: "Massage", emoji: "\u{1F339}", affiliateTag: "cdm-massage-oil", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-roseravished-massage-oil-100ml" },
+  { name: "Enraptured Figment Massage Candle", brand: "Coco de Mer", price: "\u00A350.00", description: "Melts into warm sensual massage oil", category: "Candles", emoji: "\u{1F56F}\uFE0F", affiliateTag: "cdm-massage-candle", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-enraptured-figment-massage-candle-200g" },
+  { name: "Pure Delight Orgasm Balm", brand: "Coco de Mer", price: "\u00A330.00", description: "Heighten sensation & pleasure for couples", category: "Accessories", emoji: "\u2728", affiliateTag: "cdm-orgasm-balm", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-pure-delight-orgasm-balm-20g" },
+  { name: "Silk Blindfold", brand: "Coco de Mer", price: "\u00A385.00", description: "Luxury silk blindfold for sensory play", category: "Bondage", emoji: "\u{1F3AD}", affiliateTag: "cdm-blindfold", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-blindfold" },
+  { name: "Roseravished Massage Candle", brand: "Coco de Mer", price: "\u00A350.00", description: "Rose-scented candle melts into massage oil", category: "Candles", emoji: "\u{1F339}", affiliateTag: "cdm-rose-candle", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-roseravished-massage-candle-200g" },
+  { name: "Enraptured Figment Massage Oil", brand: "Coco de Mer", price: "\u00A345.00", description: "Sultry figment-scented sensual massage oil", category: "Massage", emoji: "\u2728", affiliateTag: "cdm-figment-oil", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-enraptured-figment-massage-oil-100ml" },
+  { name: "Celeste Quarter Cup Bra", brand: "Coco de Mer", price: "\u00A3195.00", description: "Luxury hand-crafted lace lingerie", category: "Lingerie", emoji: "\u{1F338}", affiliateTag: "cdm-celeste-bra", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-celeste-quarter-cup-bra" },
+  { name: "Reina Playsuit", brand: "Coco de Mer", price: "\u00A3385.00", description: "Exquisite silk & lace bodysuit", category: "Lingerie", emoji: "\u{1F48E}", affiliateTag: "cdm-reina-playsuit", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-reina-playsuit" },
+  { name: "Divine Glow Aqua Lubricant", brand: "Coco de Mer", price: "\u00A335.00", description: "Premium water-based intimate lubricant", category: "Accessories", emoji: "\u{1F4A7}", affiliateTag: "cdm-lubricant", productUrl: "https://www.coco-de-mer.com/products/coco-de-mer-divine-glow-aqua-lubricant-100ml" },
 ];
+
+const FALLBACK_PRODUCTS = COCO_DE_MER_PRODUCTS.slice(0, 4);
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -1120,16 +1127,13 @@ Keep descriptions under 60 chars.`,
         [
           {
             role: "system",
-            content: `You are a product recommender for a couples wellness app. Suggest 4 romantic and intimate products on Amazon UK.
-Include: couples massage oils, candles, bath sets, card games, lingerie, massage candles, couples vibrators, sensual gift sets.
-You MUST suggest REAL, SPECIFIC products that actually exist on Amazon UK. Use the exact brand name and full product title.
-For asin: provide the real Amazon UK ASIN (the 10-character code starting with B, e.g. "B07MX6212N"). This MUST be a real ASIN. If you are not sure, leave it empty.
-For imageSearchTerm: provide a 3-5 word Amazon search that would find a real photo of this product.
-Keep descriptions under 60 chars.`,
+            content: `You are a product recommender for a couples wellness app. Suggest 2 romantic and intimate products available on Amazon UK.
+Include: couples card games, bath sets, massage oils, scented candles, vibrators, sensual gift sets.
+Use exact brand names and real product titles. Keep descriptions under 60 chars. Leave productUrl empty.`,
           },
           {
             role: "user",
-            content: `Suggest 4 couples intimate and romantic products for Amazon UK. Include at least one couples vibrator or massager.`,
+            content: `Suggest 2 couples intimate/romantic products from Amazon UK. Mix categories (e.g. one game/accessory and one wellness/sensual item).`,
           },
         ],
         [
@@ -1137,7 +1141,7 @@ Keep descriptions under 60 chars.`,
             type: "function",
             function: {
               name: "suggest_intimacy",
-              description: "Return 4 couples intimacy product suggestions",
+              description: "Return 2 couples intimacy product suggestions from Amazon UK",
               parameters: {
                 type: "object",
                 properties: {
@@ -1152,10 +1156,10 @@ Keep descriptions under 60 chars.`,
                         description: { type: "string" },
                         category: { type: "string", enum: ["Massage", "Candles", "Games", "Lingerie", "Bath", "Toys", "Accessories", "Vibrators", "Bondage"] },
                         emoji: { type: "string" },
-                        asin: { type: "string", description: "Amazon UK ASIN (10-char code starting with B)" },
+                        productUrl: { type: "string", description: "Full product URL for Coco de Mer items (e.g. https://www.coco-de-mer.com/products/...). Leave empty for Amazon products." },
                         imageSearchTerm: { type: "string" },
                       },
-                      required: ["name", "brand", "price", "description", "category", "emoji", "asin", "imageSearchTerm"],
+                      required: ["name", "brand", "price", "description", "category", "emoji", "productUrl", "imageSearchTerm"],
                       additionalProperties: false,
                     },
                   },
@@ -1170,19 +1174,29 @@ Keep descriptions under 60 chars.`,
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-      let products;
+      let aiProducts: any[] = [];
       if (toolCall?.function?.arguments) {
-        products = JSON.parse(toolCall.function.arguments).products;
-      } else {
-        products = FALLBACK_PRODUCTS;
+        aiProducts = JSON.parse(toolCall.function.arguments).products || [];
       }
 
-      if (!products?.length) products = FALLBACK_PRODUCTS;
+      const cdmPicks = shuffle(COCO_DE_MER_PRODUCTS).slice(0, 2);
+      let amazonItems = aiProducts.filter((p: any) => !p.productUrl?.includes("coco-de-mer.com")).slice(0, 2);
+      if (amazonItems.length < 2) {
+        amazonItems = [
+          ...amazonItems,
+          { name: "Couples Intimacy Card Game", brand: "Lovehoney", price: "\u00A314.99", description: "50 fun dares and questions for couples", category: "Games", emoji: "\u{1F0CF}", imageSearchTerm: "couples intimacy card game" },
+          { name: "Couples Massage Candle", brand: "Jimmyjane", price: "\u00A328.00", description: "Melts into warm massage oil", category: "Candles", emoji: "\u{1F56F}\uFE0F", imageSearchTerm: "massage candle couples" },
+        ].slice(0, 2 - amazonItems.length);
+      }
+      const mixed = shuffle([...cdmPicks, ...amazonItems]);
 
-      const enriched = await Promise.all(products.map(async (p: any) => {
+      const enriched = await Promise.all(mixed.map(async (p: any) => {
         const searchTerm = p.imageSearchTerm || `${p.name} ${p.brand}`;
         const imageUrl = await fetchAmazonProductImage(searchTerm);
-        return { ...p, productUrl: buildAmazonUrl(p.name), affiliateTag: AMAZON_TAG, imageUrl };
+        const url = (p.productUrl && p.productUrl.includes("coco-de-mer.com"))
+          ? p.productUrl
+          : buildAmazonUrl(p.name);
+        return { ...p, productUrl: url, affiliateTag: AMAZON_TAG, imageUrl };
       }));
 
       res.json({ products: enriched });

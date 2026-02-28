@@ -21,6 +21,7 @@ const ensureAffiliateTag = (url: string, productName?: string): string => {
   if (!url) return "";
   try {
     const u = new URL(url);
+    if (u.hostname.includes("coco-de-mer.com")) return url;
     if (u.hostname.includes("amazon")) {
       if (u.pathname.includes("/dp/") || u.pathname.includes("/gp/")) {
         return `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || "couples gift")}&tag=${AMAZON_TAG}`;
@@ -98,13 +99,13 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     active: true,
   },
   {
-    name: "Massage Oil Gift Set for Couples",
-    brand: "Puressentiel",
-    price: "£18.99",
-    description: "Relaxing massage oils set — lavender, ylang ylang & more for couple's massage",
+    name: "Roseravished Massage Candle",
+    brand: "Coco de Mer",
+    price: "£50.00",
+    description: "Luxury candle that melts into sensual warm massage oil — romantic evenings in",
     category: "Intimacy",
-    imageUrl: "https://m.media-amazon.com/images/I/61Ry3mxZURL._AC_SL1000_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/s?k=Massage+Oil+Gift+Set+Couples&tag=woodybruce-21",
+    imageUrl: "https://www.coco-de-mer.com/cdn/shop/files/Candle_CdM_PINK_Lit.jpg",
+    amazonUrl: "https://www.coco-de-mer.com/products/coco-de-mer-roseravished-massage-candle-200g",
     active: true,
   },
   {
