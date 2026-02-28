@@ -106,7 +106,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
             recipientUserId: partnerId,
             title: `${emoji} ${label}!`,
             body: `${profile.username || "Your partner"} sent you a ${label.toLowerCase()}!`,
-            data: { type: "vibe", emoji, label },
+            data: { type: "vibe", emoji, label, route: "/" },
           },
         });
       } catch (e) {

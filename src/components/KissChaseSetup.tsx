@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import { MapPin, Heart, Timer, Trophy, ArrowLeft, Zap, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { apiInvoke } from "@/lib/api";
+import { notifyPartner } from "@/lib/notifyPartner";
 import { toast } from "sonner";
 
 const rewardOptions = [
@@ -47,43 +46,19 @@ const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupP
       return;
     }
 
-    // Send both a chat message AND push notification for reliability
-    try {
-      // Chat message so partner sees it in-app
-      await supabase.from("messages").insert({
-        sender_id: user.id,
-        receiver_id: profile.partner_id,
-        content: "💋 I've started a Kiss Chase game! Open the app and join me! 🏃‍♂️",
-        message_type: "text",
-      } as any);
-    } catch (e) {
-      console.warn("Chat message failed:", e);
-    }
+    const displayName = profile.username || "Your partner";
 
-    // Push notification for when app is closed
     try {
-      const { data: pushResult, error: pushError } = await apiInvoke("send-push-notification", {
-        body: {
-          recipientUserId: profile.partner_id,
-          title: "💋 Kiss Chase!",
-          body: `${profile.username || "Your partner"} wants to play Kiss Chase! Tap to join.`,
-          data: { route: "/kiss-chase" },
-        },
+      await notifyPartner({
+        partnerId: profile.partner_id,
+        title: "💋 Kiss Chase!",
+        body: `${displayName} wants to play Kiss Chase! Tap to join.`,
+        route: "/kiss-chase",
       });
-
-      if (pushError) {
-        console.warn("Push notification error:", pushError);
-        toast.success("Invite sent via chat! (Push notification unavailable)");
-      } else if (pushResult?.sent === 0) {
-        toast.success("Invite sent via chat! Tell your partner to open the app 💋");
-      } else {
-        toast.success("Invite sent to your partner! 💋");
-      }
+      toast.success("Invite sent to your partner! 💋");
     } catch (e) {
-      console.warn("Push notification failed:", e);
-      toast.success("Invite sent via chat! 💋");
+      toast.success("Tell your partner to open the app! 💋");
     }
-
     setInviteSent(true);
   };
 
