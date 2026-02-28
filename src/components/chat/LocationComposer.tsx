@@ -102,7 +102,7 @@ const LocationComposer = ({ open, onClose, onSend }: LocationComposerProps) => {
         <div className="flex gap-1 p-1 bg-secondary/60 rounded-xl">
           <button
             onClick={() => { setTab("current"); setError(""); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[11px] font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[13px] font-semibold transition-all ${
               tab === "current" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
             }`}
           >
@@ -110,7 +110,7 @@ const LocationComposer = ({ open, onClose, onSend }: LocationComposerProps) => {
           </button>
           <button
             onClick={() => { setTab("live"); setError(""); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[11px] font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[13px] font-semibold transition-all ${
               tab === "live" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
             }`}
           >
@@ -133,7 +133,7 @@ const LocationComposer = ({ open, onClose, onSend }: LocationComposerProps) => {
                     placeholder="Location label"
                     className="w-full bg-transparent text-[14px] font-medium text-foreground outline-none placeholder:text-muted-foreground/50"
                   />
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Send your current GPS pin</p>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">Send your current GPS pin</p>
                 </div>
               </div>
 
@@ -153,13 +153,13 @@ const LocationComposer = ({ open, onClose, onSend }: LocationComposerProps) => {
                 </div>
                 <div className="flex-1">
                   <p className="text-[14px] font-medium text-foreground">Live Location</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Share your real-time movement</p>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">Share your real-time movement</p>
                 </div>
               </div>
 
               {/* Duration picker */}
               <div className="space-y-2">
-                <p className="text-[12px] font-medium text-muted-foreground flex items-center gap-1.5">
+                <p className="text-[14px] font-medium text-muted-foreground flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" /> Share for
                 </p>
                 <div className="flex gap-2">
@@ -167,7 +167,7 @@ const LocationComposer = ({ open, onClose, onSend }: LocationComposerProps) => {
                     <button
                       key={d.value}
                       onClick={() => setLiveDuration(d.value)}
-                      className={`flex-1 py-2.5 rounded-xl text-[11px] font-semibold transition-all border ${
+                      className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all border ${
                         liveDuration === d.value
                           ? "bg-[hsl(var(--us-sage))]/15 border-[hsl(var(--us-sage))]/40 text-[hsl(var(--us-sage))]"
                           : "bg-secondary/40 border-border/30 text-muted-foreground"

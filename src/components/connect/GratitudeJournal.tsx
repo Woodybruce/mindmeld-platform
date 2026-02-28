@@ -64,7 +64,7 @@ const GratitudeJournal = () => {
         <div className="flex items-start gap-2.5">
           <Sparkles className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-[11px] font-semibold text-primary uppercase tracking-wider mb-1">Daily Love Tip</p>
+            <p className="text-[13px] font-semibold text-primary uppercase tracking-wider mb-1">Daily Love Tip</p>
             <p className="text-sm text-foreground leading-relaxed">
               {randomInspiration.emoji} {randomInspiration.text}
             </p>
@@ -83,7 +83,7 @@ const GratitudeJournal = () => {
         <div className="flex items-start gap-2.5">
           <Quote className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Real Story</p>
+            <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Real Story</p>
             <p className="text-sm text-foreground/80 leading-relaxed italic">
               "{randomStory.story}"
             </p>
@@ -124,9 +124,9 @@ const GratitudeJournal = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground">{entry.text}</p>
                 <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-[11px] text-muted-foreground">{entry.author}</span>
-                  <span className="text-[11px] text-muted-foreground">·</span>
-                  <span className="text-[11px] text-muted-foreground">{entry.date}</span>
+                  <span className="text-[13px] text-muted-foreground">{entry.author}</span>
+                  <span className="text-[13px] text-muted-foreground">·</span>
+                  <span className="text-[13px] text-muted-foreground">{entry.date}</span>
                 </div>
               </div>
             </div>

@@ -147,7 +147,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
                   transition={{ duration: 0.15 }}
                   className="absolute right-0 top-full mt-2 z-50 rounded-2xl border border-border bg-card shadow-lg p-2 w-48"
                 >
-                  <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1">Send a vibe</p>
+                  <p className="text-[14px] font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1">Send a vibe</p>
                   <div className="grid grid-cols-3 gap-1">
                     {vibes.map((v) => (
                       <button
@@ -156,7 +156,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
                         className="flex flex-col items-center gap-0.5 rounded-xl py-2 px-1 hover:bg-accent/50 active:scale-95 transition-all"
                       >
                         <span className="text-xl">{v.emoji}</span>
-                        <span className="text-[11px] font-medium text-muted-foreground">{v.label}</span>
+                        <span className="text-[13px] font-medium text-muted-foreground">{v.label}</span>
                       </button>
                     ))}
                   </div>
@@ -192,7 +192,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
                     {unreadCount > 0 && (
                       <button
                         onClick={handleMarkAllRead}
-                        className="flex items-center gap-1 text-[12px] font-medium text-primary hover:text-primary/80 transition-colors"
+                        className="flex items-center gap-1 text-[14px] font-medium text-primary hover:text-primary/80 transition-colors"
                       >
                         <CheckCheck className="w-3 h-3" />
                         Mark all read
@@ -223,10 +223,10 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
                             <p className={`text-xs leading-tight ${!n.read ? "font-semibold text-foreground" : "text-foreground/80"}`}>
                               {n.title}
                             </p>
-                            <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-2">
+                            <p className="text-[14px] text-muted-foreground mt-0.5 line-clamp-2">
                               {n.body}
                             </p>
-                            <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                            <p className="text-[13px] text-muted-foreground/70 mt-0.5">
                               {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                             </p>
                           </div>

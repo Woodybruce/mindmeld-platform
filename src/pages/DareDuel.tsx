@@ -190,7 +190,7 @@ const DareDuel = () => {
                 >
                   <p className="text-xs text-muted-foreground font-medium">{p}</p>
                   <p className="font-display text-2xl font-bold text-foreground">{scores[p]}</p>
-                  <p className="text-[12px] text-muted-foreground">pts</p>
+                  <p className="text-[14px] text-muted-foreground">pts</p>
                 </div>
               ))}
             </div>
@@ -321,7 +321,7 @@ const DareDuel = () => {
                   {winner === p && <Trophy className="w-5 h-5 mx-auto text-us-gold mb-1" />}
                   <p className="text-xs text-muted-foreground font-medium">{p}</p>
                   <p className="font-display text-3xl font-bold text-foreground">{scores[p]}</p>
-                  <p className="text-[12px] text-muted-foreground">points</p>
+                  <p className="text-[14px] text-muted-foreground">points</p>
                 </div>
               ))}
             </div>

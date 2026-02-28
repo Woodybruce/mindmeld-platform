@@ -140,7 +140,7 @@ const OurChallenges = () => {
           </button>
           <div className="flex-1">
             <h1 className="font-display text-lg font-bold text-foreground">Our Challenges</h1>
-            <p className="text-[11px] text-muted-foreground">Honest growth, together</p>
+            <p className="text-[13px] text-muted-foreground">Honest growth, together</p>
           </div>
           <Shield className="w-4 h-4 text-muted-foreground" />
         </div>
@@ -216,7 +216,7 @@ const OurChallenges = () => {
               <span className="text-lg">💪</span>
               <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">What we are doing to solve them</h2>
             </div>
-            <span className="text-[11px] text-muted-foreground">{doneCount}/{data.solutions.length}</span>
+            <span className="text-[13px] text-muted-foreground">{doneCount}/{data.solutions.length}</span>
           </div>
           <div className="space-y-2">
             {data.solutions.map((s, i) => (

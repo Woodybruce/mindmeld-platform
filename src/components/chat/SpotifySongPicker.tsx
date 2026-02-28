@@ -124,8 +124,8 @@ const SpotifySongPicker = ({ open, onClose, onSend }: SpotifySongPickerProps) =>
               >
                 {track.albumArt && <img src={track.albumArt} alt="" className="w-11 h-11 rounded-lg shadow-sm flex-shrink-0" />}
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold truncate">{track.name}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{track.artist} · {track.album}</p>
+                  <p className="text-[13px] font-semibold truncate">{track.name}</p>
+                  <p className="text-[13px] text-muted-foreground truncate">{track.artist} · {track.album}</p>
                 </div>
               </button>
             ))}

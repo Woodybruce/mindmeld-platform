@@ -106,13 +106,13 @@ const SetupPrompts = () => {
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <div>
           <h3 className="font-display text-base font-bold text-foreground">Get Started</h3>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
+          <p className="text-[13px] text-muted-foreground mt-0.5">
             Set up your shared space · {remaining.length} left
           </p>
         </div>
         <button
           onClick={dismissAll}
-          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
         >
           Dismiss
         </button>
@@ -133,7 +133,7 @@ const SetupPrompts = () => {
               <span className="text-xl">{item.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                <p className="text-[13px] text-muted-foreground">{item.description}</p>
               </div>
               <span
                 role="button"

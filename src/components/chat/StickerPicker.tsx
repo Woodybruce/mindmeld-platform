@@ -53,7 +53,7 @@ const StickerPicker = ({ open, onClose, onSelect }: StickerPickerProps) => {
         <div className="max-h-[55vh] overflow-y-auto px-5 pb-5 space-y-4">
           {STICKER_PACKS.map((pack) => (
             <div key={pack.name}>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{pack.name}</p>
+              <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{pack.name}</p>
               <div className="grid grid-cols-8 gap-1">
                 {pack.stickers.map((sticker, i) => (
                   <button

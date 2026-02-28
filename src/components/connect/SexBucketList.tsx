@@ -222,7 +222,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
           <Flame className="w-5 h-5 text-us-coral" />
           <div>
             <h3 className="font-display text-sm font-bold text-foreground">Your partner proposed!</h3>
-            <p className="text-[11px] text-muted-foreground">Pick up to 5 things you'd like to try</p>
+            <p className="text-[13px] text-muted-foreground">Pick up to 5 things you'd like to try</p>
           </div>
         </div>
 
@@ -280,7 +280,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
           <Sparkles className="w-5 h-5 text-us-gold animate-pulse" />
           <div>
             <h3 className="font-display text-sm font-bold text-foreground">Proposal sent!</h3>
-            <p className="text-[11px] text-muted-foreground">Waiting for your partner to pick their favourites…</p>
+            <p className="text-[13px] text-muted-foreground">Waiting for your partner to pick their favourites…</p>
           </div>
         </div>
         <div className="space-y-1.5">
@@ -308,7 +308,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
             <Flame className="w-5 h-5 text-us-coral" />
             <div>
               <h3 className="font-display text-sm font-bold text-foreground">Sex Bucket Challenge</h3>
-              <p className="text-[11px] text-muted-foreground">Add up to 10 things to try — your partner picks 5</p>
+              <p className="text-[13px] text-muted-foreground">Add up to 10 things to try — your partner picks 5</p>
             </div>
           </div>
           <button onClick={() => { setMode("idle"); setItems([]); }} className="p-1">
@@ -467,7 +467,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
       </div>
       <div className="text-left flex-1">
         <h3 className="font-display text-sm font-bold text-foreground">Sex Bucket Challenge</h3>
-        <p className="text-[11px] text-muted-foreground">Propose 10 things to try — your partner picks 5</p>
+        <p className="text-[13px] text-muted-foreground">Propose 10 things to try — your partner picks 5</p>
       </div>
       <Plus className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
     </motion.button>

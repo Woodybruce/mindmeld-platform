@@ -215,11 +215,11 @@ const SharedLinksWidget = ({ dbLinks, onSendLink }: SharedLinksWidgetProps) => {
                       <p className="text-xs text-muted-foreground mt-0.5 italic">"{link.note}"</p>
                     )}
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[11px] text-muted-foreground">{link.sender}</span>
-                      <span className="text-[11px] text-muted-foreground">·</span>
-                      <span className="text-[11px] text-muted-foreground">{link.platform}</span>
-                      <span className="text-[11px] text-muted-foreground">·</span>
-                      <span className="text-[11px] text-muted-foreground">{link.timeAgo}</span>
+                      <span className="text-[13px] text-muted-foreground">{link.sender}</span>
+                      <span className="text-[13px] text-muted-foreground">·</span>
+                      <span className="text-[13px] text-muted-foreground">{link.platform}</span>
+                      <span className="text-[13px] text-muted-foreground">·</span>
+                      <span className="text-[13px] text-muted-foreground">{link.timeAgo}</span>
                     </div>
                   </div>
                 </a>

@@ -121,7 +121,7 @@ const SpotifyBoard = () => {
         </div>
         <button
           onClick={() => navigate("/us?tab=lists")}
-          className="text-[12px] font-medium text-muted-foreground"
+          className="text-[14px] font-medium text-muted-foreground"
           data-testid="spotify-board-playlist-link"
         >
           Our Playlist &rarr;
@@ -137,10 +137,10 @@ const SpotifyBoard = () => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1 mb-0.5">
                 <span className="w-2 h-2 rounded-full bg-[#1DB954] animate-pulse" />
-                <span className="text-[12px] font-semibold text-[#1DB954] uppercase tracking-wider">Now Playing</span>
+                <span className="text-[14px] font-semibold text-[#1DB954] uppercase tracking-wider">Now Playing</span>
               </div>
-              <p className="text-[11px] font-semibold text-foreground truncate">{nowPlaying.track.name}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{nowPlaying.track.artist}</p>
+              <p className="text-[13px] font-semibold text-foreground truncate">{nowPlaying.track.name}</p>
+              <p className="text-[13px] text-muted-foreground truncate">{nowPlaying.track.artist}</p>
             </div>
             <button
               onClick={() => playTrack(nowPlaying.track!.id)}
@@ -155,7 +155,7 @@ const SpotifyBoard = () => {
 
       {!hasNowPlaying && recentTracks.length > 0 && (
         <div className="px-4 pb-3">
-          <p className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2">Recently Played</p>
+          <p className="text-[14px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2">Recently Played</p>
           <div className="space-y-2">
             {recentTracks.map((track, i) => (
               <div key={`${track.id}-${i}`} data-testid={`spotify-recent-${i}`}>
@@ -164,8 +164,8 @@ const SpotifyBoard = () => {
                     <img src={track.albumArt} alt="" className="w-8 h-8 rounded-md flex-shrink-0" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-semibold text-foreground truncate">{track.name}</p>
-                    <p className="text-[12px] text-muted-foreground truncate">{track.artist}</p>
+                    <p className="text-[14px] font-semibold text-foreground truncate">{track.name}</p>
+                    <p className="text-[14px] text-muted-foreground truncate">{track.artist}</p>
                   </div>
                   <button
                     onClick={() => playTrack(track.id)}
@@ -188,11 +188,11 @@ const SpotifyBoard = () => {
           </div>
           {!connected ? (
             <div className="flex-1">
-              <p className="text-[12px] text-foreground font-medium">Connect Spotify</p>
-              <a href="/api/spotify/auth" className="text-[11px] text-[#1DB954] font-semibold hover:underline">Tap to authorize &rarr;</a>
+              <p className="text-[14px] text-foreground font-medium">Connect Spotify</p>
+              <a href="/api/spotify/auth" className="text-[13px] text-[#1DB954] font-semibold hover:underline">Tap to authorize &rarr;</a>
             </div>
           ) : (
-            <p className="text-[12px] text-muted-foreground">Play something on Spotify to see it here</p>
+            <p className="text-[14px] text-muted-foreground">Play something on Spotify to see it here</p>
           )}
         </div>
       )}

@@ -81,7 +81,7 @@ const RecentChatLinksWidget = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-foreground truncate">{extractDomain(link.url)}</p>
-              <p className="text-[12px] text-muted-foreground">{link.sender} · {link.time}</p>
+              <p className="text-[14px] text-muted-foreground">{link.sender} · {link.time}</p>
             </div>
           </a>
         ))}

@@ -219,7 +219,7 @@ const SubstackFeedWidget = () => {
             {newsletters.map((n) => (
               <span
                 key={n}
-                className="inline-flex items-center gap-1 bg-orange-500/10 text-foreground text-[12px] font-medium rounded-full px-2.5 py-1"
+                className="inline-flex items-center gap-1 bg-orange-500/10 text-foreground text-[14px] font-medium rounded-full px-2.5 py-1"
               >
                 {n}
                 <button onClick={() => removeNewsletter(n)} className="hover:text-destructive">
@@ -233,7 +233,7 @@ const SubstackFeedWidget = () => {
         {/* Saved articles */}
         {savedLinks.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="text-[14px] font-bold uppercase tracking-wider text-muted-foreground">
               <Bookmark className="w-3 h-3 inline mr-1" />
               Saved Articles
             </p>
@@ -264,7 +264,7 @@ const SubstackFeedWidget = () => {
           </div>
         ) : articles.length > 0 ? (
           <div className="space-y-1.5">
-            <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="text-[14px] font-bold uppercase tracking-wider text-muted-foreground">
               <Rss className="w-3 h-3 inline mr-1" />
               Latest Posts
             </p>
@@ -286,11 +286,11 @@ const SubstackFeedWidget = () => {
                     <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-foreground line-clamp-1">{article.title}</p>
-                        <p className="text-[12px] text-muted-foreground line-clamp-2 mt-0.5">{article.description}</p>
+                        <p className="text-[14px] text-muted-foreground line-clamp-2 mt-0.5">{article.description}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[12px] text-orange-500 font-medium">{article.newsletter}</span>
+                          <span className="text-[14px] text-orange-500 font-medium">{article.newsletter}</span>
                           {article.pubDate && (
-                            <span className="text-[12px] text-muted-foreground/60">
+                            <span className="text-[14px] text-muted-foreground/60">
                               {formatDistanceToNow(new Date(article.pubDate), { addSuffix: true })}
                             </span>
                           )}

@@ -82,7 +82,7 @@ const DailyListsWidget = () => {
           <CalendarDays className="w-5 h-5 text-primary" />
           <div>
             <h3 className="font-display text-base font-bold text-foreground">{todayLabel}'s Tasks</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-[13px] text-muted-foreground mt-0.5">
               {allTodayTasks.length > 0 ? `${doneCount}/${allTodayTasks.length} done` : ""}
               {allTodayTasks.length > 0 && todayEvents.length > 0 ? " · " : ""}
               {todayEvents.length > 0 ? `${todayEvents.length} event${todayEvents.length !== 1 ? "s" : ""}` : ""}
@@ -101,7 +101,7 @@ const DailyListsWidget = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground truncate">{event.subject}</p>
-                <div className="flex items-center gap-2 text-[12px] text-muted-foreground mt-0.5">
+                <div className="flex items-center gap-2 text-[14px] text-muted-foreground mt-0.5">
                   <span>{formatEventTime(event)}</span>
                   {event.location && (
                     <span className="flex items-center gap-0.5 truncate">

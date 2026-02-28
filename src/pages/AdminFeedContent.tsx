@@ -311,7 +311,7 @@ const AdminFeedContent = () => {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[12px] font-semibold text-muted-foreground uppercase">Type</label>
+                      <label className="text-[14px] font-semibold text-muted-foreground uppercase">Type</label>
                       <select
                         value={editing.type}
                         onChange={(e) => setEditing({ ...editing, type: e.target.value })}
@@ -323,7 +323,7 @@ const AdminFeedContent = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="text-[12px] font-semibold text-muted-foreground uppercase">Size</label>
+                      <label className="text-[14px] font-semibold text-muted-foreground uppercase">Size</label>
                       <select
                         value={editing.size}
                         onChange={(e) => setEditing({ ...editing, size: e.target.value })}
@@ -337,7 +337,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 space-y-2">
-                    <p className="text-[12px] font-semibold text-primary uppercase flex items-center gap-1">
+                    <p className="text-[14px] font-semibold text-primary uppercase flex items-center gap-1">
                       <Sparkles className="w-3 h-3" /> AI Assist
                     </p>
                     <input
@@ -360,7 +360,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Title *</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Title *</label>
                     <input
                       value={editing.title}
                       onChange={(e) => setEditing({ ...editing, title: e.target.value })}
@@ -370,7 +370,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Subtitle</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Subtitle</label>
                     <input
                       value={editing.subtitle || ""}
                       onChange={(e) => setEditing({ ...editing, subtitle: e.target.value || null })}
@@ -380,7 +380,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Body *</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Body *</label>
                     <textarea
                       value={editing.body}
                       onChange={(e) => setEditing({ ...editing, body: e.target.value })}
@@ -392,7 +392,7 @@ const AdminFeedContent = () => {
 
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="text-[12px] font-semibold text-muted-foreground uppercase">Emoji</label>
+                      <label className="text-[14px] font-semibold text-muted-foreground uppercase">Emoji</label>
                       <input
                         value={editing.emoji || ""}
                         onChange={(e) => setEditing({ ...editing, emoji: e.target.value || null })}
@@ -401,7 +401,7 @@ const AdminFeedContent = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-[12px] font-semibold text-muted-foreground uppercase">Tag</label>
+                      <label className="text-[14px] font-semibold text-muted-foreground uppercase">Tag</label>
                       <input
                         value={editing.tag}
                         onChange={(e) => setEditing({ ...editing, tag: e.target.value })}
@@ -410,7 +410,7 @@ const AdminFeedContent = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-[12px] font-semibold text-muted-foreground uppercase">Color</label>
+                      <label className="text-[14px] font-semibold text-muted-foreground uppercase">Color</label>
                       <select
                         value={editing.tag_color}
                         onChange={(e) => setEditing({ ...editing, tag_color: e.target.value })}
@@ -424,7 +424,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Link (route)</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Link (route)</label>
                     <input
                       value={editing.link || ""}
                       onChange={(e) => setEditing({ ...editing, link: e.target.value || null })}
@@ -435,7 +435,7 @@ const AdminFeedContent = () => {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[12px] font-semibold text-muted-foreground uppercase">Weight (1-10)</label>
+                      <label className="text-[14px] font-semibold text-muted-foreground uppercase">Weight (1-10)</label>
                       <input
                         type="number"
                         min={1}
@@ -489,7 +489,7 @@ const AdminFeedContent = () => {
                     <span className="text-xl">{item.emoji || "📄"}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{item.title}</p>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-[13px] text-muted-foreground">
                         {item.type} · {item.size} · weight {item.weight}
                         {!item.active && " · hidden"}
                       </p>
@@ -538,7 +538,7 @@ const AdminFeedContent = () => {
             <p className="text-xs text-muted-foreground">
               {shopProducts.length} products · {shopProducts.filter(p => p.active).length} active
             </p>
-            <p className="text-[12px] text-muted-foreground/70">
+            <p className="text-[14px] text-muted-foreground/70">
               Products appear in the Discover Together shop on the home page. Paste Amazon URLs and your affiliate tag is added automatically.
             </p>
 
@@ -560,7 +560,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Product Name *</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Product Name *</label>
                     <input
                       value={editingShop.name}
                       onChange={(e) => setEditingShop({ ...editingShop, name: e.target.value })}
@@ -572,7 +572,7 @@ const AdminFeedContent = () => {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[12px] font-semibold text-muted-foreground uppercase">Brand</label>
+                      <label className="text-[14px] font-semibold text-muted-foreground uppercase">Brand</label>
                       <input
                         value={editingShop.brand}
                         onChange={(e) => setEditingShop({ ...editingShop, brand: e.target.value })}
@@ -582,7 +582,7 @@ const AdminFeedContent = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-[12px] font-semibold text-muted-foreground uppercase">Price</label>
+                      <label className="text-[14px] font-semibold text-muted-foreground uppercase">Price</label>
                       <input
                         value={editingShop.price}
                         onChange={(e) => setEditingShop({ ...editingShop, price: e.target.value })}
@@ -594,7 +594,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Category</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Category</label>
                     <select
                       value={editingShop.category}
                       onChange={(e) => setEditingShop({ ...editingShop, category: e.target.value })}
@@ -608,7 +608,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Description</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Description</label>
                     <textarea
                       value={editingShop.description}
                       onChange={(e) => setEditingShop({ ...editingShop, description: e.target.value })}
@@ -620,7 +620,7 @@ const AdminFeedContent = () => {
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Amazon URL *</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Amazon URL *</label>
                     <input
                       value={editingShop.amazonUrl}
                       onChange={(e) => setEditingShop({ ...editingShop, amazonUrl: e.target.value })}
@@ -628,11 +628,11 @@ const AdminFeedContent = () => {
                       placeholder="https://www.amazon.co.uk/dp/..."
                       data-testid="shop-product-url"
                     />
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">Your affiliate tag is added automatically</p>
+                    <p className="text-[13px] text-muted-foreground/60 mt-0.5">Your affiliate tag is added automatically</p>
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-muted-foreground uppercase">Image URL</label>
+                    <label className="text-[14px] font-semibold text-muted-foreground uppercase">Image URL</label>
                     <input
                       value={editingShop.imageUrl}
                       onChange={(e) => setEditingShop({ ...editingShop, imageUrl: e.target.value })}
@@ -640,7 +640,7 @@ const AdminFeedContent = () => {
                       placeholder="https://... (product image URL, or leave blank)"
                       data-testid="shop-product-image"
                     />
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">Tip: right-click an Amazon product image → Copy image address</p>
+                    <p className="text-[13px] text-muted-foreground/60 mt-0.5">Tip: right-click an Amazon product image → Copy image address</p>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -700,7 +700,7 @@ const AdminFeedContent = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-[13px] text-muted-foreground">
                         {product.category} · {product.price || "No price"}
                         {!product.active && " · hidden"}
                       </p>

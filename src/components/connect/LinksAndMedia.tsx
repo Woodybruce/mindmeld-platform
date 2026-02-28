@@ -93,8 +93,8 @@ const LinksAndMedia = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{link.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] text-us-gold font-medium">{link.category}</span>
-                  <span className="text-[11px] text-muted-foreground">· {link.addedBy} · {link.addedAt}</span>
+                  <span className="text-[13px] text-us-gold font-medium">{link.category}</span>
+                  <span className="text-[13px] text-muted-foreground">· {link.addedBy} · {link.addedAt}</span>
                 </div>
               </div>
               <div className="relative flex-shrink-0">

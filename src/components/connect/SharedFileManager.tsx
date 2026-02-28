@@ -271,7 +271,7 @@ const SharedFileManager = () => {
                 >
                   <FolderOpen className="w-7 h-7 text-[hsl(var(--us-gold))]" />
                   <p className="text-sm font-semibold text-foreground truncate w-full">{folder.name}</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     {count} file{count !== 1 ? "s" : ""}{subCount > 0 ? ` · ${subCount} folder${subCount !== 1 ? "s" : ""}` : ""}
                   </p>
                   <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/40" />
@@ -327,7 +327,7 @@ const SharedFileManager = () => {
                 {fileIcon(f.mime_type)}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{f.file_name}</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     {formatSize(f.file_size)} · {new Date(f.created_at).toLocaleDateString("default", { day: "numeric", month: "short" })}
                   </p>
                 </div>
@@ -436,7 +436,7 @@ const SharedFileManager = () => {
               >
                 <FolderOpen className="w-8 h-8 text-[hsl(var(--us-gold))]" />
                 <p className="text-sm font-semibold text-foreground truncate w-full">{folder.name}</p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   {count} file{count !== 1 ? "s" : ""}{subCount > 0 ? ` · ${subCount} folder${subCount !== 1 ? "s" : ""}` : ""}
                 </p>
                 <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/40" />

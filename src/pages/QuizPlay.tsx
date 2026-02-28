@@ -217,7 +217,7 @@ const QuizPlay = () => {
                   <p className="text-sm text-foreground flex-1">{item}</p>
                   <button
                     onClick={() => addToList(item)}
-                    className="flex items-center gap-1 text-[11px] text-primary font-medium hover:text-primary/80 transition-colors flex-shrink-0"
+                    className="flex items-center gap-1 text-[13px] text-primary font-medium hover:text-primary/80 transition-colors flex-shrink-0"
                   >
                     <ListPlus className="w-3.5 h-3.5" /> Add
                   </button>
@@ -253,12 +253,12 @@ const QuizPlay = () => {
           </button>
           <div className="flex-1">
             <h1 className="font-display text-sm font-bold text-foreground">{quiz.title}</h1>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Question {currentQ + 1} of {quiz.questions.length}
             </p>
           </div>
           {hasPartner && (
-            <span className="flex items-center gap-1 text-[11px] text-us-sage font-medium">
+            <span className="flex items-center gap-1 text-[13px] text-us-sage font-medium">
               <Check className="w-3 h-3" /> Partner answered
             </span>
           )}

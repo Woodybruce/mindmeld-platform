@@ -261,7 +261,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
               {/* Day labels */}
               <div className="grid grid-cols-7 gap-0.5 text-center">
                 {DAY_LABELS.map((d) => (
-                  <span key={d} className="text-[12px] font-medium text-muted-foreground py-1">{d}</span>
+                  <span key={d} className="text-[14px] font-medium text-muted-foreground py-1">{d}</span>
                 ))}
               </div>
 
@@ -312,7 +312,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
               </div>
 
               {/* Legend */}
-              <div className="flex items-center gap-4 text-[12px] text-muted-foreground pt-1">
+              <div className="flex items-center gap-4 text-[14px] text-muted-foreground pt-1">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-primary" /> Has events
                 </span>
@@ -379,20 +379,20 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-semibold text-foreground truncate">{event.subject}</p>
                                 {event.partner_invited && (
-                                  <span className="shrink-0 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[12px] font-medium text-primary">
+                                  <span className="shrink-0 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[14px] font-medium text-primary">
                                     <Users className="w-3 h-3" /> Both
                                   </span>
                                 )}
                                 {event.already_imported && (
-                                  <span className="shrink-0 text-[12px] text-muted-foreground">Added</span>
+                                  <span className="shrink-0 text-[14px] text-muted-foreground">Added</span>
                                 )}
                               </div>
                               <div className="flex items-center gap-3 mt-1">
-                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                <span className="flex items-center gap-1 text-[13px] text-muted-foreground">
                                   <Clock className="w-3 h-3" /> {timeStr}
                                 </span>
                                 {event.location && (
-                                  <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <span className="flex items-center gap-1 text-[13px] text-muted-foreground">
                                     <MapPin className="w-3 h-3" /> {event.location}
                                   </span>
                                 )}

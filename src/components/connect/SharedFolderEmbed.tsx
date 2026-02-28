@@ -175,7 +175,7 @@ const SharedFolderEmbed = () => {
               <FolderOpen className="w-5 h-5 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">{folder.label}</p>
-                <p className="text-[11px] text-muted-foreground">{folder.provider}</p>
+                <p className="text-[13px] text-muted-foreground">{folder.provider}</p>
               </div>
               <button
                 onClick={() => toggleCollapse(folder.id)}

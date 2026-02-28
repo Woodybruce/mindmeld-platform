@@ -168,7 +168,7 @@ const SexBucketGame = () => {
             <h1 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
               <Flame className="w-5 h-5 text-destructive" /> Sex Bucket Challenge
             </h1>
-            <p className="text-[11px] text-muted-foreground">5 random ideas from your bucket list</p>
+            <p className="text-[13px] text-muted-foreground">5 random ideas from your bucket list</p>
           </div>
         </div>
       </header>

@@ -193,7 +193,7 @@ const OurSexList = () => {
           </button>
           <div className="flex-1">
             <h1 className="font-display text-lg font-bold text-foreground">Our Sex List</h1>
-            <p className="text-[11px] text-muted-foreground">Private & honest</p>
+            <p className="text-[13px] text-muted-foreground">Private & honest</p>
           </div>
           <Lock className="w-4 h-4 text-muted-foreground" />
         </div>

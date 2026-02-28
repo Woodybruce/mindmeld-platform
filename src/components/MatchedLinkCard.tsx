@@ -30,7 +30,7 @@ const MatchedLinkCard = ({ match }: MatchedLinkCardProps) => {
       <div className="flex items-center gap-2 px-4 pt-3 pb-1">
         <div className="flex items-center gap-1.5 bg-us-coral/15 text-us-coral rounded-full px-2.5 py-1">
           <Sparkles className="w-3.5 h-3.5" />
-          <span className="text-[11px] font-bold uppercase tracking-wider">You both saved this!</span>
+          <span className="text-[13px] font-bold uppercase tracking-wider">You both saved this!</span>
         </div>
         <div className="flex -space-x-1.5 ml-auto">
           <Heart className="w-4 h-4 fill-us-coral text-us-coral" />
@@ -56,9 +56,9 @@ const MatchedLinkCard = ({ match }: MatchedLinkCardProps) => {
             <p className="text-xs text-muted-foreground mt-0.5 italic">"{match.yourLink.note}"</p>
           )}
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-[11px] font-medium text-us-coral">{platform}</span>
-            <span className="text-[11px] text-muted-foreground">·</span>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-[13px] font-medium text-us-coral">{platform}</span>
+            <span className="text-[13px] text-muted-foreground">·</span>
+            <span className="text-[13px] text-muted-foreground">
               Saved by both of you
             </span>
           </div>

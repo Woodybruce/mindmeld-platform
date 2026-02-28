@@ -59,7 +59,7 @@ const CompletedQuizList = ({ quizzes }: CompletedQuizListProps) => {
                 <p className="text-sm font-semibold text-foreground truncate">{quiz.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xs font-medium text-primary">{quiz.score}/{quiz.totalQuestions} ({percentage}%)</span>
-                  <span className="text-[11px] text-muted-foreground">· {timeAgo}</span>
+                  <span className="text-[13px] text-muted-foreground">· {timeAgo}</span>
                 </div>
               </div>
               <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
@@ -74,7 +74,7 @@ const CompletedQuizList = ({ quizzes }: CompletedQuizListProps) => {
               >
                 {/* Answers */}
                 <div className="px-4 py-3 space-y-2">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Answers</p>
+                  <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">Answers</p>
                   {quiz.answers.map((a, j) => (
                     <div key={j} className="flex items-start gap-2 text-xs">
                       {a.match ? (
@@ -92,7 +92,7 @@ const CompletedQuizList = ({ quizzes }: CompletedQuizListProps) => {
 
                 {/* Action items */}
                 <div className="px-4 py-3 border-t border-border/30 space-y-2">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                     <Lightbulb className="w-3 h-3" /> Suggested Actions
                   </p>
                   {quiz.actionItems.map((item, j) => (
@@ -100,7 +100,7 @@ const CompletedQuizList = ({ quizzes }: CompletedQuizListProps) => {
                       <p className="text-foreground pl-4 flex-1">• {item}</p>
                       <button
                         onClick={() => addToList(item)}
-                        className="flex items-center gap-1 text-[11px] text-primary font-medium hover:text-primary/80 transition-colors flex-shrink-0"
+                        className="flex items-center gap-1 text-[13px] text-primary font-medium hover:text-primary/80 transition-colors flex-shrink-0"
                       >
                         <ListPlus className="w-3 h-3" />
                       </button>

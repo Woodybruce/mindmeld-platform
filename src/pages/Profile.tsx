@@ -170,7 +170,7 @@ const Profile = () => {
                 }`}
               >
                 <opt.icon className="w-5 h-5" />
-                <span className="text-[11px] font-medium">{opt.label}</span>
+                <span className="text-[13px] font-medium">{opt.label}</span>
               </button>
             ))}
           </div>
@@ -211,7 +211,7 @@ const Profile = () => {
 
           {forwardUrl ? (
             <div className="space-y-2">
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Your forwarding URL</p>
+              <p className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Your forwarding URL</p>
               <div className="flex gap-2">
                 <input
                   readOnly
@@ -255,7 +255,7 @@ const Profile = () => {
 
           {/* Outlook Connection */}
           <div className="mt-4 pt-4 border-t border-border/50">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Outlook Calendar</p>
+            <p className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Outlook Calendar</p>
             {outlookConnected === null ? (
               <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
             ) : outlookConnected ? (
@@ -280,7 +280,7 @@ const Profile = () => {
                 Connect Outlook Account
               </button>
             )}
-            <p className="text-[12px] text-muted-foreground mt-1.5">
+            <p className="text-[14px] text-muted-foreground mt-1.5">
               Connect your Microsoft account to sync calendar events automatically.
             </p>
           </div>
@@ -293,15 +293,15 @@ const Profile = () => {
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="rounded-lg bg-secondary p-3">
               <span className="text-lg font-bold text-foreground">{listCount}</span>
-              <p className="text-[12px] text-muted-foreground mt-0.5">Shared Lists</p>
+              <p className="text-[14px] text-muted-foreground mt-0.5">Shared Lists</p>
             </div>
             <div className="rounded-lg bg-secondary p-3">
               <span className="text-lg font-bold text-foreground">{quizCount}</span>
-              <p className="text-[12px] text-muted-foreground mt-0.5">Quizzes Done</p>
+              <p className="text-[14px] text-muted-foreground mt-0.5">Quizzes Done</p>
             </div>
             <div className="rounded-lg bg-secondary p-3">
               <span className="text-lg font-bold text-foreground">0</span>
-              <p className="text-[12px] text-muted-foreground mt-0.5">Games Played</p>
+              <p className="text-[14px] text-muted-foreground mt-0.5">Games Played</p>
             </div>
           </div>
         </div>

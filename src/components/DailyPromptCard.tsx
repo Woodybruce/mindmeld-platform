@@ -175,7 +175,7 @@ const DailyPromptCard = () => {
           <div className="flex items-start gap-3">
             <Flame className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-destructive/70 mb-1">Today's Bucket Challenge</p>
+              <p className="text-[13px] font-bold uppercase tracking-wider text-destructive/70 mb-1">Today's Bucket Challenge</p>
               <p className="text-sm font-semibold text-foreground">{bucketChallenge}</p>
             </div>
             <button

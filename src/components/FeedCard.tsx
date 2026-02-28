@@ -101,7 +101,7 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
 
           {/* Tag pill */}
           <div className="absolute top-2.5 left-2.5">
-            <span className="bg-background/80 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-foreground px-2 py-0.5 rounded-full">
+            <span className="bg-background/80 backdrop-blur-md text-[13px] font-bold uppercase tracking-wider text-foreground px-2 py-0.5 rounded-full">
               {item.tag}
             </span>
           </div>
@@ -115,7 +115,7 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
               <p className="text-xs opacity-80 mt-0.5 drop-shadow">{item.subtitle}</p>
             )}
             {size === "full" && (
-              <p className="text-[11px] opacity-65 leading-relaxed line-clamp-2 mt-1 drop-shadow">
+              <p className="text-[13px] opacity-65 leading-relaxed line-clamp-2 mt-1 drop-shadow">
                 {item.body}
               </p>
             )}
@@ -149,10 +149,10 @@ const FeedCard = ({ item, index }: FeedCardProps) => {
     >
       <div className={size === "half" ? "p-3" : "p-4"}>
         <div className="flex items-center justify-between mb-1.5">
-          <span className={`text-[12px] font-semibold uppercase tracking-wider ${item.tagColor}`}>
+          <span className={`text-[14px] font-semibold uppercase tracking-wider ${item.tagColor}`}>
             {item.tag}
           </span>
-          <span className="text-[12px] text-muted-foreground">{item.timeAgo}</span>
+          <span className="text-[14px] text-muted-foreground">{item.timeAgo}</span>
         </div>
         {item.emoji && size === "half" && (
           <div className="text-center py-1">

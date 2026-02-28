@@ -106,7 +106,7 @@ const ProductImage = ({ category, brand, imageUrl }: { category: string; brand: 
       <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center mb-2">
         <span className="text-lg font-bold text-white/90">{initials}</span>
       </div>
-      <p className="text-[12px] text-white/50 text-center line-clamp-1 max-w-[90%]">{brand}</p>
+      <p className="text-[14px] text-white/50 text-center line-clamp-1 max-w-[90%]">{brand}</p>
     </div>
   );
 };
@@ -236,7 +236,7 @@ const ProductDetailModal = ({
               <ShoppingBag className="w-4 h-4" />
               {getBuyLabel(product)}
             </button>
-            <p className="text-[12px] text-center text-muted-foreground/60">
+            <p className="text-[14px] text-center text-muted-foreground/60">
               Opens in your browser
             </p>
           </div>
@@ -359,7 +359,7 @@ const DiscoverTogether = () => {
           </div>
           <div>
             <h3 className="font-display text-sm font-bold text-foreground">Discover Together</h3>
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[14px] text-muted-foreground">
               {category === "our-picks" ? "Curated picks for couples" : "AI-curated for you both"}
             </p>
           </div>
@@ -381,7 +381,7 @@ const DiscoverTogether = () => {
             <button
               key={cat.key}
               onClick={() => setCategory(cat.key)}
-              className={`flex items-center gap-1 text-[12px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-1 text-[14px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
                 category === cat.key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
               data-testid={`tab-${cat.key}`}
@@ -411,7 +411,7 @@ const DiscoverTogether = () => {
           <div className="flex flex-col items-center justify-center py-8">
             <ShoppingBag className="w-8 h-8 text-muted-foreground/30 mb-2" />
             <p className="text-xs text-muted-foreground">No products yet</p>
-            <button onClick={handleRefresh} className="mt-2 text-[12px] text-primary font-medium" data-testid="discover-load">
+            <button onClick={handleRefresh} className="mt-2 text-[14px] text-primary font-medium" data-testid="discover-load">
               Load suggestions
             </button>
           </div>
@@ -444,14 +444,14 @@ const DiscoverTogether = () => {
                         />
                       </div>
                       <div className="absolute bottom-2 left-2">
-                        <span className="text-[11px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">
+                        <span className="text-[13px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">
                           {product.category}
                         </span>
                       </div>
                     </div>
                     <div className="p-2.5">
-                      <p className="text-[11px] font-semibold text-foreground leading-tight line-clamp-2">{product.name}</p>
-                      <p className="text-[12px] text-muted-foreground mt-0.5">{product.brand}</p>
+                      <p className="text-[13px] font-semibold text-foreground leading-tight line-clamp-2">{product.name}</p>
+                      <p className="text-[14px] text-muted-foreground mt-0.5">{product.brand}</p>
                       <div className="flex items-center justify-between mt-1.5">
                         <p className="text-xs font-bold text-primary">{product.price}</p>
                         <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
@@ -467,7 +467,7 @@ const DiscoverTogether = () => {
                   const remaining = filteredProducts.slice(6);
                   if (remaining.length > 0) setSelectedProduct(remaining[0]);
                 }}
-                className="w-full mt-2 py-2 text-[11px] font-semibold text-primary rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
+                className="w-full mt-2 py-2 text-[13px] font-semibold text-primary rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
                 data-testid="discover-show-more"
               >
                 View all {filteredProducts.length} products
@@ -476,7 +476,7 @@ const DiscoverTogether = () => {
             {loading && (
               <div className="flex items-center justify-center py-3">
                 <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin" />
-                <span className="text-[12px] text-muted-foreground ml-1.5">Finding more...</span>
+                <span className="text-[14px] text-muted-foreground ml-1.5">Finding more...</span>
               </div>
             )}
           </>

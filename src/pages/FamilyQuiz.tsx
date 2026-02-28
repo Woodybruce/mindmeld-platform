@@ -144,7 +144,7 @@ const FamilyQuiz = () => {
           </button>
           <div className="flex-1">
             <h1 className="font-display text-lg font-bold text-foreground">Family Quiz</h1>
-            <p className="text-[11px] text-muted-foreground">Build your family to-do list with AI</p>
+            <p className="text-[13px] text-muted-foreground">Build your family to-do list with AI</p>
           </div>
         </div>
         <Progress value={progress} className="h-1 rounded-none" />

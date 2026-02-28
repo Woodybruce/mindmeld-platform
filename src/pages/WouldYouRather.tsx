@@ -167,7 +167,7 @@ const WouldYouRather = () => {
         )}
 
         {!hasPicked && (
-          <p className="text-[11px] text-muted-foreground text-center">
+          <p className="text-[13px] text-muted-foreground text-center">
             Both pick before revealing 👀
           </p>
         )}

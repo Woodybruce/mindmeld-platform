@@ -937,7 +937,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">
                                   {item.text.replace(/^##\s*/, '')}
                                   {item.sectionType === "observation" && (
-                                    <span className="ml-1.5 text-[12px] font-normal normal-case text-muted-foreground">💭</span>
+                                    <span className="ml-1.5 text-[14px] font-normal normal-case text-muted-foreground">💭</span>
                                   )}
                                 </span>
                               ) : item.isObservation ? (
@@ -1020,7 +1020,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 ) : (
                                   <button
                                     onClick={() => { setPreviewAddingAfter(idx); setPreviewNewItem(""); }}
-                                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                                    className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors"
                                   >
                                     <Plus className="w-3 h-3" /> Add item
                                   </button>
@@ -1053,7 +1053,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                     <button
                       onClick={addPreviewHeading}
                       disabled={!previewNewItem.trim()}
-                      className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors px-1 disabled:opacity-30"
+                      className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-primary transition-colors px-1 disabled:opacity-30"
                     >
                       <Plus className="w-3 h-3" /> Add as subheading
                     </button>
@@ -1165,7 +1165,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                               {item.isHeading ? (
                                 <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">
                                   {item.text}
-                                  {item.sectionType === "observation" && <span className="ml-1.5 text-[12px] font-normal normal-case text-muted-foreground">💭</span>}
+                                  {item.sectionType === "observation" && <span className="ml-1.5 text-[14px] font-normal normal-case text-muted-foreground">💭</span>}
                                 </span>
                               ) : (
                                 <div className="flex items-center gap-2.5 flex-1">
@@ -1220,7 +1220,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 ) : (
                                   <button
                                     onClick={() => { setReviewAddingAfter(idx); setReviewNewItem(""); }}
-                                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                                    className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors"
                                   >
                                     <Plus className="w-3 h-3" /> Add item
                                   </button>
@@ -1375,7 +1375,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                 {list.scoreData && (
                   <div className="px-4 py-3 border-b border-border/30 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                         <TrendingUp className="w-3 h-3" /> Score Summary
                       </p>
                       {nextMilestone && (
@@ -1387,7 +1387,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                             localStorage.setItem("retestMilestone", String(nextMilestone));
                             window.location.href = `/checklist-quiz/${quizId}?retest=true`;
                           }}
-                          className="flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+                          className="flex items-center gap-1 text-[13px] font-medium text-primary hover:text-primary/80 transition-colors"
                         >
                           <RefreshCw className="w-3 h-3" /> Retest ({nextMilestone}% milestone)
                         </button>
@@ -1399,7 +1399,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                       <div className="space-y-1.5">
                         {list.scoreData.snapshots.map((snap, si) => (
                           <div key={si} className="rounded-lg bg-secondary/50 p-2.5 space-y-1">
-                            <p className="text-[11px] font-medium text-muted-foreground">
+                            <p className="text-[13px] font-medium text-muted-foreground">
                               {snap.milestone === 0 ? "Initial" : `${snap.milestone}% milestone`} · {new Date(snap.takenAt).toLocaleDateString()}
                             </p>
                             <div className="flex flex-wrap gap-x-4 gap-y-0.5">
@@ -1484,7 +1484,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider">
                                   {section.heading.text.replace(/^##\s*/, '')}
                                   {section.heading.sectionType === "observation" && (
-                                    <span className="ml-1.5 text-[12px] font-normal normal-case text-muted-foreground">💭</span>
+                                    <span className="ml-1.5 text-[14px] font-normal normal-case text-muted-foreground">💭</span>
                                   )}
                                 </span>
                                 <button
@@ -1640,7 +1640,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                         href={att.type === "event" ? undefined : att.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                                        className="inline-flex items-center gap-1 rounded-md bg-secondary/60 px-2 py-0.5 text-[14px] text-muted-foreground hover:text-foreground transition-colors"
                                       >
                                         {att.type === "photo" ? <Image className="w-2.5 h-2.5" /> : att.type === "event" ? <CalendarPlus className="w-2.5 h-2.5" /> : <Paperclip className="w-2.5 h-2.5" />}
                                         {att.type === "event" && att.date ? new Date(att.date).toLocaleDateString() : att.name || "Attachment"}
@@ -1660,7 +1660,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                 onChange={(e) => setSectionNewItem(prev => ({ ...prev, [sectionInputKey]: e.target.value }))}
                                 onKeyDown={(e) => e.key === "Enter" && addItem(list.id, headingId!)}
                                 placeholder={section.heading?.sectionType === "observation" ? "Add observation…" : "Add item…"}
-                                className="flex-1 rounded-lg border border-border/60 bg-background px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="flex-1 rounded-lg border border-border/60 bg-background px-2 py-1 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                               <button
                                 onClick={() => addItem(list.id, headingId!)}
@@ -1710,7 +1710,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                             setNewItemText("");
                           }}
                           disabled={!newItemText.trim()}
-                          className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors disabled:opacity-30"
+                          className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-primary transition-colors disabled:opacity-30"
                         >
                           💭 Add as observation
                          </button>
@@ -1718,7 +1718,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                           addingSubheading !== list.id && (
                             <button
                               onClick={() => { setAddingSubheading(list.id); setSubheadingType("task"); }}
-                              className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
+                              className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-primary transition-colors"
                             >
                               <Plus className="w-3 h-3" /> Add subheading
                             </button>
@@ -1771,13 +1771,13 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                           <div className="flex gap-2 px-1">
                             <button
                               onClick={() => setSubheadingType("task")}
-                              className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${subheadingType === "task" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                              className={`text-[13px] font-medium px-2 py-0.5 rounded-full transition-colors ${subheadingType === "task" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
                             >
                               ☑️ Task section
                             </button>
                             <button
                               onClick={() => setSubheadingType("observation")}
-                              className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${subheadingType === "observation" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                              className={`text-[13px] font-medium px-2 py-0.5 rounded-full transition-colors ${subheadingType === "observation" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
                             >
                               💭 Observation section
                             </button>
@@ -1787,7 +1787,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                     </div>
                   )}
                   {list.maxItems && list.items.length >= list.maxItems && (
-                    <p className="text-[11px] text-muted-foreground text-center pt-2">Max {list.maxItems} dreams — remove one to add another</p>
+                    <p className="text-[13px] text-muted-foreground text-center pt-2">Max {list.maxItems} dreams — remove one to add another</p>
                   )}
 
                   {/* AI Suggest button — available on all lists */}
@@ -1852,7 +1852,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                 <div className="px-4 py-2 border-t border-border/30">
                   <button
                     onClick={() => deleteList(list.id)}
-                    className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
+                    className="text-[13px] text-muted-foreground hover:text-destructive transition-colors"
                   >
                     Delete list
                   </button>

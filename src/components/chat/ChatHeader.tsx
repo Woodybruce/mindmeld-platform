@@ -75,7 +75,7 @@ const ChatHeader = ({ partnerName, isOnline, partnerPhone, onStartCall }: ChatHe
         </Avatar>
         <div className="flex-1 min-w-0">
           <h1 className="font-body text-sm font-semibold truncate leading-tight">{partnerName}</h1>
-          <p className="text-[12px] text-white/50 font-body flex items-center gap-1 leading-tight">
+          <p className="text-[14px] text-white/50 font-body flex items-center gap-1 leading-tight">
             {isOnline && (
               <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--us-sage))] inline-block" />
             )}

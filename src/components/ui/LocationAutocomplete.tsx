@@ -89,7 +89,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder = "Search locationâ
               key={r.place_id}
               type="button"
               onClick={() => handleSelect(r)}
-              className="w-full text-left px-3 py-2.5 text-[12px] text-foreground hover:bg-secondary/60 transition-colors flex items-start gap-2 border-b border-border/30 last:border-0"
+              className="w-full text-left px-3 py-2.5 text-[14px] text-foreground hover:bg-secondary/60 transition-colors flex items-start gap-2 border-b border-border/30 last:border-0"
             >
               <MapPin className="w-3 h-3 mt-0.5 text-muted-foreground shrink-0" />
               <span className="line-clamp-2">{r.display_name}</span>

@@ -61,7 +61,7 @@ const GalleryPicker = ({ open, onClose, onSelect }: GalleryPickerProps) => {
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
             <h2 className="text-[15px] font-semibold text-foreground font-body">Shared Photos</h2>
-            <span className="text-[12px] text-muted-foreground">{photos.length} photos</span>
+            <span className="text-[14px] text-muted-foreground">{photos.length} photos</span>
           </div>
 
           <div className="flex-1 overflow-y-auto">

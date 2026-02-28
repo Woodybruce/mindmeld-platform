@@ -26,10 +26,10 @@ const QuizCard = ({ title, description, emoji, duration, questions, gradient, de
         <h3 className="font-display text-base font-semibold text-foreground mt-2">{title}</h3>
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>
         <div className="flex items-center gap-3 mt-3">
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1 text-[13px] text-muted-foreground">
             <Clock className="w-3 h-3" /> {duration}
           </span>
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1 text-[13px] text-muted-foreground">
             <Users className="w-3 h-3" /> {questions} Qs
           </span>
         </div>

@@ -213,7 +213,7 @@ const ChecklistQuizPlay = () => {
                 </div>
               );
             })}
-            <p className="text-[12px] text-muted-foreground">This score will be saved with your list. Retest at 25%, 50%, 75% and 100% to track improvement.</p>
+            <p className="text-[14px] text-muted-foreground">This score will be saved with your list. Retest at 25%, 50%, 75% and 100% to track improvement.</p>
           </div>
 
           {/* Exploration items by section */}
@@ -233,7 +233,7 @@ const ChecklistQuizPlay = () => {
                 <h3 className="text-sm font-semibold text-foreground mb-2">{sec.title}</h3>
                 <div className="flex flex-wrap gap-1.5">
                   {sectionChecked.map((item) => (
-                    <span key={item.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                    <span key={item.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[13px] font-medium text-primary">
                       <Flame className="w-3 h-3" /> {item.text}
                     </span>
                   ))}
@@ -301,7 +301,7 @@ const ChecklistQuizPlay = () => {
           </button>
           <div className="flex-1">
             <h1 className="font-display text-sm font-bold text-foreground">{quiz.title}</h1>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Section {sectionIdx + 1} of {totalSections} — {section.title}
             </p>
           </div>

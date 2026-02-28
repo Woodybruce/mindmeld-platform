@@ -134,7 +134,7 @@ const CalendarWidget = () => {
         <>
           <div className="px-4 grid grid-cols-7 gap-0">
             {DAYS.map((d, i) => (
-              <div key={i} className="text-center text-[12px] font-semibold text-muted-foreground uppercase tracking-wider py-1">
+              <div key={i} className="text-center text-[14px] font-semibold text-muted-foreground uppercase tracking-wider py-1">
                 {d}
               </div>
             ))}
@@ -163,7 +163,7 @@ const CalendarWidget = () => {
           </div>
           {upcoming.length > 0 && (
             <div className="px-4 pb-4 space-y-2 border-t border-border/50 pt-3">
-              <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">Upcoming</p>
+              <p className="text-[14px] font-semibold text-muted-foreground uppercase tracking-wider">Upcoming</p>
               {upcoming.map((event, idx) => {
                 const startDate = new Date(event.start_time);
                 const dayStr = startDate.toLocaleDateString("default", { month: "short", day: "numeric" });
@@ -172,7 +172,7 @@ const CalendarWidget = () => {
                   <div key={event.id} className="flex items-center gap-2.5">
                     <div className={`w-2 h-2 rounded-full ${eventColors[idx % eventColors.length]} flex-shrink-0`} />
                     <span className="text-sm text-foreground flex-1 truncate">{event.subject}</span>
-                    <span className="text-[11px] text-muted-foreground">{isEventToday ? "Today" : dayStr}</span>
+                    <span className="text-[13px] text-muted-foreground">{isEventToday ? "Today" : dayStr}</span>
                   </div>
                 );
               })}
@@ -195,7 +195,7 @@ const CalendarWidget = () => {
               const dayEvts = getEventsForDate(d);
               return (
                 <div key={i} className="flex flex-col items-center gap-0.5">
-                  <span className="text-[12px] font-semibold text-muted-foreground uppercase">
+                  <span className="text-[14px] font-semibold text-muted-foreground uppercase">
                     {d.toLocaleDateString("default", { weekday: "narrow" })}
                   </span>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
@@ -226,11 +226,11 @@ const CalendarWidget = () => {
                   return (
                     <div key={e.id} className="flex items-center gap-2">
                       <div className={`w-1.5 h-1.5 rounded-full ${eventColors[idx % eventColors.length]} flex-shrink-0`} />
-                      <span className="text-[11px] text-muted-foreground w-14 flex-shrink-0">
+                      <span className="text-[13px] text-muted-foreground w-14 flex-shrink-0">
                         {isToday ? "Today" : d.toLocaleDateString("default", { weekday: "short" })}
                       </span>
                       <span className="text-sm text-foreground flex-1 truncate">{e.subject}</span>
-                      <span className="text-[11px] text-muted-foreground">{timeStr}</span>
+                      <span className="text-[13px] text-muted-foreground">{timeStr}</span>
                     </div>
                   );
                 })

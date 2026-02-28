@@ -38,7 +38,7 @@ const StoriesBar = () => {
               </div>
             </div>
           </div>
-          <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
             {story.label}
           </span>
         </button>

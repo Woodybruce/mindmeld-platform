@@ -194,7 +194,7 @@ const OurPhotos = () => {
                     <>
                       <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenActionMenu(null); }} />
                       <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
-                        <div className="px-3 py-1.5 text-[11px] text-muted-foreground">
+                        <div className="px-3 py-1.5 text-[13px] text-muted-foreground">
                           {photo.sender_name} · {photo.source === "chat" ? "Chat" : "Upload"}
                         </div>
                         <div className="border-t border-border my-1" />

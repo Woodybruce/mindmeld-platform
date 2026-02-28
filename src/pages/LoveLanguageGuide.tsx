@@ -46,7 +46,7 @@ const LoveLanguageGuide = () => {
             <h1 className="font-display text-lg font-bold text-foreground">
               Love Language Ideas
             </h1>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Understand how you both give and receive love
             </p>
           </div>

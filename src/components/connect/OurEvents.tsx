@@ -203,7 +203,7 @@ const OurEvents = () => {
         {/* Day labels */}
         <div className="grid grid-cols-7 gap-0.5 text-center">
           {DAY_LABELS.map((d) => (
-            <span key={d} className="text-[12px] font-medium text-muted-foreground py-0.5">{d}</span>
+            <span key={d} className="text-[14px] font-medium text-muted-foreground py-0.5">{d}</span>
           ))}
         </div>
 
@@ -284,15 +284,15 @@ const OurEvents = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{event.subject}</p>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1 text-[13px] text-muted-foreground">
                           <Clock className="w-3 h-3" /> {timeStr}
                         </span>
                         {event.source === "outlook" && (
-                          <span className="text-[12px] text-muted-foreground bg-secondary rounded px-1.5 py-0.5">Outlook</span>
+                          <span className="text-[14px] text-muted-foreground bg-secondary rounded px-1.5 py-0.5">Outlook</span>
                         )}
                       </div>
                       {event.location && (
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                        <span className="flex items-center gap-1 text-[13px] text-muted-foreground mt-0.5">
                           <MapPin className="w-3 h-3" /> {event.location}
                         </span>
                       )}

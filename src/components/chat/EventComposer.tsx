@@ -65,21 +65,21 @@ const EventComposer = ({ open, onClose, onSend }: EventComposerProps) => {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] text-muted-foreground font-medium mb-1 block">Date</label>
+            <label className="text-[13px] text-muted-foreground font-medium mb-1 block">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[11px] text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[13px] text-foreground outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground font-medium mb-1 block">Time</label>
+            <label className="text-[13px] text-muted-foreground font-medium mb-1 block">Time</label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[11px] text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full bg-secondary/60 border border-border/30 rounded-xl px-3 py-2.5 text-[13px] text-foreground outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>

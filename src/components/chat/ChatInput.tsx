@@ -192,7 +192,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                   <div className={`w-13 h-13 rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white shadow-lg`}>
                     <action.icon className="w-5.5 h-5.5" />
                   </div>
-                  <span className="text-[11px] text-muted-foreground font-medium">{action.label}</span>
+                  <span className="text-[13px] text-muted-foreground font-medium">{action.label}</span>
                 </motion.button>
               ))}
             </div>
@@ -224,7 +224,7 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">{imagePreviews.length} photo{imagePreviews.length > 1 ? "s" : ""} selected</p>
+            <p className="text-[13px] text-muted-foreground mt-1">{imagePreviews.length} photo{imagePreviews.length > 1 ? "s" : ""} selected</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -241,8 +241,8 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
             <div className="max-w-lg mx-auto flex items-center gap-2">
               <Reply className="w-4 h-4 text-[hsl(var(--us-coral))] flex-shrink-0" />
               <div className="flex-1 min-w-0 border-l-[3px] border-[hsl(var(--us-coral))] pl-2.5 py-0.5">
-                <p className="text-[11px] font-semibold text-[hsl(var(--us-coral))]">{replyingTo.senderName}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{replyingTo.content}</p>
+                <p className="text-[13px] font-semibold text-[hsl(var(--us-coral))]">{replyingTo.senderName}</p>
+                <p className="text-[13px] text-muted-foreground truncate">{replyingTo.content}</p>
               </div>
               <button onClick={onCancelReply} className="p-1.5 rounded-full hover:bg-secondary transition-colors">
                 <X className="w-4 h-4 text-muted-foreground" />

@@ -387,13 +387,13 @@ const InstaFeedWidget = () => {
                         {embed?.title || link.title || "Instagram Post"}
                       </p>
                       {username && <p className="text-xs opacity-80 mt-0.5 drop-shadow">@{username}</p>}
-                      <div className="mt-2 flex items-center gap-1.5 text-[12px] opacity-70">
+                      <div className="mt-2 flex items-center gap-1.5 text-[14px] opacity-70">
                         <ExternalLink className="w-3 h-3" />
                         <span>View on Instagram</span>
                       </div>
                     </div>
                     <div className="absolute top-3 right-3 bg-black/30 backdrop-blur-sm rounded-lg px-2 py-1">
-                      <p className="text-[12px] text-white/80 font-medium">
+                      <p className="text-[14px] text-white/80 font-medium">
                         {new Date(link.created_at).toLocaleDateString("default", { day: "numeric", month: "short" })}
                       </p>
                     </div>
@@ -420,7 +420,7 @@ const InstaFeedWidget = () => {
                       <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                         <div className="flex items-center gap-1.5 mb-1">
                           <Heart className="w-3 h-3 text-pink-400" />
-                          <span className="text-[12px] font-medium uppercase tracking-wider opacity-80">
+                          <span className="text-[14px] font-medium uppercase tracking-wider opacity-80">
                             {account.label || "Suggestion"}
                           </span>
                         </div>
@@ -482,7 +482,7 @@ const InstaFeedWidget = () => {
               />
             ))}
             {allCards.length > 10 && (
-              <span className="text-[12px] text-muted-foreground self-center ml-1">+{allCards.length - 10}</span>
+              <span className="text-[14px] text-muted-foreground self-center ml-1">+{allCards.length - 10}</span>
             )}
           </div>
         )}

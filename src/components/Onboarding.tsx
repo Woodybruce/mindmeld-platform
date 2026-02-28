@@ -93,7 +93,7 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                 ].map((f) => (
                   <div key={f.label} className="rounded-xl bg-card border border-border/50 p-3 text-center">
                     <span className="text-2xl">{f.icon}</span>
-                    <p className="text-[12px] text-muted-foreground mt-1 font-medium">{f.label}</p>
+                    <p className="text-[14px] text-muted-foreground mt-1 font-medium">{f.label}</p>
                   </div>
                 ))}
               </div>
@@ -166,7 +166,7 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                   className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground text-center">
+              <p className="text-[13px] text-muted-foreground text-center">
                 They'll get a magic link to join. You can also do this later from your Profile.
               </p>
               <button

@@ -165,7 +165,7 @@ const PhotoChallenge = () => {
                   <X className="w-3.5 h-3.5 text-foreground" />
                 </button>
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent p-3">
-                  <span className="text-[11px] text-white font-medium">Saved to Our Photos ✓</span>
+                  <span className="text-[13px] text-white font-medium">Saved to Our Photos ✓</span>
                 </div>
               </div>
             ) : (

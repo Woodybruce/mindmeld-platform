@@ -136,7 +136,7 @@ const ReflectionQuizPlay = () => {
           </button>
           <div className="flex-1">
             <h1 className="font-display text-sm font-bold text-foreground">{quiz.title}</h1>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Question {currentQ + 1} of {quiz.questions.length}
             </p>
           </div>
@@ -157,7 +157,7 @@ const ReflectionQuizPlay = () => {
           >
             <div>
               <span className="text-3xl">{quiz.emoji}</span>
-              <p className="text-[11px] text-muted-foreground mt-2 uppercase tracking-wider font-medium">
+              <p className="text-[13px] text-muted-foreground mt-2 uppercase tracking-wider font-medium">
                 Question {currentQ + 1}
               </p>
               <h2 className="font-display text-xl font-bold text-foreground mt-1">
@@ -175,7 +175,7 @@ const ReflectionQuizPlay = () => {
               className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
             />
 
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <p className="text-[13px] text-muted-foreground flex items-center gap-1.5">
               <Lock className="w-3 h-3" /> Your answer stays private until you choose to share
             </p>
 
