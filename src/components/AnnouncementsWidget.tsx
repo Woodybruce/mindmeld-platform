@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Megaphone, Plus, Send, Trash2, Pin, X, Bell, ListChecks, Camera, MessageCircle, Calendar, FileText } from "lucide-react";
+import { Megaphone, Plus, Send, Trash2, Pin, X, ListChecks, Camera, Calendar, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
@@ -28,10 +28,9 @@ interface ActivityItem {
   color: string;
 }
 
-const activityIconMap = {
+const activityIconMap: Record<string, React.ReactNode> = {
   list: <ListChecks className="w-3.5 h-3.5" />,
   photo: <Camera className="w-3.5 h-3.5" />,
-  message: <MessageCircle className="w-3.5 h-3.5" />,
   file: <FileText className="w-3.5 h-3.5" />,
   task: <Calendar className="w-3.5 h-3.5" />,
 };
@@ -39,7 +38,6 @@ const activityIconMap = {
 const activityColorMap: Record<string, string> = {
   list: "bg-blue-500/15 text-blue-600",
   photo: "bg-pink-500/15 text-pink-600",
-  message: "bg-[hsl(var(--us-navy))]/15 text-[hsl(var(--us-navy))]",
   file: "bg-[hsl(var(--us-sage))]/15 text-[hsl(var(--us-sage))]",
   task: "bg-[hsl(var(--us-gold))]/15 text-[hsl(var(--us-gold))]",
 };
@@ -87,18 +85,6 @@ const AnnouncementsWidget = () => {
       const items: ActivityItem[] = [];
 
       if (partnerId) {
-        const { data: msgs } = await supabase
-          .from("messages")
-          .select("id, content, message_type, created_at, sender_id")
-          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-          .order("created_at", { ascending: false })
-          .limit(3);
-        (msgs || []).forEach((m) => {
-          const isYou = m.sender_id === user.id;
-          const preview = m.message_type === "image" ? "Shared a photo" : (m.content?.slice(0, 40) || "Message");
-          items.push({ id: `msg-${m.id}`, type: "message", label: isYou ? "You sent a message" : "Partner messaged you", detail: preview, time: new Date(m.created_at), route: "/chat", icon: activityIconMap.message, color: activityColorMap.message });
-        });
-
         const { data: photos } = await supabase
           .from("couple_photos")
           .select("id, created_at, user_id")
@@ -143,7 +129,7 @@ const AnnouncementsWidget = () => {
       }
 
       items.sort((a, b) => b.time.getTime() - a.time.getTime());
-      setActivities(items.slice(0, 5));
+      setActivities(items.slice(0, 10));
     };
     fetchActivity();
   }, [user, partnerId]);
@@ -186,30 +172,44 @@ const AnnouncementsWidget = () => {
 
   if (loading) return null;
 
+  type FeedItem =
+    | { kind: "announcement"; data: Announcement; time: Date }
+    | { kind: "activity"; data: ActivityItem; time: Date };
+
+  const feed: FeedItem[] = [];
+  announcements.forEach((a) => feed.push({ kind: "announcement", data: a, time: new Date(a.created_at) }));
+  activities.forEach((a) => feed.push({ kind: "activity", data: a, time: a.time }));
+  feed.sort((a, b) => {
+    const aPinned = a.kind === "announcement" && (a.data as Announcement).pinned ? 1 : 0;
+    const bPinned = b.kind === "announcement" && (b.data as Announcement).pinned ? 1 : 0;
+    if (aPinned !== bPinned) return bPinned - aPinned;
+    return b.time.getTime() - a.time.getTime();
+  });
+  const visibleFeed = feed.slice(0, 2);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-card border border-border rounded-2xl overflow-hidden"
     >
-      <div className="flex items-center gap-3 px-4 pt-3 pb-1.5">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shrink-0">
-          <Megaphone className="w-4.5 h-4.5" />
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shrink-0">
+          <Megaphone className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-display text-sm font-semibold text-foreground">Our Board</h3>
-          <p className="text-[11px] text-muted-foreground">What's new</p>
+          <h3 className="font-display text-base font-semibold text-foreground">Our Board</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Shared updates & pinned notes</p>
         </div>
         <button
           onClick={() => setComposing(!composing)}
-          className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
+          className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
           data-testid="button-compose-announcement"
         >
-          {composing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+          {composing ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Compose */}
       <AnimatePresence>
         {composing && (
           <motion.div
@@ -254,84 +254,75 @@ const AnnouncementsWidget = () => {
         )}
       </AnimatePresence>
 
-      {/* Announcements list */}
-      <div className="px-3 pb-2 pt-0.5 space-y-1 max-h-[120px] overflow-y-auto scrollbar-hide">
-        {announcements.length === 0 && !composing && (
+      <div className="px-4 pb-4 pt-1 space-y-1.5">
+        {visibleFeed.length === 0 && !composing && (
           <button
             onClick={() => setComposing(true)}
-            className="w-full py-3 text-center text-[11px] text-muted-foreground"
+            className="w-full py-4 text-center text-xs text-muted-foreground"
           >
             No updates yet — tap + to post one
           </button>
         )}
-        {announcements.map((a, i) => {
-          const isOwn = a.user_id === user?.id;
-          return (
-            <motion.div
-              key={a.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.04 }}
-              className={`flex items-start gap-2 rounded-lg px-2.5 py-1.5 ${
-                a.pinned ? "bg-amber-500/10 border border-amber-500/20" : "bg-secondary/40"
-              }`}
-            >
-              <span className="text-sm mt-0.5">{a.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-foreground leading-tight">{a.content}</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">
-                  {isOwn ? "You" : "Partner"} · {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}
-                </p>
-              </div>
-              {isOwn && (
-                <div className="flex gap-0.5 shrink-0">
-                  <button onClick={() => togglePin(a)} className="p-0.5 rounded hover:bg-secondary transition-colors">
-                    <Pin className={`w-3 h-3 ${a.pinned ? "text-amber-500" : "text-muted-foreground"}`} />
-                  </button>
-                  <button onClick={() => remove(a.id)} className="p-0.5 rounded hover:bg-destructive/10 transition-colors">
-                    <Trash2 className="w-3 h-3 text-muted-foreground" />
-                  </button>
+        {visibleFeed.map((item, i) => {
+          if (item.kind === "announcement") {
+            const a = item.data as Announcement;
+            const isOwn = a.user_id === user?.id;
+            return (
+              <motion.div
+                key={a.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04 }}
+                className={`flex items-start gap-2.5 rounded-xl px-3 py-2.5 ${
+                  a.pinned ? "bg-amber-500/10 border border-amber-500/20" : "bg-secondary/40"
+                }`}
+              >
+                <span className="text-base mt-0.5">{a.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground">{a.content}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {isOwn ? "You" : "Partner"} · {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}
+                  </p>
                 </div>
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* What's New activity feed */}
-      {activities.length > 0 && (
-        <>
-          <div className="mx-3 border-t border-border/40" />
-          <div className="px-3 pt-1.5 pb-0.5 flex items-center gap-1.5">
-            <Bell className="w-3 h-3 text-[hsl(var(--us-coral))]" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Recent Activity</span>
-          </div>
-          <div className="px-3 pb-2.5 pt-0.5 space-y-0.5 max-h-[110px] overflow-y-auto scrollbar-hide">
-            {activities.map((a, i) => (
+                {isOwn && (
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => togglePin(a)} className="p-1 rounded-md hover:bg-secondary transition-colors">
+                      <Pin className={`w-3.5 h-3.5 ${a.pinned ? "text-amber-500" : "text-muted-foreground"}`} />
+                    </button>
+                    <button onClick={() => remove(a.id)} className="p-1 rounded-md hover:bg-destructive/10 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            );
+          } else {
+            const a = item.data as ActivityItem;
+            return (
               <motion.button
                 key={a.id}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={() => navigate(a.route)}
-                className="w-full flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left"
+                className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 bg-secondary/40 text-left"
                 data-testid={`activity-${a.type}-${i}`}
               >
-                <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${a.color}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${a.color}`}>
                   {a.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-foreground truncate leading-tight">{a.label}</p>
-                  <p className="text-[9px] text-muted-foreground truncate">{a.detail}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{a.label}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{a.detail}</p>
                 </div>
-                <span className="text-[9px] text-muted-foreground/60 shrink-0 whitespace-nowrap">
+                <span className="text-[10px] text-muted-foreground/60 shrink-0 whitespace-nowrap">
                   {formatDistanceToNow(a.time, { addSuffix: true })}
                 </span>
               </motion.button>
-            ))}
-          </div>
-        </>
-      )}
+            );
+          }
+        })}
+      </div>
     </motion.div>
   );
 };
