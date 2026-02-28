@@ -235,21 +235,17 @@ const PodcastImage = ({ imageUrl, title }: { imageUrl?: string; title: string })
   const [failed, setFailed] = useState(false);
   if (!imageUrl || failed) {
     return (
-      <div className="w-14 h-14 rounded-lg flex-shrink-0 bg-[#1DB954]/10 flex items-center justify-center">
-        <Headphones className="w-6 h-6 text-[#1DB954]" />
+      <div className="w-full h-full flex items-center justify-center bg-[#1DB954]/10">
+        <Headphones className="w-8 h-8 text-[#1DB954]" />
       </div>
     );
   }
-  return (
-    <div className="w-14 h-14 rounded-lg flex-shrink-0 overflow-hidden bg-muted">
-      <img src={imageUrl} alt={title} className="w-full h-full object-cover" onError={() => setFailed(true)} />
-    </div>
-  );
+  return <img src={imageUrl} alt={title} className="w-full h-full object-cover" onError={() => setFailed(true)} />;
 };
 
-const SkeletonCard = ({ wide = false }: { wide?: boolean }) => (
-  <div className={`flex-shrink-0 ${wide ? "w-64" : "w-48"} animate-pulse bg-secondary/60 rounded-xl overflow-hidden`}>
-    <div className={`w-full ${wide ? "h-36" : "h-24"} bg-muted`} />
+const SkeletonCard = () => (
+  <div className="flex-shrink-0 w-44 animate-pulse bg-secondary/60 rounded-xl overflow-hidden">
+    <div className="w-full h-28 bg-muted" />
     <div className="p-2.5 space-y-2">
       <div className="w-3/4 h-3 bg-muted rounded" />
       <div className="w-full h-2 bg-muted rounded" />
@@ -267,43 +263,13 @@ const CuratedLinksWidget = () => {
   const [quotes, setQuotes] = useState<QuoteItem[]>([]);
   const [loading, setLoading] = useState<Record<TabKey, boolean>>({ articles: false, podcasts: false, videos: false, quotes: false });
   const [loaded, setLoaded] = useState<Record<TabKey, boolean>>({ articles: false, podcasts: false, videos: false, quotes: false });
-  const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
-  const [expandedPodcast, setExpandedPodcast] = useState<string | null>(null);
+  const [playerModal, setPlayerModal] = useState<{ type: "podcast" | "video"; title: string; embedUrl: string } | null>(null);
   const [ogMetaMap, setOgMetaMap] = useState<Record<string, OgMeta>>({});
   const [readerArticle, setReaderArticle] = useState<ArticleContent | null>(null);
   const [readerLoading, setReaderLoading] = useState(false);
   const fetchedOgUrls = useRef(new Set<string>());
 
-  useEffect(() => { setExpandedVideo(null); setExpandedPodcast(null); }, [activeTab]);
-
-  const touchRef = useRef<{ startX: number; startY: number; startTime: number } | null>(null);
-  const TAB_ORDER: TabKey[] = ["articles", "podcasts", "videos", "quotes"];
-
-  const swipeToTab = useCallback((direction: "left" | "right") => {
-    setActiveTab(prev => {
-      const idx = TAB_ORDER.indexOf(prev);
-      if (direction === "left" && idx < TAB_ORDER.length - 1) return TAB_ORDER[idx + 1];
-      if (direction === "right" && idx > 0) return TAB_ORDER[idx - 1];
-      return prev;
-    });
-  }, []);
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchRef.current = { startX: t.clientX, startY: t.clientY, startTime: Date.now() };
-  }, []);
-
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!touchRef.current) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - touchRef.current.startX;
-    const dy = t.clientY - touchRef.current.startY;
-    const dt = Date.now() - touchRef.current.startTime;
-    touchRef.current = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 400) {
-      swipeToTab(dx < 0 ? "left" : "right");
-    }
-  }, [swipeToTab]);
+  useEffect(() => { setPlayerModal(null); }, [activeTab]);
 
   const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("article");
   const { addList: addSharedList } = useSharedLists();
@@ -491,7 +457,7 @@ const CuratedLinksWidget = () => {
         ))}
       </div>
 
-      <div className="pb-3" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="pb-1">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -499,362 +465,251 @@ const CuratedLinksWidget = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -12 }}
             transition={{ duration: 0.2 }}
+            className="flex gap-3 overflow-x-auto scrollbar-hide px-3 pb-2"
           >
             {activeTab === "articles" && (
-              <div className="flex flex-col gap-3 px-3 pb-1">
-                {isTabLoading && !combinedArticles.length
-                  ? Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="animate-pulse rounded-xl bg-secondary/60 overflow-hidden">
-                        <div className="w-full h-40 bg-muted" />
-                        <div className="p-3 space-y-2">
-                          <div className="w-3/4 h-4 bg-muted rounded" />
-                          <div className="w-full h-3 bg-muted rounded" />
-                        </div>
-                      </div>
-                    ))
-                  : combinedArticles.map((item, i) => {
-                      if (item.kind === "link") {
-                        const link = item.data;
-                        return (
-                          <a
-                            key={`link-${link.id}`}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-xl bg-secondary/50 hover:bg-secondary transition-colors overflow-hidden block"
-                            data-testid={`saved-link-${link.id}`}
-                          >
-                            <div className="flex items-center gap-3 p-3">
-                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                <Bookmark className="w-4 h-4 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{link.title || extractDomain(link.url)}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                                  <img src={getFavicon(link.url) || ""} alt="" className="w-3 h-3 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                                  {extractDomain(link.url)}
-                                </p>
-                              </div>
-                              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                            </div>
-                          </a>
-                        );
-                      }
-                      const article = item.data;
-                      const og = ogMetaMap[article.url];
-                      const hasImage = !!og?.ogImage;
+              isTabLoading && !combinedArticles.length
+                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+                : combinedArticles.map((item, i) => {
+                    if (item.kind === "link") {
+                      const link = item.data;
                       return (
-                        <motion.div
-                          key={`article-${i}`}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.04 }}
-                          className="rounded-xl bg-secondary/50 overflow-hidden"
+                        <a
+                          key={`link-${link.id}`}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 w-44 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors overflow-hidden block"
+                          data-testid={`saved-link-${link.id}`}
                         >
-                          <button
-                            onClick={() => openArticleReader(article)}
-                            className="w-full text-left"
-                            data-testid={`article-link-${i}`}
-                            disabled={readerLoading}
-                          >
-                            <div className={`relative w-full overflow-hidden bg-muted ${hasImage ? "h-36" : "h-20"}`}>
-                              <ArticleImage url={article.url} ogMeta={og} emoji={article.emoji} />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                              <div className="absolute bottom-2 left-2.5 right-2.5">
-                                <span className="text-[9px] bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full font-medium">{article.category}</span>
-                              </div>
-                            </div>
-                            <div className="p-3">
-                              <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{article.title}</h4>
-                              <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{og?.ogDescription || article.description}</p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <img
-                                  src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(article.url)}&size=64`}
-                                  alt=""
-                                  className="w-3.5 h-3.5 rounded"
-                                />
-                                <span className="text-[10px] text-muted-foreground font-medium">{og?.siteName || article.source}</span>
-                                <ChevronRight className="w-3 h-3 text-muted-foreground/50 ml-auto" />
-                              </div>
-                            </div>
-                          </button>
-                          <div className="px-3 pb-2.5 flex items-center justify-between border-t border-border/30 pt-2">
-                            <LikeButton
-                              liked={isLikedByMe(article.url)}
-                              partnerLiked={isLikedByPartner(article.url)}
-                              mutual={isMutualLike(article.url)}
-                              onToggle={() => toggleLike(article.url, article.title)}
-                            />
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => saveArticleAsList(article)}
-                                className="p-1.5 rounded-lg hover:bg-secondary transition-all"
-                                title="Save as list"
-                                data-testid={`save-article-${i}`}
-                              >
-                                <ListPlus className="w-3.5 h-3.5 text-primary" />
-                              </button>
-                              <a
-                                href={article.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 rounded-lg hover:bg-secondary transition-all"
-                                title="Open in browser"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                              </a>
+                          <div className="w-full h-24 bg-primary/5 flex items-center justify-center">
+                            <Bookmark className="w-6 h-6 text-primary/40" />
+                          </div>
+                          <div className="p-2.5">
+                            <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{link.title || extractDomain(link.url)}</p>
+                            <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                              <img src={getFavicon(link.url) || ""} alt="" className="w-3 h-3 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                              {extractDomain(link.url)}
+                            </p>
+                          </div>
+                        </a>
+                      );
+                    }
+                    const article = item.data;
+                    const og = ogMetaMap[article.url];
+                    const hasImage = !!og?.ogImage;
+                    return (
+                      <motion.div
+                        key={`article-${i}`}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.04 }}
+                        className="flex-shrink-0 w-44 rounded-xl bg-secondary/50 overflow-hidden"
+                      >
+                        <button
+                          onClick={() => openArticleReader(article)}
+                          className="w-full text-left"
+                          data-testid={`article-link-${i}`}
+                          disabled={readerLoading}
+                        >
+                          <div className={`relative w-full overflow-hidden bg-muted ${hasImage ? "h-28" : "h-16"}`}>
+                            <ArticleImage url={article.url} ogMeta={og} emoji={article.emoji} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                            <div className="absolute bottom-1.5 left-1.5">
+                              <span className="text-[9px] bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{article.category}</span>
                             </div>
                           </div>
-                        </motion.div>
-                      );
-                    })}
-              </div>
+                          <div className="p-2.5">
+                            <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{article.title}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{og?.ogDescription || article.description}</p>
+                            <div className="flex items-center gap-1.5 mt-1.5">
+                              <img
+                                src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(article.url)}&size=64`}
+                                alt="" className="w-3 h-3 rounded"
+                              />
+                              <span className="text-[9px] text-muted-foreground">{og?.siteName || article.source}</span>
+                            </div>
+                          </div>
+                        </button>
+                        <div className="px-2.5 pb-2 flex items-center justify-between">
+                          <LikeButton
+                            liked={isLikedByMe(article.url)}
+                            partnerLiked={isLikedByPartner(article.url)}
+                            mutual={isMutualLike(article.url)}
+                            onToggle={() => toggleLike(article.url, article.title)}
+                          />
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => saveArticleAsList(article)} className="p-1 rounded-lg hover:bg-secondary" data-testid={`save-article-${i}`}>
+                              <ListPlus className="w-3 h-3 text-primary" />
+                            </button>
+                            <a href={article.url} target="_blank" rel="noopener noreferrer" className="p-1 rounded-lg hover:bg-secondary">
+                              <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                            </a>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
             )}
 
             {activeTab === "podcasts" && (
-              <div className="flex flex-col gap-2.5 px-3 pb-1">
-                {isTabLoading && !podcasts.length
-                  ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} wide />)
-                  : podcasts.map((pod, i) => {
-                      const podKey = `pod-${pod.spotifyId}`;
-                      const isExpanded = expandedPodcast === podKey;
-                      return (
-                        <motion.div
-                          key={podKey}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="rounded-xl bg-secondary/50 overflow-hidden"
+              isTabLoading && !podcasts.length
+                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+                : podcasts.map((pod, i) => {
+                    const podKey = `pod-${pod.spotifyId}`;
+                    return (
+                      <motion.div
+                        key={podKey}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="flex-shrink-0 w-44 rounded-xl bg-secondary/50 overflow-hidden"
+                      >
+                        <button
+                          onClick={() => {
+                            const embedUrl = pod.appleId
+                              ? `https://embed.podcasts.apple.com/us/podcast/id${pod.appleId}?theme=auto`
+                              : `https://open.spotify.com/embed/show/${pod.spotifyId}?utm_source=generator&theme=0`;
+                            setPlayerModal({ type: "podcast", title: pod.title, embedUrl });
+                          }}
+                          className="w-full text-left"
+                          data-testid={`podcast-${i}`}
                         >
-                          <button
-                            onClick={() => setExpandedPodcast(isExpanded ? null : podKey)}
-                            className="w-full text-left p-3 flex items-start gap-3"
-                            data-testid={`podcast-${i}`}
-                          >
+                          <div className="relative w-full h-36 overflow-hidden bg-muted">
                             <PodcastImage imageUrl={pod.imageUrl} title={pod.title} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{pod.title}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">{pod.host} · {pod.duration}</p>
-                              <p className="text-[10px] text-muted-foreground/70 mt-0.5 line-clamp-2">{pod.description}</p>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                            <div className="absolute bottom-1.5 left-1.5">
+                              <span className="text-[9px] bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{pod.category}</span>
                             </div>
-                            <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                              <PlayCircle className={`w-5 h-5 transition-colors ${isExpanded ? "text-[#8232D2]" : "text-muted-foreground"}`} />
-                              <span className="text-[8px] text-muted-foreground">{pod.category}</span>
-                            </div>
-                          </button>
-
-                          <AnimatePresence>
-                            {isExpanded && (pod.appleId || pod.spotifyId) && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 175, opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="overflow-hidden"
-                              >
-                                {pod.appleId ? (
-                                  <iframe
-                                    src={`https://embed.podcasts.apple.com/us/podcast/id${pod.appleId}?theme=auto`}
-                                    width="100%"
-                                    height="175"
-                                    allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
-                                    sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
-                                    loading="lazy"
-                                    className="border-0 rounded-none"
-                                    title={pod.title}
-                                  />
-                                ) : (
-                                  <iframe
-                                    src={`https://open.spotify.com/embed/show/${pod.spotifyId}?utm_source=generator&theme=0`}
-                                    width="100%"
-                                    height="175"
-                                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                                    loading="lazy"
-                                    className="border-0"
-                                    title={pod.title}
-                                  />
-                                )}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-
-                          <div className="px-3 pb-2 flex items-center justify-between">
-                            <LikeButton
-                              liked={isLikedByMe(podKey)}
-                              partnerLiked={isLikedByPartner(podKey)}
-                              mutual={isMutualLike(podKey)}
-                              onToggle={() => toggleLike(podKey, pod.title)}
-                            />
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={`https://podcasts.apple.com/podcast/id${pod.appleId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[10px] font-medium text-[#8232D2] hover:underline flex items-center gap-1"
-                                data-testid={`podcast-apple-${i}`}
-                              >
-                                Apple <ExternalLink className="w-2.5 h-2.5" />
-                              </a>
-                              <a
-                                href={`https://open.spotify.com/show/${pod.spotifyId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[10px] font-medium text-[#1DB954] hover:underline flex items-center gap-1"
-                                data-testid={`podcast-spotify-${i}`}
-                              >
-                                Spotify <ExternalLink className="w-2.5 h-2.5" />
-                              </a>
+                            <div className="absolute top-1.5 right-1.5">
+                              <PlayCircle className="w-5 h-5 drop-shadow text-white/80" />
                             </div>
                           </div>
-                        </motion.div>
-                      );
-                    })}
-              </div>
+                          <div className="p-2.5">
+                            <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{pod.title}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{pod.host} · {pod.duration}</p>
+                          </div>
+                        </button>
+
+                        <div className="px-2.5 pb-2 flex items-center justify-between">
+                          <LikeButton
+                            liked={isLikedByMe(podKey)}
+                            partnerLiked={isLikedByPartner(podKey)}
+                            mutual={isMutualLike(podKey)}
+                            onToggle={() => toggleLike(podKey, pod.title)}
+                          />
+                          <div className="flex items-center gap-1.5">
+                            <a href={`https://podcasts.apple.com/podcast/id${pod.appleId}`} target="_blank" rel="noopener noreferrer" className="text-[9px] font-medium text-[#8232D2]" data-testid={`podcast-apple-${i}`}>Apple</a>
+                            <a href={`https://open.spotify.com/show/${pod.spotifyId}`} target="_blank" rel="noopener noreferrer" className="text-[9px] font-medium text-[#1DB954]" data-testid={`podcast-spotify-${i}`}>Spotify</a>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
             )}
 
             {activeTab === "videos" && (
-              <div className="flex flex-col gap-2.5 px-3 pb-1">
-                {isTabLoading && !videos.length
-                  ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} wide />)
-                  : videos.map((vid, i) => {
-                      const isExpanded = expandedVideo === vid.youtubeId;
-                      const isTed = !!vid.tedSlug;
-                      const thumbSrc = vid.thumbnailUrl || `https://img.youtube.com/vi/${vid.youtubeId}/mqdefault.jpg`;
-                      return (
-                        <motion.div
-                          key={vid.youtubeId}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="rounded-xl bg-secondary/50 overflow-hidden"
+              isTabLoading && !videos.length
+                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+                : videos.map((vid, i) => {
+                    const isTed = !!vid.tedSlug;
+                    const thumbSrc = vid.thumbnailUrl || `https://img.youtube.com/vi/${vid.youtubeId}/mqdefault.jpg`;
+                    return (
+                      <motion.div
+                        key={vid.youtubeId}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="flex-shrink-0 w-44 rounded-xl bg-secondary/50 overflow-hidden"
+                      >
+                        <button
+                          onClick={() => {
+                            const embedUrl = isTed
+                              ? `https://embed.ted.com/talks/${vid.tedSlug}`
+                              : `https://www.youtube.com/embed/${vid.youtubeId}?autoplay=1&rel=0`;
+                            setPlayerModal({ type: "video", title: vid.title, embedUrl });
+                          }}
+                          className="w-full text-left"
+                          data-testid={`video-${i}`}
                         >
-                          <button
-                            onClick={() => setExpandedVideo(isExpanded ? null : vid.youtubeId)}
-                            className="w-full text-left"
-                            data-testid={`video-${i}`}
-                          >
-                            <div className="relative w-full aspect-video bg-black/5 overflow-hidden">
-                              {isExpanded ? (
-                                <iframe
-                                  src={isTed
-                                    ? `https://embed.ted.com/talks/${vid.tedSlug}`
-                                    : `https://www.youtube.com/embed/${vid.youtubeId}?autoplay=1&rel=0`
-                                  }
-                                  width="100%"
-                                  height="100%"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                  allowFullScreen
-                                  className="absolute inset-0 border-0"
-                                  title={vid.title}
-                                />
-                              ) : (
-                                <>
-                                  <img
-                                    src={thumbSrc}
-                                    alt={vid.title}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${vid.youtubeId}/mqdefault.jpg`; }}
-                                  />
-                                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${isTed ? "bg-[#e62b1e]" : "bg-white/90"}`}>
-                                      <PlayCircle className={`w-7 h-7 ${isTed ? "text-white" : "text-red-600"}`} />
-                                    </div>
-                                  </div>
-                                  <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
-                                    {isTed && (
-                                      <span className="text-[9px] bg-[#e62b1e] text-white px-1.5 py-0.5 rounded font-bold">TED</span>
-                                    )}
-                                    <span className="text-[9px] bg-black/70 text-white px-1.5 py-0.5 rounded font-medium">{vid.duration}</span>
-                                  </div>
-                                </>
-                              )}
+                          <div className="relative w-full h-24 bg-black/5 overflow-hidden">
+                            <img src={thumbSrc} alt={vid.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${vid.youtubeId}/mqdefault.jpg`; }} />
+                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${isTed ? "bg-[#e62b1e]" : "bg-white/90"}`}>
+                                <PlayCircle className={`w-5 h-5 ${isTed ? "text-white" : "text-red-600"}`} />
+                              </div>
                             </div>
-                          </button>
-                          <div className="p-2.5">
-                            <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{vid.title}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{vid.creator} · {vid.category}</p>
-                            <p className="text-[10px] text-muted-foreground/70 mt-0.5 line-clamp-2">{vid.description}</p>
+                            <div className="absolute bottom-1 right-1 flex items-center gap-0.5">
+                              {isTed && <span className="text-[8px] bg-[#e62b1e] text-white px-1 py-0.5 rounded font-bold">TED</span>}
+                              <span className="text-[8px] bg-black/70 text-white px-1 py-0.5 rounded font-medium">{vid.duration}</span>
+                            </div>
                           </div>
-                          <div className="px-2.5 pb-2 flex items-center justify-between">
-                            <LikeButton
-                              liked={isLikedByMe(vid.youtubeId)}
-                              partnerLiked={isLikedByPartner(vid.youtubeId)}
-                              mutual={isMutualLike(vid.youtubeId)}
-                              onToggle={() => toggleLike(vid.youtubeId, vid.title)}
-                            />
-                            <span className="text-[9px] text-muted-foreground/50">{vid.category}</span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-              </div>
+                        </button>
+                        <div className="p-2.5">
+                          <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{vid.title}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{vid.creator} · {vid.duration}</p>
+                        </div>
+                        <div className="px-2.5 pb-2 flex items-center justify-between">
+                          <LikeButton
+                            liked={isLikedByMe(vid.youtubeId)}
+                            partnerLiked={isLikedByPartner(vid.youtubeId)}
+                            mutual={isMutualLike(vid.youtubeId)}
+                            onToggle={() => toggleLike(vid.youtubeId, vid.title)}
+                          />
+                          <span className="text-[9px] text-muted-foreground/50">{vid.category}</span>
+                        </div>
+                      </motion.div>
+                    );
+                  })
             )}
 
             {activeTab === "quotes" && (
-              <div className="flex flex-col gap-2.5 px-3 pb-1">
-                {isTabLoading && !quotes.length
-                  ? Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="animate-pulse rounded-xl bg-secondary/50 p-6">
-                        <div className="w-3/4 h-4 bg-muted rounded mx-auto mb-3" />
-                        <div className="w-1/2 h-3 bg-muted rounded mx-auto" />
-                      </div>
+              isTabLoading && !quotes.length
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex-shrink-0 w-44 animate-pulse rounded-xl bg-secondary/50 p-6">
+                      <div className="w-3/4 h-4 bg-muted rounded mx-auto mb-3" />
+                      <div className="w-1/2 h-3 bg-muted rounded mx-auto" />
+                    </div>
                     ))
-                  : quotes.map((quote, i) => (
-                      <motion.div
-                        key={`${quote.author}-${i}`}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.08 }}
-                        className={`rounded-xl bg-gradient-to-br ${GRADIENT_PALETTES[i % GRADIENT_PALETTES.length]} p-5 text-center relative overflow-hidden`}
-                      >
-                        <Quote className="w-6 h-6 text-foreground/10 absolute top-3 left-3" />
-                        <Quote className="w-6 h-6 text-foreground/10 absolute bottom-3 right-3 rotate-180" />
-                        <p className="text-sm font-serif italic text-foreground leading-relaxed relative z-10">
-                          "{quote.text}"
-                        </p>
-                        <p className="text-[11px] font-medium text-muted-foreground mt-2.5 relative z-10">
-                          — {quote.author}
-                        </p>
-                        <div className="mt-2.5 flex items-center justify-center">
-                          {(() => {
-                            const quoteId = `quote-${quote.text.slice(0, 30).replace(/\s+/g, "-").toLowerCase()}`;
-                            return (
-                              <LikeButton
-                                liked={isLikedByMe(quoteId)}
-                                partnerLiked={isLikedByPartner(quoteId)}
-                                mutual={isMutualLike(quoteId)}
-                                onToggle={() => toggleLike(quoteId, quote.text.slice(0, 50))}
-                              />
-                            );
-                          })()}
-                        </div>
-                      </motion.div>
-                    ))}
-              </div>
+                  : quotes.map((quote, i) => {
+                      const quoteId = `quote-${quote.text.slice(0, 30).replace(/\s+/g, "-").toLowerCase()}`;
+                      return (
+                        <motion.div
+                          key={`${quote.author}-${i}`}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.08 }}
+                          className={`flex-shrink-0 w-44 rounded-xl bg-gradient-to-br ${GRADIENT_PALETTES[i % GRADIENT_PALETTES.length]} p-4 text-center relative overflow-hidden`}
+                        >
+                          <Quote className="w-4 h-4 text-foreground/10 absolute top-2 left-2" />
+                          <p className="text-[11px] font-serif italic text-foreground leading-relaxed relative z-10 line-clamp-5">
+                            "{quote.text}"
+                          </p>
+                          <p className="text-[10px] font-medium text-muted-foreground mt-2 relative z-10">
+                            — {quote.author}
+                          </p>
+                          <div className="mt-2 flex items-center justify-center">
+                            <LikeButton
+                              liked={isLikedByMe(quoteId)}
+                              partnerLiked={isLikedByPartner(quoteId)}
+                              mutual={isMutualLike(quoteId)}
+                              onToggle={() => toggleLike(quoteId, quote.text.slice(0, 50))}
+                            />
+                          </div>
+                        </motion.div>
+                      );
+                    })
             )}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center justify-center gap-1.5 py-2">
-        {TAB_ORDER.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`rounded-full transition-all duration-200 ${
-              activeTab === tab ? "w-4 h-1.5 bg-primary" : "w-1.5 h-1.5 bg-muted-foreground/30"
-            }`}
-            data-testid={`foryou-dot-${tab}`}
-          />
-        ))}
-      </div>
-
       <div className="px-4 pb-2.5">
-        <p className="text-[9px] text-muted-foreground/50 text-center">
-          {activeTab === "articles" && "Tap to read in-app · Swipe to browse"}
-          {activeTab === "podcasts" && "Tap to play in-app · Swipe to browse"}
-          {activeTab === "videos" && "Tap to play inline · Swipe to browse"}
-          {activeTab === "quotes" && "Share your favourite · Swipe to browse"}
+        <p className="text-[9px] text-muted-foreground/50">
+          {activeTab === "articles" && "Tap to read in-app · Scroll for more"}
+          {activeTab === "podcasts" && "Tap to play in-app · Scroll for more"}
+          {activeTab === "videos" && "Tap to play inline · Scroll for more"}
+          {activeTab === "quotes" && "Share your favourite · Scroll for more"}
         </p>
       </div>
 
@@ -874,6 +729,46 @@ const CuratedLinksWidget = () => {
             ogMeta={ogMetaMap[readerArticle.url]}
             onClose={() => setReaderArticle(null)}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {playerModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center"
+            onClick={() => setPlayerModal(null)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full max-w-lg bg-card rounded-t-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+                <p className="text-sm font-semibold text-foreground line-clamp-1">{playerModal.title}</p>
+                <button onClick={() => setPlayerModal(null)} className="p-1 rounded-full hover:bg-secondary" data-testid="close-player-modal">
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              <div className={playerModal.type === "video" ? "aspect-video" : "h-[280px]"}>
+                <iframe
+                  src={playerModal.embedUrl}
+                  width="100%"
+                  height="100%"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  sandbox={playerModal.type === "podcast" ? "allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" : undefined}
+                  className="border-0"
+                  title={playerModal.title}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
