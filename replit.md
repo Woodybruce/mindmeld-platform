@@ -61,6 +61,9 @@ All routes are defined in `server/routes.ts`:
 - `POST /api/suggest-products` - AI product recommendations
 - `POST /api/suggest-tasks` - AI shared list suggestions
 - `POST /api/suggest-travel` - AI travel suggestions
+- `GET /api/curated-podcasts` - Curated relationship podcasts
+- `GET /api/curated-videos` - Curated relationship videos (YouTube)
+- `GET /api/curated-quotes` - Inspirational relationship quotes
 - `GET /api/microsoft-auth-url` - Microsoft OAuth URL generation
 - `POST /api/microsoft-oauth-callback` - Microsoft OAuth token exchange
 - `POST /api/sync-outlook-calendar` - Outlook calendar sync
@@ -122,6 +125,13 @@ All routes are defined in `server/routes.ts`:
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes
+- 2026-02-28: For You section expanded with 4 content tabs
+  - Articles tab: relationship reads + saved links (existing, now tabbed)
+  - Podcasts tab: curated Spotify relationship podcasts with inline embed player
+  - Videos tab: curated YouTube relationship videos with inline playback
+  - Quotes tab: inspirational relationship quotes with gradient cards
+  - New API routes: `/api/curated-podcasts`, `/api/curated-videos`, `/api/curated-quotes`
+  - Each tab has its own caching, like/heart support, and refresh
 - 2026-02-28: Discover Together shop with curated Amazon products
   - `useShopProducts` hook stores curated products in `shared_lists` table as `__shop_products__` JSON items array
   - Admin page (AdminFeedContent.tsx) has "Shop Products" tab to add/edit/remove products

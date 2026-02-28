@@ -67,6 +67,46 @@ const REAL_ARTICLES = [
   { title: "Self-Care for Better Relationships", description: "Taking care of yourself so you can love better", source: "Verywell Mind", category: "Wellness", emoji: "\u{1F9D8}", url: "https://www.verywellmind.com/self-care-strategies-overall-stress-reduction-3144729", imageHint: "self care" },
 ];
 
+const CURATED_PODCASTS = [
+  { title: "Where Should We Begin? — Esther Perel", description: "Step inside real therapy sessions with couples navigating love, betrayal, and desire", host: "Esther Perel", category: "Therapy", emoji: "🎧", spotifyUri: "spotify:show:2LfEXBqTmGJMPMYfAVHdj4", spotifyUrl: "https://open.spotify.com/show/2LfEXBqTmGJMPMYfAVHdj4", duration: "40 min" },
+  { title: "The Gottman Relationship Coach", description: "Science-based strategies for building a stronger, more connected partnership", host: "Dr John Gottman", category: "Communication", emoji: "🧠", spotifyUri: "spotify:show:2wB2EfyzrCDhjWXA3pVBOa", spotifyUrl: "https://open.spotify.com/show/2wB2EfyzrCDhjWXA3pVBOa", duration: "30 min" },
+  { title: "Modern Love Podcast", description: "Real stories of love, loss, and redemption from the New York Times column", host: "New York Times", category: "Stories", emoji: "💌", spotifyUri: "spotify:show:03Er7mSPHvc2Dn8gP5odMh", spotifyUrl: "https://open.spotify.com/show/03Er7mSPHvc2Dn8gP5odMh", duration: "25 min" },
+  { title: "The Love Fix", description: "Clinical psychologist helps couples navigate real relationship challenges", host: "Dr Tari Mack", category: "Advice", emoji: "💡", spotifyUri: "spotify:show:3jYyI64kRl4wERdfIc0fQO", spotifyUrl: "https://open.spotify.com/show/3jYyI64kRl4wERdfIc0fQO", duration: "45 min" },
+  { title: "Just Between Us", description: "Honest chats about dating, marriage, and everything in between", host: "Allison & Gaby", category: "Fun", emoji: "😄", spotifyUri: "spotify:show:2afVjOVyRWzyWBi8qrNkeJ", spotifyUrl: "https://open.spotify.com/show/2afVjOVyRWzyWBi8qrNkeJ", duration: "35 min" },
+  { title: "Relationship Alive!", description: "Deep-dive conversations with world-renowned relationship experts", host: "Neil Sattin", category: "Growth", emoji: "🌱", spotifyUri: "spotify:show:6cQwLbS6rAku3Y84fN3aPU", spotifyUrl: "https://open.spotify.com/show/6cQwLbS6rAku3Y84fN3aPU", duration: "60 min" },
+  { title: "Foreplay Radio", description: "Sex therapists discuss intimacy, desire, and keeping the spark alive", host: "Laurie Watson", category: "Intimacy", emoji: "🔥", spotifyUri: "spotify:show:5kKKuebRUxNsaKLPM7hIBt", spotifyUrl: "https://open.spotify.com/show/5kKKuebRUxNsaKLPM7hIBt", duration: "30 min" },
+  { title: "The Secure Relationship", description: "Attachment theory in action — heal anxious & avoidant patterns", host: "Julie Menanno", category: "Growth", emoji: "🔗", spotifyUri: "spotify:show:6HwbZhlhLzBJXJEq9OWaOX", spotifyUrl: "https://open.spotify.com/show/6HwbZhlhLzBJXJEq9OWaOX", duration: "25 min" },
+];
+
+const CURATED_VIDEOS = [
+  { title: "The Secret to Desire in Long-Term Relationships", description: "Esther Perel reveals why desire fades and how to bring it back", creator: "TED", category: "Intimacy", emoji: "🔥", youtubeId: "sa0RUmGTCYY", duration: "19 min" },
+  { title: "How to Make Love Last", description: "Neuroscientist Helen Fisher on the science behind lasting love", creator: "TED", category: "Science", emoji: "🧬", youtubeId: "OYfoGTIG7pY", duration: "18 min" },
+  { title: "The 4 Attachment Styles Explained", description: "Understand how your attachment style shapes your relationships", creator: "The School of Life", category: "Growth", emoji: "🔗", youtubeId: "2s9ACDMcpjA", duration: "7 min" },
+  { title: "10 Ways to Have a Better Conversation", description: "Communication tips that will transform every relationship", creator: "TED", category: "Communication", emoji: "💬", youtubeId: "R1vskiVDwl4", duration: "12 min" },
+  { title: "Why We All Need to Practice Emotional First Aid", description: "How taking care of your emotional health benefits your relationship", creator: "TED", category: "Wellness", emoji: "🩹", youtubeId: "F2hc2FLOdhI", duration: "18 min" },
+  { title: "The Power of Vulnerability", description: "Brené Brown on how vulnerability is the birthplace of connection", creator: "TED", category: "Connection", emoji: "❤️", youtubeId: "iCvmsMzlF7o", duration: "21 min" },
+  { title: "How to Fix a Broken Relationship", description: "John Gottman breaks down the key to repairing relationship trust", creator: "Big Think", category: "Communication", emoji: "🔧", youtubeId: "AKTyPgwfPgg", duration: "8 min" },
+  { title: "5 Love Languages Explained", description: "Gary Chapman walks through each love language with examples", creator: "Gary Chapman", category: "Connection", emoji: "🗣️", youtubeId: "doRMsni0sno", duration: "10 min" },
+];
+
+const CURATED_QUOTES = [
+  { text: "The best thing to hold onto in life is each other.", author: "Audrey Hepburn", category: "Love" },
+  { text: "A great relationship is about two things: first, appreciating the similarities, and second, respecting the differences.", author: "Unknown", category: "Growth" },
+  { text: "In the end, the love you take is equal to the love you make.", author: "Paul McCartney", category: "Love" },
+  { text: "Being deeply loved by someone gives you strength, while loving someone deeply gives you courage.", author: "Lao Tzu", category: "Courage" },
+  { text: "The greatest thing you'll ever learn is just to love and be loved in return.", author: "Eden Ahbez", category: "Love" },
+  { text: "We loved with a love that was more than love.", author: "Edgar Allan Poe", category: "Passion" },
+  { text: "Love does not consist of gazing at each other, but in looking outward together in the same direction.", author: "Antoine de Saint-Exupéry", category: "Partnership" },
+  { text: "Whatever our souls are made of, his and mine are the same.", author: "Emily Brontë", category: "Connection" },
+  { text: "You know you're in love when you can't fall asleep because reality is finally better than your dreams.", author: "Dr Seuss", category: "Joy" },
+  { text: "To love and be loved is to feel the sun from both sides.", author: "David Viscott", category: "Warmth" },
+  { text: "The real lover is the man who can thrill you by kissing your forehead.", author: "Marilyn Monroe", category: "Intimacy" },
+  { text: "Where there is love there is life.", author: "Mahatma Gandhi", category: "Life" },
+  { text: "I have decided to stick with love. Hate is too great a burden to bear.", author: "Martin Luther King Jr.", category: "Choice" },
+  { text: "You are my today and all of my tomorrows.", author: "Leo Christopher", category: "Forever" },
+  { text: "The couples that are meant to be are the ones who go through everything that is meant to tear them apart and come out even stronger.", author: "Unknown", category: "Resilience" },
+];
+
 const FALLBACK_PRODUCTS = [
   { name: "Couples Massage Oil Gift Set", brand: "Intimate Earth", price: "\u00A324.99", description: "Sensual massage oils for two", category: "Massage", emoji: "\u{1F486}", affiliateTag: "massage-oil-set", productUrl: "https://www.amazon.co.uk/s?k=couples+massage+oil+gift+set&tag=woodybruce-21" },
   { name: "Couples Intimacy Card Game", brand: "Lovehoney", price: "\u00A314.99", description: "50 fun dares and questions for couples", category: "Games", emoji: "\u{1F0CF}", affiliateTag: "couples-game", productUrl: "https://www.amazon.co.uk/s?k=couples+intimacy+card+game&tag=woodybruce-21" },
@@ -665,6 +705,36 @@ Return ONLY valid JSON with these fields:
       console.error("suggest-articles error:", e);
       const fallback = shuffle(REAL_ARTICLES).slice(0, 7);
       res.json({ articles: fallback });
+    }
+  });
+
+  // 7b. GET /api/curated-podcasts
+  app.get("/api/curated-podcasts", (_req: Request, res: Response) => {
+    try {
+      res.json({ podcasts: shuffle(CURATED_PODCASTS).slice(0, 6) });
+    } catch (e) {
+      console.error("curated-podcasts error:", e);
+      res.json({ podcasts: CURATED_PODCASTS.slice(0, 6) });
+    }
+  });
+
+  // 7c. GET /api/curated-videos
+  app.get("/api/curated-videos", (_req: Request, res: Response) => {
+    try {
+      res.json({ videos: shuffle(CURATED_VIDEOS).slice(0, 6) });
+    } catch (e) {
+      console.error("curated-videos error:", e);
+      res.json({ videos: CURATED_VIDEOS.slice(0, 6) });
+    }
+  });
+
+  // 7d. GET /api/curated-quotes
+  app.get("/api/curated-quotes", (_req: Request, res: Response) => {
+    try {
+      res.json({ quotes: shuffle(CURATED_QUOTES).slice(0, 5) });
+    } catch (e) {
+      console.error("curated-quotes error:", e);
+      res.json({ quotes: CURATED_QUOTES.slice(0, 5) });
     }
   });
 
