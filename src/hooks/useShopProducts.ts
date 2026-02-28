@@ -17,17 +17,20 @@ export interface ShopProduct {
 const SHOP_LIST_NAME = "Our Shopping List";
 const AMAZON_TAG = "woodybruce-21";
 
-const ensureAffiliateTag = (url: string): string => {
+const ensureAffiliateTag = (url: string, productName?: string): string => {
   if (!url) return "";
   try {
     const u = new URL(url);
     if (u.hostname.includes("amazon")) {
+      if (u.pathname.includes("/dp/") || u.pathname.includes("/gp/")) {
+        return `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || "couples gift")}&tag=${AMAZON_TAG}`;
+      }
       u.searchParams.set("tag", AMAZON_TAG);
     }
     return u.toString();
   } catch {
     if (url.includes("amazon")) {
-      return `https://www.amazon.co.uk/s?k=${encodeURIComponent(url)}&tag=${AMAZON_TAG}`;
+      return `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || url)}&tag=${AMAZON_TAG}`;
     }
     return url;
   }
@@ -41,7 +44,7 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     description: "150 conversation cards for date nights — fun questions, flirty dares & deep talks",
     category: "Games",
     imageUrl: "https://m.media-amazon.com/images/I/71KqGN8mBOL._AC_SL1500_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/dp/B0BYQ4142J",
+    amazonUrl: "https://www.amazon.co.uk/s?k=Talk+Flirt+Dare+couples+card+game&tag=woodybruce-21",
     active: true,
   },
   {
@@ -51,7 +54,7 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     description: "Scratch off fun date ideas together — from cooking classes to stargazing",
     category: "Date Night",
     imageUrl: "https://m.media-amazon.com/images/I/81xdUHuBbEL._AC_SL1500_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/dp/B07MX6212N",
+    amazonUrl: "https://www.amazon.co.uk/s?k=100+Dates+Scratch+Off+Poster+Gift+Republic&tag=woodybruce-21",
     active: true,
   },
   {
@@ -61,7 +64,7 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     description: "Luxury bath & body set — perfect for a pamper night in together",
     category: "Wellness",
     imageUrl: "https://m.media-amazon.com/images/I/61Ry3mxZURL._AC_SL1000_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/dp/B08CXWLMFD",
+    amazonUrl: "https://www.amazon.co.uk/s?k=Couples+Wellness+Spa+Gift+Set&tag=woodybruce-21",
     active: true,
   },
   {
@@ -71,7 +74,7 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     description: "Custom night sky from the date you met — a meaningful keepsake gift",
     category: "Gifts",
     imageUrl: "https://m.media-amazon.com/images/I/61dQKnj3KAL._AC_SL1000_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/dp/B08NDRHCFL",
+    amazonUrl: "https://www.amazon.co.uk/s?k=Personalised+Star+Map+Print+couples&tag=woodybruce-21",
     active: true,
   },
   {
@@ -81,7 +84,7 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     description: "A guided journal for adventures and experiences you want to share together",
     category: "Gifts",
     imageUrl: "https://m.media-amazon.com/images/I/71L9jz4GxkL._AC_SL1500_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/dp/1633360245",
+    amazonUrl: "https://www.amazon.co.uk/s?k=Couples+Bucket+List+Book+journal&tag=woodybruce-21",
     active: true,
   },
   {
@@ -91,7 +94,7 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     description: "Set of 3 votives in romantic scents — ideal for date nights at home",
     category: "Date Night",
     imageUrl: "https://m.media-amazon.com/images/I/81Vkq2TNNML._AC_SL1500_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/dp/B00F3J7070",
+    amazonUrl: "https://www.amazon.co.uk/s?k=Yankee+Candle+romantic+scented+gift+set&tag=woodybruce-21",
     active: true,
   },
   {
@@ -101,7 +104,7 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     description: "Relaxing massage oils set — lavender, ylang ylang & more for couple's massage",
     category: "Intimacy",
     imageUrl: "https://m.media-amazon.com/images/I/61Ry3mxZURL._AC_SL1000_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/dp/B01L8GH9S6",
+    amazonUrl: "https://www.amazon.co.uk/s?k=Massage+Oil+Gift+Set+Couples&tag=woodybruce-21",
     active: true,
   },
   {
@@ -111,7 +114,7 @@ const DEFAULT_PRODUCTS: Omit<ShopProduct, "id">[] = [
     description: "Deepen your connection with meaningful questions and wildcards",
     category: "Games",
     imageUrl: "https://m.media-amazon.com/images/I/61ynJ2CVQBL._AC_SL1000_.jpg",
-    amazonUrl: "https://www.amazon.co.uk/dp/B08GSGBY5P",
+    amazonUrl: "https://www.amazon.co.uk/s?k=Were+Not+Really+Strangers+Card+Game&tag=woodybruce-21",
     active: true,
   },
 ];
@@ -158,7 +161,7 @@ export function useShopProducts() {
       const seedProducts: ShopProduct[] = DEFAULT_PRODUCTS.map(p => ({
         ...p,
         id: crypto.randomUUID(),
-        amazonUrl: ensureAffiliateTag(p.amazonUrl),
+        amazonUrl: ensureAffiliateTag(p.amazonUrl, p.name),
       }));
       const { data: inserted, error: insertErr } = await supabase
         .from("shared_lists")
@@ -199,7 +202,7 @@ export function useShopProducts() {
     const newProduct: ShopProduct = {
       ...product,
       id: crypto.randomUUID(),
-      amazonUrl: ensureAffiliateTag(product.amazonUrl),
+      amazonUrl: ensureAffiliateTag(product.amazonUrl, product.name),
     };
     const updated = [...products, newProduct];
     await saveProducts(updated);
@@ -209,7 +212,7 @@ export function useShopProducts() {
   const updateProduct = useCallback(async (id: string, updates: Partial<ShopProduct>) => {
     const updated = products.map(p =>
       p.id === id
-        ? { ...p, ...updates, amazonUrl: updates.amazonUrl ? ensureAffiliateTag(updates.amazonUrl) : p.amazonUrl }
+        ? { ...p, ...updates, amazonUrl: updates.amazonUrl ? ensureAffiliateTag(updates.amazonUrl, updates.name || p.name) : p.amazonUrl }
         : p
     );
     await saveProducts(updated);

@@ -24,8 +24,18 @@ const withAffiliateTag = (url?: string): string | undefined => {
 const amazonSearch = (name: string): string =>
   `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
 
-const getLink = (url?: string, name?: string): string =>
-  withAffiliateTag(url) || amazonSearch(name || "couples gift");
+const ensureSearchUrl = (url: string, name: string): string => {
+  if (url.includes("/dp/") || url.includes("/gp/")) {
+    return amazonSearch(name);
+  }
+  return url;
+};
+
+const getLink = (url?: string, name?: string): string => {
+  const tagged = withAffiliateTag(url);
+  if (tagged) return ensureSearchUrl(tagged, name || "couples gift");
+  return amazonSearch(name || "couples gift");
+};
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane, ShoppingCart } from "lucide-react";
 import { apiInvoke } from "@/lib/api";
@@ -193,13 +203,13 @@ const DiscoverTogether = () => {
 
   useEffect(() => {
     const v = localStorage.getItem("disc-cache-v");
-    if (v !== "3") {
+    if (v !== "4") {
       ["disc-experiences", "disc-intimacy", "disc-travel"].forEach(k => localStorage.removeItem(k));
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k && k.startsWith("disc-products-")) localStorage.removeItem(k);
       }
-      localStorage.setItem("disc-cache-v", "3");
+      localStorage.setItem("disc-cache-v", "4");
     }
   }, []);
   useEffect(() => { if (activeTab === "experiences" && !loaded.experiences) fetchExperiences(); }, [activeTab]);
@@ -330,7 +340,7 @@ const DiscoverTogether = () => {
                               <LikeButton liked={isLikedByMe(id)} partnerLiked={isLikedByPartner(id)} mutual={isMutualLike(id)} onToggle={() => toggleLike(id, product.name)} />
                             </div>
                             <a
-                              href={withAffiliateTag(product.amazonUrl) || `https://www.amazon.co.uk/s?k=${encodeURIComponent(product.name)}&tag=${AMAZON_TAG}`}
+                              href={getLink(product.amazonUrl, product.name)}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
@@ -389,7 +399,7 @@ const DiscoverTogether = () => {
                 : products.slice(0, 6).map((p, i) => {
                     const img = getCategoryImage(p.category);
                     return (
-                      <motion.button key={p.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+                      <motion.button key={`${p.name}-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
                         onClick={() => window.open(getLink(p.productUrl, p.name), "_blank", "noopener,noreferrer")}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
@@ -422,7 +432,7 @@ const DiscoverTogether = () => {
                 : intimacy.slice(0, 6).map((item, i) => {
                     const img = getCategoryImage(item.category);
                     return (
-                      <motion.button key={item.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+                      <motion.button key={`${item.name}-${i}`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
                         onClick={() => window.open(getLink(item.productUrl, item.name), "_blank", "noopener,noreferrer")}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >

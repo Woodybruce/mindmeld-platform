@@ -45,14 +45,18 @@ const QUICK_PROMPTS: Record<string, string[]> = {
 };
 
 const withAmazonTag = (url?: string, productName?: string): string => {
+  const searchFallback = `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || "")}&tag=${AMAZON_TAG}`;
   if (url) {
     try {
       const u = new URL(url);
+      if (u.pathname.includes("/dp/") || u.pathname.includes("/gp/")) {
+        return searchFallback;
+      }
       u.searchParams.set("tag", AMAZON_TAG);
       return u.toString();
     } catch {}
   }
-  return `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || "")}&tag=${AMAZON_TAG}`;
+  return searchFallback;
 };
 
 const AiSearchBar = ({ section }: { section: "discover" | "foryou" }) => {
