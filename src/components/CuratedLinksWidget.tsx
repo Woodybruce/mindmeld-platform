@@ -25,8 +25,9 @@ interface Podcast {
   host: string;
   category: string;
   emoji: string;
-  spotifyUri: string;
-  spotifyUrl: string;
+  spotifyId: string;
+  appleId: string;
+  imageUrl: string;
   duration: string;
 }
 
@@ -37,6 +38,8 @@ interface Video {
   category: string;
   emoji: string;
   youtubeId: string;
+  tedSlug: string;
+  thumbnailUrl: string;
   duration: string;
 }
 
@@ -106,6 +109,22 @@ const GRADIENT_PALETTES = [
   "from-emerald-100 to-green-50 dark:from-emerald-900/30 dark:to-green-900/20",
   "from-violet-100 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/20",
 ];
+
+const PodcastImage = ({ imageUrl, title }: { imageUrl?: string; title: string }) => {
+  const [failed, setFailed] = useState(false);
+  if (!imageUrl || failed) {
+    return (
+      <div className="w-14 h-14 rounded-lg flex-shrink-0 bg-[#1DB954]/10 flex items-center justify-center">
+        <Headphones className="w-6 h-6 text-[#1DB954]" />
+      </div>
+    );
+  }
+  return (
+    <div className="w-14 h-14 rounded-lg flex-shrink-0 overflow-hidden bg-muted">
+      <img src={imageUrl} alt={title} className="w-full h-full object-cover" onError={() => setFailed(true)} />
+    </div>
+  );
+};
 
 const SkeletonCard = ({ wide = false }: { wide?: boolean }) => (
   <div className={`flex-shrink-0 ${wide ? "w-64" : "w-48"} animate-pulse bg-secondary/60 rounded-xl overflow-hidden`}>
@@ -203,7 +222,14 @@ const CuratedLinksWidget = () => {
     finally { setLoading(p => ({ ...p, quotes: false })); setLoaded(p => ({ ...p, quotes: true })); }
   }, []);
 
-  useEffect(() => { if (!loaded.articles) fetchArticles(); }, []);
+  useEffect(() => {
+    const v = localStorage.getItem("foryou-cache-v");
+    if (v !== "2") {
+      ["foryou-articles", "foryou-podcasts", "foryou-videos", "foryou-quotes", "curated-articles"].forEach(k => localStorage.removeItem(k));
+      localStorage.setItem("foryou-cache-v", "2");
+    }
+    if (!loaded.articles) fetchArticles();
+  }, []);
   useEffect(() => { if (activeTab === "podcasts" && !loaded.podcasts) fetchPodcasts(); }, [activeTab]);
   useEffect(() => { if (activeTab === "videos" && !loaded.videos) fetchVideos(); }, [activeTab]);
   useEffect(() => { if (activeTab === "quotes" && !loaded.quotes) fetchQuotes(); }, [activeTab]);
@@ -255,8 +281,8 @@ const CuratedLinksWidget = () => {
             <h3 className="font-display text-sm font-bold text-foreground">For You</h3>
             <p className="text-[10px] text-muted-foreground">
               {activeTab === "articles" && "Reads & saved links"}
-              {activeTab === "podcasts" && "Relationship podcasts"}
-              {activeTab === "videos" && "Watch together"}
+              {activeTab === "podcasts" && "Listen together in-app"}
+              {activeTab === "videos" && "TED Talks & more"}
               {activeTab === "quotes" && "Words to inspire"}
             </p>
           </div>
@@ -374,73 +400,95 @@ const CuratedLinksWidget = () => {
                 {isTabLoading && !podcasts.length
                   ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} wide />)
                   : podcasts.map((pod, i) => {
-                      const isExpanded = expandedPodcast === pod.spotifyUri;
-                      const spotifyEmbedId = pod.spotifyUrl.split("/show/")[1]?.split("?")[0];
+                      const podKey = `pod-${pod.spotifyId}`;
+                      const isExpanded = expandedPodcast === podKey;
                       return (
                         <motion.div
-                          key={pod.spotifyUri}
+                          key={podKey}
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.05 }}
                           className="rounded-xl bg-secondary/50 overflow-hidden"
                         >
                           <button
-                            onClick={() => setExpandedPodcast(isExpanded ? null : pod.spotifyUri)}
+                            onClick={() => setExpandedPodcast(isExpanded ? null : podKey)}
                             className="w-full text-left p-3 flex items-start gap-3"
                             data-testid={`podcast-${i}`}
                           >
-                            <div className="w-12 h-12 rounded-lg bg-[#1DB954]/10 flex items-center justify-center flex-shrink-0">
-                              <Headphones className="w-5 h-5 text-[#1DB954]" />
-                            </div>
+                            <PodcastImage imageUrl={pod.imageUrl} title={pod.title} />
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{pod.title}</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">{pod.host} · {pod.duration}</p>
                               <p className="text-[10px] text-muted-foreground/70 mt-0.5 line-clamp-2">{pod.description}</p>
                             </div>
                             <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                              <PlayCircle className={`w-5 h-5 transition-colors ${isExpanded ? "text-[#1DB954]" : "text-muted-foreground"}`} />
+                              <PlayCircle className={`w-5 h-5 transition-colors ${isExpanded ? "text-[#8232D2]" : "text-muted-foreground"}`} />
                               <span className="text-[8px] text-muted-foreground">{pod.category}</span>
                             </div>
                           </button>
 
                           <AnimatePresence>
-                            {isExpanded && spotifyEmbedId && (
+                            {isExpanded && (pod.appleId || pod.spotifyId) && (
                               <motion.div
                                 initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 160, opacity: 1 }}
+                                animate={{ height: 175, opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
                                 transition={{ duration: 0.3 }}
                                 className="overflow-hidden"
                               >
-                                <iframe
-                                  src={`https://open.spotify.com/embed/show/${spotifyEmbedId}?utm_source=generator&theme=0`}
-                                  width="100%"
-                                  height="160"
-                                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                                  loading="lazy"
-                                  className="border-0"
-                                  title={pod.title}
-                                />
+                                {pod.appleId ? (
+                                  <iframe
+                                    src={`https://embed.podcasts.apple.com/us/podcast/id${pod.appleId}?theme=auto`}
+                                    width="100%"
+                                    height="175"
+                                    allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
+                                    sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+                                    loading="lazy"
+                                    className="border-0 rounded-none"
+                                    title={pod.title}
+                                  />
+                                ) : (
+                                  <iframe
+                                    src={`https://open.spotify.com/embed/show/${pod.spotifyId}?utm_source=generator&theme=0`}
+                                    width="100%"
+                                    height="175"
+                                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                    loading="lazy"
+                                    className="border-0"
+                                    title={pod.title}
+                                  />
+                                )}
                               </motion.div>
                             )}
                           </AnimatePresence>
 
                           <div className="px-3 pb-2 flex items-center justify-between">
                             <LikeButton
-                              liked={isLikedByMe(pod.spotifyUri)}
-                              partnerLiked={isLikedByPartner(pod.spotifyUri)}
-                              mutual={isMutualLike(pod.spotifyUri)}
-                              onToggle={() => toggleLike(pod.spotifyUri, pod.title)}
+                              liked={isLikedByMe(podKey)}
+                              partnerLiked={isLikedByPartner(podKey)}
+                              mutual={isMutualLike(podKey)}
+                              onToggle={() => toggleLike(podKey, pod.title)}
                             />
-                            <a
-                              href={pod.spotifyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[10px] font-medium text-[#1DB954] hover:underline flex items-center gap-1"
-                              data-testid={`podcast-open-${i}`}
-                            >
-                              Open in Spotify <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`https://podcasts.apple.com/podcast/id${pod.appleId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] font-medium text-[#8232D2] hover:underline flex items-center gap-1"
+                                data-testid={`podcast-apple-${i}`}
+                              >
+                                Apple <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                              <a
+                                href={`https://open.spotify.com/show/${pod.spotifyId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] font-medium text-[#1DB954] hover:underline flex items-center gap-1"
+                                data-testid={`podcast-spotify-${i}`}
+                              >
+                                Spotify <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            </div>
                           </div>
                         </motion.div>
                       );
@@ -454,6 +502,8 @@ const CuratedLinksWidget = () => {
                   ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} wide />)
                   : videos.map((vid, i) => {
                       const isExpanded = expandedVideo === vid.youtubeId;
+                      const isTed = !!vid.tedSlug;
+                      const thumbSrc = vid.thumbnailUrl || `https://img.youtube.com/vi/${vid.youtubeId}/mqdefault.jpg`;
                       return (
                         <motion.div
                           key={vid.youtubeId}
@@ -470,7 +520,10 @@ const CuratedLinksWidget = () => {
                             <div className="relative w-full aspect-video bg-black/5 overflow-hidden">
                               {isExpanded ? (
                                 <iframe
-                                  src={`https://www.youtube.com/embed/${vid.youtubeId}?autoplay=1&rel=0`}
+                                  src={isTed
+                                    ? `https://embed.ted.com/talks/${vid.tedSlug}`
+                                    : `https://www.youtube.com/embed/${vid.youtubeId}?autoplay=1&rel=0`
+                                  }
                                   width="100%"
                                   height="100%"
                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -481,16 +534,20 @@ const CuratedLinksWidget = () => {
                               ) : (
                                 <>
                                   <img
-                                    src={`https://img.youtube.com/vi/${vid.youtubeId}/mqdefault.jpg`}
+                                    src={thumbSrc}
                                     alt={vid.title}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${vid.youtubeId}/mqdefault.jpg`; }}
                                   />
                                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                    <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                                      <PlayCircle className="w-7 h-7 text-red-600" />
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${isTed ? "bg-[#e62b1e]" : "bg-white/90"}`}>
+                                      <PlayCircle className={`w-7 h-7 ${isTed ? "text-white" : "text-red-600"}`} />
                                     </div>
                                   </div>
-                                  <div className="absolute bottom-1.5 right-1.5">
+                                  <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
+                                    {isTed && (
+                                      <span className="text-[9px] bg-[#e62b1e] text-white px-1.5 py-0.5 rounded font-bold">TED</span>
+                                    )}
                                     <span className="text-[9px] bg-black/70 text-white px-1.5 py-0.5 rounded font-medium">{vid.duration}</span>
                                   </div>
                                 </>
@@ -566,8 +623,8 @@ const CuratedLinksWidget = () => {
       <div className="px-4 pb-2.5">
         <p className="text-[9px] text-muted-foreground/50">
           {activeTab === "articles" && "Curated reads + your saved links · Tap to reshuffle"}
-          {activeTab === "podcasts" && "Tap to preview · Open in Spotify for full episodes"}
-          {activeTab === "videos" && "Tap to play · Watch together for bonus connection points"}
+          {activeTab === "podcasts" && "Tap to play in-app · Also on Spotify & Apple Podcasts"}
+          {activeTab === "videos" && "Tap to play inline · TED Talks play directly in-app"}
           {activeTab === "quotes" && "Share your favourite with your partner"}
         </p>
       </div>
