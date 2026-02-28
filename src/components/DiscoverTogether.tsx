@@ -4,7 +4,7 @@ const AMAZON_TAG = "woodybruce-21";
 const CJ_PID = "7540258";
 
 const withAffiliateTag = (url?: string): string | undefined => {
-  if (!url) return url;
+  if (!url) return undefined;
   try {
     const u = new URL(url);
     if (u.hostname.includes("amazon.co.uk") || u.hostname.includes("amazon.com")) {
@@ -16,9 +16,16 @@ const withAffiliateTag = (url?: string): string | undefined => {
       if (!u.searchParams.has("aid")) u.searchParams.set("aid", "356980");
       return u.toString();
     }
+    return url;
   } catch {}
-  return url;
+  return undefined;
 };
+
+const amazonSearch = (name: string): string =>
+  `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
+
+const getLink = (url?: string, name?: string): string =>
+  withAffiliateTag(url) || amazonSearch(name || "couples gift");
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, ExternalLink, Sparkles, ShoppingBag, MapPin, Heart, Plane, ShoppingCart } from "lucide-react";
 import { apiInvoke } from "@/lib/api";
@@ -336,7 +343,7 @@ const DiscoverTogether = () => {
                     const id = `exp-${exp.name}`;
                     return (
                       <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => { const u = withAffiliateTag(exp.bookingUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
+                        onClick={() => window.open(getLink(exp.bookingUrl, exp.name), "_blank", "noopener,noreferrer")}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
                         <div className="relative w-full h-36 overflow-hidden">
@@ -372,7 +379,7 @@ const DiscoverTogether = () => {
                     const img = getCategoryImage(p.category);
                     return (
                       <motion.button key={p.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => { const u = withAffiliateTag(p.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
+                        onClick={() => window.open(getLink(p.productUrl, p.name), "_blank", "noopener,noreferrer")}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
                         <div className="relative w-full h-36 overflow-hidden">
@@ -405,7 +412,7 @@ const DiscoverTogether = () => {
                     const img = getCategoryImage(item.category);
                     return (
                       <motion.button key={item.affiliateTag} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => { const u = withAffiliateTag(item.productUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
+                        onClick={() => window.open(getLink(item.productUrl, item.name), "_blank", "noopener,noreferrer")}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
                         <div className="relative w-full h-36 overflow-hidden">
@@ -439,7 +446,7 @@ const DiscoverTogether = () => {
                     const id = `travel-${dest.destination}`;
                     return (
                       <motion.button key={id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                        onClick={() => { const u = withAffiliateTag(dest.bookingUrl); u && window.open(u, "_blank", "noopener,noreferrer"); }}
+                        onClick={() => window.open(getLink(dest.bookingUrl, `${dest.name} ${dest.destination}`), "_blank", "noopener,noreferrer")}
                         className="group flex-shrink-0 w-40 rounded-xl bg-secondary/50 hover:bg-secondary overflow-hidden text-left transition-all hover:shadow-sm"
                       >
                         <div className="relative w-full h-36 overflow-hidden">
