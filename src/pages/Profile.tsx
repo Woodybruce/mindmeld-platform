@@ -309,7 +309,7 @@ const Profile = () => {
         {/* Reset App Data */}
         <button
           onClick={async () => {
-            if (!window.confirm("This will DELETE all your messages, photos, quizzes, links, files and clear local data. This cannot be undone. Continue?")) return;
+            if (!window.confirm("This will DELETE all your messages, photos, quizzes, links, files, calendar events and clear local data. This cannot be undone. Continue?")) return;
             try {
               const { data: { user: currentUser } } = await supabase.auth.getUser();
               if (currentUser) {
