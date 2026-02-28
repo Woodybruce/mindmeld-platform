@@ -49,45 +49,48 @@ const CATEGORIES: CategoryDef[] = [
   { key: "home", label: "Home", icon: Home },
 ];
 
-const CACHE_KEY = "shop_catalog_v2";
+const CACHE_KEY = "shop_catalog_v3";
 const CACHE_TTL = 1000 * 60 * 30;
 
-const CATEGORY_PHOTOS: Record<string, string> = {
-  "date-night": "photo-1414235077428-338989a2e8c0",
-  "gifts": "photo-1513885535751-8b9238bd345a",
-  "wellness": "photo-1544367567-0f2fcb009e0b",
-  "intimacy": "photo-1518199266791-5375a83190b7",
-  "games": "photo-1610890716171-6b1bb98ffd09",
-  "home": "photo-1555041469-a586c61ea9bc",
-  "all": "photo-1529543544282-ea57407bc2f3",
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  "date night": "from-rose-900/80 via-pink-800/60 to-amber-900/40",
+  "gifts": "from-violet-900/80 via-purple-800/60 to-pink-900/40",
+  "wellness": "from-emerald-900/80 via-teal-800/60 to-cyan-900/40",
+  "intimacy": "from-red-900/80 via-rose-800/60 to-pink-900/40",
+  "games": "from-blue-900/80 via-indigo-800/60 to-violet-900/40",
+  "home": "from-amber-900/80 via-orange-800/60 to-yellow-900/40",
 };
 
-const getCategoryImage = (cat: string) => {
-  const photoId = CATEGORY_PHOTOS[cat.toLowerCase().replace(/\s+/g, "-")] || CATEGORY_PHOTOS["all"];
-  return `https://images.unsplash.com/${photoId}?w=600&h=600&fit=crop&q=80`;
+const CATEGORY_ICONS: Record<string, typeof Wine> = {
+  "date night": Wine,
+  "gifts": Gift,
+  "wellness": Flower2,
+  "intimacy": Flame,
+  "games": Gamepad2,
+  "home": Home,
 };
 
-const ProductImage = ({ keyword, category, alt }: { keyword: string; category: string; alt: string }) => {
-  const [failed, setFailed] = useState(false);
-  const src = failed
-    ? getCategoryImage(category)
-    : `https://images.unsplash.com/photo-${keyword}?w=600&h=600&fit=crop&q=80`;
+const getCategoryGradient = (cat: string) => {
+  const key = cat.toLowerCase();
+  return CATEGORY_GRADIENTS[key] || "from-slate-900/80 via-gray-800/60 to-zinc-900/40";
+};
 
-  const fallbackSrc = getCategoryImage(category);
+const ProductImage = ({ category, brand, name }: { category: string; brand: string; name: string }) => {
+  const catKey = category.toLowerCase();
+  const Icon = CATEGORY_ICONS[catKey] || ShoppingBag;
+  const gradient = getCategoryGradient(category);
+  const initials = brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
-    <img
-      src={keyword && !failed ? `https://source.unsplash.com/600x600/?${encodeURIComponent(keyword)}` : fallbackSrc}
-      alt={alt}
-      className="w-full h-full object-cover"
-      loading="lazy"
-      onError={(e) => {
-        if (!failed) {
-          setFailed(true);
-          (e.target as HTMLImageElement).src = fallbackSrc;
-        }
-      }}
-    />
+    <div className={`w-full h-full bg-gradient-to-br ${gradient} flex flex-col items-center justify-center p-4 relative`}>
+      <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+        <Icon className="w-4 h-4 text-white/70" />
+      </div>
+      <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center mb-2">
+        <span className="text-lg font-bold text-white/90">{initials}</span>
+      </div>
+      <p className="text-[10px] text-white/50 text-center line-clamp-1 max-w-[90%]">{brand}</p>
+    </div>
   );
 };
 
@@ -134,8 +137,7 @@ const ProductDetailModal = ({
       >
         <div className="relative">
           <div className="w-full h-72 overflow-hidden rounded-t-3xl sm:rounded-t-3xl">
-            <ProductImage keyword={product.imageKeyword} category={product.category} alt={product.name} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <ProductImage category={product.category} brand={product.brand} name={product.name} />
           </div>
 
           <button
@@ -375,7 +377,7 @@ const Shop = () => {
                       data-testid={`shop-product-${product.id}`}
                     >
                       <div className="relative w-full aspect-square overflow-hidden">
-                        <ProductImage keyword={product.imageKeyword} category={product.category} alt={product.name} />
+                        <ProductImage category={product.category} brand={product.brand} name={product.name} />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                         <div className="absolute top-2 right-2">
                           <LikeButton
