@@ -129,6 +129,11 @@ const LUXURY_INTIMACY_PRODUCTS = [
   { name: "Corsets & Basques", brand: "Agent Provocateur", price: "From \u00A3150", description: "Statement corsetry for unforgettable nights", category: "Lingerie", emoji: "\u2728", affiliateTag: "ap-corsets", productUrl: "https://www.agentprovocateur.com/gb_en/lingerie/corsets-basques" },
   { name: "Hosiery & Suspenders", brand: "Agent Provocateur", price: "From \u00A325", description: "Luxurious stockings, tights & suspenders", category: "Accessories", emoji: "\u{1F451}", affiliateTag: "ap-hosiery", productUrl: "https://www.agentprovocateur.com/gb_en/hosiery" },
   { name: "Luxury Gift Sets", brand: "Agent Provocateur", price: "From \u00A395", description: "Beautifully packaged intimate gift sets", category: "Accessories", emoji: "\u{1F381}", affiliateTag: "ap-gifts", productUrl: "https://www.agentprovocateur.com/gb_en/gifts" },
+  { name: "Couples Massage & Intimacy", brand: "goop", price: "From $30", description: "Curated couples wellness & massage essentials", category: "Massage", emoji: "\u{1F9F4}", affiliateTag: "goop-massage", productUrl: "https://goop.com/shop/beauty/bath-body/" },
+  { name: "Wellness & Sexual Health", brand: "goop", price: "From $25", description: "Expert-curated intimate wellness products", category: "Accessories", emoji: "\u{1F31F}", affiliateTag: "goop-sexual-health", productUrl: "https://goop.com/wellness/sexual-health/" },
+  { name: "Luxury Bath & Body for Two", brand: "goop", price: "From $35", description: "Premium bath sets for a couples pamper night", category: "Bath", emoji: "\u{1F6C1}", affiliateTag: "goop-bath", productUrl: "https://goop.com/shop/beauty/bath-body/" },
+  { name: "Couples Gift Edit", brand: "goop", price: "From $40", description: "Hand-picked luxury gifts for couples", category: "Accessories", emoji: "\u{1F381}", affiliateTag: "goop-gifts", productUrl: "https://goop.com/shop/gifts/for-her/" },
+  { name: "Clean Fragrance Collection", brand: "goop", price: "From $48", description: "Sensual clean fragrances for date nights", category: "Accessories", emoji: "\u{1F33A}", affiliateTag: "goop-fragrance", productUrl: "https://goop.com/shop/beauty/fragrance/" },
 ];
 
 const FALLBACK_PRODUCTS = LUXURY_INTIMACY_PRODUCTS.slice(0, 4);
@@ -1185,7 +1190,7 @@ Use exact brand names and real product titles. Keep descriptions under 60 chars.
       }
 
       const cdmPicks = shuffle(LUXURY_INTIMACY_PRODUCTS).slice(0, 2);
-      let amazonItems = aiProducts.filter((p: any) => !p.productUrl?.includes("coco-de-mer.com") && !p.productUrl?.includes("agentprovocateur.com")).slice(0, 2);
+      let amazonItems = aiProducts.filter((p: any) => !p.productUrl?.includes("coco-de-mer.com") && !p.productUrl?.includes("agentprovocateur.com") && !p.productUrl?.includes("goop.com")).slice(0, 2);
       if (amazonItems.length < 2) {
         amazonItems = [
           ...amazonItems,
@@ -1198,7 +1203,7 @@ Use exact brand names and real product titles. Keep descriptions under 60 chars.
       const enriched = await Promise.all(mixed.map(async (p: any) => {
         const searchTerm = p.imageSearchTerm || `${p.name} ${p.brand}`;
         const imageUrl = await fetchAmazonProductImage(searchTerm);
-        const isLuxuryBrand = p.productUrl && (p.productUrl.includes("coco-de-mer.com") || p.productUrl.includes("agentprovocateur.com"));
+        const isLuxuryBrand = p.productUrl && (p.productUrl.includes("coco-de-mer.com") || p.productUrl.includes("agentprovocateur.com") || p.productUrl.includes("goop.com"));
         const url = isLuxuryBrand ? p.productUrl : buildAmazonUrl(p.name);
         return { ...p, productUrl: url, affiliateTag: AMAZON_TAG, imageUrl };
       }));

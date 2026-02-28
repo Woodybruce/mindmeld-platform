@@ -147,11 +147,12 @@ All routes are defined in `server/routes.ts`:
   - Category filtering: All, Date Night, Gifts, Wellness, Games, Intimacy, Experiences
   - Auto-seeds 8 default products if none exist on first load
   - Other Discover Together tabs (Date Night, Gifts, Intimacy, Travel) remain AI-powered
-  - **Coco de Mer integration**: Intimacy tab always includes 2 Coco de Mer products (from `LUXURY_INTIMACY_PRODUCTS` array) mixed with 2 AI-suggested Amazon items
-  - `LUXURY_INTIMACY_PRODUCTS` array in `server/routes.ts` contains 14 real products (8 Coco de Mer + 6 Agent Provocateur) with direct URLs
+  - **Coco de Mer integration**: Intimacy tab always includes 2 luxury products (from `LUXURY_INTIMACY_PRODUCTS` array) mixed with 2 AI-suggested Amazon items
+  - `LUXURY_INTIMACY_PRODUCTS` array in `server/routes.ts` contains 19 products (8 Coco de Mer + 6 Agent Provocateur + 5 goop) with direct URLs
   - Coco de Mer URLs preserved as-is (not converted to Amazon search); Amazon `/dp/` links converted to search URLs
   - **Agent Provocateur integration**: 6 AP collection/category links (lingerie, bridal, nightwear, corsets, hosiery, gifts)
-  - Product buttons styled by source: black "Shop Coco de Mer" / "Shop Agent Provocateur" vs orange "Buy on Amazon"
+  - **goop integration**: 5 couples-focused wellness categories (massage/intimacy, sexual health, bath & body, gifts, fragrance)
+  - Product buttons styled by source: black "Shop Coco de Mer" / "Shop Agent Provocateur" / "Shop goop" vs orange "Buy on Amazon"
   - All Amazon product links use search URLs (`/s?k=...&tag=affiliate`) — direct `/dp/` links don't work from server IPs
 - 2026-02-28: Outlook calendar auto-sync with shared events
   - `useOutlookAutoSync` hook runs on home page load, syncs every 15 minutes

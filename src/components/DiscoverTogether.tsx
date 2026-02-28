@@ -25,7 +25,7 @@ const amazonSearch = (name: string): string =>
   `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
 
 const isLuxuryBrand = (url: string): boolean =>
-  url.includes("coco-de-mer.com") || url.includes("agentprovocateur.com");
+  url.includes("coco-de-mer.com") || url.includes("agentprovocateur.com") || url.includes("goop.com");
 
 const ensureSearchUrl = (url: string, name: string): string => {
   if (isLuxuryBrand(url)) return url;
@@ -352,7 +352,7 @@ const DiscoverTogether = () => {
                               data-testid={`buy-${product.id}`}
                             >
                               <ShoppingCart className="w-3 h-3" />
-                              {product.amazonUrl?.includes("coco-de-mer.com") ? "Shop Coco de Mer" : product.amazonUrl?.includes("agentprovocateur.com") ? "Shop Agent Provocateur" : "Buy on Amazon"}
+                              {product.amazonUrl?.includes("coco-de-mer.com") ? "Shop Coco de Mer" : product.amazonUrl?.includes("agentprovocateur.com") ? "Shop Agent Provocateur" : product.amazonUrl?.includes("goop.com") ? "Shop goop" : "Buy on Amazon"}
                             </a>
                           </div>
                         </motion.div>
