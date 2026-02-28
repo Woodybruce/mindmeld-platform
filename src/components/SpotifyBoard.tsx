@@ -107,7 +107,7 @@ const SpotifyBoard = () => {
       {hasNowPlaying && nowPlaying.track && (
         <div className="px-4 pb-3">
           {playingTrackId === nowPlaying.track.id ? (
-            <SpotifyEmbed trackId={nowPlaying.track.id} />
+            <SpotifyEmbed trackId={nowPlaying.track.id} autoPlay />
           ) : (
             <div className="flex items-center gap-3" data-testid="spotify-now-playing">
               {nowPlaying.track.albumArt && (
@@ -140,7 +140,7 @@ const SpotifyBoard = () => {
             {recentTracks.map((track, i) => (
               <div key={`${track.id}-${i}`} data-testid={`spotify-recent-${i}`}>
                 {playingTrackId === track.id ? (
-                  <SpotifyEmbed trackId={track.id} />
+                  <SpotifyEmbed trackId={track.id} autoPlay />
                 ) : (
                   <div className="flex items-center gap-2.5">
                     {track.albumArt && (

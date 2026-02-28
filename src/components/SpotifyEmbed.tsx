@@ -4,10 +4,11 @@ import { Play } from "lucide-react";
 interface SpotifyEmbedProps {
   trackId: string;
   compact?: boolean;
+  autoPlay?: boolean;
 }
 
-export default function SpotifyEmbed({ trackId, compact = false }: SpotifyEmbedProps) {
-  const [show, setShow] = useState(false);
+export default function SpotifyEmbed({ trackId, compact = false, autoPlay = false }: SpotifyEmbedProps) {
+  const [show, setShow] = useState(autoPlay);
 
   if (!show) {
     return (
