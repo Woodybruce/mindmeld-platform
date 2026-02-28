@@ -113,6 +113,24 @@ export async function getUncachableSpotifyClient() {
   return spotify;
 }
 
+export async function spotifyApiFetch(path: string, options: RequestInit = {}) {
+  const accessToken = await refreshAccessToken();
+  const resp = await fetch(`https://api.spotify.com/v1${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Spotify API error ${resp.status}: ${text}`);
+  }
+  if (resp.status === 204) return null;
+  return resp.json();
+}
+
 export function invalidateSpotifyCache() {
   storedAccessToken = null;
   tokenExpiresAt = 0;

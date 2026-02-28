@@ -3,7 +3,7 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import webpush from "web-push";
-import { getUncachableSpotifyClient, invalidateSpotifyCache, getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected } from "./spotify";
+import { getUncachableSpotifyClient, invalidateSpotifyCache, getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, spotifyApiFetch } from "./spotify";
 
 async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
@@ -1603,17 +1603,16 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
   app.post("/api/spotify/playlist/create", async (req: Request, res: Response) => {
     try {
       const { name, description } = req.body;
-      const result = await spotifyRetry(async () => {
-        const spotify = await getUncachableSpotifyClient();
-        const me = await spotify.currentUser.profile();
-        const playlist = await spotify.playlists.createPlaylist(me.id, {
+      const me = await spotifyApiFetch("/me");
+      const playlist = await spotifyApiFetch(`/users/${me.id}/playlists`, {
+        method: "POST",
+        body: JSON.stringify({
           name: name || "Us — Our Playlist",
           description: description || "Our shared couple playlist",
           public: false,
-        });
-        return { id: playlist.id, name: playlist.name, spotifyUrl: playlist.external_urls?.spotify || "" };
+        }),
       });
-      res.json(result);
+      res.json({ id: playlist.id, name: playlist.name, spotifyUrl: playlist.external_urls?.spotify || "" });
     } catch (e: any) {
       console.error("Spotify create playlist error:", e.message);
       res.status(500).json({ error: e.message });
@@ -1624,9 +1623,9 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
     try {
       const { playlistId, trackUri } = req.body;
       if (!playlistId || !trackUri) return res.status(400).json({ error: "playlistId and trackUri required" });
-      await spotifyRetry(async () => {
-        const spotify = await getUncachableSpotifyClient();
-        await spotify.playlists.addItemsToPlaylist(playlistId, [trackUri]);
+      await spotifyApiFetch(`/playlists/${playlistId}/tracks`, {
+        method: "POST",
+        body: JSON.stringify({ uris: [trackUri] }),
       });
       res.json({ success: true });
     } catch (e: any) {
@@ -1639,9 +1638,9 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
     try {
       const { playlistId, trackUri } = req.body;
       if (!playlistId || !trackUri) return res.status(400).json({ error: "playlistId and trackUri required" });
-      await spotifyRetry(async () => {
-        const spotify = await getUncachableSpotifyClient();
-        await spotify.playlists.removeItemsFromPlaylist(playlistId, { tracks: [{ uri: trackUri }] });
+      await spotifyApiFetch(`/playlists/${playlistId}/tracks`, {
+        method: "DELETE",
+        body: JSON.stringify({ tracks: [{ uri: trackUri }] }),
       });
       res.json({ success: true });
     } catch (e: any) {

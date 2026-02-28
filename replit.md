@@ -106,12 +106,19 @@ All routes are defined in `server/routes.ts`:
 - Sex Bucket Game draws from the `sex-bucket-ideas` template list
 
 ## Spotify Integration
-- Replit Spotify connector provides API access (single account, not per-user OAuth)
-- `server/spotify.ts` — Spotify client using `@spotify/web-api-ts-sdk`
+- Custom OAuth flow using user's own Spotify Developer App (SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET env vars)
+- `server/spotify.ts` — OAuth token management (auth code exchange, refresh), direct API fetch helper, SDK client
+- OAuth routes: `/api/spotify/auth` (redirects to Spotify login), `/api/spotify/callback` (exchanges code for tokens), `/api/spotify/status` (connection check)
 - API routes: `/api/spotify/now-playing`, `/api/spotify/search`, `/api/spotify/playlist` (CRUD), `/api/spotify/recently-played`
+- Playlist write operations use `spotifyApiFetch()` (direct REST) instead of SDK to avoid 403 issues
 - `SpotifyWidget` on Us page (Lists tab) — shows now-playing, shared playlist with search & add
+- `SpotifyBoard` on home page — shows now-playing or recently played with in-app playback
+- `SpotifyEmbed` component — Spotify embed iframe player for in-app playback (tap play to load)
+- In-app playback: Play buttons on tracks in SpotifyBoard, SpotifyWidget, and ChatBubble load Spotify embed player
+- If Spotify isn't connected after server restart, SpotifyBoard shows "Connect Spotify" link to `/api/spotify/auth`
+- Tokens stored in memory (reset on server restart — user must re-authorize)
 - Playlist ID stored in `shared_lists` table with `game_type: "spotify_playlist"` (no extra tables needed)
-- Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as card in `ChatBubble`
+- Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes
 - 2026-02-25: Web Push notifications + bug fixes
