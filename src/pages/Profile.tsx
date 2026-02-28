@@ -1,4 +1,4 @@
-import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw, Camera, Shield } from "lucide-react";
+import { Settings, Heart, LogOut, UserPlus, Mail, Sun, Moon, Monitor, Phone, Calendar, Copy, Check, RefreshCw, RotateCcw, Camera, Shield, Sparkles } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import PartnerAvatarUpload from "@/components/connect/PartnerAvatarUpload";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
@@ -30,6 +30,8 @@ const Profile = () => {
   const [syncingOutlook, setSyncingOutlook] = useState(false);
   const [outlookConnected, setOutlookConnected] = useState<boolean | null>(null);
   const [showEventPicker, setShowEventPicker] = useState(false);
+  const [aiPreferences, setAiPreferences] = useState("");
+  const [savingAiPrefs, setSavingAiPrefs] = useState(false);
 
   const quizCount = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("completedQuizzes") || "[]").length; } catch { return 0; }
@@ -45,10 +47,10 @@ const Profile = () => {
           setPhoneNumber(data.phone_number);
         }
       });
-    // Check if Outlook is connected
     supabase.from("microsoft_tokens").select("id").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => setOutlookConnected(!!data));
-  }, [user]);
+    if (profile?.ai_preferences) setAiPreferences(profile.ai_preferences);
+  }, [user, profile?.ai_preferences]);
 
   const connectOutlook = async () => {
     const redirectUri = `${window.location.origin}/outlook-callback`;
@@ -87,6 +89,24 @@ const Profile = () => {
       toast.success("Phone number saved ✓");
     }
     setSavingPhone(false);
+  };
+
+  const saveAiPreferences = async () => {
+    if (!user) return;
+    setSavingAiPrefs(true);
+    try {
+      const trimmed = aiPreferences.trim();
+      const { data: existing } = await supabase.from("shared_lists").select("id").eq("user_id", user.id).eq("name", "__ai_preferences__").maybeSingle();
+      if (existing) {
+        await supabase.from("shared_lists").update({ score_data: { preferences: trimmed } }).eq("id", existing.id);
+      } else {
+        await supabase.from("shared_lists").insert({ user_id: user.id, name: "__ai_preferences__", icon: "brain", items: [], score_data: { preferences: trimmed } });
+      }
+      toast.success("AI preferences saved");
+    } catch {
+      toast.error("Failed to save preferences");
+    }
+    setSavingAiPrefs(false);
   };
 
   if (loading) {
@@ -198,6 +218,32 @@ const Profile = () => {
               {savingPhone ? "…" : "Save"}
             </button>
           </div>
+        </div>
+
+        {/* AI Preferences */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-display font-semibold text-foreground mb-1 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-violet-500" /> AI Personalisation
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            Tell us about yourselves so AI suggestions are more relevant — interests, hobbies, dietary needs, travel style, anniversary, anything you like.
+          </p>
+          <textarea
+            value={aiPreferences}
+            onChange={(e) => setAiPreferences(e.target.value)}
+            placeholder={"e.g. We love hiking and cooking Italian food. We're vegetarian. Our anniversary is in June. We prefer city breaks over beach holidays. We have a dog called Milo."}
+            rows={4}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            data-testid="input-ai-preferences"
+          />
+          <button
+            onClick={saveAiPreferences}
+            disabled={savingAiPrefs}
+            className="mt-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50 w-full"
+            data-testid="button-save-ai-preferences"
+          >
+            {savingAiPrefs ? "Saving…" : "Save Preferences"}
+          </button>
         </div>
 
         {/* Calendar Sync */}

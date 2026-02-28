@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export async function apiInvoke<T = any>(
   functionName: string,
   options?: { body?: any; method?: string; query?: Record<string, string> }
@@ -15,8 +17,11 @@ export async function apiInvoke<T = any>(
       headers: { "Content-Type": "application/json" },
     };
 
-    if (options?.body && method !== "GET") {
-      fetchOptions.body = JSON.stringify(options.body);
+    if (method !== "GET") {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      const bodyWithUser = { ...(options?.body || {}), ...(userId ? { userId } : {}) };
+      fetchOptions.body = JSON.stringify(bodyWithUser);
     }
 
     const response = await fetch(url, fetchOptions);

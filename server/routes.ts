@@ -40,9 +40,17 @@ function buildAmazonUrl(productName?: string): string {
   return `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
 }
 
-async function callAI(messages: any[], tools?: any[], toolChoice?: any) {
+async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?: string) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
+
+  const finalMessages = [...messages];
+  if (userId) {
+    const prefs = await fetchAiPreferences(userId);
+    if (prefs && finalMessages.length > 0 && finalMessages[0].role === "system") {
+      finalMessages[0] = { ...finalMessages[0], content: injectPreferences(finalMessages[0].content, prefs) };
+    }
+  }
 
   const url = process.env.AI_GATEWAY_URL || "https://api.openai.com/v1/chat/completions";
   const response = await fetch(url, {
@@ -53,7 +61,7 @@ async function callAI(messages: any[], tools?: any[], toolChoice?: any) {
     },
     body: JSON.stringify({
       model: process.env.AI_MODEL || "gpt-4o-mini",
-      messages,
+      messages: finalMessages,
       ...(tools ? { tools, tool_choice: toolChoice } : {}),
       temperature: 0.8,
     }),
@@ -67,6 +75,22 @@ async function callAI(messages: any[], tools?: any[], toolChoice?: any) {
   }
 
   return response.json();
+}
+
+async function fetchAiPreferences(userId?: string): Promise<string> {
+  if (!userId) return "";
+  try {
+    const supaUrl = process.env.SUPABASE_URL!;
+    const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const sb = createClient(supaUrl, supaKey);
+    const { data } = await sb.from("shared_lists").select("score_data").eq("user_id", userId).eq("name", "__ai_preferences__").maybeSingle();
+    return (data?.score_data as any)?.preferences || "";
+  } catch { return ""; }
+}
+
+function injectPreferences(systemPrompt: string, preferences: string): string {
+  if (!preferences) return systemPrompt;
+  return `${systemPrompt}\n\nIMPORTANT — The couple has shared these personal details to help you make better suggestions: "${preferences}". Use this context to make your recommendations more relevant and personalised to them.`;
 }
 
 const REAL_ARTICLES = [
@@ -709,7 +733,7 @@ Return ONLY valid JSON with these fields:
       const data = await callAI([
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
-      ]);
+      ], undefined, undefined, req.body?.userId);
 
       const raw = data.choices?.[0]?.message?.content || "";
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -984,7 +1008,8 @@ Return ONLY valid JSON with these fields:
             },
           },
         ],
-        { type: "function", function: { name: "suggest_dreams" } }
+        { type: "function", function: { name: "suggest_dreams" } },
+        req.body?.userId
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1052,7 +1077,8 @@ Keep descriptions under 60 chars.`,
             },
           },
         ],
-        { type: "function", function: { name: "suggest_experiences" } }
+        { type: "function", function: { name: "suggest_experiences" } },
+        req.body?.userId
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1136,7 +1162,8 @@ Keep descriptions under 60 chars.`,
             },
           },
         ],
-        { type: "function", function: { name: "generate_family_tasks" } }
+        { type: "function", function: { name: "generate_family_tasks" } },
+        req.body?.userId
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1202,7 +1229,8 @@ Use exact brand names and real product titles. Keep descriptions under 60 chars.
             },
           },
         ],
-        { type: "function", function: { name: "suggest_intimacy" } }
+        { type: "function", function: { name: "suggest_intimacy" } },
+        req.body?.userId
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1292,7 +1320,8 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
             },
           },
         ],
-        { type: "function", function: { name: "suggest_products" } }
+        { type: "function", function: { name: "suggest_products" } },
+        req.body?.userId
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1386,7 +1415,8 @@ Products should be things couples would actually buy for each other or to enjoy 
             },
           },
         ],
-        { type: "function", function: { name: "generate_shop_products" } }
+        { type: "function", function: { name: "generate_shop_products" } },
+        req.body?.userId
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1552,7 +1582,8 @@ Products should be things couples would actually buy for each other or to enjoy 
             },
           },
         ],
-        { type: "function", function: { name: "suggest_tasks" } }
+        { type: "function", function: { name: "suggest_tasks" } },
+        req.body?.userId
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1622,7 +1653,8 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
             },
           },
         ],
-        { type: "function", function: { name: "suggest_travel" } }
+        { type: "function", function: { name: "suggest_travel" } },
+        req.body?.userId
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -2254,7 +2286,7 @@ Focus on real, existing content about relationships, dating, couples, love, and 
         { role: "user", content: query },
       ];
 
-      const result = await callAI(messages);
+      const result = await callAI(messages, undefined, undefined, req.body?.userId);
       const content = result.choices?.[0]?.message?.content || "{}";
       const cleaned = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
 

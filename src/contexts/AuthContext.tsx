@@ -9,6 +9,7 @@ interface Profile {
   partner_id: string | null;
   partner_code: string | null;
   phone_number: string | null;
+  ai_preferences: string | null;
 }
 
 interface LinkResult {
@@ -45,18 +46,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, username, partner_id, partner_code, phone_number")
-      .eq("id", userId)
-      .single();
-    if (data) {
+    const [profileRes, prefsRes] = await Promise.all([
+      supabase.from("profiles").select("id, username, partner_id, partner_code, phone_number").eq("id", userId).single(),
+      supabase.from("shared_lists").select("score_data").eq("user_id", userId).eq("name", "__ai_preferences__").maybeSingle(),
+    ]);
+    if (profileRes.data) {
+      const aiPrefs = (prefsRes.data?.score_data as any)?.preferences || null;
       setProfile({
-        id: data.id,
-        username: data.username,
-        partner_id: data.partner_id,
-        partner_code: data.partner_code,
-        phone_number: (data as any).phone_number ?? null,
+        id: profileRes.data.id,
+        username: profileRes.data.username,
+        partner_id: profileRes.data.partner_id,
+        partner_code: profileRes.data.partner_code,
+        phone_number: (profileRes.data as any).phone_number ?? null,
+        ai_preferences: aiPrefs,
       });
     }
   };

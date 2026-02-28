@@ -125,6 +125,14 @@ All routes are defined in `server/routes.ts`:
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes
+- 2026-02-28: AI Personalisation preferences
+  - "AI Personalisation" section in Profile page
+  - Users can write free-text about themselves (interests, hobbies, dietary needs, travel style, etc.)
+  - Stored in `shared_lists` table with `name: "__ai_preferences__"` and `score_data.preferences`
+  - Profile interface includes `ai_preferences` field loaded from shared_lists on login
+  - `apiInvoke` automatically attaches `userId` to all POST requests
+  - `callAI()` accepts optional `userId` param, fetches preferences and injects into system prompt
+  - All 10 AI endpoints receive personalised context: generate-feed-content, suggest-dreams, suggest-experiences, suggest-family-tasks, suggest-intimacy, suggest-products, shop/generate, suggest-tasks, suggest-travel, ai-search
 - 2026-02-28: AI Search in For You & Discover Together
   - `AiSearchBar` component embedded in both sections
   - `POST /api/ai-search` endpoint uses OpenAI to find products, articles, podcasts, videos, quotes
