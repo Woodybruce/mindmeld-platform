@@ -309,9 +309,10 @@ const DiscoverTogether = () => {
                               <LikeButton liked={isLikedByMe(id)} partnerLiked={isLikedByPartner(id)} mutual={isMutualLike(id)} onToggle={() => toggleLike(id, product.name)} />
                             </div>
                             <a
-                              href={withAffiliateTag(product.amazonUrl)}
+                              href={withAffiliateTag(product.amazonUrl) || `https://www.amazon.co.uk/s?k=${encodeURIComponent(product.name)}&tag=${AMAZON_TAG}`}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#FF9900] py-1.5 text-[11px] font-semibold text-black hover:bg-[#FFa820] transition-colors"
                               data-testid={`buy-${product.id}`}
                             >

@@ -18,7 +18,7 @@ const SHOP_LIST_NAME = "Our Shopping List";
 const AMAZON_TAG = "woodybruce-21";
 
 const ensureAffiliateTag = (url: string): string => {
-  if (!url) return url;
+  if (!url) return "";
   try {
     const u = new URL(url);
     if (u.hostname.includes("amazon")) {
@@ -26,6 +26,9 @@ const ensureAffiliateTag = (url: string): string => {
     }
     return u.toString();
   } catch {
+    if (url.includes("amazon")) {
+      return `https://www.amazon.co.uk/s?k=${encodeURIComponent(url)}&tag=${AMAZON_TAG}`;
+    }
     return url;
   }
 };
@@ -136,10 +139,18 @@ export function useShopProducts() {
 
     if (data) {
       setListId(data.id);
-      const items = Array.isArray(data.items) ? data.items as ShopProduct[] : [];
+      let items = Array.isArray(data.items) ? data.items as ShopProduct[] : [];
+      let needsSave = false;
+      items = items.map(p => {
+        if (!p.id || p.id.length < 8) {
+          needsSave = true;
+          return { ...p, id: crypto.randomUUID() };
+        }
+        return p;
+      });
       setProducts(items);
-      if (data.name !== SHOP_LIST_NAME) {
-        await supabase.from("shared_lists").update({ name: SHOP_LIST_NAME, template: "shopping", icon: "🛒" }).eq("id", data.id);
+      if (data.name !== SHOP_LIST_NAME || needsSave) {
+        await supabase.from("shared_lists").update({ name: SHOP_LIST_NAME, template: "shopping", icon: "🛒", ...(needsSave ? { items: items as any } : {}) }).eq("id", data.id);
       }
     } else if (!error && !seeded.current) {
       seeded.current = true;
