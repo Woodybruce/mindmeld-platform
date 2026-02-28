@@ -141,8 +141,9 @@ export function useShopProducts() {
       setListId(data.id);
       let items = Array.isArray(data.items) ? data.items as ShopProduct[] : [];
       let needsSave = false;
+      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       items = items.map(p => {
-        if (!p.id || p.id.length < 8) {
+        if (!p.id || !uuidRe.test(p.id)) {
           needsSave = true;
           return { ...p, id: crypto.randomUUID() };
         }
