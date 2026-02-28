@@ -125,6 +125,13 @@ All routes are defined in `server/routes.ts`:
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes
+- 2026-02-28: AI Search in For You & Discover Together
+  - `AiSearchBar` component embedded in both sections
+  - `POST /api/ai-search` endpoint uses OpenAI to find products, articles, podcasts, videos, quotes
+  - Quick prompt suggestions for each section context
+  - Product results link to Amazon UK with affiliate tag
+  - Article/podcast/video results link to respective platforms
+  - Results displayed as inline cards with type badges and action buttons
 - 2026-02-28: For You section expanded with 4 content tabs
   - Articles tab: relationship reads + saved links (existing, now tabbed)
   - Podcasts tab: curated Spotify relationship podcasts with inline embed player

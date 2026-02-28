@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import { useSharedLists } from "@/hooks/useSharedLists";
 import LikeButton from "@/components/LikeButton";
+import AiSearchBar from "@/components/AiSearchBar";
 
 interface Article {
   title: string;
@@ -456,6 +457,8 @@ const CuratedLinksWidget = () => {
           </button>
         ))}
       </div>
+
+      <AiSearchBar section="foryou" />
 
       <div className="pb-1">
         <AnimatePresence mode="wait">

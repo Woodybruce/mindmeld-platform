@@ -25,6 +25,7 @@ import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
 import { useShopProducts, type ShopProduct } from "@/hooks/useShopProducts";
+import AiSearchBar from "@/components/AiSearchBar";
 
 interface Product { name: string; brand: string; price: string; description: string; category: string; emoji: string; affiliateTag: string; productUrl?: string; }
 interface Experience { name: string; venue: string; price: string; description: string; category: string; emoji: string; city: string; bookingUrl?: string; duration: string; }
@@ -266,6 +267,8 @@ const DiscoverTogether = () => {
           ))}
         </div>
       )}
+
+      <AiSearchBar section="discover" />
 
       <div className="pb-1">
         <AnimatePresence mode="wait">

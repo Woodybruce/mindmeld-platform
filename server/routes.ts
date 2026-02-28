@@ -1975,4 +1975,52 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
       res.json({ tracks: [] });
     }
   });
+
+  app.post("/api/ai-search", async (req: Request, res: Response) => {
+    try {
+      const { query, section } = req.body;
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "query is required" });
+      }
+
+      const sectionContext = section === "discover"
+        ? `You are a shopping & experience advisor for couples.
+Return a JSON object with an "items" array of 4-6 results.
+Each item MUST have: name (string), description (string, 1-2 sentences), category (string), emoji (string), type (one of "product","experience","travel").
+For products also include: price (string like "£29.99"), brand (string), amazonSearchUrl (a full amazon.co.uk search URL for the product).
+For experiences also include: price (string), venue (string), city (string), duration (string).
+For travel also include: destination (string), country (string), price (string), duration (string).
+Focus on items available to buy on Amazon UK or experiences in the UK.`
+        : `You are a relationship media curator.
+Return a JSON object with an "items" array of 4-6 results.
+Each item MUST have: name (string), description (string, 1-2 sentences), category (string), emoji (string), type (one of "article","podcast","video","quote").
+For articles include: url (a real, working URL to the article), source (string).
+For podcasts include: spotifyShowName (string), host (string).
+For videos include: youtubeSearchQuery (string to find it on YouTube), creator (string), duration (string).
+For quotes include: text (the full quote text), author (string).
+Focus on real, existing content about relationships, dating, couples, love, and communication.`;
+
+      const messages = [
+        { role: "system", content: `${sectionContext}\nOnly return valid JSON. No markdown, no code fences.` },
+        { role: "user", content: query },
+      ];
+
+      const result = await callAI(messages);
+      const content = result.choices?.[0]?.message?.content || "{}";
+      const cleaned = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+
+      let parsed;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch {
+        return res.status(500).json({ error: "Failed to parse AI response" });
+      }
+
+      res.json({ items: parsed.items || [] });
+    } catch (e: any) {
+      console.error("AI search error:", e.message);
+      if (e.status === 429) return res.status(429).json({ error: "Rate limited, try again shortly" });
+      res.status(500).json({ error: "AI search failed" });
+    }
+  });
 }
