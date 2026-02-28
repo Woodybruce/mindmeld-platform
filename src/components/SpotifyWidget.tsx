@@ -45,6 +45,8 @@ export default function SpotifyWidget() {
   const [expanded, setExpanded] = useState(false);
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
 
   useEffect(() => {
     loadPlaylistId();
@@ -118,19 +120,59 @@ export default function SpotifyWidget() {
     setCreatingPlaylist(true);
     try {
       const coupleNames = profile?.username || "Us";
-      const { data } = await apiInvoke("spotify/playlist/create", {
-        body: { name: `${coupleNames} — Our Playlist 💕`, description: "Songs we love together" },
+      const resp = await fetch("/api/spotify/playlist/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: `${coupleNames} — Our Playlist 💕`, description: "Songs we love together" }),
       });
-      if (data) {
-        const d = data as any;
+      const d = await resp.json();
+      if (resp.ok && d.id) {
         setPlaylistId(d.id);
         setPlaylistName(d.name);
         setPlaylistUrl(d.spotifyUrl);
         await savePlaylistId(d.id, d.name, d.spotifyUrl);
         toast.success("Playlist created!");
+      } else {
+        setShowLinkInput(true);
+        toast.error("Auto-create blocked by Spotify — paste a playlist link instead");
       }
     } catch (e) {
-      toast.error("Couldn't create playlist — try reconnecting Spotify from the home screen");
+      setShowLinkInput(true);
+      toast.error("Auto-create blocked by Spotify — paste a playlist link instead");
+    }
+    setCreatingPlaylist(false);
+  }
+
+  function extractPlaylistId(input: string): string | null {
+    const urlMatch = input.match(/playlist\/([a-zA-Z0-9]+)/);
+    if (urlMatch) return urlMatch[1];
+    if (/^[a-zA-Z0-9]{22}$/.test(input.trim())) return input.trim();
+    return null;
+  }
+
+  async function linkPlaylist() {
+    const pid = extractPlaylistId(linkUrl);
+    if (!pid) {
+      toast.error("Paste a valid Spotify playlist link");
+      return;
+    }
+    setCreatingPlaylist(true);
+    try {
+      const { data } = await apiInvoke(`spotify/playlist?playlistId=${pid}`, { method: "GET" });
+      if (data) {
+        const d = data as any;
+        setPlaylistId(pid);
+        setPlaylistName(d.name || "Our Playlist");
+        setPlaylistUrl(d.spotifyUrl || `https://open.spotify.com/playlist/${pid}`);
+        await savePlaylistId(pid, d.name || "Our Playlist", d.spotifyUrl || "");
+        setShowLinkInput(false);
+        setLinkUrl("");
+        toast.success("Playlist linked!");
+      } else {
+        toast.error("Couldn't find that playlist — check the link");
+      }
+    } catch (e) {
+      toast.error("Couldn't find that playlist — check the link");
     }
     setCreatingPlaylist(false);
   }
@@ -225,17 +267,60 @@ export default function SpotifyWidget() {
       {!playlistId ? (
         <div className="px-4 py-6 text-center">
           <Music className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-          <p className="text-sm font-semibold text-foreground mb-1">Create your shared playlist</p>
+          <p className="text-sm font-semibold text-foreground mb-1">Your shared playlist</p>
           <p className="text-xs text-muted-foreground mb-3">Add songs together that you both love</p>
-          <button
-            onClick={createPlaylist}
-            disabled={creatingPlaylist}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#1DB954] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1DB954]/90 transition-colors disabled:opacity-50"
-            data-testid="create-playlist-btn"
-          >
-            {creatingPlaylist ? <Loader2 className="w-4 h-4 animate-spin" /> : <SpotifyIcon className="w-4 h-4" />}
-            Create Playlist
-          </button>
+
+          {!showLinkInput ? (
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={createPlaylist}
+                disabled={creatingPlaylist}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#1DB954] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1DB954]/90 transition-colors disabled:opacity-50"
+                data-testid="create-playlist-btn"
+              >
+                {creatingPlaylist ? <Loader2 className="w-4 h-4 animate-spin" /> : <SpotifyIcon className="w-4 h-4" />}
+                Create Playlist
+              </button>
+              <button
+                onClick={() => setShowLinkInput(true)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-existing-playlist-btn"
+              >
+                or link an existing playlist
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 max-w-xs mx-auto">
+              <p className="text-xs text-muted-foreground">Create a playlist in Spotify, then paste the link here</p>
+              <input
+                type="text"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://open.spotify.com/playlist/..."
+                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#1DB954]/50"
+                data-testid="playlist-link-input"
+                onKeyDown={(e) => e.key === "Enter" && linkPlaylist()}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={linkPlaylist}
+                  disabled={creatingPlaylist || !linkUrl.trim()}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1DB954] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1DB954]/90 transition-colors disabled:opacity-50"
+                  data-testid="link-playlist-btn"
+                >
+                  {creatingPlaylist ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Link Playlist
+                </button>
+                <button
+                  onClick={() => { setShowLinkInput(false); setLinkUrl(""); }}
+                  className="rounded-xl px-3 py-2 text-sm text-muted-foreground hover:text-foreground border border-border transition-colors"
+                  data-testid="cancel-link-btn"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div>
