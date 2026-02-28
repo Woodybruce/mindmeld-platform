@@ -272,7 +272,7 @@ const AdminFeedContent = () => {
             }`}
             data-testid="admin-tab-shop"
           >
-            <ShoppingBag className="w-3.5 h-3.5" /> Shop Products
+            <ShoppingBag className="w-3.5 h-3.5" /> Our Shopping List
           </button>
         </div>
 
@@ -525,7 +525,7 @@ const AdminFeedContent = () => {
         {adminTab === "shop" && (
           <>
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold text-foreground">Shop Products</h2>
+              <h2 className="font-display text-lg font-bold text-foreground">Our Shopping List</h2>
               <button
                 onClick={() => setEditingShop({ ...EMPTY_SHOP_PRODUCT })}
                 className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"

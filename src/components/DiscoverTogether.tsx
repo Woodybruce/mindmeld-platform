@@ -36,7 +36,7 @@ type TabKey = "shop" | "experiences" | "products" | "intimacy" | "travel";
 interface Tab { key: TabKey; label: string; icon: React.ReactNode; colour: string; }
 
 const TABS: Tab[] = [
-  { key: "shop",        label: "Our Picks",  icon: <ShoppingCart className="w-3 h-3" />, colour: "from-primary/20 to-us-coral/20" },
+  { key: "shop",        label: "Our Shopping List",  icon: <ShoppingCart className="w-3 h-3" />, colour: "from-primary/20 to-us-coral/20" },
   { key: "experiences", label: "Date Night",  icon: <MapPin className="w-3 h-3" />,       colour: "from-us-coral/20 to-us-blush/30" },
   { key: "products",    label: "Gifts",       icon: <ShoppingBag className="w-3 h-3" />,  colour: "from-us-gold/20 to-us-cream/40" },
   { key: "intimacy",    label: "Intimacy",    icon: <Heart className="w-3 h-3" />,         colour: "from-us-blush/30 to-us-coral/10" },
@@ -201,7 +201,7 @@ const DiscoverTogether = () => {
   const curatedProducts = shopFilter === "all" ? allCuratedProducts : getCuratedProducts(shopFilter);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-2xl overflow-hidden">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl overflow-hidden">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">

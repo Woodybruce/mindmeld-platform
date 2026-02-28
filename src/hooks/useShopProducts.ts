@@ -14,7 +14,7 @@ export interface ShopProduct {
   active: boolean;
 }
 
-const SHOP_LIST_NAME = "__shop_products__";
+const SHOP_LIST_NAME = "Our Shopping List";
 const AMAZON_TAG = "woodybruce-21";
 
 const ensureAffiliateTag = (url: string): string => {
@@ -126,7 +126,7 @@ export function useShopProducts() {
     const { data, error } = await supabase
       .from("shared_lists")
       .select("*")
-      .eq("name", SHOP_LIST_NAME)
+      .in("name", [SHOP_LIST_NAME, "__shop_products__"])
       .limit(1)
       .maybeSingle();
 
@@ -138,6 +138,9 @@ export function useShopProducts() {
       setListId(data.id);
       const items = Array.isArray(data.items) ? data.items as ShopProduct[] : [];
       setProducts(items);
+      if (data.name !== SHOP_LIST_NAME) {
+        await supabase.from("shared_lists").update({ name: SHOP_LIST_NAME, template: "shopping", icon: "🛒" }).eq("id", data.id);
+      }
     } else if (!error && !seeded.current) {
       seeded.current = true;
       const seedProducts: ShopProduct[] = DEFAULT_PRODUCTS.map(p => ({
@@ -147,7 +150,7 @@ export function useShopProducts() {
       }));
       const { data: inserted, error: insertErr } = await supabase
         .from("shared_lists")
-        .insert({ name: SHOP_LIST_NAME, icon: "\uD83D\uDECD\uFE0F", items: seedProducts as any, user_id: user.id })
+        .insert({ name: SHOP_LIST_NAME, icon: "🛒", template: "shopping", items: seedProducts as any, user_id: user.id })
         .select("id")
         .single();
       if (insertErr) {
@@ -172,7 +175,7 @@ export function useShopProducts() {
     } else if (user) {
       const { data } = await supabase
         .from("shared_lists")
-        .insert({ name: SHOP_LIST_NAME, icon: "\uD83D\uDECD\uFE0F", items: newProducts as any, user_id: user.id })
+        .insert({ name: SHOP_LIST_NAME, icon: "🛒", template: "shopping", items: newProducts as any, user_id: user.id })
         .select("id")
         .single();
       if (data) setListId(data.id);
