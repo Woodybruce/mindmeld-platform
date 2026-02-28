@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { SpotifyPlayerProvider } from "@/contexts/SpotifyPlayerContext";
+import PersistentSpotifyPlayer from "@/components/PersistentSpotifyPlayer";
 import Index from "./pages/Index";
 import Us from "./pages/Us";
 import Profile from "./pages/Profile";
@@ -43,8 +45,10 @@ const App = () => (
           <Sonner />
           <VibeOverlay />
           <OfflineBanner />
-          <BrowserRouter>
-            <Routes>
+          <SpotifyPlayerProvider>
+            <BrowserRouter>
+              <PersistentSpotifyPlayer />
+              <Routes>
               <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
               <Route path="/us" element={<AuthGuard><Us /></AuthGuard>} />
               <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
@@ -68,8 +72,9 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/outlook-callback" element={<OutlookCallback />} />
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+              </Routes>
+            </BrowserRouter>
+          </SpotifyPlayerProvider>
         </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>

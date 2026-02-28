@@ -5,7 +5,7 @@ import { apiInvoke } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import SpotifyEmbed from "./SpotifyEmbed";
+import { useSpotifyPlayer } from "@/contexts/SpotifyPlayerContext";
 
 interface NowPlayingData {
   isPlaying?: boolean;
@@ -39,8 +39,8 @@ const SpotifyBoard = () => {
   const [nowPlaying, setNowPlaying] = useState<NowPlayingData | null>(null);
   const [recentTracks, setRecentTracks] = useState<RecentTrack[]>([]);
   const [loading, setLoading] = useState(true);
-  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [connected, setConnected] = useState(true);
+  const { playTrack, playPlaylist } = useSpotifyPlayer();
   const [playlistId, setPlaylistId] = useState<string | null>(null);
   const [playlistName, setPlaylistName] = useState("");
   const [playlistExpanded, setPlaylistExpanded] = useState(false);
@@ -130,30 +130,26 @@ const SpotifyBoard = () => {
 
       {hasNowPlaying && nowPlaying.track && (
         <div className="px-4 pb-3">
-          {playingTrackId === nowPlaying.track.id ? (
-            <SpotifyEmbed trackId={nowPlaying.track.id} autoPlay />
-          ) : (
-            <div className="flex items-center gap-3" data-testid="spotify-now-playing">
-              {nowPlaying.track.albumArt && (
-                <img src={nowPlaying.track.albumArt} alt="" className="w-12 h-12 rounded-lg shadow-md flex-shrink-0" />
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1 mb-0.5">
-                  <span className="w-2 h-2 rounded-full bg-[#1DB954] animate-pulse" />
-                  <span className="text-[10px] font-semibold text-[#1DB954] uppercase tracking-wider">Now Playing</span>
-                </div>
-                <p className="text-[13px] font-semibold text-foreground truncate">{nowPlaying.track.name}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{nowPlaying.track.artist}</p>
+          <div className="flex items-center gap-3" data-testid="spotify-now-playing">
+            {nowPlaying.track.albumArt && (
+              <img src={nowPlaying.track.albumArt} alt="" className="w-12 h-12 rounded-lg shadow-md flex-shrink-0" />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1 mb-0.5">
+                <span className="w-2 h-2 rounded-full bg-[#1DB954] animate-pulse" />
+                <span className="text-[10px] font-semibold text-[#1DB954] uppercase tracking-wider">Now Playing</span>
               </div>
-              <button
-                onClick={() => setPlayingTrackId(nowPlaying.track!.id)}
-                className="w-9 h-9 rounded-full bg-[#1DB954] flex items-center justify-center text-white hover:scale-105 transition-transform shrink-0"
-                data-testid="play-now-playing"
-              >
-                <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-              </button>
+              <p className="text-[13px] font-semibold text-foreground truncate">{nowPlaying.track.name}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{nowPlaying.track.artist}</p>
             </div>
-          )}
+            <button
+              onClick={() => playTrack(nowPlaying.track!.id)}
+              className="w-9 h-9 rounded-full bg-[#1DB954] flex items-center justify-center text-white hover:scale-105 transition-transform shrink-0"
+              data-testid="play-now-playing"
+            >
+              <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+          </div>
         </div>
       )}
 
@@ -163,26 +159,22 @@ const SpotifyBoard = () => {
           <div className="space-y-2">
             {recentTracks.map((track, i) => (
               <div key={`${track.id}-${i}`} data-testid={`spotify-recent-${i}`}>
-                {playingTrackId === track.id ? (
-                  <SpotifyEmbed trackId={track.id} autoPlay />
-                ) : (
-                  <div className="flex items-center gap-2.5">
-                    {track.albumArt && (
-                      <img src={track.albumArt} alt="" className="w-8 h-8 rounded-md flex-shrink-0" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-semibold text-foreground truncate">{track.name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{track.artist}</p>
-                    </div>
-                    <button
-                      onClick={() => setPlayingTrackId(track.id)}
-                      className="w-7 h-7 rounded-full bg-[#1DB954] flex items-center justify-center text-white hover:scale-105 transition-transform shrink-0"
-                      data-testid={`play-recent-${i}`}
-                    >
-                      <svg className="w-3.5 h-3.5 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                    </button>
+                <div className="flex items-center gap-2.5">
+                  {track.albumArt && (
+                    <img src={track.albumArt} alt="" className="w-8 h-8 rounded-md flex-shrink-0" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12px] font-semibold text-foreground truncate">{track.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{track.artist}</p>
                   </div>
-                )}
+                  <button
+                    onClick={() => playTrack(track.id)}
+                    className="w-7 h-7 rounded-full bg-[#1DB954] flex items-center justify-center text-white hover:scale-105 transition-transform shrink-0"
+                    data-testid={`play-recent-${i}`}
+                  >
+                    <svg className="w-3.5 h-3.5 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -208,38 +200,15 @@ const SpotifyBoard = () => {
       {playlistId && (
         <div className="border-t border-border/30">
           <button
-            onClick={() => setPlaylistExpanded(!playlistExpanded)}
+            onClick={() => playPlaylist(playlistId)}
             className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary/50 transition-colors"
             data-testid="toggle-home-playlist"
           >
             <span className="text-xs font-semibold text-muted-foreground">
               {playlistName || "Our Playlist"}
             </span>
-            {playlistExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+            <svg className="w-4 h-4 ml-0.5 text-[#1DB954]" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
           </button>
-          <AnimatePresence>
-            {playlistExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="px-2 pb-2">
-                  <iframe
-                    src={`https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator&theme=0`}
-                    width="100%"
-                    height="352"
-                    frameBorder="0"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    className="rounded-xl"
-                    data-testid="spotify-home-playlist-embed"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       )}
     </motion.div>
