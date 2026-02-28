@@ -17,7 +17,7 @@ import DiscoverTogether from "@/components/DiscoverTogether";
 import { useFeedContent } from "@/hooks/useFeedContent";
 import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
-import InstaFeedWidget from "@/components/InstaFeedWidget";
+
 import DailyPromptCard from "@/components/DailyPromptCard";
 import SpotifyBoard from "@/components/SpotifyBoard";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
@@ -117,9 +117,6 @@ const Index = () => {
 
         {/* Our Photos */}
         <PhotosPreview />
-
-        {/* Instagram feed — above For You */}
-        <InstaFeedWidget />
 
         {/* For You — combined saved links + suggested reads (randomised) */}
         <CuratedLinksWidget />
