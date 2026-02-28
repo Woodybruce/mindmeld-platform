@@ -116,7 +116,8 @@ All routes are defined in `server/routes.ts`:
 - `SpotifyEmbed` component — Spotify embed iframe player for in-app playback (tap play to load)
 - In-app playback: Play buttons on tracks in SpotifyBoard, SpotifyWidget, and ChatBubble load Spotify embed player
 - If Spotify isn't connected after server restart, SpotifyBoard shows "Connect Spotify" link to `/api/spotify/auth`
-- Tokens stored in memory (reset on server restart — user must re-authorize)
+- Tokens persisted to Replit KV store + /tmp file; survive server restarts (user only needs to authorize once)
+- `SPOTIFY_REDIRECT_URI` env var set per environment (dev/production) to match Spotify Dashboard redirect URIs
 - Playlist ID stored in `shared_lists` table with `game_type: "spotify_playlist"` (no extra tables needed)
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 

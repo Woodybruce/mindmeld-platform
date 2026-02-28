@@ -3,7 +3,7 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import webpush from "web-push";
-import { getUncachableSpotifyClient, invalidateSpotifyCache, getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, spotifyApiFetch } from "./spotify";
+import { getUncachableSpotifyClient, invalidateSpotifyCache, getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, spotifyApiFetch, initSpotifyTokens } from "./spotify";
 
 async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
@@ -282,7 +282,9 @@ async function refreshMicrosoftToken(refreshToken: string) {
   return res.json();
 }
 
-export function registerRoutes(app: Express): void {
+export async function registerRoutes(app: Express): Promise<void> {
+  await initSpotifyTokens();
+
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok" });
   });
@@ -1532,8 +1534,8 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
     }
   });
 
-  app.get("/api/spotify/status", (_req: Request, res: Response) => {
-    res.json({ connected: isSpotifyConnected() });
+  app.get("/api/spotify/status", async (_req: Request, res: Response) => {
+    res.json({ connected: await isSpotifyConnected() });
   });
 
   app.get("/api/spotify/now-playing", async (_req: Request, res: Response) => {
