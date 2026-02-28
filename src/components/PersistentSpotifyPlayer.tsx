@@ -1,6 +1,5 @@
 import { useSpotifyPlayer } from "@/contexts/SpotifyPlayerContext";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 const SpotifyIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -20,49 +19,42 @@ export default function PersistentSpotifyPlayer() {
   const height = player.type === "playlist" ? 352 : 80;
 
   return (
-    <div className="fixed bottom-20 left-0 right-0 z-40 pointer-events-none safe-area-bottom">
-      <div className="max-w-lg mx-auto px-3 pointer-events-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#191414] rounded-xl shadow-lg border border-[#1DB954]/30 overflow-hidden"
+    <div className="fixed bottom-0 left-0 right-0 z-[51] pointer-events-none safe-area-bottom">
+      <div className="max-w-lg mx-auto pointer-events-auto">
+        <div
+          className="overflow-hidden transition-all duration-300 px-1.5"
+          style={{
+            height: player.minimized ? 0 : height + 6,
+            opacity: player.minimized ? 0 : 1,
+          }}
         >
-          <div className="flex items-center justify-between px-3 py-1.5">
-            <div className="flex items-center gap-2">
-              <SpotifyIcon className="w-3.5 h-3.5 text-[#1DB954]" />
-              <span className="text-[10px] text-white/60 font-medium uppercase tracking-wider">
-                {player.type === "playlist" ? "Playlist" : "Now Playing"}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <button onClick={player.minimized ? maximize : minimize} className="p-1 text-white/60 hover:text-white" data-testid="toggle-player-size">
-                {player.minimized ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
-              <button onClick={stop} className="p-1 text-white/60 hover:text-white" data-testid="close-player">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+          <iframe
+            src={embedUrl}
+            width="100%"
+            height={height}
+            frameBorder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            className="rounded-t-lg"
+            data-testid="persistent-spotify-embed"
+          />
+        </div>
+        <div className="flex items-center justify-between px-3 py-1 bg-[#191414] border-t border-[#1DB954]/30">
+          <div className="flex items-center gap-2">
+            <SpotifyIcon className="w-3.5 h-3.5 text-[#1DB954]" />
+            <span className="text-[10px] text-white/60 font-medium uppercase tracking-wider">
+              {player.type === "playlist" ? "Playlist" : "Now Playing"}
+            </span>
           </div>
-          <div
-            className="px-1.5 overflow-hidden transition-all duration-300"
-            style={{
-              height: player.minimized ? 0 : height + 6,
-              paddingBottom: player.minimized ? 0 : 6,
-              opacity: player.minimized ? 0 : 1,
-            }}
-          >
-            <iframe
-              src={embedUrl}
-              width="100%"
-              height={height}
-              frameBorder="0"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-              className="rounded-lg"
-              data-testid="persistent-spotify-embed"
-            />
+          <div className="flex items-center gap-1">
+            <button onClick={player.minimized ? maximize : minimize} className="p-1 text-white/60 hover:text-white" data-testid="toggle-player-size">
+              {player.minimized ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            <button onClick={stop} className="p-1 text-white/60 hover:text-white" data-testid="close-player">
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
