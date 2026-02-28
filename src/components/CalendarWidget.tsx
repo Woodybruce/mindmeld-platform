@@ -34,7 +34,7 @@ function formatHour(h: number) {
 const CalendarWidget = () => {
   const { events, getEventsForMonth, getUpcomingEvents } = useCalendarEvents();
   const [viewDate, setViewDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>("month");
+  const [viewMode, setViewMode] = useState<ViewMode>("week");
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
