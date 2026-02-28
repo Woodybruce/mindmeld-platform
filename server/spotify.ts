@@ -152,6 +152,10 @@ export async function exchangeSpotifyCode(code: string, redirectUri: string) {
   return data;
 }
 
+export async function getSpotifyAccessToken(): Promise<string> {
+  return refreshAccessToken();
+}
+
 async function refreshAccessToken(): Promise<string> {
   await loadTokens();
 

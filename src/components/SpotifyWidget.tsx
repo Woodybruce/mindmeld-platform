@@ -118,11 +118,20 @@ export default function SpotifyWidget() {
     setCreatingPlaylist(true);
     try {
       const coupleNames = profile?.username || "Us";
-      const { data } = await apiInvoke("spotify/playlist/create", {
-        body: { name: `${coupleNames} — Our Playlist 💕`, description: "Songs we love together" },
+      const resp = await fetch("/api/spotify/playlist/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: `${coupleNames} — Our Playlist 💕`, description: "Songs we love together" }),
       });
-      if (data) {
-        const d = data as any;
+      const d = await resp.json();
+      if (!resp.ok) {
+        if (d.reconnect || resp.status === 403) {
+          toast.error("Please re-authorize Spotify first");
+          window.open("/api/spotify/auth", "_blank");
+        } else {
+          toast.error("Couldn't create playlist");
+        }
+      } else {
         setPlaylistId(d.id);
         setPlaylistName(d.name);
         setPlaylistUrl(d.spotifyUrl);

@@ -3,7 +3,7 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import webpush from "web-push";
-import { getUncachableSpotifyClient, invalidateSpotifyCache, getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, spotifyApiFetch, initSpotifyTokens } from "./spotify";
+import { getUncachableSpotifyClient, invalidateSpotifyCache, getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, spotifyApiFetch, initSpotifyTokens, getSpotifyAccessToken } from "./spotify";
 
 async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
@@ -1637,14 +1637,37 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
     try {
       const { name, description } = req.body;
       const me = await spotifyApiFetch("/me");
-      const playlist = await spotifyApiFetch(`/users/${me.id}/playlists`, {
+      console.log("Spotify /me user id:", me.id, "product:", me.product);
+
+      const accessToken = await getSpotifyAccessToken();
+
+      const createResp = await fetch(`https://api.spotify.com/v1/users/${me.id}/playlists`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           name: name || "Us — Our Playlist",
           description: description || "Our shared couple playlist",
           public: false,
         }),
       });
+
+      if (!createResp.ok) {
+        const errText = await createResp.text();
+        console.error("Spotify create playlist raw error:", createResp.status, errText);
+
+        if (createResp.status === 403) {
+          return res.status(403).json({ 
+            error: "Spotify denied playlist creation. Please re-authorize Spotify.",
+            reconnect: true 
+          });
+        }
+        return res.status(createResp.status).json({ error: `Spotify API ${createResp.status}: ${errText}` });
+      }
+
+      const playlist = await createResp.json();
       res.json({ id: playlist.id, name: playlist.name, spotifyUrl: playlist.external_urls?.spotify || "" });
     } catch (e: any) {
       console.error("Spotify create playlist error:", e.message);
