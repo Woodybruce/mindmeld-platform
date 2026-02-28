@@ -342,7 +342,7 @@ const CuratedLinksWidget = () => {
   }, []);
 
   const fetchPodcasts = useCallback(async (force = false) => {
-    const key = "foryou-podcasts";
+    const key = "foryou-podcasts-v2";
     if (!force) { const c = cacheGet(key); if (c) { setPodcasts(c); setLoaded(p => ({ ...p, podcasts: true })); return; } }
     setLoading(p => ({ ...p, podcasts: true }));
     try {

@@ -68,14 +68,14 @@ const REAL_ARTICLES = [
 ];
 
 const CURATED_PODCASTS = [
-  { title: "Where Should We Begin?", description: "Step inside real therapy sessions with couples navigating love, betrayal, and desire", host: "Esther Perel", category: "Therapy", emoji: "🎧", spotifyId: "2LfEXBqTmGJMPMYfAVHdj4", appleId: "1237931798", imageUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts126/v4/b4/15/47/b4154757-8819-2ea2-40be-fb0b48e4b823/mza_11822702498498983702.jpg/600x600bb.jpg", duration: "40 min" },
-  { title: "Modern Love", description: "Real stories of love, loss, and redemption from the New York Times column", host: "New York Times", category: "Stories", emoji: "💌", spotifyId: "03Er7mSPHvc2Dn8gP5odMh", appleId: "1065559535", imageUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts116/v4/60/17/3a/60173a82-4a99-1f0e-9273-0c3e225ebc36/mza_8998498299498614365.jpg/600x600bb.jpg", duration: "25 min" },
-  { title: "Foreplay Radio — Couples & Sex Therapy", description: "Sex therapists discuss intimacy, desire, and keeping the spark alive", host: "Laurie Watson", category: "Intimacy", emoji: "🔥", spotifyId: "5kKKuebRUxNsaKLPM7hIBt", appleId: "1099303755", imageUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts116/v4/13/c4/3d/13c43d66-6a2f-5d41-4e7e-8aaf2f9c0bf3/mza_16289958393279498866.jpg/600x600bb.jpg", duration: "30 min" },
-  { title: "Relationship Alive!", description: "Deep-dive conversations with world-renowned relationship experts", host: "Neil Sattin", category: "Growth", emoji: "🌱", spotifyId: "6cQwLbS6rAku3Y84fN3aPU", appleId: "1044181794", imageUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts116/v4/80/f0/23/80f023fa-c5ce-1d4f-84e4-8c36a5ccd6b0/mza_2613841417816519498.jpg/600x600bb.jpg", duration: "60 min" },
-  { title: "The Love Fix", description: "Clinical psychologist helps couples navigate real relationship challenges", host: "Dr Tari Mack", category: "Advice", emoji: "💡", spotifyId: "3jYyI64kRl4wERdfIc0fQO", appleId: "1502699831", imageUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts126/v4/c2/3a/3d/c23a3d08-7a20-6c9b-bd2e-3f97b943c2fa/mza_6143179073889198866.jpg/600x600bb.jpg", duration: "45 min" },
-  { title: "Just Between Us", description: "Honest chats about dating, marriage, and everything in between", host: "Allison & Gaby", category: "Fun", emoji: "😄", spotifyId: "2afVjOVyRWzyWBi8qrNkeJ", appleId: "992459624", imageUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts126/v4/7c/b9/63/7cb96388-80b1-8a48-55c1-fc3eae6e44fa/mza_14735875693289498866.jpg/600x600bb.jpg", duration: "35 min" },
-  { title: "The Secure Relationship", description: "Attachment theory in action — heal anxious & avoidant patterns", host: "Julie Menanno", category: "Growth", emoji: "🔗", spotifyId: "6HwbZhlhLzBJXJEq9OWaOX", appleId: "1680030865", imageUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts116/v4/f2/a7/90/f2a79046-7e44-63a0-d89e-5a7d53a6fbbc/mza_3017927013889198866.jpg/600x600bb.jpg", duration: "25 min" },
-  { title: "We Can Do Hard Things", description: "Glennon Doyle tackles love, identity, and partnership with radical honesty", host: "Glennon Doyle", category: "Growth", emoji: "💪", spotifyId: "5swfO4bVmFrcUsQjGeBp2o", appleId: "1564530722", imageUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts126/v4/5b/7c/2e/5b7c2e3c-8c7d-7d5d-4e4c-7c3c3c3c3c3c/mza_6143179073889198866.jpg/600x600bb.jpg", duration: "50 min" },
+  { title: "Where Should We Begin?", description: "Step inside real therapy sessions with couples navigating love, betrayal, and desire", host: "Esther Perel", category: "Therapy", spotifyId: "2LfEXBqTmGJMPMYfAVHdj4", appleId: "1237931798", imageUrl: "", duration: "40 min" },
+  { title: "Modern Love", description: "Real stories of love, loss, and redemption from the New York Times column", host: "New York Times", category: "Stories", spotifyId: "03Er7mSPHvc2Dn8gP5odMh", appleId: "1065559535", imageUrl: "", duration: "25 min" },
+  { title: "Foreplay — Couples & Sex Therapy", description: "Sex therapists discuss intimacy, desire, and keeping the spark alive", host: "Laurie Watson", category: "Intimacy", spotifyId: "5kKKuebRUxNsaKLPM7hIBt", appleId: "1083324677", imageUrl: "", duration: "30 min" },
+  { title: "Relationship Alive!", description: "Deep-dive conversations with world-renowned relationship experts", host: "Neil Sattin", category: "Growth", spotifyId: "6cQwLbS6rAku3Y84fN3aPU", appleId: "1037691804", imageUrl: "", duration: "60 min" },
+  { title: "The Love Fix", description: "Clinical psychologist helps couples navigate real relationship challenges", host: "Dr Tari Mack", category: "Advice", spotifyId: "3jYyI64kRl4wERdfIc0fQO", appleId: "1551411428", imageUrl: "", duration: "45 min" },
+  { title: "The Secure Love Podcast", description: "Attachment theory in action — heal anxious & avoidant patterns", host: "Julie Menanno", category: "Growth", spotifyId: "6HwbZhlhLzBJXJEq9OWaOX", appleId: "1753342452", imageUrl: "", duration: "25 min" },
+  { title: "We Can Do Hard Things", description: "Glennon Doyle tackles love, identity, and partnership with radical honesty", host: "Glennon Doyle", category: "Growth", spotifyId: "5swfO4bVmFrcUsQjGeBp2o", appleId: "1564530722", imageUrl: "", duration: "50 min" },
+  { title: "Just Between Us Ghoulfriends", description: "Honest chats about dating, marriage, and everything in between", host: "Allison & Gaby", category: "Fun", spotifyId: "2afVjOVyRWzyWBi8qrNkeJ", appleId: "1440694086", imageUrl: "", duration: "35 min" },
 ];
 
 const CURATED_VIDEOS = [
@@ -843,9 +843,30 @@ Return ONLY valid JSON with these fields:
   });
 
   // 7b. GET /api/curated-podcasts
-  app.get("/api/curated-podcasts", (_req: Request, res: Response) => {
+  const podcastArtworkCache = new Map<string, { url: string; ts: number }>();
+  async function enrichPodcastArtwork(podcasts: typeof CURATED_PODCASTS) {
+    const enriched = await Promise.all(podcasts.map(async (p) => {
+      if (p.imageUrl) return p;
+      const cached = podcastArtworkCache.get(p.appleId);
+      if (cached && Date.now() - cached.ts < 7 * 24 * 60 * 60 * 1000) {
+        return { ...p, imageUrl: cached.url };
+      }
+      try {
+        const resp = await fetch(`https://itunes.apple.com/lookup?id=${p.appleId}&entity=podcast`);
+        const data = await resp.json() as any;
+        const artwork = data.results?.[0]?.artworkUrl600 || data.results?.[0]?.artworkUrl100 || "";
+        if (artwork) podcastArtworkCache.set(p.appleId, { url: artwork, ts: Date.now() });
+        return { ...p, imageUrl: artwork };
+      } catch {
+        return p;
+      }
+    }));
+    return enriched;
+  }
+  app.get("/api/curated-podcasts", async (_req: Request, res: Response) => {
     try {
-      res.json({ podcasts: shuffle(CURATED_PODCASTS).slice(0, 6) });
+      const enriched = await enrichPodcastArtwork(CURATED_PODCASTS);
+      res.json({ podcasts: shuffle(enriched).slice(0, 6) });
     } catch (e) {
       console.error("curated-podcasts error:", e);
       res.json({ podcasts: CURATED_PODCASTS.slice(0, 6) });
