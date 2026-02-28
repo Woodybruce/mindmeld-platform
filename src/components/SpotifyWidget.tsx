@@ -62,16 +62,21 @@ export default function SpotifyWidget() {
   async function loadPlaylistId() {
     if (!user) { setLoading(false); return; }
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("shared_lists")
         .select("score_data")
         .eq("game_type", "spotify_playlist")
         .limit(1)
         .maybeSingle();
+      if (error) console.warn("Load playlist error:", error.message);
       const pid = (data?.score_data as any)?.playlistId;
-      if (pid) setPlaylistId(pid);
+      if (pid) {
+        setPlaylistId(pid);
+        setPlaylistName((data?.score_data as any)?.playlistName || "");
+        setPlaylistUrl((data?.score_data as any)?.spotifyUrl || "");
+      }
     } catch (e) {
-      // ignore
+      console.warn("Load playlist exception:", e);
     }
     setLoading(false);
   }
@@ -79,16 +84,31 @@ export default function SpotifyWidget() {
   async function savePlaylistId(id: string, name: string, url: string) {
     if (!user) return;
     try {
-      await supabase.from("shared_lists").upsert(
-        {
-          user_id: user.id,
-          game_type: "spotify_playlist",
-          score_data: { playlistId: id, playlistName: name, spotifyUrl: url },
-        },
-        { onConflict: "user_id,game_type" }
-      );
+      const { data: existing } = await supabase
+        .from("shared_lists")
+        .select("id")
+        .eq("game_type", "spotify_playlist")
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from("shared_lists")
+          .update({ score_data: { playlistId: id, playlistName: name, spotifyUrl: url } })
+          .eq("id", existing.id);
+        if (error) console.error("Update playlist error:", error.message);
+      } else {
+        const { error } = await supabase
+          .from("shared_lists")
+          .insert({
+            user_id: user.id,
+            game_type: "spotify_playlist",
+            score_data: { playlistId: id, playlistName: name, spotifyUrl: url },
+          });
+        if (error) console.error("Insert playlist error:", error.message);
+      }
     } catch (e) {
-      // silently fail
+      console.error("Save playlist exception:", e);
     }
   }
 
