@@ -123,7 +123,7 @@ const openBuyLink = (url: string) => {
 
 const isLuxuryBrand = (source: string) => {
   const s = source.toLowerCase();
-  return s.includes("coco de mer") || s.includes("agent provocateur") || s.includes("goop");
+  return s.includes("coco de mer") || s.includes("agent provocateur") || s.includes("goop") || s.includes("sophie") || s.includes("olivia");
 };
 
 const getBuyLabel = (product: ShopProduct) => {
@@ -131,6 +131,7 @@ const getBuyLabel = (product: ShopProduct) => {
   if (s.includes("coco de mer")) return "Shop Coco de Mer";
   if (s.includes("agent provocateur")) return "Shop Agent Provocateur";
   if (s.includes("goop")) return "Shop goop";
+  if (s.includes("sophie") || s.includes("olivia")) return "Shop Sophie & Olivia";
   return `Buy Now — ${product.price}`;
 };
 

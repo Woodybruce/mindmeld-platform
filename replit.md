@@ -148,7 +148,7 @@ All routes are defined in `server/routes.ts`:
   - Product detail modal with image, description, features, and buy button
   - Buy button uses `document.createElement('a')` for reliable webview link opening
   - Brand-styled buy buttons: black for luxury brands, primary for Amazon
-  - `LUXURY_INTIMACY_PRODUCTS` in `server/routes.ts`: 19 products (8 CdM + 6 AP + 5 goop)
+  - `LUXURY_INTIMACY_PRODUCTS` in `server/routes.ts`: 25 products (8 CdM + 6 AP + 5 goop + 6 Sophie & Olivia)
   - All Amazon product links use search URLs (`/s?k=...&tag=woodybruce-21`)
   - 30-minute client-side cache per category
   - Like/heart support with partner mutual like indicators
