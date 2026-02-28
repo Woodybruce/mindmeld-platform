@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MapPin, Heart, Timer, Trophy, ArrowLeft, Zap, Send } from "lucide-react";
+import { MapPin, Heart, Timer, Trophy, ArrowLeft, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { notifyPartner } from "@/lib/notifyPartner";
-import { toast } from "sonner";
 
 const rewardOptions = [
   { id: "task", label: "Task Favour", desc: "Loser does a chore of winner's choice", icon: "🧹", color: "from-blue-400 to-blue-600" },
@@ -38,29 +36,6 @@ const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupP
   const { user, profile } = useAuth();
   const [selectedReward, setSelectedReward] = useState<string | null>("task");
   const [selectedTime, setSelectedTime] = useState<number>(30);
-  const [inviteSent, setInviteSent] = useState(false);
-
-  const sendInviteToPartner = async () => {
-    if (!user || !profile?.partner_id) {
-      toast.error("Link your partner first in Profile");
-      return;
-    }
-
-    const displayName = profile.username || "Your partner";
-
-    try {
-      await notifyPartner({
-        partnerId: profile.partner_id,
-        title: "💋 Kiss Chase!",
-        body: `${displayName} wants to play Kiss Chase! Tap to join.`,
-        route: "/kiss-chase",
-      });
-      toast.success("Invite sent to your partner! 💋");
-    } catch (e) {
-      toast.success("Tell your partner to open the app! 💋");
-    }
-    setInviteSent(true);
-  };
 
   const hasPartner = !!profile?.partner_id;
 
@@ -145,24 +120,12 @@ const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupP
             animate={{ opacity: 1, y: 0 }}
             className="bg-[hsl(var(--us-sage))]/10 border border-[hsl(var(--us-sage))]/20 rounded-2xl p-4"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[hsl(var(--us-sage))]" />
-                  Partner linked ✓
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">Both of you need the game open to see live locations</p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={sendInviteToPartner}
-                disabled={inviteSent}
-                className="gap-1.5"
-              >
-                <Send className="w-3.5 h-3.5" />
-                {inviteSent ? "Sent!" : "Invite"}
-              </Button>
+            <div>
+              <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[hsl(var(--us-sage))]" />
+                Partner linked ✓
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Your partner will be notified when you start the chase</p>
             </div>
           </motion.div>
         )}
@@ -234,7 +197,7 @@ const KissChaseSetup = ({ onStart, partnerGame, onJoinPartner }: KissChaseSetupP
           </Button>
           <p className="text-center text-xs text-muted-foreground mt-2">
             {hasPartner
-              ? "Location permission will be requested • Make sure your partner opens the game too!"
+              ? "Your partner will get a notification to join • Location permission required"
               : "Playing with a simulated partner • Link your partner for real locations"}
           </p>
         </motion.div>
