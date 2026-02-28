@@ -25,6 +25,7 @@ import PullToRefresh from "@/components/PullToRefresh";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import AnnouncementsWidget from "@/components/AnnouncementsWidget";
+import { useOutlookAutoSync } from "@/hooks/useOutlookAutoSync";
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
   const rows: (FeedItem | [FeedItem, FeedItem])[] = [];
@@ -46,6 +47,7 @@ const Index = () => {
   const rows = layoutItems(sampleFeedData);
   useWidgetSync();
   usePushNotifications();
+  useOutlookAutoSync();
   const { user, profile } = useAuth();
   const { data: backendFeedItems = [] } = useFeedContent(2);
   
