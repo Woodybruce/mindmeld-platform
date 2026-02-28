@@ -18,11 +18,46 @@ async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 const AMAZON_TAG = "woodybruce-21";
-function buildAmazonUrl(asin?: string, productName?: string): string {
-  if (asin && /^B[A-Z0-9]{9}$/i.test(asin)) {
-    return `https://www.amazon.co.uk/dp/${asin}?tag=${AMAZON_TAG}`;
+
+const asinCache = new Map<string, string>();
+
+async function lookupAmazonAsin(productName: string): Promise<string | null> {
+  const cacheKey = productName.toLowerCase().trim();
+  if (asinCache.has(cacheKey)) return asinCache.get(cacheKey)!;
+
+  try {
+    const searchUrl = `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName)}`;
+    const resp = await fetch(searchUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-GB,en;q=0.9",
+      },
+    });
+    if (!resp.ok) return null;
+    const html = await resp.text();
+    const matches = [...html.matchAll(/data-asin="(B[A-Z0-9]{9})"/g)];
+    const asins = [...new Set(matches.map(m => m[1]))];
+    if (asins.length > 0) {
+      asinCache.set(cacheKey, asins[0]);
+      return asins[0];
+    }
+  } catch (e) {
+    console.error("Amazon ASIN lookup failed:", e);
   }
-  return `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || "couples gift")}&tag=${AMAZON_TAG}`;
+  return null;
+}
+
+async function buildAmazonUrl(asinOrName?: string, productName?: string): Promise<string> {
+  if (asinOrName && /^B[A-Z0-9]{9}$/i.test(asinOrName)) {
+    return `https://www.amazon.co.uk/dp/${asinOrName}?tag=${AMAZON_TAG}`;
+  }
+  const name = productName || asinOrName || "couples gift";
+  const lookedUp = await lookupAmazonAsin(name);
+  if (lookedUp) {
+    return `https://www.amazon.co.uk/dp/${lookedUp}?tag=${AMAZON_TAG}`;
+  }
+  return `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
 }
 
 async function callAI(messages: any[], tools?: any[], toolChoice?: any) {
@@ -1037,10 +1072,10 @@ Keep descriptions under 60 chars.`,
         ];
       }
 
-      experiences = experiences.map((e: any) => ({
+      experiences = await Promise.all(experiences.map(async (e: any) => ({
         ...e,
-        bookingUrl: buildAmazonUrl(e.asin, e.name),
-      }));
+        bookingUrl: await buildAmazonUrl(e.asin, e.name),
+      })));
 
       res.json({ experiences });
     } catch (e: any) {
@@ -1183,7 +1218,7 @@ Keep descriptions under 60 chars.`,
       const enriched = await Promise.all(products.map(async (p: any) => {
         const searchTerm = p.imageSearchTerm || `${p.name} ${p.brand}`;
         const imageUrl = await fetchAmazonProductImage(searchTerm);
-        return { ...p, productUrl: buildAmazonUrl(p.asin, p.name), affiliateTag: AMAZON_TAG, imageUrl };
+        return { ...p, productUrl: await buildAmazonUrl(p.asin, p.name), affiliateTag: AMAZON_TAG, imageUrl };
       }));
 
       res.json({ products: enriched });
@@ -1259,11 +1294,11 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
         throw new Error("No tool call response from AI");
       }
 
-      const enriched = (products || []).map((p: any) => ({
+      const enriched = await Promise.all((products || []).map(async (p: any) => ({
         ...p,
-        productUrl: buildAmazonUrl(p.asin, p.name),
+        productUrl: await buildAmazonUrl(p.asin, p.name),
         affiliateTag: AMAZON_TAG,
-      }));
+      })));
       res.json({ products: enriched });
     } catch (e: any) {
       console.error("suggest-products error:", e);
@@ -2026,12 +2061,12 @@ Focus on real, existing content about relationships, dating, couples, love, and 
         return res.status(500).json({ error: "Failed to parse AI response" });
       }
 
-      const items = (parsed.items || []).map((item: any) => {
+      const items = await Promise.all((parsed.items || []).map(async (item: any) => {
         if ((item.type === "product" || item.type === "experience") && (item.asin || item.name)) {
-          item.amazonSearchUrl = buildAmazonUrl(item.asin, item.name);
+          item.amazonSearchUrl = await buildAmazonUrl(item.asin, item.name);
         }
         return item;
-      });
+      }));
 
       res.json({ items });
     } catch (e: any) {
