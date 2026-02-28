@@ -1496,10 +1496,19 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
 
   // ── Spotify routes ──
 
+  function getSpotifyRedirectUri(req: Request): string {
+    if (process.env.SPOTIFY_REDIRECT_URI) {
+      return process.env.SPOTIFY_REDIRECT_URI;
+    }
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
+    const host = req.headers["x-forwarded-host"] || req.headers.host || req.hostname;
+    const origin = `${protocol}://${host}`;
+    return `${origin}/api/spotify/callback`;
+  }
+
   app.get("/api/spotify/auth", (req: Request, res: Response) => {
-    const protocol = req.headers["x-forwarded-proto"] || "https";
-    const host = req.headers["x-forwarded-host"] || req.headers.host;
-    const redirectUri = `${protocol}://${host}/api/spotify/callback`;
+    const redirectUri = getSpotifyRedirectUri(req);
+    console.log("Spotify auth redirect_uri:", redirectUri);
     res.redirect(getSpotifyAuthUrl(redirectUri));
   });
 
@@ -1513,9 +1522,8 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
       return res.status(400).send("Missing code parameter");
     }
     try {
-      const protocol = req.headers["x-forwarded-proto"] || "https";
-      const host = req.headers["x-forwarded-host"] || req.headers.host;
-      const redirectUri = `${protocol}://${host}/api/spotify/callback`;
+      const redirectUri = getSpotifyRedirectUri(req);
+      console.log("Spotify callback redirect_uri:", redirectUri);
       await exchangeSpotifyCode(code, redirectUri);
       res.send("<html><body><h2>Spotify connected!</h2><p>You can close this tab and go back to the app.</p><script>setTimeout(()=>window.close(),2000)</script></body></html>");
     } catch (e: any) {
