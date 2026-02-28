@@ -1636,16 +1636,38 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
   app.post("/api/spotify/playlist/create", async (req: Request, res: Response) => {
     try {
       const { name, description } = req.body;
-      const spotify = await getUncachableSpotifyClient();
-      const me = await spotify.currentUser.profile();
+      const accessToken = await getSpotifyAccessToken();
+
+      const meResp = await fetch("https://api.spotify.com/v1/me", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const me = await meResp.json();
       console.log("Spotify /me user id:", me.id, "product:", me.product);
 
-      const playlist = await spotify.playlists.createPlaylist(me.id, {
+      const createBody = JSON.stringify({
         name: name || "Us — Our Playlist",
         description: description || "Our shared couple playlist",
         public: false,
       });
+      console.log("Spotify create playlist request:", `POST /users/${me.id}/playlists`, createBody);
 
+      const createResp = await fetch(`https://api.spotify.com/v1/users/${me.id}/playlists`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: createBody,
+      });
+
+      const respText = await createResp.text();
+      console.log("Spotify create playlist response:", createResp.status, createResp.headers.get("www-authenticate"), respText.substring(0, 500));
+
+      if (!createResp.ok) {
+        return res.status(createResp.status).json({ error: `Spotify API ${createResp.status}: ${respText}` });
+      }
+
+      const playlist = JSON.parse(respText);
       res.json({ id: playlist.id, name: playlist.name, spotifyUrl: playlist.external_urls?.spotify || "" });
     } catch (e: any) {
       console.error("Spotify create playlist error:", e.message);
