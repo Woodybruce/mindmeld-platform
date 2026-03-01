@@ -49,11 +49,13 @@ const KissChasePage = () => {
 
   const handleCatch = () => {
     setCaught(true);
+    broadcastQuit();
     setPhase("result");
   };
 
   const handleTimeUp = () => {
     setCaught(false);
+    broadcastQuit();
     setPhase("result");
   };
 
