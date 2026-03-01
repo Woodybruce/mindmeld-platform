@@ -76,11 +76,31 @@ const openBuyLink = (url: string) => {
   document.body.removeChild(a);
 };
 
-const ProductImage = ({ product }: { product: ShopProduct }) => {
+const BRAND_GRADIENTS: Record<string, string> = {
+  "coco de mer": "from-stone-950 via-stone-900 to-stone-800",
+  "agent provocateur": "from-pink-950 via-stone-900 to-stone-950",
+  "goop": "from-stone-100 via-stone-50 to-white",
+  "space nk": "from-stone-800 via-stone-700 to-stone-600",
+  "sophie & olivia": "from-rose-950 via-stone-900 to-stone-950",
+};
+
+const getBrandGradient = (brand: string) => {
+  const b = brand.toLowerCase();
+  for (const [key, val] of Object.entries(BRAND_GRADIENTS)) {
+    if (b.includes(key)) return val;
+  }
+  return "from-stone-900 via-stone-800 to-stone-700";
+};
+
+const isGoopBrand = (brand: string) => brand.toLowerCase().includes("goop");
+
+const ProductImage = ({ product, isCurated = false }: { product: ShopProduct; isCurated?: boolean }) => {
   const [failed, setFailed] = useState(false);
   const initials = product.brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const gradient = getBrandGradient(product.brand);
+  const lightBrand = isGoopBrand(product.brand);
 
-  if (product.imageUrl && !failed) {
+  if (product.imageUrl && !failed && !isCurated) {
     return (
       <img
         src={product.imageUrl}
@@ -94,11 +114,10 @@ const ProductImage = ({ product }: { product: ShopProduct }) => {
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-stone-900 via-stone-800 to-stone-700 flex flex-col items-center justify-center p-4">
-      <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center mb-3">
-        <span className="text-xl font-light text-white/80 tracking-wider">{initials}</span>
-      </div>
-      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40 text-center">{product.brand}</p>
+    <div className={`w-full h-full bg-gradient-to-br ${gradient} flex flex-col items-center justify-center p-4`}>
+      <p className={`text-[10px] uppercase tracking-[0.25em] ${lightBrand ? "text-stone-400" : "text-white/40"} mb-2`}>{product.brand}</p>
+      <p className={`text-sm font-medium ${lightBrand ? "text-stone-700" : "text-white/80"} text-center leading-snug max-w-[80%]`}>{product.name}</p>
+      <p className={`text-[13px] font-semibold ${lightBrand ? "text-stone-900" : "text-white/90"} mt-2`}>{product.price}</p>
     </div>
   );
 };
@@ -137,8 +156,8 @@ const ProductDetailModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative">
-          <div className="w-full aspect-[4/5] overflow-hidden rounded-t-3xl sm:rounded-t-3xl bg-stone-100">
-            <ProductImage product={product} />
+          <div className="w-full aspect-[3/2] overflow-hidden rounded-t-3xl sm:rounded-t-3xl bg-stone-100">
+            <ProductImage product={product} isCurated={product.id.startsWith("curated-")} />
           </div>
 
           <button
@@ -355,7 +374,7 @@ const DiscoverTogether = () => {
       <div className="px-3 pb-3">
         {loading && filteredProducts.length === 0 ? (
           <div className="space-y-2">
-            <div className="rounded-xl bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse aspect-[4/5]" />
+            <div className="rounded-xl bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse aspect-[16/9]" />
             <div className="grid grid-cols-2 gap-2">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="rounded-xl bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse">
@@ -387,9 +406,9 @@ const DiscoverTogether = () => {
                 className="rounded-xl overflow-hidden cursor-pointer active:scale-[0.99] transition-transform mb-2 relative"
                 data-testid={`discover-product-${heroProduct.id}`}
               >
-                <div className="relative w-full aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-900">
-                  <ProductImage product={heroProduct} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                <div className="relative w-full aspect-[16/9] overflow-hidden bg-stone-100 dark:bg-stone-900">
+                  <ProductImage product={heroProduct} isCurated={heroProduct.id.startsWith("curated-")} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                   <div className="absolute top-3 right-3">
                     <LikeButton
                       liked={isLikedByMe(heroProduct.id)}
@@ -399,11 +418,10 @@ const DiscoverTogether = () => {
                       size="sm"
                     />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
                     <p className="text-[10px] uppercase tracking-[0.2em] text-white/60 font-medium">{heroProduct.brand}</p>
-                    <h4 className="text-base font-semibold text-white leading-tight mt-0.5">{heroProduct.name}</h4>
-                    <p className="text-[13px] text-white/70 mt-1 line-clamp-2">{heroProduct.description}</p>
-                    <div className="flex items-center justify-between mt-3">
+                    <h4 className="text-sm font-semibold text-white leading-tight mt-0.5">{heroProduct.name}</h4>
+                    <div className="flex items-center justify-between mt-1.5">
                       <span className="text-sm font-semibold text-white">{heroProduct.price}</span>
                       <span className="text-[11px] text-white/50 uppercase tracking-wider flex items-center gap-1">
                         View <ChevronRight className="w-3 h-3" />
@@ -429,7 +447,7 @@ const DiscoverTogether = () => {
                     data-testid={`discover-product-${product.id}`}
                   >
                     <div className="relative w-full aspect-square overflow-hidden">
-                      <ProductImage product={product} />
+                      <ProductImage product={product} isCurated={product.id.startsWith("curated-")} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                       <div className="absolute top-2 right-2">
                         <LikeButton
