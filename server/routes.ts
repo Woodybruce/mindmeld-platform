@@ -20,8 +20,11 @@ async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
 const AMAZON_TAG = "woodybruce-21";
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY || "";
 
+const imageCache = new Map<string, string | null>();
+
 async function searchPexelsImage(query: string): Promise<string | null> {
   if (!PEXELS_API_KEY) return null;
+  if (imageCache.has(query)) return imageCache.get(query)!;
   try {
     const resp = await fetch(
       `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=square`,
@@ -29,10 +32,18 @@ async function searchPexelsImage(query: string): Promise<string | null> {
     );
     if (!resp.ok) return null;
     const data = await resp.json();
-    return data.photos?.[0]?.src?.medium || null;
+    const url = data.photos?.[0]?.src?.medium || null;
+    imageCache.set(query, url);
+    return url;
   } catch {
     return null;
   }
+}
+
+async function resolveProductImage(product: any): Promise<string | null> {
+  if (product.imageUrl) return product.imageUrl;
+  const keyword = product.imageKeyword || `${product.brand} ${product.name} luxury`;
+  return searchPexelsImage(keyword);
 }
 
 function buildAmazonUrl(productName?: string): string {
@@ -1502,64 +1513,78 @@ Products should be things couples would actually buy for each other or to enjoy 
       if (catLower.includes("intimacy") || catLower === "all" || catLower.includes("mix")) {
         const isIntimacy = catLower.includes("intimacy");
         const luxuryPick = shuffle(LUXURY_INTIMACY_PRODUCTS).slice(0, isIntimacy ? 2 : 1);
-        luxuryPick.forEach((lp: any, i: number) => {
-          enriched.push({
-            id: `shop-luxury-${Date.now()}-${i}`,
-            name: lp.name,
-            brand: lp.brand,
-            price: lp.price,
-            description: lp.description,
-            longDescription: lp.longDescription || lp.description,
-            features: lp.features || [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
-            category: normalizeShopCategory(lp.category || "Intimacy"),
-            emoji: "",
-            imageKeyword: lp.imageKeyword || `${lp.category} luxury couples`,
-            imageUrl: lp.imageUrl || null,
-            buyUrl: lp.productUrl,
-            source: lp.brand,
-          });
-        });
+        const luxuryResolved = await Promise.all(
+          luxuryPick.map(async (lp: any, i: number) => {
+            const resolvedImage = await resolveProductImage(lp);
+            return {
+              id: `shop-luxury-${Date.now()}-${i}`,
+              name: lp.name,
+              brand: lp.brand,
+              price: lp.price,
+              description: lp.description,
+              longDescription: lp.longDescription || lp.description,
+              features: lp.features || [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
+              category: normalizeShopCategory(lp.category || "Intimacy"),
+              emoji: "",
+              imageKeyword: lp.imageKeyword || `${lp.category} luxury couples`,
+              imageUrl: resolvedImage,
+              buyUrl: lp.productUrl,
+              source: lp.brand,
+            };
+          })
+        );
+        enriched.push(...luxuryResolved);
       }
 
       res.json({ products: shuffle(enriched) });
     } catch (e: any) {
       console.error("shop/generate error:", e);
       // Return fallback products
-      const fallback = LUXURY_INTIMACY_PRODUCTS.slice(0, 4).map((lp, i) => ({
-        id: `shop-fallback-${i}`,
-        name: lp.name,
-        brand: lp.brand,
-        price: lp.price,
-        description: lp.description,
-        longDescription: lp.longDescription || lp.description,
-        features: lp.features || [`By ${lp.brand}`, "Premium quality"],
-        category: normalizeShopCategory(lp.category),
-        emoji: "",
-        imageKeyword: lp.imageKeyword || `${lp.category} luxury`,
-        buyUrl: lp.productUrl,
-        source: lp.brand,
-      }));
+      const fallback = await Promise.all(
+        LUXURY_INTIMACY_PRODUCTS.slice(0, 4).map(async (lp, i) => {
+          const resolvedImage = await resolveProductImage(lp);
+          return {
+            id: `shop-fallback-${i}`,
+            name: lp.name,
+            brand: lp.brand,
+            price: lp.price,
+            description: lp.description,
+            longDescription: lp.longDescription || lp.description,
+            features: lp.features || [`By ${lp.brand}`, "Premium quality"],
+            category: normalizeShopCategory(lp.category),
+            emoji: "",
+            imageKeyword: lp.imageKeyword || `${lp.category} luxury`,
+            imageUrl: resolvedImage,
+            buyUrl: lp.productUrl,
+            source: lp.brand,
+          };
+        })
+      );
       res.json({ products: fallback });
     }
   });
 
-  // GET /api/shop/curated — Return all luxury brand products with images
   app.get("/api/shop/curated", async (_req: Request, res: Response) => {
     try {
-      const products = LUXURY_INTIMACY_PRODUCTS.map((lp: any, i: number) => ({
-        id: `curated-${i}`,
-        name: lp.name,
-        brand: lp.brand,
-        price: lp.price,
-        description: lp.description,
-        longDescription: lp.longDescription || lp.description,
-        features: lp.features || [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
-        category: normalizeShopCategory(lp.category),
-        imageKeyword: lp.imageKeyword || `${lp.category} luxury couples`,
-        imageUrl: lp.imageUrl || null,
-        buyUrl: lp.productUrl,
-        source: lp.brand,
-      }));
+      const products = await Promise.all(
+        LUXURY_INTIMACY_PRODUCTS.map(async (lp: any, i: number) => {
+          const resolvedImage = await resolveProductImage(lp);
+          return {
+            id: `curated-${i}`,
+            name: lp.name,
+            brand: lp.brand,
+            price: lp.price,
+            description: lp.description,
+            longDescription: lp.longDescription || lp.description,
+            features: lp.features || [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
+            category: normalizeShopCategory(lp.category),
+            imageKeyword: lp.imageKeyword || `${lp.category} luxury couples`,
+            imageUrl: resolvedImage,
+            buyUrl: lp.productUrl,
+            source: lp.brand,
+          };
+        })
+      );
 
       res.json({ products });
     } catch (e: any) {
