@@ -102,9 +102,12 @@ All routes are defined in `server/routes.ts`:
 
 ## List System
 - Lists stored in Supabase `shared_lists` table (not localStorage)
-- `useSharedLists` hook is the canonical way to read/write lists
+- `useSharedLists` hook is the canonical way to read/write lists; filters out internal lists (names starting with `__`)
+- Internal lists: `__spotify_playlist__` (Spotify), `__ai_preferences__` (AI prefs) — hidden from user list view
 - `status` and `createdBy` metadata stored inside `score_data._listMeta` JSONB (no schema changes needed)
 - Template lists require partner to add items before going live (`status: "pending_partner"` → `"active"`)
+- Shopping list template (`id: "shopping"`) — items have inline Amazon buy button (ExternalLink icon) and "Buy on Amazon" in action menu
+- Amazon buy links use search URL format: `amazon.co.uk/s?k=...&tag=woodybruce-21`
 - Sex Bucket Challenge uses separate `bucket_list_proposals` table for its proposal flow
 - Sex Bucket Game draws from the `sex-bucket-ideas` template list
 

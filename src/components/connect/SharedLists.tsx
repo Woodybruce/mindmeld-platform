@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Heart, Pencil, Search, ClipboardList, MoreHorizontal } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Heart, Pencil, Search, ClipboardList, MoreHorizontal, ShoppingCart, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiInvoke } from "@/lib/api";
@@ -248,12 +248,27 @@ const templates = [
     category: "core" as const,
     defaultItems: togetherListDefaultItems,
   },
+  {
+    id: "shopping",
+    name: "Our Shopping List",
+    icon: "🛒",
+    description: "Shared shopping with one-tap Amazon buy",
+    gradient: "bg-gradient-to-br from-us-gold/15 to-us-sage/20",
+    lucideIcon: ShoppingCart,
+    category: "core" as const,
+    defaultItems: [
+      "## Groceries",
+      "## Home Essentials",
+      "## Gifts & Treats",
+      "##>> Wishlist",
+    ],
+  },
   // Add-on
   {
     id: "family",
     name: "Family List",
     icon: "👨‍👩‍👧‍👦",
-    description: "AI-powered family to-do list",
+    description: "Family to-do list",
     gradient: "bg-gradient-to-br from-us-sage/20 to-us-gold/15",
     lucideIcon: Target,
     category: "addon" as const,
@@ -1402,6 +1417,21 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                       {item.text}
                                     </span>
                                   )}
+                                  {!isEditing && list.template === "shopping" && !item.done && (
+                                    <button
+                                      onClick={() => {
+                                        const a = document.createElement("a");
+                                        a.href = `https://www.amazon.co.uk/s?k=${encodeURIComponent(item.text)}&tag=woodybruce-21`;
+                                        a.target = "_blank";
+                                        a.rel = "noopener noreferrer";
+                                        a.click();
+                                      }}
+                                      className="flex-shrink-0 p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                                      data-testid={`buy-amazon-${item.id}`}
+                                    >
+                                      <ExternalLink className="w-3.5 h-3.5 text-primary" />
+                                    </button>
+                                  )}
                                   {!isEditing && (
                                     <div className="relative flex-shrink-0">
                                       <button
@@ -1438,6 +1468,22 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                             >
                                               <ClipboardList className="w-3.5 h-3.5 text-muted-foreground" /> Add to weekly
                                             </button>
+                                            {list.template === "shopping" && (
+                                              <button
+                                                onClick={() => {
+                                                  const a = document.createElement("a");
+                                                  a.href = `https://www.amazon.co.uk/s?k=${encodeURIComponent(item.text)}&tag=woodybruce-21`;
+                                                  a.target = "_blank";
+                                                  a.rel = "noopener noreferrer";
+                                                  a.click();
+                                                  setOpenActionMenu(null);
+                                                }}
+                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                                                data-testid={`menu-buy-amazon-${item.id}`}
+                                              >
+                                                <ShoppingCart className="w-3.5 h-3.5 text-muted-foreground" /> Buy on Amazon
+                                              </button>
+                                            )}
                                             <div className="border-t border-border my-1" />
                                             <button
                                               onClick={() => { removeItem(list.id, item.id); setOpenActionMenu(null); }}

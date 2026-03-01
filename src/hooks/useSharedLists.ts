@@ -48,7 +48,10 @@ export function useSharedLists() {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      const result = data.map(dbRowToList);
+      const INTERNAL_PREFIXES = ["__"];
+      const result = data
+        .filter((row: any) => !INTERNAL_PREFIXES.some(p => row.name?.startsWith(p)))
+        .map(dbRowToList);
       setLists(result);
     }
     setLoading(false);
