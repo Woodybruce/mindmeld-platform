@@ -124,7 +124,7 @@ All routes are defined in `server/routes.ts`:
 - If Spotify isn't connected after server restart, SpotifyBoard shows "Connect Spotify" link to `/api/spotify/auth`
 - Tokens persisted to Replit KV store + /tmp file; survive server restarts (user only needs to authorize once)
 - `SPOTIFY_REDIRECT_URI` env var set per environment (dev/production) to match Spotify Dashboard redirect URIs
-- Playlist ID stored in localStorage (`spotify_playlist` key) — no database entries needed
+- Playlist ID stored in Supabase (`__spotify_playlist__` internal list in `shared_lists` table) so both partners see the same playlist; localStorage used as local cache for instant loading
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes

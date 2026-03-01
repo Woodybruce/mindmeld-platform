@@ -7,6 +7,7 @@ const SpotifyIcon = ({ className }: { className?: string }) => (
 );
 import { apiInvoke } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface SpotifyTrack {
@@ -52,13 +53,13 @@ export default function SpotifyWidget() {
     fetchNowPlaying();
     const interval = setInterval(fetchNowPlaying, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (playlistId) fetchPlaylist();
   }, [playlistId]);
 
-  function loadPlaylistId() {
+  async function loadPlaylistId() {
     try {
       const raw = localStorage.getItem("spotify_playlist");
       if (raw) {
@@ -69,17 +70,55 @@ export default function SpotifyWidget() {
           setPlaylistUrl(saved.spotifyUrl || "");
         }
       }
-    } catch (e) {
-      console.warn("Load playlist exception:", e);
+    } catch {}
+    if (user) {
+      try {
+        const { data } = await supabase
+          .from("shared_lists")
+          .select("items")
+          .eq("name", "__spotify_playlist__")
+          .maybeSingle();
+        if (data?.items?.[0]) {
+          const info = data.items[0] as any;
+          if (info.playlistId) {
+            setPlaylistId(info.playlistId);
+            setPlaylistName(info.playlistName || "");
+            setPlaylistUrl(info.spotifyUrl || "");
+            localStorage.setItem("spotify_playlist", JSON.stringify(info));
+          }
+        }
+      } catch {}
     }
     setLoading(false);
   }
 
-  function savePlaylistId(id: string, name: string, url: string) {
+  async function savePlaylistId(id: string, name: string, url: string) {
+    const info = { playlistId: id, playlistName: name, spotifyUrl: url };
     try {
-      localStorage.setItem("spotify_playlist", JSON.stringify({ playlistId: id, playlistName: name, spotifyUrl: url }));
+      localStorage.setItem("spotify_playlist", JSON.stringify(info));
+    } catch {}
+    if (!user) return;
+    try {
+      const { data: existing } = await supabase
+        .from("shared_lists")
+        .select("id")
+        .eq("name", "__spotify_playlist__")
+        .maybeSingle();
+      if (existing) {
+        await supabase
+          .from("shared_lists")
+          .update({ items: [info] } as any)
+          .eq("id", existing.id);
+      } else {
+        await supabase.from("shared_lists").insert({
+          user_id: user.id,
+          name: "__spotify_playlist__",
+          icon: "🎵",
+          items: [info],
+        } as any);
+      }
     } catch (e) {
-      console.error("Save playlist exception:", e);
+      console.error("Save playlist to Supabase error:", e);
     }
   }
 
