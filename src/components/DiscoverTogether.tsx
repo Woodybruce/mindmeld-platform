@@ -368,17 +368,17 @@ const DiscoverTogether = () => {
         ))}
       </div>
 
-      <div className="px-3 pb-4">
+      <div className="pb-4 overflow-x-auto scrollbar-hide">
         {loading && filteredProducts.length === 0 ? (
-          <div className="grid grid-cols-3 gap-1.5">
-            {Array.from({ length: 3 }).map((_, i) => (
+          <div className="px-3 grid grid-rows-2 grid-flow-col auto-cols-[140px] gap-1.5">
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-lg bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse">
                 <div className="w-full aspect-[3/4]" />
               </div>
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8">
+          <div className="px-3 flex flex-col items-center justify-center py-8">
             <ShoppingBag className="w-6 h-6 text-muted-foreground/20 mb-2" />
             <p className="text-xs text-muted-foreground">No products yet</p>
             <button onClick={handleRefresh} className="mt-2 text-[12px] text-foreground font-medium underline underline-offset-4" data-testid="discover-load">
@@ -386,14 +386,14 @@ const DiscoverTogether = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="px-3 grid grid-rows-2 grid-flow-col auto-cols-[140px] gap-1.5">
             <AnimatePresence mode="popLayout">
               {filteredProducts.slice(0, 12).map((product, i) => (
                 <motion.div
                   key={product.id}
                   layout
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() => setSelectedProduct(product)}
