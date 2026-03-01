@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, ShoppingBag, Star, X, ChevronRight, Sparkles, Wine, Gift, Flower2, Flame, Gamepad2, Home, Heart as HeartIcon } from "lucide-react";
+
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
@@ -331,9 +332,6 @@ const DiscoverTogether = () => {
     fetchProducts(category, true);
   };
 
-  const heroProduct = filteredProducts[0];
-  const gridProducts = filteredProducts.slice(1, 7);
-
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl overflow-hidden">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
@@ -370,124 +368,67 @@ const DiscoverTogether = () => {
         ))}
       </div>
 
-      <div className="px-3 pb-3">
+      <div className="px-3 pb-2 max-h-[280px] overflow-y-auto scrollbar-hide">
         {loading && filteredProducts.length === 0 ? (
-          <div className="space-y-2">
-            <div className="rounded-xl bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse aspect-[16/9]" />
-            <div className="grid grid-cols-2 gap-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-xl bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse">
-                  <div className="w-full aspect-square" />
-                  <div className="p-3 space-y-1.5">
-                    <div className="w-1/3 h-2 bg-stone-200 dark:bg-stone-800 rounded" />
-                    <div className="w-3/4 h-2.5 bg-stone-200 dark:bg-stone-800 rounded" />
-                    <div className="w-1/4 h-2.5 bg-stone-200 dark:bg-stone-800 rounded mt-1" />
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-lg bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse">
+                <div className="w-full aspect-[3/4]" />
+              </div>
+            ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <ShoppingBag className="w-8 h-8 text-muted-foreground/20 mb-3" />
-            <p className="text-sm text-muted-foreground">No products yet</p>
-            <button onClick={handleRefresh} className="mt-3 text-[13px] text-foreground font-medium underline underline-offset-4" data-testid="discover-load">
+          <div className="flex flex-col items-center justify-center py-8">
+            <ShoppingBag className="w-6 h-6 text-muted-foreground/20 mb-2" />
+            <p className="text-xs text-muted-foreground">No products yet</p>
+            <button onClick={handleRefresh} className="mt-2 text-[12px] text-foreground font-medium underline underline-offset-4" data-testid="discover-load">
               Browse collection
             </button>
           </div>
         ) : (
-          <>
-            {heroProduct && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                onClick={() => setSelectedProduct(heroProduct)}
-                className="rounded-xl overflow-hidden cursor-pointer active:scale-[0.99] transition-transform mb-2 relative"
-                data-testid={`discover-product-${heroProduct.id}`}
-              >
-                <div className="relative w-full aspect-[16/9] overflow-hidden bg-stone-100 dark:bg-stone-900">
-                  <ProductImage product={heroProduct} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                  <div className="absolute top-3 right-3">
-                    <LikeButton
-                      liked={isLikedByMe(heroProduct.id)}
-                      partnerLiked={isLikedByPartner(heroProduct.id)}
-                      mutual={isMutualLike(heroProduct.id)}
-                      onToggle={() => toggleLike(heroProduct.id, heroProduct.name)}
-                      size="sm"
-                    />
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/60 font-medium">{heroProduct.brand}</p>
-                    <h4 className="text-sm font-semibold text-white leading-tight mt-0.5">{heroProduct.name}</h4>
-                    <div className="flex items-center justify-between mt-1.5">
-                      <span className="text-sm font-semibold text-white">{heroProduct.price}</span>
-                      <span className="text-[11px] text-white/50 uppercase tracking-wider flex items-center gap-1">
-                        View <ChevronRight className="w-3 h-3" />
-                      </span>
+          <div className="grid grid-cols-3 gap-1.5">
+            <AnimatePresence mode="popLayout">
+              {filteredProducts.slice(0, 12).map((product, i) => (
+                <motion.div
+                  key={product.id}
+                  layout
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  onClick={() => setSelectedProduct(product)}
+                  className="rounded-lg overflow-hidden cursor-pointer active:scale-[0.97] transition-transform bg-stone-50 dark:bg-stone-900/50"
+                  data-testid={`discover-product-${product.id}`}
+                >
+                  <div className="relative w-full aspect-[3/4] overflow-hidden">
+                    <ProductImage product={product} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <div className="absolute top-1.5 right-1.5">
+                      <LikeButton
+                        liked={isLikedByMe(product.id)}
+                        partnerLiked={isLikedByPartner(product.id)}
+                        mutual={isMutualLike(product.id)}
+                        onToggle={() => toggleLike(product.id, product.name)}
+                        size="sm"
+                      />
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                      <p className="text-[8px] uppercase tracking-[0.15em] text-white/60 font-medium truncate">{product.brand}</p>
+                      <p className="text-[11px] font-medium text-white leading-tight mt-0.5 line-clamp-1">{product.name}</p>
+                      <p className="text-[11px] font-semibold text-white mt-0.5">{product.price}</p>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
 
-            <div className="grid grid-cols-2 gap-2">
-              <AnimatePresence mode="popLayout">
-                {gridProducts.map((product, i) => (
-                  <motion.div
-                    key={product.id}
-                    layout
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    onClick={() => setSelectedProduct(product)}
-                    className="rounded-xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform bg-stone-50 dark:bg-stone-900/50"
-                    data-testid={`discover-product-${product.id}`}
-                  >
-                    <div className="relative w-full aspect-square overflow-hidden">
-                      <ProductImage product={product} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                      <div className="absolute top-2 right-2">
-                        <LikeButton
-                          liked={isLikedByMe(product.id)}
-                          partnerLiked={isLikedByPartner(product.id)}
-                          mutual={isMutualLike(product.id)}
-                          onToggle={() => toggleLike(product.id, product.name)}
-                          size="sm"
-                        />
-                      </div>
-                    </div>
-                    <div className="p-3">
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium">{product.brand}</p>
-                      <p className="text-[13px] font-medium text-foreground leading-tight mt-0.5 line-clamp-2">{product.name}</p>
-                      <p className="text-[13px] font-semibold text-foreground mt-1.5">{product.price}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-
-            {filteredProducts.length > 7 && (
-              <button
-                onClick={() => {
-                  const remaining = filteredProducts.slice(7);
-                  if (remaining.length > 0) setSelectedProduct(remaining[0]);
-                }}
-                className="w-full mt-3 py-2.5 text-[13px] font-medium text-foreground rounded-xl border border-border/50 hover:border-foreground/30 transition-colors"
-                data-testid="discover-show-more"
-              >
-                View all {filteredProducts.length} products
-              </button>
-            )}
-
-            {loading && (
-              <div className="flex items-center justify-center py-4">
-                <RefreshCw className="w-3.5 h-3.5 text-muted-foreground animate-spin" />
-                <span className="text-[13px] text-muted-foreground ml-2">Loading...</span>
-              </div>
-            )}
-          </>
+        {loading && filteredProducts.length > 0 && (
+          <div className="flex items-center justify-center py-2">
+            <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin" />
+            <span className="text-[11px] text-muted-foreground ml-1.5">Loading...</span>
+          </div>
         )}
       </div>
 
