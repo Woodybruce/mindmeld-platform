@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Sparkles, Loader2, Heart, Pencil, Search, ClipboardList, MoreHorizontal } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Heart, Pencil, Search, ClipboardList, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiInvoke } from "@/lib/api";
@@ -385,8 +385,6 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
   const [showTemplates, setShowTemplates] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [creatingBlank, setCreatingBlank] = useState(false);
-  const [suggestingFor, setSuggestingFor] = useState<string | null>(null);
-  const [suggestingForPreview, setSuggestingForPreview] = useState(false);
   const [addingSubheading, setAddingSubheading] = useState<string | null>(null);
   const [subheadingText, setSubheadingText] = useState("");
   const [subheadingType, setSubheadingType] = useState<"task" | "observation">("task");
@@ -625,129 +623,6 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     }
   };
 
-  const suggestDreams = async (listId: string) => {
-    setSuggestingFor(listId);
-    try {
-      const list = lists.find((l) => l.id === listId);
-      const existingDreams = list?.items.map((i) => i.text) || [];
-      const existingLists = lists.filter((l) => l.id !== listId).map((l) => l.name);
-
-      const { data, error } = await apiInvoke("suggest-dreams", {
-        body: { existingDreams, existingLists },
-      });
-
-      if (error) throw error;
-      if (data?.dreams) {
-        const maxSlots = (list?.maxItems || 5) - (list?.items.length || 0);
-        const newItems = data.dreams.slice(0, maxSlots).map((d: { text: string }, i: number) => ({
-          id: `dream-${Date.now()}-${i}`,
-          text: d.text,
-          done: false,
-        }));
-        const updated = lists.map((l) =>
-          l.id === listId ? { ...l, items: [...l.items, ...newItems] } : l
-        );
-        onUpdate(updated);
-        toast({ title: "Dreams suggested ✨", description: `${newItems.length} dreams added` });
-      }
-    } catch (e) {
-      console.error(e);
-      toast({ title: "Couldn't generate suggestions", description: "Please try again shortly.", variant: "destructive" });
-    } finally {
-      setSuggestingFor(null);
-    }
-  };
-
-  const suggestTasks = async (listId: string) => {
-    setSuggestingFor(listId);
-    try {
-      const list = lists.find((l) => l.id === listId);
-      const existingItems = list?.items.map((i) => i.text) || [];
-
-      const { data, error } = await apiInvoke("suggest-tasks", {
-        body: { existingItems, listName: list?.name || "Daily To-Do" },
-      });
-
-      if (error) throw error;
-      if (data?.tasks) {
-        const newItems = data.tasks.map((t: { text: string }, i: number) => ({
-          id: `task-${Date.now()}-${i}`,
-          text: t.text,
-          done: false,
-        }));
-        const updated = lists.map((l) =>
-          l.id === listId ? { ...l, items: [...l.items, ...newItems] } : l
-        );
-        onUpdate(updated);
-        toast({ title: "Tasks suggested ✨", description: `${newItems.length} items added` });
-      }
-    } catch (e) {
-      console.error(e);
-      toast({ title: "Couldn't generate suggestions", description: "Please try again shortly.", variant: "destructive" });
-    } finally {
-      setSuggestingFor(null);
-    }
-  };
-
-  const suggestPreviewItems = async (listName: string) => {
-    setSuggestingForPreview(true);
-    try {
-      const existingItems = previewItems.filter(i => !i.isHeading).map(i => i.text);
-      const { data, error } = await apiInvoke("suggest-tasks", {
-        body: { existingItems, listName },
-      });
-      if (error) throw error;
-      if (data?.tasks) {
-        const newItems = data.tasks.map((t: { text: string }, i: number) => ({
-          id: `ai-${Date.now()}-${i}`,
-          text: t.text,
-          done: true,
-        }));
-        setPreviewItems(prev => [...prev, ...newItems]);
-        toast({ title: "AI suggestions added ✨", description: `${newItems.length} items added — tick to include` });
-      }
-    } catch (e) {
-      console.error(e);
-      toast({ title: "Couldn't generate suggestions", description: "Please try again shortly.", variant: "destructive" });
-    } finally {
-      setSuggestingForPreview(false);
-    }
-  };
-
-  const suggestForBlankList = async (topic: string) => {
-    setSuggestingForPreview(true);
-    try {
-      const { data, error } = await apiInvoke("suggest-tasks", {
-        body: { existingItems: [], listName: topic },
-      });
-      if (error) throw error;
-      if (data?.tasks) {
-        const items = data.tasks.map((t: { text: string }, i: number) => ({
-          id: `ai-${Date.now()}-${i}`,
-          text: t.text,
-          done: false,
-        }));
-        const newList: UserList = {
-          id: Date.now().toString(),
-          name: topic,
-          icon: "✨",
-          createdAt: new Date().toISOString(),
-          items,
-        };
-        const updated = [newList, ...lists];
-        onUpdate(updated);
-        setCreatingBlank(false);
-        setNewListName("");
-        setExpandedId(newList.id);
-        toast({ title: "List generated ✨", description: `${items.length} items created from AI` });
-      }
-    } catch (e) {
-      console.error(e);
-      toast({ title: "Couldn't generate list", description: "Please try again shortly.", variant: "destructive" });
-    } finally {
-      setSuggestingForPreview(false);
-    }
-  };
 
   const removeItem = (listId: string, itemId: string) => {
     const updated = lists.map((l) =>
@@ -1060,18 +935,6 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                   )}
 
                   <button
-                    onClick={() => suggestPreviewItems(t.name)}
-                    disabled={suggestingForPreview}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent/50 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
-                  >
-                    {suggestingForPreview ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-                    ) : (
-                      <><Sparkles className="w-4 h-4" /> Generate more with AI</>
-                    )}
-                  </button>
-
-                  <button
                     onClick={confirmTemplate}
                     className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
@@ -1109,17 +972,6 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                 ✕
               </button>
             </div>
-            <button
-              onClick={() => newListName.trim() && suggestForBlankList(newListName.trim())}
-              disabled={!newListName.trim() || suggestingForPreview}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent/50 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
-            >
-              {suggestingForPreview ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Generating list…</>
-              ) : (
-                <><Sparkles className="w-4 h-4" /> Generate with AI</>
-              )}
-            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1790,18 +1642,6 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                     <p className="text-[13px] text-muted-foreground text-center pt-2">Max {list.maxItems} dreams — remove one to add another</p>
                   )}
 
-                  {/* AI Suggest button — available on all lists */}
-                  <button
-                    onClick={() => suggestTasks(list.id)}
-                    disabled={suggestingFor === list.id}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent/50 py-2 mt-2 text-xs font-medium text-accent-foreground hover:bg-accent transition-colors disabled:opacity-50"
-                  >
-                    {suggestingFor === list.id ? (
-                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
-                    ) : (
-                      <><Sparkles className="w-3.5 h-3.5" /> Ask AI for suggestions</>
-                    )}
-                  </button>
                 </div>
 
                 {/* Completed items toggle */}

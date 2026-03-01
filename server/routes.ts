@@ -46,7 +46,7 @@ async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?:
 
   const finalMessages = [...messages];
   if (userId) {
-    const prefs = await fetchAiPreferences(userId);
+    const prefs = await fetchUserContext(userId);
     if (prefs && finalMessages.length > 0 && finalMessages[0].role === "system") {
       finalMessages[0] = { ...finalMessages[0], content: injectPreferences(finalMessages[0].content, prefs) };
     }
@@ -77,20 +77,65 @@ async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?:
   return response.json();
 }
 
-async function fetchAiPreferences(userId?: string): Promise<string> {
+const userContextCache = new Map<string, { context: string; ts: number }>();
+const USER_CONTEXT_TTL = 1000 * 60 * 15;
+
+async function fetchUserContext(userId?: string): Promise<string> {
   if (!userId) return "";
+
+  const cached = userContextCache.get(userId);
+  if (cached && Date.now() - cached.ts < USER_CONTEXT_TTL) return cached.context;
+
   try {
     const supaUrl = process.env.SUPABASE_URL!;
     const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const sb = createClient(supaUrl, supaKey);
-    const { data } = await sb.from("shared_lists").select("score_data").eq("user_id", userId).eq("name", "__ai_preferences__").maybeSingle();
-    return (data?.score_data as any)?.preferences || "";
+
+    const [prefsResult, listsResult, messagesResult, moodResult, likesResult] = await Promise.all([
+      sb.from("shared_lists").select("score_data").eq("user_id", userId).eq("name", "__ai_preferences__").maybeSingle(),
+      sb.from("shared_lists").select("name, items, template").eq("user_id", userId).neq("name", "__ai_preferences__").order("updated_at", { ascending: false }).limit(10),
+      sb.from("messages").select("content, message_type").or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).eq("message_type", "text").order("created_at", { ascending: false }).limit(30),
+      sb.from("mood_checkins").select("mood, note").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
+      sb.from("content_likes").select("content_type, content_title").eq("user_id", userId).order("created_at", { ascending: false }).limit(15),
+    ]);
+
+    const parts: string[] = [];
+
+    const prefs = (prefsResult.data?.score_data as any)?.preferences;
+    if (prefs) parts.push(`Personal preferences: ${prefs}`);
+
+    if (listsResult.data?.length) {
+      const listSummary = listsResult.data.map((l: any) => {
+        const itemTexts = (l.items || []).slice(0, 5).map((i: any) => i.text).filter(Boolean).join(", ");
+        return `${l.name}${l.template ? ` (${l.template})` : ""}${itemTexts ? `: ${itemTexts}` : ""}`;
+      }).join("; ");
+      parts.push(`Recent lists: ${listSummary}`);
+    }
+
+    if (messagesResult.data?.length) {
+      const topics = messagesResult.data.map((m: any) => m.content).filter((c: string) => c && c.length > 3 && c.length < 200).slice(0, 15).join(" | ");
+      if (topics) parts.push(`Recent chat topics: ${topics}`);
+    }
+
+    if (moodResult.data?.length) {
+      const moods = moodResult.data.map((m: any) => `${m.mood}${m.note ? ` (${m.note})` : ""}`).join(", ");
+      parts.push(`Recent moods: ${moods}`);
+    }
+
+    if (likesResult.data?.length) {
+      const liked = likesResult.data.map((l: any) => `${l.content_title || l.content_type}`).join(", ");
+      parts.push(`Liked content: ${liked}`);
+    }
+
+    const context = parts.join("\n");
+    userContextCache.set(userId, { context, ts: Date.now() });
+    return context;
   } catch { return ""; }
 }
 
-function injectPreferences(systemPrompt: string, preferences: string): string {
-  if (!preferences) return systemPrompt;
-  return `${systemPrompt}\n\nIMPORTANT — The couple has shared these personal details to help you make better suggestions: "${preferences}". Use this context to make your recommendations more relevant and personalised to them.`;
+function injectPreferences(systemPrompt: string, context: string): string {
+  if (!context) return systemPrompt;
+  return `${systemPrompt}\n\nIMPORTANT — Here is context about this couple gathered from their app activity (preferences, lists, conversations, moods, and liked content). Use this to make your recommendations highly relevant and personalised:\n${context}`;
 }
 
 const REAL_ARTICLES = [

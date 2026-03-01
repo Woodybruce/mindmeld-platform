@@ -125,21 +125,19 @@ All routes are defined in `server/routes.ts`:
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes
-- 2026-02-28: AI Personalisation preferences
-  - "AI Personalisation" section in Profile page
-  - Users can write free-text about themselves (interests, hobbies, dietary needs, travel style, etc.)
-  - Stored in `shared_lists` table with `name: "__ai_preferences__"` and `score_data.preferences`
-  - Profile interface includes `ai_preferences` field loaded from shared_lists on login
+- 2026-03-01: Invisible AI — automatic behavioral learning
+  - Removed all visible AI buttons: AiSearchBar, "Generate with AI", "Ask AI for suggestions", AI sparkle labels
+  - AI now works silently in the background — no user-facing AI branding
+  - `fetchUserContext(userId)` gathers behavioral context automatically from 5 data sources:
+    1. Manual preferences from Profile page (still editable)
+    2. Recent shared lists (names, items, templates)
+    3. Recent chat messages (topics/themes)
+    4. Mood check-ins (recent moods and notes)
+    5. Content likes (articles, products, podcasts liked)
+  - Context cached per user for 15 minutes to avoid repeated DB queries
+  - All 10 AI endpoints receive personalised context automatically via `callAI()`
   - `apiInvoke` automatically attaches `userId` to all POST requests
-  - `callAI()` accepts optional `userId` param, fetches preferences and injects into system prompt
-  - All 10 AI endpoints receive personalised context: generate-feed-content, suggest-dreams, suggest-experiences, suggest-family-tasks, suggest-intimacy, suggest-products, shop/generate, suggest-tasks, suggest-travel, ai-search
-- 2026-02-28: AI Search in For You & Discover Together
-  - `AiSearchBar` component embedded in both sections
-  - `POST /api/ai-search` endpoint uses OpenAI to find products, articles, podcasts, videos, quotes
-  - Quick prompt suggestions for each section context
-  - Product results link to Amazon UK with affiliate tag
-  - Article/podcast/video results link to respective platforms
-  - Results displayed as inline cards with type badges and action buttons
+  - Dead AI code removed from SharedLists (suggestDreams, suggestTasks, suggestPreviewItems, suggestForBlankList)
 - 2026-02-28: For You section expanded with 4 content tabs
   - Articles tab: relationship reads + saved links (existing, now tabbed)
   - Podcasts tab: curated Spotify relationship podcasts with inline embed player

@@ -145,7 +145,7 @@ const SuggestedProducts = () => {
           </div>
           <div>
             <h3 className="font-display text-sm font-bold text-foreground">Picked for You</h3>
-            <p className="text-[14px] text-muted-foreground">AI-curated couple gifts & experiences</p>
+            <p className="text-[14px] text-muted-foreground">Curated couple gifts & experiences</p>
           </div>
         </div>
         <button onClick={() => fetchProducts(activeCategory, true)} disabled={loading} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">

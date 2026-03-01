@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, X, Loader2, Sparkles, Users, ListPlus } from "lucide-react";
+import { ArrowLeft, Plus, X, Loader2, Users, ListPlus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { apiInvoke } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
@@ -286,7 +286,7 @@ const FamilyQuiz = () => {
                   disabled={!canProceedFromCategories}
                   className="flex-[2] rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
                 >
-                  <Sparkles className="w-4 h-4" /> Generate Family List
+                  Generate Family List
                 </button>
               </div>
             </motion.div>
@@ -355,7 +355,7 @@ const FamilyQuiz = () => {
                 onClick={generateList}
                 className="w-full rounded-xl bg-secondary py-3 text-sm font-semibold text-foreground hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
               >
-                <Sparkles className="w-4 h-4" /> Regenerate
+                Regenerate
               </button>
 
               <button

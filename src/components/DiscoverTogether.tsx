@@ -361,7 +361,7 @@ const DiscoverTogether = () => {
           <div>
             <h3 className="font-display text-sm font-bold text-foreground">Discover Together</h3>
             <p className="text-[14px] text-muted-foreground">
-              {category === "our-picks" ? "Curated picks for couples" : "AI-curated for you both"}
+              {category === "our-picks" ? "Curated picks for couples" : "Curated for you both"}
             </p>
           </div>
         </div>
