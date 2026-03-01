@@ -103,7 +103,7 @@ All routes are defined in `server/routes.ts`:
 ## List System
 - Lists stored in Supabase `shared_lists` table (not localStorage)
 - `useSharedLists` hook is the canonical way to read/write lists; filters out internal lists (names starting with `__`)
-- Internal lists: `__spotify_playlist__` (Spotify), `__ai_preferences__` (AI prefs) — hidden from user list view
+- Internal lists: `__ai_preferences__` (AI prefs) — hidden from user list view
 - `status` and `createdBy` metadata stored inside `score_data._listMeta` JSONB (no schema changes needed)
 - Template lists require partner to add items before going live (`status: "pending_partner"` → `"active"`)
 - Shopping list template (`id: "shopping"`) — items have inline Amazon buy button (ExternalLink icon) and "Buy on Amazon" in action menu
@@ -124,7 +124,7 @@ All routes are defined in `server/routes.ts`:
 - If Spotify isn't connected after server restart, SpotifyBoard shows "Connect Spotify" link to `/api/spotify/auth`
 - Tokens persisted to Replit KV store + /tmp file; survive server restarts (user only needs to authorize once)
 - `SPOTIFY_REDIRECT_URI` env var set per environment (dev/production) to match Spotify Dashboard redirect URIs
-- Playlist ID stored in `shared_lists` table with `game_type: "spotify_playlist"` (no extra tables needed)
+- Playlist ID stored in localStorage (`spotify_playlist` key) — no database entries needed
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes

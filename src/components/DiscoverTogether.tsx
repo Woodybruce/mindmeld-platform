@@ -368,7 +368,7 @@ const DiscoverTogether = () => {
         ))}
       </div>
 
-      <div className="px-3 pb-2 max-h-[280px] overflow-y-auto scrollbar-hide">
+      <div className="px-3 pb-4 max-h-[280px] overflow-y-auto scrollbar-hide">
         {loading && filteredProducts.length === 0 ? (
           <div className="grid grid-cols-3 gap-1.5">
             {Array.from({ length: 3 }).map((_, i) => (

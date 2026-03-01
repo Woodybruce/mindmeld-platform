@@ -4,7 +4,6 @@ import { ExternalLink, Music, ChevronDown, ChevronUp } from "lucide-react";
 import { apiInvoke } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useSpotifyPlayer } from "@/contexts/SpotifyPlayerContext";
 
 interface NowPlayingData {
@@ -53,19 +52,15 @@ const SpotifyBoard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  async function loadPlaylistId() {
-    if (!user) return;
+  function loadPlaylistId() {
     try {
-      const { data } = await supabase
-        .from("shared_lists")
-        .select("score_data")
-        .eq("name", "__spotify_playlist__")
-        .limit(1)
-        .maybeSingle();
-      const pid = (data?.score_data as any)?.playlistId;
-      if (pid) {
-        setPlaylistId(pid);
-        setPlaylistName((data?.score_data as any)?.playlistName || "Our Playlist");
+      const raw = localStorage.getItem("spotify_playlist");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.playlistId) {
+          setPlaylistId(saved.playlistId);
+          setPlaylistName(saved.playlistName || "Our Playlist");
+        }
       }
     } catch {}
   }
