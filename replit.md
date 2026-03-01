@@ -152,11 +152,13 @@ All routes are defined in `server/routes.ts`:
   - `DiscoverTogether.tsx` rewritten with premium layout: hero product card (4:5 ratio) + 2-column grid
   - Category pills (text-only, no icons): Our Picks, For You, Date Night, Gifts, Wellness, Intimacy, Games, Home
   - Product detail modal: bottom-sheet style with spring animation, full product info, features grid
-  - `isLuxuryBrand()` updated to include Space NK alongside CdM, AP, goop, Sophie & Olivia
-  - `getBuyLabel()` returns brand-specific "Shop X" labels for luxury brands
+  - `isLuxuryBrand()` updated to include Space NK, LELO, Lovehoney alongside CdM, AP, goop, Sophie & Olivia
+  - `getBuyLabel()` returns brand-specific "Shop X" labels for all luxury brands
   - Server: `normalizeShopCategory()` maps niche categories (Massage→Wellness, Lingerie→Intimacy, Fragrance→Gifts, etc.) to tab-compatible categories
   - Server: product data now passes through `longDescription`, `features[]`, `imageKeyword` from `LUXURY_INTIMACY_PRODUCTS` instead of generating inline
-  - `LUXURY_INTIMACY_PRODUCTS`: 22 items across 5 brands (7 CdM, 4 AP, 4 goop, 3 Space NK, 3 Sophie & Olivia) with rich descriptions and features
+  - `LUXURY_INTIMACY_PRODUCTS`: 25 items across 7 brands (7 CdM, 4 AP, 5 goop, 3 Space NK, 3 Sophie & Olivia, 2 LELO, 1 Lovehoney) with rich descriptions and features
+  - Product images sourced from: Coco de Mer Shopify CDN, Sophie & Olivia Shopify CDN, Cult Beauty/LookFantastic THG CDN (`static.thcdn.com`), Milk Makeup Shopify CDN, Amazon CDN, local files (`public/products/`), Pexels API fallback
+  - `resolveProductImage()` + in-memory `imageCache`: server auto-fetches Pexels images for any product without a hardcoded `imageUrl`
 - 2026-02-28: Discover Together — unified shopping widget on home page
   - `DiscoverTogether` component (`src/components/DiscoverTogether.tsx`) is the unified product browser
   - "Our Picks" tab: curated luxury products via `GET /api/shop/curated`

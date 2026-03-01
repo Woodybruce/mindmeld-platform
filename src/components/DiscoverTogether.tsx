@@ -54,7 +54,7 @@ const CACHE_TTL = 1000 * 60 * 30;
 
 const isLuxuryBrand = (source: string) => {
   const s = source.toLowerCase();
-  return s.includes("coco de mer") || s.includes("agent provocateur") || s.includes("goop") || s.includes("sophie") || s.includes("olivia") || s.includes("space nk");
+  return s.includes("coco de mer") || s.includes("agent provocateur") || s.includes("goop") || s.includes("sophie") || s.includes("olivia") || s.includes("space nk") || s.includes("lelo") || s.includes("lovehoney");
 };
 
 const getBuyLabel = (product: ShopProduct) => {
@@ -63,6 +63,8 @@ const getBuyLabel = (product: ShopProduct) => {
   if (s.includes("agent provocateur")) return "Shop Agent Provocateur";
   if (s.includes("goop")) return "Shop goop";
   if (s.includes("space nk")) return "Shop Space NK";
+  if (s.includes("lelo")) return "Shop LELO";
+  if (s.includes("lovehoney")) return "Shop Lovehoney";
   if (s.includes("sophie") || s.includes("olivia")) return "Shop Sophie & Olivia";
   return `Buy Now`;
 };
@@ -83,6 +85,8 @@ const BRAND_GRADIENTS: Record<string, string> = {
   "goop": "from-stone-100 via-stone-50 to-white",
   "space nk": "from-stone-800 via-stone-700 to-stone-600",
   "sophie & olivia": "from-rose-950 via-stone-900 to-stone-950",
+  "lelo": "from-stone-950 via-stone-900 to-stone-800",
+  "lovehoney": "from-purple-950 via-stone-900 to-stone-950",
 };
 
 const getBrandGradient = (brand: string) => {
