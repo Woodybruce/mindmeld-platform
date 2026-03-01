@@ -148,23 +148,24 @@ export default function SpotifyWidget() {
       return;
     }
     setCreatingPlaylist(true);
+    const fallbackUrl = `https://open.spotify.com/playlist/${pid}`;
+    let name = "Our Playlist";
+    let url = fallbackUrl;
     try {
       const { data } = await apiInvoke(`spotify/playlist?playlistId=${pid}`, { method: "GET" });
       if (data) {
         const d = data as any;
-        setPlaylistId(pid);
-        setPlaylistName(d.name || "Our Playlist");
-        setPlaylistUrl(d.spotifyUrl || `https://open.spotify.com/playlist/${pid}`);
-        await savePlaylistId(pid, d.name || "Our Playlist", d.spotifyUrl || "");
-        setShowLinkInput(false);
-        setLinkUrl("");
-        toast.success("Playlist linked!");
-      } else {
-        toast.error("Couldn't find that playlist — check the link");
+        name = d.name || name;
+        url = d.spotifyUrl || fallbackUrl;
       }
-    } catch (e) {
-      toast.error("Couldn't find that playlist — check the link");
-    }
+    } catch {}
+    setPlaylistId(pid);
+    setPlaylistName(name);
+    setPlaylistUrl(url);
+    savePlaylistId(pid, name, url);
+    setShowLinkInput(false);
+    setLinkUrl("");
+    toast.success("Playlist linked!");
     setCreatingPlaylist(false);
   }
 
