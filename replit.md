@@ -163,7 +163,7 @@ All routes are defined in `server/routes.ts`:
   - `getBuyLabel()` returns brand-specific "Shop X" labels for all luxury brands
   - Server: `normalizeShopCategory()` maps niche categories (Massage→Wellness, Lingerie→Intimacy, Fragrance→Gifts, etc.) to tab-compatible categories
   - Server: product data now passes through `longDescription`, `features[]`, `imageKeyword` from `LUXURY_INTIMACY_PRODUCTS` instead of generating inline
-  - `LUXURY_INTIMACY_PRODUCTS`: 25 items across 7 brands (7 CdM, 4 AP, 5 goop, 3 Space NK, 3 Sophie & Olivia, 2 LELO, 1 Lovehoney) with rich descriptions and features
+  - `LUXURY_INTIMACY_PRODUCTS`: 33 items across 7 brands (7 CdM, 4 AP, 5 goop, 3 Space NK, 11 Sophie & Olivia, 2 LELO, 1 Lovehoney) with rich descriptions and features
   - Product images sourced from: Coco de Mer Shopify CDN, Sophie & Olivia Shopify CDN, Cult Beauty/LookFantastic THG CDN (`static.thcdn.com`), Milk Makeup Shopify CDN, Amazon CDN, local files (`public/products/`), Pexels API fallback
   - `resolveProductImage()` + in-memory `imageCache`: server auto-fetches Pexels images for any product without a hardcoded `imageUrl`
 - 2026-02-28: Discover Together — unified shopping widget on home page
@@ -173,7 +173,7 @@ All routes are defined in `server/routes.ts`:
   - Real product images via Pexels API (`PEXELS_API_KEY` env var) with gradient fallbacks
   - Buy button uses `document.createElement('a')` for reliable webview link opening
   - Brand-styled buy buttons: black for luxury brands, primary for Amazon
-  - `LUXURY_INTIMACY_PRODUCTS` in `server/routes.ts`: 25 products (8 CdM + 6 AP + 5 goop + 6 Sophie & Olivia)
+  - `LUXURY_INTIMACY_PRODUCTS` in `server/routes.ts`: 33 products (7 CdM + 4 AP + 5 goop + 3 Space NK + 11 Sophie & Olivia + 2 LELO + 1 Lovehoney)
   - All Amazon product links use search URLs (`/s?k=...&tag=woodybruce-21`)
   - 30-minute client-side cache per category
   - Like/heart support with partner mutual like indicators
