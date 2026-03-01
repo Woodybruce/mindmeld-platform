@@ -148,13 +148,20 @@ All routes are defined in `server/routes.ts`:
   - Quotes tab: inspirational relationship quotes with gradient cards
   - New API routes: `/api/curated-podcasts`, `/api/curated-videos`, `/api/curated-quotes`
   - Each tab has its own caching, like/heart support, and refresh
+- 2026-03-01: Shop redesign — luxury editorial aesthetic
+  - `DiscoverTogether.tsx` rewritten with premium layout: hero product card (4:5 ratio) + 2-column grid
+  - Category pills (text-only, no icons): Our Picks, For You, Date Night, Gifts, Wellness, Intimacy, Games, Home
+  - Product detail modal: bottom-sheet style with spring animation, full product info, features grid
+  - `isLuxuryBrand()` updated to include Space NK alongside CdM, AP, goop, Sophie & Olivia
+  - `getBuyLabel()` returns brand-specific "Shop X" labels for luxury brands
+  - Server: `normalizeShopCategory()` maps niche categories (Massage→Wellness, Lingerie→Intimacy, Fragrance→Gifts, etc.) to tab-compatible categories
+  - Server: product data now passes through `longDescription`, `features[]`, `imageKeyword` from `LUXURY_INTIMACY_PRODUCTS` instead of generating inline
+  - `LUXURY_INTIMACY_PRODUCTS`: 22 items across 5 brands (7 CdM, 4 AP, 4 goop, 3 Space NK, 3 Sophie & Olivia) with rich descriptions and features
 - 2026-02-28: Discover Together — unified shopping widget on home page
-  - Replaced old multi-tab DiscoverTogether + separate Shop page with single inline widget
   - `DiscoverTogether` component (`src/components/DiscoverTogether.tsx`) is the unified product browser
-  - "Our Picks" tab: curated luxury products from CdM, AP, goop via `GET /api/shop/curated`
+  - "Our Picks" tab: curated luxury products via `GET /api/shop/curated`
   - AI-powered tabs: For You, Date Night, Gifts, Wellness, Intimacy, Games, Home via `POST /api/shop/generate`
   - Real product images via Pexels API (`PEXELS_API_KEY` env var) with gradient fallbacks
-  - Product detail modal with image, description, features, and buy button
   - Buy button uses `document.createElement('a')` for reliable webview link opening
   - Brand-styled buy buttons: black for luxury brands, primary for Amazon
   - `LUXURY_INTIMACY_PRODUCTS` in `server/routes.ts`: 25 products (8 CdM + 6 AP + 5 goop + 6 Sophie & Olivia)

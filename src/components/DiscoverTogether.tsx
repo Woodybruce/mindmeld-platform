@@ -48,67 +48,22 @@ const CATEGORIES: CategoryDef[] = [
   { key: "home", label: "Home", icon: Home },
 ];
 
-const CACHE_KEY = "discover_catalog_v1";
+const CACHE_KEY = "discover_catalog_v2";
 const CACHE_TTL = 1000 * 60 * 30;
 
-const CATEGORY_GRADIENTS: Record<string, string> = {
-  "date night": "from-rose-900/80 via-pink-800/60 to-amber-900/40",
-  "gifts": "from-violet-900/80 via-purple-800/60 to-pink-900/40",
-  "wellness": "from-emerald-900/80 via-teal-800/60 to-cyan-900/40",
-  "intimacy": "from-red-900/80 via-rose-800/60 to-pink-900/40",
-  "games": "from-blue-900/80 via-indigo-800/60 to-violet-900/40",
-  "home": "from-amber-900/80 via-orange-800/60 to-yellow-900/40",
-  "lingerie": "from-red-900/80 via-rose-800/60 to-pink-900/40",
-  "massage": "from-emerald-900/80 via-teal-800/60 to-cyan-900/40",
+const isLuxuryBrand = (source: string) => {
+  const s = source.toLowerCase();
+  return s.includes("coco de mer") || s.includes("agent provocateur") || s.includes("goop") || s.includes("sophie") || s.includes("olivia") || s.includes("space nk");
 };
 
-const CATEGORY_ICONS: Record<string, typeof Wine> = {
-  "date night": Wine,
-  "gifts": Gift,
-  "wellness": Flower2,
-  "intimacy": Flame,
-  "games": Gamepad2,
-  "home": Home,
-  "lingerie": Flame,
-  "massage": Flower2,
-};
-
-const getCategoryGradient = (cat: string) => {
-  const key = cat.toLowerCase();
-  return CATEGORY_GRADIENTS[key] || "from-slate-900/80 via-gray-800/60 to-zinc-900/40";
-};
-
-const ProductImage = ({ category, brand, imageUrl }: { category: string; brand: string; imageUrl?: string | null }) => {
-  const [failed, setFailed] = useState(false);
-  const catKey = category.toLowerCase();
-  const Icon = CATEGORY_ICONS[catKey] || ShoppingBag;
-  const gradient = getCategoryGradient(category);
-  const initials = brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
-
-  if (imageUrl && !failed) {
-    return (
-      <img
-        src={imageUrl}
-        alt={brand}
-        className="w-full h-full object-cover"
-        loading="lazy"
-        onError={() => setFailed(true)}
-        data-testid="product-image"
-      />
-    );
-  }
-
-  return (
-    <div className={`w-full h-full bg-gradient-to-br ${gradient} flex flex-col items-center justify-center p-4 relative`}>
-      <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-        <Icon className="w-4 h-4 text-white/70" />
-      </div>
-      <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center mb-2">
-        <span className="text-lg font-bold text-white/90">{initials}</span>
-      </div>
-      <p className="text-[14px] text-white/50 text-center line-clamp-1 max-w-[90%]">{brand}</p>
-    </div>
-  );
+const getBuyLabel = (product: ShopProduct) => {
+  const s = product.source.toLowerCase();
+  if (s.includes("coco de mer")) return "Shop Coco de Mer";
+  if (s.includes("agent provocateur")) return "Shop Agent Provocateur";
+  if (s.includes("goop")) return "Shop goop";
+  if (s.includes("space nk")) return "Shop Space NK";
+  if (s.includes("sophie") || s.includes("olivia")) return "Shop Sophie & Olivia";
+  return `Buy Now`;
 };
 
 const openBuyLink = (url: string) => {
@@ -121,18 +76,31 @@ const openBuyLink = (url: string) => {
   document.body.removeChild(a);
 };
 
-const isLuxuryBrand = (source: string) => {
-  const s = source.toLowerCase();
-  return s.includes("coco de mer") || s.includes("agent provocateur") || s.includes("goop") || s.includes("sophie") || s.includes("olivia");
-};
+const ProductImage = ({ product }: { product: ShopProduct }) => {
+  const [failed, setFailed] = useState(false);
+  const initials = product.brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
-const getBuyLabel = (product: ShopProduct) => {
-  const s = product.source.toLowerCase();
-  if (s.includes("coco de mer")) return "Shop Coco de Mer";
-  if (s.includes("agent provocateur")) return "Shop Agent Provocateur";
-  if (s.includes("goop")) return "Shop goop";
-  if (s.includes("sophie") || s.includes("olivia")) return "Shop Sophie & Olivia";
-  return `Buy Now — ${product.price}`;
+  if (product.imageUrl && !failed) {
+    return (
+      <img
+        src={product.imageUrl}
+        alt={product.name}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        onError={() => setFailed(true)}
+        data-testid="product-image"
+      />
+    );
+  }
+
+  return (
+    <div className="w-full h-full bg-gradient-to-br from-stone-900 via-stone-800 to-stone-700 flex flex-col items-center justify-center p-4">
+      <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center mb-3">
+        <span className="text-xl font-light text-white/80 tracking-wider">{initials}</span>
+      </div>
+      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40 text-center">{product.brand}</p>
+    </div>
+  );
 };
 
 const ProductDetailModal = ({
@@ -157,7 +125,7 @@ const ProductDetailModal = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
       onClick={onClose}
     >
       <motion.div
@@ -169,31 +137,27 @@ const ProductDetailModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative">
-          <div className="w-full h-72 overflow-hidden rounded-t-3xl sm:rounded-t-3xl">
-            <ProductImage category={product.category} brand={product.brand} imageUrl={product.imageUrl} />
+          <div className="w-full aspect-[4/5] overflow-hidden rounded-t-3xl sm:rounded-t-3xl bg-stone-100">
+            <ProductImage product={product} />
           </div>
 
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center"
             data-testid="close-product-detail"
           >
             <X className="w-4 h-4" />
           </button>
-
-          <div className="absolute bottom-4 left-4 right-4">
-            <span className="text-xs bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full">{product.category}</span>
-          </div>
         </div>
 
         <div className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <h2 className="text-lg font-bold text-foreground leading-tight">{product.name}</h2>
-              <p className="text-sm text-muted-foreground mt-0.5">{product.brand}</p>
+              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-medium">{product.brand}</p>
+              <h2 className="text-lg font-semibold text-foreground leading-tight mt-0.5">{product.name}</h2>
             </div>
             <div className="text-right flex-shrink-0">
-              <p className="text-xl font-bold text-primary">{product.price}</p>
+              <p className="text-lg font-semibold text-foreground">{product.price}</p>
               {product.originalPrice && (
                 <p className="text-xs text-muted-foreground line-through">{product.originalPrice}</p>
               )}
@@ -201,11 +165,11 @@ const ProductDetailModal = ({
           </div>
 
           <div className="flex items-center gap-3 mt-3">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {[1,2,3,4,5].map(i => (
-                <Star key={i} className={`w-3.5 h-3.5 ${i <= 4 ? "text-amber-400 fill-amber-400" : "text-muted-foreground/30"}`} />
+                <Star key={i} className={`w-3 h-3 ${i <= 4 ? "text-foreground fill-foreground" : "text-muted-foreground/20"}`} />
               ))}
-              <span className="text-xs text-muted-foreground ml-1">4.0+</span>
+              <span className="text-[11px] text-muted-foreground ml-1.5">4.0+</span>
             </div>
             <LikeButton liked={liked} partnerLiked={partnerLiked} mutual={mutual} onToggle={onToggleLike} size="sm" />
           </div>
@@ -213,13 +177,12 @@ const ProductDetailModal = ({
           <p className="text-sm text-foreground/80 mt-4 leading-relaxed">{product.longDescription}</p>
 
           {product.features.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Highlights</h3>
-              <div className="space-y-1.5">
+            <div className="mt-5 pt-4 border-t border-border/50">
+              <div className="grid grid-cols-2 gap-2">
                 {product.features.map((f, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                    <p className="text-sm text-foreground/70">{f}</p>
+                    <div className="w-1 h-1 rounded-full bg-foreground/40 mt-2 flex-shrink-0" />
+                    <p className="text-[13px] text-foreground/60">{f}</p>
                   </div>
                 ))}
               </div>
@@ -229,15 +192,14 @@ const ProductDetailModal = ({
           <div className="mt-6 space-y-2.5 pb-4">
             <button
               onClick={() => openBuyLink(product.buyUrl)}
-              className={`w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform ${
-                luxury ? "bg-black text-white" : "bg-primary text-primary-foreground"
+              className={`w-full py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
+                luxury ? "bg-foreground text-background" : "bg-foreground text-background"
               }`}
               data-testid="buy-now-button"
             >
-              <ShoppingBag className="w-4 h-4" />
               {getBuyLabel(product)}
             </button>
-            <p className="text-[14px] text-center text-muted-foreground/60">
+            <p className="text-[11px] text-center text-muted-foreground/50 uppercase tracking-wider">
               Opens in your browser
             </p>
           </div>
@@ -351,19 +313,17 @@ const DiscoverTogether = () => {
     fetchProducts(category, true);
   };
 
+  const heroProduct = filteredProducts[0];
+  const gridProducts = filteredProducts.slice(1, 7);
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl overflow-hidden">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-display text-sm font-bold text-foreground">Discover Together</h3>
-            <p className="text-[14px] text-muted-foreground">
-              {category === "our-picks" ? "Curated picks for couples" : "Curated for you both"}
-            </p>
-          </div>
+        <div>
+          <h3 className="font-display text-base font-bold text-foreground tracking-tight">Shop</h3>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            {category === "our-picks" ? "Curated luxury for couples" : "Picked for you both"}
+          </p>
         </div>
         <button
           onClick={handleRefresh}
@@ -375,66 +335,102 @@ const DiscoverTogether = () => {
         </button>
       </div>
 
-      <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
-        {CATEGORIES.map(cat => {
-          const Icon = cat.icon;
-          return (
-            <button
-              key={cat.key}
-              onClick={() => setCategory(cat.key)}
-              className={`flex items-center gap-1 text-[14px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
-                category === cat.key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
-              data-testid={`tab-${cat.key}`}
-            >
-              <Icon className="w-3 h-3" />
-              {cat.label}
-            </button>
-          );
-        })}
+      <div className="px-3 pb-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
+        {CATEGORIES.map(cat => (
+          <button
+            key={cat.key}
+            onClick={() => setCategory(cat.key)}
+            className={`text-[13px] font-medium px-3 py-1.5 rounded-full whitespace-nowrap transition-all border ${
+              category === cat.key
+                ? "bg-foreground text-background border-foreground"
+                : "bg-transparent text-muted-foreground border-border/50 hover:border-foreground/30 hover:text-foreground"
+            }`}
+            data-testid={`tab-${cat.key}`}
+          >
+            {cat.label}
+          </button>
+        ))}
       </div>
 
       <div className="px-3 pb-3">
         {loading && filteredProducts.length === 0 ? (
-          <div className="grid grid-cols-2 gap-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-xl bg-secondary/50 overflow-hidden animate-pulse">
-                <div className="w-full aspect-square bg-muted" />
-                <div className="p-2.5 space-y-1.5">
-                  <div className="w-3/4 h-2.5 bg-muted rounded" />
-                  <div className="w-1/2 h-2 bg-muted rounded" />
-                  <div className="w-1/3 h-3 bg-muted rounded mt-1" />
+          <div className="space-y-2">
+            <div className="rounded-xl bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse aspect-[4/5]" />
+            <div className="grid grid-cols-2 gap-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-xl bg-stone-100 dark:bg-stone-900 overflow-hidden animate-pulse">
+                  <div className="w-full aspect-square" />
+                  <div className="p-3 space-y-1.5">
+                    <div className="w-1/3 h-2 bg-stone-200 dark:bg-stone-800 rounded" />
+                    <div className="w-3/4 h-2.5 bg-stone-200 dark:bg-stone-800 rounded" />
+                    <div className="w-1/4 h-2.5 bg-stone-200 dark:bg-stone-800 rounded mt-1" />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <ShoppingBag className="w-8 h-8 text-muted-foreground/30 mb-2" />
-            <p className="text-xs text-muted-foreground">No products yet</p>
-            <button onClick={handleRefresh} className="mt-2 text-[14px] text-primary font-medium" data-testid="discover-load">
-              Load suggestions
+          <div className="flex flex-col items-center justify-center py-12">
+            <ShoppingBag className="w-8 h-8 text-muted-foreground/20 mb-3" />
+            <p className="text-sm text-muted-foreground">No products yet</p>
+            <button onClick={handleRefresh} className="mt-3 text-[13px] text-foreground font-medium underline underline-offset-4" data-testid="discover-load">
+              Browse collection
             </button>
           </div>
         ) : (
           <>
+            {heroProduct && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                onClick={() => setSelectedProduct(heroProduct)}
+                className="rounded-xl overflow-hidden cursor-pointer active:scale-[0.99] transition-transform mb-2 relative"
+                data-testid={`discover-product-${heroProduct.id}`}
+              >
+                <div className="relative w-full aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-900">
+                  <ProductImage product={heroProduct} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                  <div className="absolute top-3 right-3">
+                    <LikeButton
+                      liked={isLikedByMe(heroProduct.id)}
+                      partnerLiked={isLikedByPartner(heroProduct.id)}
+                      mutual={isMutualLike(heroProduct.id)}
+                      onToggle={() => toggleLike(heroProduct.id, heroProduct.name)}
+                      size="sm"
+                    />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/60 font-medium">{heroProduct.brand}</p>
+                    <h4 className="text-base font-semibold text-white leading-tight mt-0.5">{heroProduct.name}</h4>
+                    <p className="text-[13px] text-white/70 mt-1 line-clamp-2">{heroProduct.description}</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-sm font-semibold text-white">{heroProduct.price}</span>
+                      <span className="text-[11px] text-white/50 uppercase tracking-wider flex items-center gap-1">
+                        View <ChevronRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             <div className="grid grid-cols-2 gap-2">
               <AnimatePresence mode="popLayout">
-                {filteredProducts.slice(0, 6).map((product, i) => (
+                {gridProducts.map((product, i) => (
                   <motion.div
                     key={product.id}
                     layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ delay: i * 0.03 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: i * 0.04 }}
                     onClick={() => setSelectedProduct(product)}
-                    className="rounded-xl bg-secondary/40 overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
+                    className="rounded-xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform bg-stone-50 dark:bg-stone-900/50"
                     data-testid={`discover-product-${product.id}`}
                   >
                     <div className="relative w-full aspect-square overflow-hidden">
-                      <ProductImage category={product.category} brand={product.brand} imageUrl={product.imageUrl} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                      <ProductImage product={product} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                       <div className="absolute top-2 right-2">
                         <LikeButton
                           liked={isLikedByMe(product.id)}
@@ -444,40 +440,34 @@ const DiscoverTogether = () => {
                           size="sm"
                         />
                       </div>
-                      <div className="absolute bottom-2 left-2">
-                        <span className="text-[13px] bg-background/80 backdrop-blur-sm text-foreground px-1.5 py-0.5 rounded-full font-medium">
-                          {product.category}
-                        </span>
-                      </div>
                     </div>
-                    <div className="p-2.5">
-                      <p className="text-[13px] font-semibold text-foreground leading-tight line-clamp-2">{product.name}</p>
-                      <p className="text-[14px] text-muted-foreground mt-0.5">{product.brand}</p>
-                      <div className="flex items-center justify-between mt-1.5">
-                        <p className="text-xs font-bold text-primary">{product.price}</p>
-                        <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
-                      </div>
+                    <div className="p-3">
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium">{product.brand}</p>
+                      <p className="text-[13px] font-medium text-foreground leading-tight mt-0.5 line-clamp-2">{product.name}</p>
+                      <p className="text-[13px] font-semibold text-foreground mt-1.5">{product.price}</p>
                     </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
             </div>
-            {filteredProducts.length > 6 && (
+
+            {filteredProducts.length > 7 && (
               <button
                 onClick={() => {
-                  const remaining = filteredProducts.slice(6);
+                  const remaining = filteredProducts.slice(7);
                   if (remaining.length > 0) setSelectedProduct(remaining[0]);
                 }}
-                className="w-full mt-2 py-2 text-[13px] font-semibold text-primary rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
+                className="w-full mt-3 py-2.5 text-[13px] font-medium text-foreground rounded-xl border border-border/50 hover:border-foreground/30 transition-colors"
                 data-testid="discover-show-more"
               >
                 View all {filteredProducts.length} products
               </button>
             )}
+
             {loading && (
-              <div className="flex items-center justify-center py-3">
-                <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin" />
-                <span className="text-[14px] text-muted-foreground ml-1.5">Finding more...</span>
+              <div className="flex items-center justify-center py-4">
+                <RefreshCw className="w-3.5 h-3.5 text-muted-foreground animate-spin" />
+                <span className="text-[13px] text-muted-foreground ml-2">Loading...</span>
               </div>
             )}
           </>
