@@ -161,19 +161,32 @@ const Chat = () => {
         messageType = "voice";
       }
 
-      // If multiple images, send each as a separate message
       if (imageFiles && imageFiles.length > 0) {
         for (let i = 0; i < imageFiles.length; i++) {
           const file = imageFiles[i];
-          const ext = file.name.split(".").pop();
-          const storagePath = `${user.id}/${Date.now()}-${i}.${ext}`;
-          const { error } = await supabase.storage.from("chat-images").upload(storagePath, file);
-          if (!error) {
-            const imageUrl = supabase.storage.from("chat-images").getPublicUrl(storagePath).data.publicUrl;
+          let imageUrl: string | null = null;
+          try {
+            const resp = await fetch("/api/upload-photo", {
+              method: "POST",
+              headers: { "Content-Type": file.type || "image/jpeg", "x-user-id": user.id, "x-bucket": "chat-images" },
+              body: file,
+            });
+            const result = await resp.json();
+            if (resp.ok) imageUrl = result.publicUrl;
+          } catch {}
+          if (!imageUrl) {
+            const ext = file.name.split(".").pop();
+            const storagePath = `${user.id}/${Date.now()}-${i}.${ext}`;
+            const { error } = await supabase.storage.from("chat-images").upload(storagePath, file);
+            if (!error) {
+              imageUrl = supabase.storage.from("chat-images").getPublicUrl(storagePath).data.publicUrl;
+            }
+          }
+          if (imageUrl) {
             await supabase.from("messages").insert({
               sender_id: user.id,
               receiver_id: partnerId,
-              content: i === 0 && content ? content : "📷 Photo",
+              content: i === 0 && content ? content : "\u{1F4F7} Photo",
               image_url: imageUrl,
               reply_to_id: i === 0 ? (replyingTo?.id || null) : null,
               message_type: "image",

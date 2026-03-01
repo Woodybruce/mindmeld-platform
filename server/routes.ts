@@ -502,11 +502,87 @@ async function refreshMicrosoftToken(refreshToken: string) {
   return res.json();
 }
 
+async function ensureStorageBuckets() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return;
+  try {
+    const admin = createClient(url, key);
+    const { data: buckets } = await admin.storage.listBuckets();
+    const existingNames = new Set(buckets?.map((b: any) => b.name) || []);
+
+    const required = [
+      { name: "couple-photos", opts: { public: true, allowedMimeTypes: ["image/*"], fileSizeLimit: 10485760 } },
+      { name: "chat-images", opts: { public: true, allowedMimeTypes: ["image/*"], fileSizeLimit: 10485760 } },
+      { name: "voice-notes", opts: { public: true, allowedMimeTypes: ["audio/*"], fileSizeLimit: 10485760 } },
+    ];
+
+    for (const { name, opts } of required) {
+      if (!existingNames.has(name)) {
+        const { error } = await admin.storage.createBucket(name, opts);
+        if (error) {
+          console.warn(`Could not create ${name} bucket:`, error.message);
+        } else {
+          console.log(`Created ${name} storage bucket`);
+        }
+      } else {
+        await admin.storage.updateBucket(name, opts);
+      }
+    }
+  } catch (e: any) {
+    console.warn("Storage bucket check failed:", e.message);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<void> {
   await initSpotifyTokens();
+  ensureStorageBuckets();
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok" });
+  });
+
+  app.post("/api/upload-photo", express.raw({ type: "image/*", limit: "10mb" }), async (req: Request, res: Response) => {
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "Supabase not configured" });
+
+    const userId = req.headers["x-user-id"] as string;
+    if (!userId) return res.status(400).json({ error: "Missing user ID" });
+
+    const bucket = (req.headers["x-bucket"] as string) || "couple-photos";
+    const contentType = req.headers["content-type"] || "image/jpeg";
+    const ext = contentType.split("/")[1]?.split("+")[0] || "jpg";
+    const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+    const caption = (req.headers["x-caption"] as string) || "";
+
+    try {
+      const admin = createClient(SUPABASE_URL, SUPABASE_KEY);
+      const { error: uploadError } = await admin.storage
+        .from(bucket)
+        .upload(path, req.body, { contentType, upsert: false });
+
+      if (uploadError) {
+        console.error("Photo upload storage error:", uploadError.message);
+        return res.status(500).json({ error: uploadError.message });
+      }
+
+      if (bucket === "couple-photos") {
+        const insertPayload: any = { user_id: userId, storage_path: path };
+        if (caption) insertPayload.caption = caption;
+        const { error: dbError } = await admin.from("couple_photos").insert(insertPayload);
+        if (dbError) {
+          console.error("Photo upload DB error:", dbError.message);
+          return res.status(500).json({ error: dbError.message });
+        }
+      }
+
+      const { data: urlData } = admin.storage.from(bucket).getPublicUrl(path);
+      res.json({ success: true, path, publicUrl: urlData.publicUrl });
+    } catch (e: any) {
+      console.error("Photo upload error:", e.message);
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // 1. GET /api/search-gifs

@@ -96,30 +96,40 @@ const OurPhotos = () => {
     if (!files || files.length === 0 || !user) return;
     setUploading(true);
 
+    let successCount = 0;
     for (const file of Array.from(files)) {
-      const ext = file.name.split(".").pop();
-      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("couple-photos")
-        .upload(path, file);
-
-      if (uploadError) {
-        toast.error(`Upload failed: ${file.name}`);
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error(`${file.name} is too large (max 10MB)`);
         continue;
       }
 
-      const { error: dbError } = await supabase
-        .from("couple_photos")
-        .insert({ user_id: user.id, storage_path: path });
-
-      if (dbError) {
-        toast.error(`Failed to save: ${file.name}`);
+      try {
+        const resp = await fetch("/api/upload-photo", {
+          method: "POST",
+          headers: {
+            "Content-Type": file.type || "image/jpeg",
+            "x-user-id": user.id,
+          },
+          body: file,
+        });
+        const result = await resp.json();
+        if (!resp.ok) {
+          console.error("Upload error:", result.error);
+          toast.error(`Upload failed: ${result.error || file.name}`);
+          continue;
+        }
+        successCount++;
+      } catch (err: any) {
+        console.error("Upload exception:", err);
+        toast.error(`Upload failed: ${file.name}`);
       }
     }
 
-    toast.success(`${files.length} photo${files.length > 1 ? "s" : ""} uploaded!`);
-    fetchPhotos();
+    if (successCount > 0) {
+      toast.success(`${successCount} photo${successCount > 1 ? "s" : ""} uploaded!`);
+      fetchPhotos();
+    }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };

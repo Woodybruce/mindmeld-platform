@@ -128,6 +128,13 @@ All routes are defined in `server/routes.ts`:
 - Song sharing in chat: `SpotifySongPicker` component in chat attach menu, `spotify` message type renders as embedded player in `ChatBubble`
 
 ## Recent Changes
+- 2026-03-01: Photo upload fix — server-side upload proxy
+  - Root cause: Supabase storage buckets (`couple-photos`, `chat-images`, `voice-notes`) weren't created
+  - `ensureStorageBuckets()` runs at server startup — auto-creates any missing storage buckets
+  - New `POST /api/upload-photo` endpoint — uploads via service role key (bypasses storage RLS)
+  - Headers: `x-user-id` (required), `x-bucket` (default `couple-photos`), `x-caption` (optional)
+  - OurPhotos and PhotoChallenge now upload through server endpoint
+  - Chat image upload tries server endpoint first, falls back to direct Supabase client upload
 - 2026-03-01: Invisible AI — automatic behavioral learning
   - Removed all visible AI buttons: AiSearchBar, "Generate with AI", "Ask AI for suggestions", AI sparkle labels
   - AI now works silently in the background — no user-facing AI branding

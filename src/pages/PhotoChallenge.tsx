@@ -77,31 +77,25 @@ const PhotoChallenge = () => {
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${user.id}/challenge-${currentIdx}-${Date.now()}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("couple-photos")
-        .upload(path, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Save reference in couple_photos table
-      await supabase.from("couple_photos").insert({
-        user_id: user.id,
-        storage_path: path,
-        caption: `📸 Photo Challenge #${currentIdx + 1}: ${challenge}`,
+      const caption = `\u{1F4F8} Photo Challenge #${currentIdx + 1}: ${challenge}`;
+      const resp = await fetch("/api/upload-photo", {
+        method: "POST",
+        headers: {
+          "Content-Type": file.type || "image/jpeg",
+          "x-user-id": user.id,
+          "x-caption": caption,
+        },
+        body: file,
       });
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || "Upload failed");
 
-      const { data: urlData } = supabase.storage.from("couple-photos").getPublicUrl(path);
-      setUploadedPhotos((prev) => ({ ...prev, [currentIdx]: urlData.publicUrl }));
-
-      // Auto-mark as done when photo uploaded
+      setUploadedPhotos((prev) => ({ ...prev, [currentIdx]: result.publicUrl }));
       setCompleted((prev) => new Set(prev).add(currentIdx));
-      toast.success("Photo saved to your shared album! 🎉");
-    } catch (err) {
+      toast.success("Photo saved to your shared album!");
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to upload photo");
+      toast.error(err.message || "Failed to upload photo");
     } finally {
       setUploading(false);
     }
