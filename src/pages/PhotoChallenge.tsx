@@ -195,7 +195,8 @@ const PhotoChallenge = () => {
           type="file"
           accept="image/*"
           onChange={handleFileChange}
-          className="hidden"
+          className="absolute w-0 h-0 overflow-hidden opacity-0"
+          data-testid="photo-challenge-file-input"
         />
 
         <button

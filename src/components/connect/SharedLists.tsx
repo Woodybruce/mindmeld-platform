@@ -1180,8 +1180,9 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
         ref={fileInputRef}
         type="file"
         accept="image/*,application/pdf,.doc,.docx,.txt"
-        className="hidden"
+        className="absolute w-0 h-0 overflow-hidden opacity-0"
         onChange={handleFileAttach}
+        data-testid="list-file-input"
       />
 
       {lists.filter(l => l.status !== "pending_partner").map((list, i) => {

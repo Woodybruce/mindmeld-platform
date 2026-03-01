@@ -222,7 +222,7 @@ const SharedFileManager = () => {
               <Upload className="w-3.5 h-3.5" /> {uploading ? "Uploading…" : "Upload"}
             </button>
           </div>
-          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleUpload} />
+          <input ref={fileInputRef} type="file" multiple className="absolute w-0 h-0 overflow-hidden opacity-0" onChange={handleUpload} data-testid="file-upload-input" />
         </div>
 
         {/* New subfolder input */}

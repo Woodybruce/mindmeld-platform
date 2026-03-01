@@ -95,7 +95,7 @@ const PartnerAvatarUpload = () => {
         </div>
 
         <div className="flex gap-2">
-          <input type="file" ref={fileRef} accept="image/*" className="hidden" onChange={handleUpload} />
+          <input type="file" ref={fileRef} accept="image/*" className="absolute w-0 h-0 overflow-hidden opacity-0" onChange={handleUpload} data-testid="avatar-file-input" />
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}

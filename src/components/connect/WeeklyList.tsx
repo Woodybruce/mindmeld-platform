@@ -136,8 +136,9 @@ const WeeklyList = () => {
         ref={fileInputRef}
         type="file"
         accept="image/*,application/pdf,.doc,.docx,.txt"
-        className="hidden"
+        className="absolute w-0 h-0 overflow-hidden opacity-0"
         onChange={handleFileAttach}
+        data-testid="weekly-file-input"
       />
 
       {/* Header */}

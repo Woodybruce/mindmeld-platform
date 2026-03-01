@@ -151,8 +151,9 @@ const OurPhotos = () => {
             type="file"
             accept="image/*"
             multiple
-            className="hidden"
+            className="absolute w-0 h-0 overflow-hidden opacity-0"
             onChange={handleUpload}
+            data-testid="photo-file-input"
           />
           <button
             onClick={() => fileInputRef.current?.click()}

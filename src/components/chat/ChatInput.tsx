@@ -255,8 +255,8 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
       {/* Input bar */}
       <div className="bg-background/95 backdrop-blur-xl border-t border-border/30 px-3 py-3 safe-area-bottom">
         <div className="flex items-end gap-2 max-w-lg mx-auto">
-          <input type="file" ref={fileInputRef} accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
-          <input type="file" ref={cameraInputRef} accept="image/*" className="hidden" onChange={handleImageSelect} />
+          <input type="file" ref={fileInputRef} accept="image/*" multiple className="absolute w-0 h-0 overflow-hidden opacity-0" onChange={handleImageSelect} data-testid="chat-file-input" />
+          <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" className="absolute w-0 h-0 overflow-hidden opacity-0" onChange={handleImageSelect} data-testid="chat-camera-input" />
 
           {recording ? (
             <>
