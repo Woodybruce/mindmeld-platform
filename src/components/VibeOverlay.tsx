@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,67 +23,19 @@ const VibeOverlay = () => {
   const [floaters, setFloaters] = useState<FloatingEmoji[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processedVibes = useRef(new Set<string>());
+  const lastVibeTs = useRef(0);
 
-  useEffect(() => {
-    if (!user || !profile?.partner_id) return;
+  const triggerVibeAnimation = useCallback((emoji: string, label: string) => {
+    const now = Date.now();
+    if (now - lastVibeTs.current < 1000) return;
+    lastVibeTs.current = now;
 
-    const partnerId = profile.partner_id;
-    const channelName = `vibe-${[user.id, partnerId].sort().join("-")}`;
-
-    // Primary: broadcast channel (instant, no DB dependency)
-    const broadcastChannel = supabase
-      .channel(channelName)
-      .on("broadcast", { event: "vibe" }, ({ payload }) => {
-        if (payload.senderId === partnerId) {
-          const key = `${payload.senderId}-${payload.ts}`;
-          if (processedVibes.current.has(key)) return;
-          processedVibes.current.add(key);
-          triggerVibeAnimation(payload.emoji, payload.label);
-        }
-      })
-      .subscribe();
-
-    // Backup: postgres_changes for when broadcast misses
-    const dbChannel = supabase
-      .channel("vibe-db-incoming")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
-          const msg = payload.new as any;
-          if (
-            msg.message_type === "vibe" &&
-            msg.receiver_id === user.id &&
-            msg.sender_id === partnerId
-          ) {
-            const key = `${msg.sender_id}-${msg.created_at}`;
-            if (processedVibes.current.has(key)) return;
-            processedVibes.current.add(key);
-            try {
-              const data = JSON.parse(msg.content);
-              triggerVibeAnimation(data.emoji, data.label);
-            } catch {
-              // ignore parse errors
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(broadcastChannel);
-      supabase.removeChannel(dbChannel);
-    };
-  }, [user, profile?.partner_id]);
-
-  const triggerVibeAnimation = (emoji: string, label: string) => {
-    // Dismiss any existing overlay first
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     setIncomingVibe({ emoji, label });
 
     const newFloaters: FloatingEmoji[] = Array.from({ length: 30 }, (_, i) => ({
-      id: `${Date.now()}-${i}`,
+      id: `${now}-${i}`,
       emoji,
       x: Math.random() * 95,
       delay: Math.random() * 1.5,
@@ -96,7 +48,56 @@ const VibeOverlay = () => {
       setIncomingVibe(null);
       setFloaters([]);
     }, 5500);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user || !profile?.partner_id) return;
+
+    const partnerId = profile.partner_id;
+    const channelName = `vibe-overlay-${[user.id, partnerId].sort().join("-")}`;
+
+    const broadcastChannel = supabase
+      .channel(channelName)
+      .on("broadcast", { event: "vibe" }, ({ payload }) => {
+        if (payload.senderId === partnerId) {
+          const key = `bc-${payload.senderId}-${payload.ts}`;
+          if (processedVibes.current.has(key)) return;
+          processedVibes.current.add(key);
+          triggerVibeAnimation(payload.emoji, payload.label);
+        }
+      })
+      .subscribe();
+
+    const dbChannel = supabase
+      .channel(`vibe-db-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const msg = payload.new as any;
+          if (msg.message_type === "vibe" && msg.sender_id === partnerId) {
+            const key = `db-${msg.id}`;
+            if (processedVibes.current.has(key)) return;
+            processedVibes.current.add(key);
+            try {
+              const data = JSON.parse(msg.content);
+              triggerVibeAnimation(data.emoji, data.label);
+            } catch {}
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(broadcastChannel);
+      supabase.removeChannel(dbChannel);
+    };
+  }, [user, profile?.partner_id, triggerVibeAnimation]);
 
   const dismiss = () => {
     setIncomingVibe(null);
@@ -116,14 +117,12 @@ const VibeOverlay = () => {
           className="fixed inset-0 z-[9999] overflow-hidden pointer-events-auto"
           onClick={dismiss}
         >
-          {/* Dark blurred backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="absolute inset-0 bg-black/50 backdrop-blur-md"
           />
 
-          {/* Dramatic emoji shower — falling from top + rising from bottom */}
           {floaters.map((f) => (
             <motion.span
               key={f.id}
@@ -151,7 +150,6 @@ const VibeOverlay = () => {
             </motion.span>
           ))}
 
-          {/* Central dramatic message */}
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none">
             <motion.span
               initial={{ scale: 0, rotate: -20 }}

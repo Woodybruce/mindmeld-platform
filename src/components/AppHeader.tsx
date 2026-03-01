@@ -70,28 +70,25 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
 
     if (user && profile?.partner_id) {
       const partnerId = profile.partner_id;
-      const channelName = `vibe-${[user.id, partnerId].sort().join("-")}`;
+      const channelName = `vibe-overlay-${[user.id, partnerId].sort().join("-")}`;
       const ts = Date.now();
 
-      const channel = supabase.channel(channelName);
-      
-      if ((channel as any).state === "joined") {
-        channel.send({
+      const sendBroadcast = () => {
+        const ch = supabase.channel(channelName);
+        const doSend = () => ch.send({
           type: "broadcast",
           event: "vibe",
           payload: { senderId: user.id, emoji, label, ts },
         });
-      } else {
-        channel.subscribe((status) => {
-          if (status === "SUBSCRIBED") {
-            channel.send({
-              type: "broadcast",
-              event: "vibe",
-              payload: { senderId: user.id, emoji, label, ts },
-            });
-          }
-        });
-      }
+        if ((ch as any).state === "joined") {
+          doSend();
+        } else {
+          ch.subscribe((status) => {
+            if (status === "SUBSCRIBED") doSend();
+          });
+        }
+      };
+      sendBroadcast();
 
       await supabase.from("messages").insert({
         sender_id: user.id,
