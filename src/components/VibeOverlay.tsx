@@ -51,6 +51,30 @@ const VibeOverlay = () => {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const vibeEmoji = params.get("vibe");
+    const vibeLabel = params.get("vibeLabel");
+    if (vibeEmoji && vibeLabel) {
+      setTimeout(() => triggerVibeAnimation(vibeEmoji, vibeLabel), 300);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("vibe");
+      url.searchParams.delete("vibeLabel");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  }, [triggerVibeAnimation]);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "vibe" && event.data.emoji && event.data.label) {
+        triggerVibeAnimation(event.data.emoji, event.data.label);
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, [triggerVibeAnimation]);
+
+  useEffect(() => {
     if (!user || !profile?.partner_id) return;
 
     const partnerId = profile.partner_id;
