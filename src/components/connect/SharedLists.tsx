@@ -505,7 +505,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     if (!list) return;
     const updatedList: UserList = {
       ...list,
-      items: reviewItems,
+      items: reviewItems.map(item => ({ ...item, done: false })),
       status: "active",
     };
     onUpdate(lists.map(l => l.id === reviewingListId ? updatedList : l));
@@ -1418,7 +1418,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                       {item.text}
                                     </span>
                                   )}
-                                  {!isEditing && list.template === "shopping" && !item.done && (
+                                  {!isEditing && (list.template === "shopping" || list.name.toLowerCase().includes("shopping")) && !item.done && (
                                     <button
                                       onClick={() => {
                                         const a = document.createElement("a");
@@ -1469,7 +1469,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                             >
                                               <ClipboardList className="w-3.5 h-3.5 text-muted-foreground" /> Add to weekly
                                             </button>
-                                            {list.template === "shopping" && (
+                                            {(list.template === "shopping" || list.name.toLowerCase().includes("shopping")) && (
                                               <button
                                                 onClick={() => {
                                                   const a = document.createElement("a");
@@ -1551,7 +1551,6 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                             );
                           })}
 
-                          {/* Per-section add item input */}
                           {headingId && !isSectionCollapsed && (!list.maxItems || list.items.filter(i => !i.isHeading).length < list.maxItems) && (
                             <div className="flex gap-1.5 pt-1 pb-1">
                               <input
@@ -1567,6 +1566,23 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
+                              {(list.template === "shopping" || list.name.toLowerCase().includes("shopping")) && (sectionNewItem[sectionInputKey] || "").trim() && (
+                                <button
+                                  onClick={() => {
+                                    const q = (sectionNewItem[sectionInputKey] || "").trim();
+                                    if (!q) return;
+                                    const a = document.createElement("a");
+                                    a.href = `https://www.amazon.co.uk/s?k=${encodeURIComponent(q)}&tag=woodybruce-21`;
+                                    a.target = "_blank";
+                                    a.rel = "noopener noreferrer";
+                                    a.click();
+                                  }}
+                                  className="rounded-lg bg-stone-900 px-2.5 py-1 text-white text-[11px] font-medium hover:bg-stone-800 transition-colors flex items-center gap-1 whitespace-nowrap"
+                                  data-testid="search-amazon-btn"
+                                >
+                                  <ShoppingCart className="w-3 h-3" /> Amazon
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
