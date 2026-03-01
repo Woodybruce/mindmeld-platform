@@ -94,13 +94,12 @@ const getBrandGradient = (brand: string) => {
 
 const isGoopBrand = (brand: string) => brand.toLowerCase().includes("goop");
 
-const ProductImage = ({ product, isCurated = false }: { product: ShopProduct; isCurated?: boolean }) => {
+const ProductImage = ({ product }: { product: ShopProduct }) => {
   const [failed, setFailed] = useState(false);
-  const initials = product.brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   const gradient = getBrandGradient(product.brand);
   const lightBrand = isGoopBrand(product.brand);
 
-  if (product.imageUrl && !failed && !isCurated) {
+  if (product.imageUrl && !failed) {
     return (
       <img
         src={product.imageUrl}
@@ -157,7 +156,7 @@ const ProductDetailModal = ({
       >
         <div className="relative">
           <div className="w-full aspect-[3/2] overflow-hidden rounded-t-3xl sm:rounded-t-3xl bg-stone-100">
-            <ProductImage product={product} isCurated={product.id.startsWith("curated-")} />
+            <ProductImage product={product} />
           </div>
 
           <button
@@ -407,7 +406,7 @@ const DiscoverTogether = () => {
                 data-testid={`discover-product-${heroProduct.id}`}
               >
                 <div className="relative w-full aspect-[16/9] overflow-hidden bg-stone-100 dark:bg-stone-900">
-                  <ProductImage product={heroProduct} isCurated={heroProduct.id.startsWith("curated-")} />
+                  <ProductImage product={heroProduct} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                   <div className="absolute top-3 right-3">
                     <LikeButton
@@ -447,7 +446,7 @@ const DiscoverTogether = () => {
                     data-testid={`discover-product-${product.id}`}
                   >
                     <div className="relative w-full aspect-square overflow-hidden">
-                      <ProductImage product={product} isCurated={product.id.startsWith("curated-")} />
+                      <ProductImage product={product} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                       <div className="absolute top-2 right-2">
                         <LikeButton
