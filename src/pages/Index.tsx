@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import AppHeader from "@/components/AppHeader";
 import StoriesBar from "@/components/StoriesBar";
 import BottomNav from "@/components/BottomNav";
@@ -12,10 +12,7 @@ import { sampleFeedData } from "@/components/feedData";
 import type { FeedItem } from "@/components/FeedCard";
 import GamesCarousel from "@/components/GamesCarousel";
 
-import CuratedLinksWidget from "@/components/CuratedLinksWidget";
-import DiscoverTogether from "@/components/DiscoverTogether";
 import { useFeedContent } from "@/hooks/useFeedContent";
-import { PhotosPreview } from "@/components/UsSectionPreviews";
 import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
 
 import DailyPromptCard from "@/components/DailyPromptCard";
@@ -26,6 +23,10 @@ import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import AnnouncementsWidget from "@/components/AnnouncementsWidget";
 import { useOutlookAutoSync } from "@/hooks/useOutlookAutoSync";
+
+const CuratedLinksWidget = lazy(() => import("@/components/CuratedLinksWidget"));
+const DiscoverTogether = lazy(() => import("@/components/DiscoverTogether"));
+const PhotosPreview = lazy(() => import("@/components/UsSectionPreviews").then(m => ({ default: m.PhotosPreview })));
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
   const rows: (FeedItem | [FeedItem, FeedItem])[] = [];
@@ -116,13 +117,19 @@ const Index = () => {
         )}
 
         {/* Our Photos */}
-        <PhotosPreview />
+        <Suspense fallback={null}>
+          <PhotosPreview />
+        </Suspense>
 
         {/* For You — combined saved links + suggested reads (randomised) */}
-        <CuratedLinksWidget />
+        <Suspense fallback={null}>
+          <CuratedLinksWidget />
+        </Suspense>
 
         {/* Shopping suggestions with categories */}
-        <DiscoverTogether />
+        <Suspense fallback={null}>
+          <DiscoverTogether />
+        </Suspense>
 
         {/* Remaining feed cards */}
         {rows.slice(2).map((row, idx) => (

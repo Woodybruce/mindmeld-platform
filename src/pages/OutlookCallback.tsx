@@ -54,6 +54,8 @@ const OutlookCallback = () => {
           setErrorMsg(result.error);
         } else {
           setStatus("success");
+          localStorage.setItem("outlook_connected", "true");
+          localStorage.removeItem("outlook_no_token");
           setTimeout(() => navigate("/profile"), 1500);
         }
       } catch {

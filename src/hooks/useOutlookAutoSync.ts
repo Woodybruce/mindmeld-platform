@@ -13,7 +13,9 @@ export function useOutlookAutoSync(onSynced?: () => void) {
     if (!user) return;
 
     const lastSync = localStorage.getItem(SYNC_KEY);
+    const lastFail = localStorage.getItem("outlook_no_token");
     const now = Date.now();
+    if (lastFail && now - parseInt(lastFail, 10) < SYNC_INTERVAL_MS * 4) return;
     if (lastSync && now - parseInt(lastSync, 10) < SYNC_INTERVAL_MS) return;
 
     if (syncing.current) return;
@@ -36,7 +38,10 @@ export function useOutlookAutoSync(onSynced?: () => void) {
         });
 
         const result = await res.json();
-        if (result.error) return;
+        if (result.error) {
+          if (result.error === "no_microsoft_token") localStorage.setItem("outlook_no_token", String(Date.now()));
+          return;
+        }
 
         const events = result.events || [];
         const toImport = events

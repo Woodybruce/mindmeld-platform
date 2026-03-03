@@ -39,11 +39,47 @@ export const useAuth = () => {
   return ctx;
 };
 
+const PROFILE_CACHE_KEY = "us-profile-cache";
+const SESSION_CACHE_KEY = "us-session-cache";
+
+function getCachedProfile(): Profile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function getCachedUser(): User | null {
+  try {
+    const raw = localStorage.getItem(SESSION_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function cacheProfile(p: Profile | null) {
+  try {
+    if (p) {
+      const { phone_number, ai_preferences, ...safe } = p;
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(safe));
+    }
+    else localStorage.removeItem(PROFILE_CACHE_KEY);
+  } catch {}
+}
+
+function cacheUser(u: User | null) {
+  try {
+    if (u) localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(u));
+    else localStorage.removeItem(SESSION_CACHE_KEY);
+  } catch {}
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const cachedUser = getCachedUser();
+  const cachedProfile = getCachedProfile();
+  const [user, setUser] = useState<User | null>(cachedUser);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(cachedProfile);
+  const [loading, setLoading] = useState(!cachedUser);
 
   const fetchProfile = async (userId: string) => {
     const [profileRes, prefsRes] = await Promise.all([
@@ -52,14 +88,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     ]);
     if (profileRes.data) {
       const aiPrefs = (prefsRes.data?.score_data as any)?.preferences || null;
-      setProfile({
+      const p: Profile = {
         id: profileRes.data.id,
         username: profileRes.data.username,
         partner_id: profileRes.data.partner_id,
         partner_code: profileRes.data.partner_code,
         phone_number: (profileRes.data as any).phone_number ?? null,
         ai_preferences: aiPrefs,
-      });
+      };
+      setProfile(p);
+      cacheProfile(p);
     }
   };
 
@@ -72,10 +110,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        cacheUser(session?.user ?? null);
         if (session?.user) {
           setTimeout(() => fetchProfile(session.user.id), 0);
         } else {
           setProfile(null);
+          cacheProfile(null);
         }
         setLoading(false);
       }
@@ -84,7 +124,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      cacheUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
+      else {
+        cacheProfile(null);
+        cacheUser(null);
+      }
       setLoading(false);
     });
 

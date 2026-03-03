@@ -18,8 +18,10 @@ self.addEventListener("push", (event) => {
 
   event.waitUntil(
     self.registration.showNotification(data.title || "Us", options).then(function() {
-      if (navigator.setAppBadge) {
-        var count = data.badge || 1;
+      var count = data.badge || 1;
+      if (self.registration.setAppBadge) {
+        self.registration.setAppBadge(count).catch(function() {});
+      } else if (navigator.setAppBadge) {
         navigator.setAppBadge(count).catch(function() {});
       }
     })
@@ -29,7 +31,9 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  if (navigator.clearAppBadge) {
+  if (self.registration.clearAppBadge) {
+    self.registration.clearAppBadge().catch(function() {});
+  } else if (navigator.clearAppBadge) {
     navigator.clearAppBadge().catch(function() {});
   }
 
