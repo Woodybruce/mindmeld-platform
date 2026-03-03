@@ -682,10 +682,20 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ error: "recipientUserId and title are required" });
       }
 
-      const { data: tokens, error: tokenError } = await supabase
-        .from("device_tokens")
-        .select("token, platform")
-        .eq("user_id", recipientUserId);
+      const [{ data: tokens, error: tokenError }, { count: unreadCount }] = await Promise.all([
+        supabase
+          .from("device_tokens")
+          .select("token, platform")
+          .eq("user_id", recipientUserId),
+        supabase
+          .from("messages")
+          .select("*", { count: "exact", head: true })
+          .eq("receiver_id", recipientUserId)
+          .eq("read", false)
+          .neq("message_type", "vibe"),
+      ]);
+
+      const badgeCount = (unreadCount || 0) + 1;
 
       if (tokenError) {
         throw new Error(`Failed to fetch tokens: ${tokenError.message}`);
@@ -713,7 +723,7 @@ export async function registerRoutes(app: Express): Promise<void> {
                 const subscription = JSON.parse(token);
                 await webpush.sendNotification(
                   subscription,
-                  JSON.stringify({ title, body: body || "", data: data || {} })
+                  JSON.stringify({ title, body: body || "", data: data || {}, badge: badgeCount })
                 );
                 return { success: true };
               } catch (err: any) {
@@ -750,7 +760,7 @@ export async function registerRoutes(app: Express): Promise<void> {
                     token,
                     notification: { title, body: body || "" },
                     data: data || {},
-                    apns: { payload: { aps: { sound: "default", badge: 1 } } },
+                    apns: { payload: { aps: { sound: "default", badge: badgeCount } } },
                     android: { priority: "HIGH", notification: { sound: "default" } },
                   },
                 }),

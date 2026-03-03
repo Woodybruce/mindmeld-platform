@@ -16,11 +16,22 @@ self.addEventListener("push", (event) => {
     renotify: true,
   };
 
-  event.waitUntil(self.registration.showNotification(data.title || "Us", options));
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Us", options).then(function() {
+      if (navigator.setAppBadge) {
+        var count = data.badge || 1;
+        navigator.setAppBadge(count).catch(function() {});
+      }
+    })
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
+  if (navigator.clearAppBadge) {
+    navigator.clearAppBadge().catch(function() {});
+  }
 
   const notifData = event.notification.data || {};
   const isVibe = notifData.type === "vibe";

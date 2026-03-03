@@ -2,12 +2,22 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+function setAppBadge(count: number) {
+  if ("setAppBadge" in navigator) {
+    if (count > 0) {
+      (navigator as any).setAppBadge(count).catch(() => {});
+    } else {
+      (navigator as any).clearAppBadge().catch(() => {});
+    }
+  }
+}
+
 export function useUnreadMessages() {
   const { user } = useAuth();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (!user) { setCount(0); return; }
+    if (!user) { setCount(0); setAppBadge(0); return; }
 
     const fetchCount = async () => {
       const { count: c } = await supabase
@@ -16,7 +26,9 @@ export function useUnreadMessages() {
         .eq("receiver_id", user.id)
         .eq("read", false)
         .neq("message_type", "vibe");
-      setCount(c || 0);
+      const unread = c || 0;
+      setCount(unread);
+      setAppBadge(unread);
     };
 
     fetchCount();
