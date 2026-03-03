@@ -91,7 +91,8 @@ const ChatBubble = ({
   const isSpecial = messageType === "location" || messageType === "poll" || messageType === "event";
   const isSticker = messageType === "sticker";
   const isGif = messageType === "gif";
-  const isSpotify = messageType === "spotify";
+  const looksLikeSpotify = !!(content && content.includes('"spotifyUrl"') && content.includes('"name"'));
+  const isSpotify = messageType === "spotify" || looksLikeSpotify;
   const parsed = (isSpecial || isSticker || isGif || isSpotify) ? tryParseJSON(content) : null;
 
   // iMessage grouping: tight spacing within group, normal spacing between groups
@@ -282,7 +283,7 @@ const ChatBubble = ({
           </div>
         )}
 
-        {content && content !== "📷 Photo" && !isSpecial && !isSticker && !isGif && (
+        {content && content !== "📷 Photo" && !isSpecial && !isSticker && !isGif && !isSpotify && (
           <p className="text-[15px] leading-[1.3] break-words px-3 pt-2 pb-0.5">
             {renderContentWithLinks(content)}
           </p>
