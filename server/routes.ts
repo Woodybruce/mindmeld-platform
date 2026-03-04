@@ -2226,7 +2226,7 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
       const redirectUri = getSpotifyRedirectUri(req);
       console.log("Spotify callback redirect_uri:", redirectUri);
       await exchangeSpotifyCode(code, redirectUri);
-      res.send("<html><body><h2>Spotify connected!</h2><p>You can close this tab and go back to the app.</p><script>setTimeout(()=>window.close(),2000)</script></body></html>");
+      res.send(`<html><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#faf5f0"><div style="text-align:center"><h2 style="color:#1DB954">&#10003; Spotify connected!</h2><p style="color:#666">Redirecting back to the app&hellip;</p></div><script>setTimeout(function(){window.location.href='/'},1500)</script></body></html>`);
     } catch (e: any) {
       console.error("Spotify callback error:", e.message);
       res.status(500).send(`Spotify auth failed: ${e.message}`);
