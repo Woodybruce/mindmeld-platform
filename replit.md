@@ -25,6 +25,7 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - AI-personalised "For You" content (Articles, Podcasts, Videos, Quotes) — uses couple's context to select/generate relevant content.
 - Spotify integration for shared music experiences and in-app playback.
 - Stripe in-app checkout for the Shop section (products managed via Stripe Dashboard, synced to PostgreSQL `stripe` schema).
+- AI Product Sourcer: Admin tool at `/admin/products` that uses couple context (preferences, moods, liked content, lists) to recommend real, sourceable products with supplier info, wholesale pricing, and margin calculations. Server-side admin auth enforced via `requireAdmin()`. Private message data excluded from AI context.
 
 **UI/UX Decisions:**
 - The application utilizes TailwindCSS and shadcn/ui components for a consistent and modern aesthetic.

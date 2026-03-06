@@ -65,6 +65,26 @@ async function extractUserId(req: Request): Promise<string | undefined> {
   } catch { return undefined; }
 }
 
+async function requireAdmin(req: Request, res: Response): Promise<string | null> {
+  const userId = await extractUserId(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return null;
+  }
+  try {
+    const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const { data } = await sb.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    if (!data) {
+      res.status(403).json({ error: "Admin access required" });
+      return null;
+    }
+    return userId;
+  } catch {
+    res.status(500).json({ error: "Failed to verify permissions" });
+    return null;
+  }
+}
+
 async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?: string) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
@@ -2763,26 +2783,64 @@ Focus on real, existing content about relationships, dating, couples, love, and 
 
   app.post("/api/stripe/ai-create-products", async (req: Request, res: Response) => {
     try {
-      const { prompt, count = 3 } = req.body;
+      const adminUserId = await requireAdmin(req, res);
+      if (!adminUserId) return;
+
+      const { prompt, count = 3, usePersonalisation = true } = req.body;
       if (!prompt || typeof prompt !== "string") {
         return res.status(400).json({ error: "A prompt describing your products is required" });
       }
       const safeCount = Math.max(1, Math.min(10, Number(count) || 3));
 
+      let coupleContext = "";
+      if (usePersonalisation) {
+        const fullContext = await fetchUserContext(adminUserId);
+        coupleContext = fullContext
+          .replace(/Recent messages:.*?(?=\n[A-Z]|\n$|$)/s, "")
+          .replace(/\n{2,}/g, "\n")
+          .trim();
+      }
+
+      const personalisationBlock = coupleContext
+        ? `\n\nIMPORTANT — COUPLE CONTEXT (use this to tailor product recommendations):
+${coupleContext}
+Use their interests, moods, liked content, recent conversations and list themes to pick products they would genuinely love. If they discuss date nights, recommend date night products. If they like wellness, lean into spa/self-care. If intimacy is a theme, suggest tasteful intimacy products. Match the products to THEIR tastes.`
+        : "";
+
       const aiResult = await callAI(
         [
           {
             role: "system",
-            content: `You are a product catalog assistant for a couples/relationship app. Based on the user's description, generate ${safeCount} real, specific products to sell in the shop. Each product needs:
-- name: Full product name
-- brand: Brand name
-- description: 1-2 sentence product description
-- priceInPence: Price in GBP pence (e.g. 5400 for £54.00). Use realistic prices.
-- category: One of: Massage, Candles, Wellness, Lingerie, Accessories, Nightwear, Fragrance, Beauty, Skincare, Bath, Date Night, Gifts, Games, Home, Intimacy
-- imageUrl: Leave as empty string — the user will add images later via Stripe Dashboard
-- features: Array of 3-4 short feature bullet points
+            content: `You are a product sourcing specialist for a couples/relationship app shop. Your job is to recommend ${safeCount} REAL products that:
+1. Actually exist and can be purchased from well-known UK/international suppliers or wholesalers
+2. Would appeal to couples based on their interests
+3. Have good resale margin potential
 
-Make products feel premium, real, and gift-worthy. Use real brand names where possible.`,
+For each product provide:
+- name: The exact real product name as it appears on the supplier site
+- brand: The real brand/manufacturer name
+- description: 1-2 sentence customer-facing description
+- priceInPence: Your recommended RETAIL price in GBP pence (e.g. 4999 for £49.99). This should be the price customers pay — build in a healthy margin (aim for 40-60% markup over wholesale)
+- wholesalePriceEstimate: Estimated wholesale/cost price in GBP pence
+- category: One of: Massage, Candles, Wellness, Lingerie, Accessories, Nightwear, Fragrance, Beauty, Skincare, Bath, Date Night, Gifts, Games, Home, Intimacy
+- supplier: Where to source this product for resale — use real supplier names like "Amazon Business", "Faire", "Beauty Wholesale Direct", "The Hut Group (THG)", "Alibaba", "Sephora Wholesale", "Boots Trade", "eBay Business Supply", the brand's own wholesale programme, or other real wholesale/trade platforms. Be specific.
+- supplierUrl: The best URL to find or order this product from the supplier (use real URLs like "https://www.faire.com", "https://business.amazon.co.uk", "https://www.alibaba.com", the brand's trade site, etc.)
+- features: Array of 3-4 short feature bullet points
+- marginNotes: Brief note on sourcing strategy — e.g. "Available on Faire at ~£12 wholesale, RRP £28" or "Brand offers trade accounts with 40% discount"
+
+Focus on products that are:
+- Readily available from known suppliers (not one-off items)
+- Premium enough for a luxury couples app but accessible enough to source
+- From brands that offer wholesale/trade pricing
+- Good margin potential (at least 30-40% profit after costs)
+
+Prioritise these supplier channels (in order):
+1. Faire (curated wholesale marketplace — excellent for premium lifestyle products)
+2. Amazon Business / Amazon Vendor (easy sourcing, good variety)
+3. Brand direct wholesale (many beauty/wellness brands offer trade accounts)
+4. The Hut Group brands (Lookfantastic, ESPA, etc.)
+5. Alibaba / AliExpress (for white-label or unbranded items)
+6. Other specialist wholesalers${personalisationBlock}`,
           },
           {
             role: "user",
@@ -2794,7 +2852,7 @@ Make products feel premium, real, and gift-worthy. Use real brand names where po
             type: "function",
             function: {
               name: "create_products",
-              description: `Generate ${safeCount} products for the shop`,
+              description: `Generate ${safeCount} sourceable products for resale in the shop`,
               parameters: {
                 type: "object",
                 properties: {
@@ -2807,11 +2865,14 @@ Make products feel premium, real, and gift-worthy. Use real brand names where po
                         brand: { type: "string" },
                         description: { type: "string" },
                         priceInPence: { type: "number" },
+                        wholesalePriceEstimate: { type: "number" },
                         category: { type: "string" },
-                        imageUrl: { type: "string" },
+                        supplier: { type: "string" },
+                        supplierUrl: { type: "string" },
                         features: { type: "array", items: { type: "string" } },
+                        marginNotes: { type: "string" },
                       },
-                      required: ["name", "brand", "description", "priceInPence", "category", "features"],
+                      required: ["name", "brand", "description", "priceInPence", "wholesalePriceEstimate", "category", "supplier", "supplierUrl", "features", "marginNotes"],
                     },
                   },
                 },
@@ -2838,23 +2899,33 @@ Make products feel premium, real, and gift-worthy. Use real brand names where po
       const created: any[] = [];
 
       for (const p of generated) {
-        const priceInPence = Math.max(100, Math.round(Number(p.priceInPence) || 1000));
+        const retailPence = Math.max(100, Math.round(Number(p.priceInPence) || 1000));
+        let wholesalePence = Math.max(50, Math.round(Number(p.wholesalePriceEstimate) || 500));
+        if (wholesalePence >= retailPence) {
+          wholesalePence = Math.round(retailPence * 0.5);
+        }
+        const marginPercent = Math.round(((retailPence - wholesalePence) / retailPence) * 100);
 
         const product = await stripe.products.create({
           name: `${p.name} — ${p.brand}`,
           description: p.description,
-          images: p.imageUrl ? [p.imageUrl] : [],
+          images: [],
           metadata: {
             brand: p.brand,
             category: p.category,
             shop_product_name: p.name,
             features: JSON.stringify(p.features || []),
+            supplier: p.supplier || "",
+            supplier_url: p.supplierUrl || "",
+            wholesale_price: String(wholesalePence),
+            margin_notes: (p.marginNotes || "").slice(0, 500),
+            margin_percent: String(marginPercent),
           },
         });
 
         const price = await stripe.prices.create({
           product: product.id,
-          unit_amount: priceInPence,
+          unit_amount: retailPence,
           currency: "gbp",
         });
 
@@ -2863,10 +2934,15 @@ Make products feel premium, real, and gift-worthy. Use real brand names where po
           priceId: price.id,
           name: p.name,
           brand: p.brand,
-          price: `£${(priceInPence / 100).toFixed(2)}`,
+          retailPrice: `£${(retailPence / 100).toFixed(2)}`,
+          wholesalePrice: `£${(wholesalePence / 100).toFixed(2)}`,
+          margin: `${marginPercent}%`,
           description: p.description,
           category: p.category,
           features: p.features,
+          supplier: p.supplier,
+          supplierUrl: p.supplierUrl,
+          marginNotes: p.marginNotes,
         });
       }
 
@@ -2882,6 +2958,9 @@ Make products feel premium, real, and gift-worthy. Use real brand names where po
 
   app.delete("/api/stripe/products/:productId", async (req: Request, res: Response) => {
     try {
+      const adminUserId = await requireAdmin(req, res);
+      if (!adminUserId) return;
+
       const { productId } = req.params;
       if (!productId || !productId.startsWith("prod_")) {
         return res.status(400).json({ error: "Valid product ID required" });

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Sparkles, Package, Trash2, Loader2, Plus, RefreshCw, AlertCircle } from "lucide-react";
+import { ArrowLeft, Sparkles, Package, Trash2, Loader2, Plus, RefreshCw, AlertCircle, ExternalLink, TrendingUp, Users, ShieldAlert } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 interface StripeProduct {
   id: string;
@@ -17,14 +19,20 @@ interface CreatedProduct {
   priceId: string;
   name: string;
   brand: string;
-  price: string;
+  retailPrice: string;
+  wholesalePrice: string;
+  margin: string;
   description: string;
   category: string;
   features: string[];
+  supplier: string;
+  supplierUrl: string;
+  marginNotes: string;
 }
 
 const AdminProducts = () => {
   const navigate = useNavigate();
+  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
   const [products, setProducts] = useState<StripeProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
@@ -33,6 +41,7 @@ const AdminProducts = () => {
   const [lastCreated, setLastCreated] = useState<CreatedProduct[]>([]);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [usePersonalisation, setUsePersonalisation] = useState(true);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -56,10 +65,21 @@ const AdminProducts = () => {
     setError("");
     setLastCreated([]);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+
       const res = await fetch("/api/stripe/ai-create-products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), count }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          count,
+          usePersonalisation,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create products");
@@ -75,7 +95,12 @@ const AdminProducts = () => {
   const handleDelete = async (productId: string) => {
     setDeletingId(productId);
     try {
-      const res = await fetch(`/api/stripe/products/${productId}`, { method: "DELETE" });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`/api/stripe/products/${productId}`, {
+        method: "DELETE",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         setProducts(prev => prev.filter(p => p.id !== productId));
       }
@@ -90,6 +115,29 @@ const AdminProducts = () => {
     }).format(amount / 100);
   };
 
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3 px-4">
+        <ShieldAlert className="w-10 h-10 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground">Admin access required</p>
+        <button
+          onClick={() => navigate("/")}
+          className="text-sm text-foreground/60 hover:text-foreground underline underline-offset-2"
+        >
+          Go back
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 py-6">
@@ -103,7 +151,7 @@ const AdminProducts = () => {
           </button>
           <div>
             <h1 className="text-xl font-bold text-foreground" data-testid="text-page-title">Shop Products</h1>
-            <p className="text-sm text-muted-foreground">Create and manage your Stripe products</p>
+            <p className="text-sm text-muted-foreground">AI-powered product sourcing for your shop</p>
           </div>
         </div>
 
@@ -114,19 +162,19 @@ const AdminProducts = () => {
         >
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-4 h-4 text-foreground" />
-            <h2 className="font-semibold text-foreground text-sm">AI Product Creator</h2>
+            <h2 className="font-semibold text-foreground text-sm">AI Product Sourcer</h2>
           </div>
 
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe the products you want to create... e.g. '5 luxury massage oils and candles for couples under £60' or '3 premium date night gift sets'"
+            placeholder="Describe what you want to sell... e.g. 'Premium massage oils and candles for couples under £50' or 'Luxury date night gift sets with good margins'"
             className="w-full bg-secondary/50 rounded-xl p-3 text-sm text-foreground placeholder:text-muted-foreground/60 resize-none focus:outline-none focus:ring-1 focus:ring-foreground/20"
             rows={3}
             data-testid="input-product-prompt"
           />
 
-          <div className="flex items-center gap-3 mt-3">
+          <div className="flex items-center gap-3 mt-3 flex-wrap">
             <div className="flex items-center gap-2">
               <label className="text-xs text-muted-foreground">Count:</label>
               <select
@@ -140,6 +188,20 @@ const AdminProducts = () => {
                 ))}
               </select>
             </div>
+
+            <button
+              onClick={() => setUsePersonalisation(!usePersonalisation)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                usePersonalisation
+                  ? "bg-foreground/10 text-foreground border-foreground/20"
+                  : "bg-transparent text-muted-foreground border-border/50"
+              }`}
+              data-testid="toggle-personalisation"
+            >
+              <Users className="w-3 h-3" />
+              {usePersonalisation ? "Personalised" : "Generic"}
+            </button>
+
             <button
               onClick={handleGenerate}
               disabled={generating || !prompt.trim()}
@@ -149,16 +211,22 @@ const AdminProducts = () => {
               {generating ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Creating...
+                  Sourcing...
                 </>
               ) : (
                 <>
                   <Plus className="w-3.5 h-3.5" />
-                  Create Products
+                  Source Products
                 </>
               )}
             </button>
           </div>
+
+          {usePersonalisation && (
+            <p className="text-[11px] text-muted-foreground/60 mt-2">
+              AI will use your couple's activity, moods, liked content and conversations to find products you'd both love
+            </p>
+          )}
 
           {error && (
             <div className="mt-3 flex items-center gap-2 text-sm text-red-500">
@@ -177,21 +245,54 @@ const AdminProducts = () => {
               className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-5 mb-6 border border-green-200 dark:border-green-800"
             >
               <h3 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-3">
-                Created {lastCreated.length} products
+                Sourced {lastCreated.length} products
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {lastCreated.map((p) => (
-                  <div key={p.productId} className="flex items-center justify-between bg-white/50 dark:bg-white/5 rounded-lg px-3 py-2">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">{p.brand} · {p.category} · {p.price}</p>
+                  <div key={p.productId} className="bg-white/50 dark:bg-white/5 rounded-xl p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{p.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{p.brand} · {p.category}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-semibold text-foreground">{p.retailPrice}</p>
+                        <p className="text-[11px] text-green-600 dark:text-green-400 font-medium">{p.margin} margin</p>
+                      </div>
                     </div>
+
+                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        Cost: {p.wholesalePrice}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Package className="w-3 h-3" />
+                        {p.supplier}
+                      </span>
+                    </div>
+
+                    {p.marginNotes && (
+                      <p className="text-[11px] text-muted-foreground/70 mt-1.5 italic">{p.marginNotes}</p>
+                    )}
+
+                    {p.supplierUrl && (
+                      <a
+                        href={p.supplierUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-foreground/60 hover:text-foreground mt-1.5 underline underline-offset-2"
+                        data-testid={`link-supplier-${p.productId}`}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        View on {p.supplier}
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Products will appear in the shop once Stripe syncs them (usually a few seconds).
-                You can add images via the Stripe Dashboard.
+                Products are live in your shop. Add images via the Stripe Dashboard.
               </p>
             </motion.div>
           )}
@@ -225,7 +326,7 @@ const AdminProducts = () => {
           <div className="bg-card rounded-2xl p-8 text-center">
             <Package className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">No products yet</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Use the AI creator above to add products to your shop</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Use the AI sourcer above to find and add products</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -233,6 +334,8 @@ const AdminProducts = () => {
               {products.map((product) => {
                 const meta = product.metadata || {};
                 const price = product.prices[0];
+                const wholesalePence = meta.wholesale_price ? Number(meta.wholesale_price) : null;
+                const marginPct = meta.margin_percent;
                 return (
                   <motion.div
                     key={product.id}
@@ -240,44 +343,72 @@ const AdminProducts = () => {
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="bg-card rounded-xl p-4 flex items-start gap-3"
+                    className="bg-card rounded-xl p-4"
                   >
-                    {product.images && product.images.length > 0 ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                        <Package className="w-5 h-5 text-muted-foreground/40" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate" data-testid={`text-product-${product.id}`}>
-                        {product.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {meta.brand && `${meta.brand} · `}
-                        {meta.category && `${meta.category} · `}
-                        {price ? formatPrice(price.unit_amount, price.currency) : "No price"}
-                      </p>
-                      {product.description && (
-                        <p className="text-xs text-muted-foreground/60 mt-1 line-clamp-1">{product.description}</p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleDelete(product.id)}
-                      disabled={deletingId === product.id}
-                      className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
-                      data-testid={`button-delete-${product.id}`}
-                    >
-                      {deletingId === product.id ? (
-                        <Loader2 className="w-4 h-4 text-red-500 animate-spin" />
+                    <div className="flex items-start gap-3">
+                      {product.images && product.images.length > 0 ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                        />
                       ) : (
-                        <Trash2 className="w-4 h-4 text-red-400" />
+                        <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                          <Package className="w-5 h-5 text-muted-foreground/40" />
+                        </div>
                       )}
-                    </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate" data-testid={`text-product-${product.id}`}>
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {meta.brand && `${meta.brand} · `}
+                          {meta.category && `${meta.category} · `}
+                          {price ? formatPrice(price.unit_amount, price.currency) : "No price"}
+                        </p>
+                        {(wholesalePence || marginPct) && (
+                          <div className="flex items-center gap-3 mt-1">
+                            {wholesalePence && (
+                              <span className="text-[11px] text-muted-foreground/60">
+                                Cost: £{(wholesalePence / 100).toFixed(2)}
+                              </span>
+                            )}
+                            {marginPct && (
+                              <span className="text-[11px] text-green-600 dark:text-green-400 font-medium">
+                                {marginPct}% margin
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {meta.supplier && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="text-[11px] text-muted-foreground/60">{meta.supplier}</span>
+                            {meta.supplier_url && (
+                              <a
+                                href={meta.supplier_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] text-foreground/50 hover:text-foreground"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        disabled={deletingId === product.id}
+                        className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+                        data-testid={`button-delete-${product.id}`}
+                      >
+                        {deletingId === product.id ? (
+                          <Loader2 className="w-4 h-4 text-red-500 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        )}
+                      </button>
+                    </div>
                   </motion.div>
                 );
               })}
