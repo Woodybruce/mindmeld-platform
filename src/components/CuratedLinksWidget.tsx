@@ -374,9 +374,9 @@ const CuratedLinksWidget = () => {
 
   useEffect(() => {
     const v = localStorage.getItem("foryou-cache-v");
-    if (v !== "3") {
-      ["foryou-articles", "foryou-podcasts", "foryou-videos", "foryou-quotes", "curated-articles"].forEach(k => localStorage.removeItem(k));
-      localStorage.setItem("foryou-cache-v", "3");
+    if (v !== "4") {
+      ["foryou-articles", "foryou-podcasts", "foryou-podcasts-v2", "foryou-videos", "foryou-quotes", "curated-articles"].forEach(k => localStorage.removeItem(k));
+      localStorage.setItem("foryou-cache-v", "4");
     }
     if (!loaded.articles) fetchArticles();
   }, []);

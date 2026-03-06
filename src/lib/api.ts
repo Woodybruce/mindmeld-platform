@@ -12,13 +12,14 @@ export async function apiInvoke<T = any>(
     }
 
     const method = options?.method || (options?.body ? "POST" : "GET");
-    const fetchOptions: RequestInit = {
-      method,
-      headers: { "Content-Type": "application/json" },
-    };
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (session?.access_token) {
+      headers["Authorization"] = `Bearer ${session.access_token}`;
+    }
+    const fetchOptions: RequestInit = { method, headers };
 
     if (method !== "GET") {
-      const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
       const bodyWithUser = { ...(options?.body || {}), ...(userId ? { userId } : {}) };
       fetchOptions.body = JSON.stringify(bodyWithUser);

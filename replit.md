@@ -22,7 +22,7 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - Photo sharing and interactive games (Kiss Chase, Truth or Dare, Would You Rather).
 - Family quiz and task management.
 - Mood check-ins.
-- Curated content sections (Articles, Podcasts, Videos, Quotes).
+- AI-personalised "For You" content (Articles, Podcasts, Videos, Quotes) — uses couple's context to select/generate relevant content.
 - Spotify integration for shared music experiences and in-app playback.
 
 **UI/UX Decisions:**

@@ -51,6 +51,17 @@ function buildAmazonUrl(productName?: string): string {
   return `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
 }
 
+async function extractUserId(req: Request): Promise<string | undefined> {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return undefined;
+    const token = auth.slice(7);
+    const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+    const { data: { user } } = await sb.auth.getUser(token);
+    return user?.id;
+  } catch { return undefined; }
+}
+
 async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?: string) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
@@ -953,31 +964,47 @@ Return ONLY valid JSON with these fields:
   });
 
   // 7. GET /api/suggest-articles
-  app.get("/api/suggest-articles", (_req: Request, res: Response) => {
-    try {
+  app.get("/api/suggest-articles", async (req: Request, res: Response) => {
+    const userId = await extractUserId(req);
+    const fallback = () => {
       const shuffled = shuffle(REAL_ARTICLES);
       const categories = new Set<string>();
       const selected: typeof REAL_ARTICLES = [];
-
       for (const article of shuffled) {
         if (!categories.has(article.category) && selected.length < 7) {
           selected.push(article);
           categories.add(article.category);
         }
       }
-
       for (const article of shuffled) {
         if (selected.length >= 7) break;
-        if (!selected.includes(article)) {
-          selected.push(article);
-        }
+        if (!selected.includes(article)) selected.push(article);
       }
+      return selected.slice(0, 7);
+    };
 
-      res.json({ articles: selected.slice(0, 7) });
+    if (!userId || !process.env.OPENAI_API_KEY) {
+      return res.json({ articles: fallback() });
+    }
+
+    try {
+      const catalog = REAL_ARTICLES.map((a, i) => `${i}: [${a.category}] ${a.title} — ${a.description}`).join("\n");
+      const result = await callAI([
+        { role: "system", content: `You are a relationship content curator for a couples app called "Us". Given a numbered list of articles about relationships, pick the 7 most relevant for this specific couple based on their context (conversations, moods, preferences, interests). Return ONLY a JSON array of the 7 article index numbers, most relevant first. Example: [3,7,12,0,5,18,9]` },
+        { role: "user", content: `Here are the available articles:\n${catalog}\n\nPick the 7 most relevant for this couple.` },
+      ], undefined, undefined, userId);
+
+      const content = result.choices?.[0]?.message?.content || "";
+      const match = content.match(/\[[\d,\s]+\]/);
+      if (match) {
+        const indices: number[] = JSON.parse(match[0]);
+        const selected = indices.filter(i => i >= 0 && i < REAL_ARTICLES.length).map(i => REAL_ARTICLES[i]).slice(0, 7);
+        if (selected.length >= 5) return res.json({ articles: selected });
+      }
+      res.json({ articles: fallback() });
     } catch (e) {
-      console.error("suggest-articles error:", e);
-      const fallback = shuffle(REAL_ARTICLES).slice(0, 7);
-      res.json({ articles: fallback });
+      console.error("suggest-articles AI error:", e);
+      res.json({ articles: fallback() });
     }
   });
 
@@ -1136,33 +1163,91 @@ Return ONLY valid JSON with these fields:
     }));
     return enriched;
   }
-  app.get("/api/curated-podcasts", async (_req: Request, res: Response) => {
+  app.get("/api/curated-podcasts", async (req: Request, res: Response) => {
+    const userId = await extractUserId(req);
+    const enriched = await enrichPodcastArtwork(CURATED_PODCASTS).catch(() => CURATED_PODCASTS);
+    const fallbackResult = shuffle(enriched).slice(0, 6);
+
+    if (!userId || !process.env.OPENAI_API_KEY) {
+      return res.json({ podcasts: fallbackResult });
+    }
+
     try {
-      const enriched = await enrichPodcastArtwork(CURATED_PODCASTS);
-      res.json({ podcasts: shuffle(enriched).slice(0, 6) });
+      const catalog = enriched.map((p, i) => `${i}: [${p.category}] "${p.title}" by ${p.host} — ${p.description}`).join("\n");
+      const result = await callAI([
+        { role: "system", content: `You are a relationship content curator for a couples app called "Us". Given a numbered list of relationship podcasts, pick the 6 most relevant for this specific couple based on their context. Return ONLY a JSON array of 6 index numbers, most relevant first. Example: [2,5,0,8,3,11]` },
+        { role: "user", content: `Here are the available podcasts:\n${catalog}\n\nPick the 6 most relevant for this couple.` },
+      ], undefined, undefined, userId);
+
+      const content = result.choices?.[0]?.message?.content || "";
+      const match = content.match(/\[[\d,\s]+\]/);
+      if (match) {
+        const indices: number[] = JSON.parse(match[0]);
+        const selected = indices.filter(i => i >= 0 && i < enriched.length).map(i => enriched[i]).slice(0, 6);
+        if (selected.length >= 4) return res.json({ podcasts: selected });
+      }
+      res.json({ podcasts: fallbackResult });
     } catch (e) {
-      console.error("curated-podcasts error:", e);
-      res.json({ podcasts: CURATED_PODCASTS.slice(0, 6) });
+      console.error("curated-podcasts AI error:", e);
+      res.json({ podcasts: fallbackResult });
     }
   });
 
   // 7c. GET /api/curated-videos
-  app.get("/api/curated-videos", (_req: Request, res: Response) => {
+  app.get("/api/curated-videos", async (req: Request, res: Response) => {
+    const userId = await extractUserId(req);
+    const fallbackResult = shuffle(CURATED_VIDEOS).slice(0, 6);
+
+    if (!userId || !process.env.OPENAI_API_KEY) {
+      return res.json({ videos: fallbackResult });
+    }
+
     try {
-      res.json({ videos: shuffle(CURATED_VIDEOS).slice(0, 6) });
+      const catalog = CURATED_VIDEOS.map((v, i) => `${i}: [${v.category}] "${v.title}" by ${v.creator} — ${v.description}`).join("\n");
+      const result = await callAI([
+        { role: "system", content: `You are a relationship content curator for a couples app called "Us". Given a numbered list of relationship videos, pick the 6 most relevant for this specific couple based on their context. Return ONLY a JSON array of 6 index numbers, most relevant first. Example: [1,4,0,7,2,9]` },
+        { role: "user", content: `Here are the available videos:\n${catalog}\n\nPick the 6 most relevant for this couple.` },
+      ], undefined, undefined, userId);
+
+      const content = result.choices?.[0]?.message?.content || "";
+      const match = content.match(/\[[\d,\s]+\]/);
+      if (match) {
+        const indices: number[] = JSON.parse(match[0]);
+        const selected = indices.filter(i => i >= 0 && i < CURATED_VIDEOS.length).map(i => CURATED_VIDEOS[i]).slice(0, 6);
+        if (selected.length >= 4) return res.json({ videos: selected });
+      }
+      res.json({ videos: fallbackResult });
     } catch (e) {
-      console.error("curated-videos error:", e);
-      res.json({ videos: CURATED_VIDEOS.slice(0, 6) });
+      console.error("curated-videos AI error:", e);
+      res.json({ videos: fallbackResult });
     }
   });
 
   // 7d. GET /api/curated-quotes
-  app.get("/api/curated-quotes", (_req: Request, res: Response) => {
+  app.get("/api/curated-quotes", async (req: Request, res: Response) => {
+    const userId = await extractUserId(req);
+    const fallbackResult = shuffle(CURATED_QUOTES).slice(0, 5);
+
+    if (!userId || !process.env.OPENAI_API_KEY) {
+      return res.json({ quotes: fallbackResult });
+    }
+
     try {
-      res.json({ quotes: shuffle(CURATED_QUOTES).slice(0, 5) });
+      const result = await callAI([
+        { role: "system", content: `You are a poetic, warm quote writer for a couples app called "Us". Based on this couple's context (their conversations, moods, interests), generate 5 inspiring, romantic or thoughtful quotes about love and relationships. Make them feel personal and relevant to what this couple is going through. Mix original quotes with well-known ones that fit their situation. Return a JSON array of objects with "text", "author", and "category" fields. For original quotes, use "Us" as the author.` },
+        { role: "user", content: "Generate 5 personalised relationship quotes for this couple." },
+      ], undefined, undefined, userId);
+
+      const content = result.choices?.[0]?.message?.content || "";
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const quotes = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(quotes) && quotes.length >= 3) return res.json({ quotes: quotes.slice(0, 5) });
+      }
+      res.json({ quotes: fallbackResult });
     } catch (e) {
-      console.error("curated-quotes error:", e);
-      res.json({ quotes: CURATED_QUOTES.slice(0, 5) });
+      console.error("curated-quotes AI error:", e);
+      res.json({ quotes: fallbackResult });
     }
   });
 
