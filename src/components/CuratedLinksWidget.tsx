@@ -40,8 +40,8 @@ interface Podcast {
   description: string;
   host: string;
   category: string;
-  emoji: string;
-  spotifyId: string;
+  emoji?: string;
+  spotifyId?: string;
   appleId: string;
   imageUrl: string;
   duration: string;

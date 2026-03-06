@@ -22,7 +22,7 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - Photo sharing and interactive games (Kiss Chase, Truth or Dare, Would You Rather).
 - Family quiz and task management.
 - Mood check-ins.
-- AI-personalised "For You" content (Articles, Podcasts, Videos, Quotes) — uses couple's context to select/generate relevant content.
+- AI-personalised "For You" content (Articles, Podcasts, Videos, Quotes) — uses couple's context to select/generate relevant content. Podcasts use Apple Podcasts exclusively (iTunes Search API for discovery + verification, Apple embed player, Apple Podcasts links). AI dynamically discovers new podcasts beyond the curated catalog based on couple context.
 - Spotify integration for shared music experiences and in-app playback.
 - Stripe in-app checkout for the Shop section (products managed via Stripe Dashboard, synced to PostgreSQL `stripe` schema).
 - AI Product Sourcer: Admin tool at `/admin/products` that uses couple context (preferences, moods, liked content, lists) to recommend real, sourceable products with supplier info, wholesale pricing, and margin calculations. Server-side admin auth enforced via `requireAdmin()`. Private message data excluded from AI context.

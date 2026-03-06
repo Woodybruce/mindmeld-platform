@@ -1198,6 +1198,64 @@ Return ONLY valid JSON with these fields:
 
   // 7b. GET /api/curated-podcasts
   const podcastArtworkCache = new Map<string, { url: string; ts: number }>();
+
+  function normalizeForMatch(s: string): string {
+    return s.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+  }
+
+  function titleSimilarity(a: string, b: string): number {
+    const na = normalizeForMatch(a);
+    const nb = normalizeForMatch(b);
+    if (na === nb) return 1;
+    const wordsA = na.split(" ");
+    const wordsB = new Set(nb.split(" "));
+    const matches = wordsA.filter(w => wordsB.has(w)).length;
+    return matches / Math.max(wordsA.length, wordsB.size);
+  }
+
+  async function searchApplePodcast(query: string, expectedHost?: string): Promise<{ appleId: string; title: string; host: string; imageUrl: string; feedUrl: string } | null> {
+    const cacheKey = `itunes:${query}`;
+    const cached = podcastArtworkCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < 7 * 24 * 60 * 60 * 1000) {
+      return JSON.parse(cached.url);
+    }
+    try {
+      const resp = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=podcast&entity=podcast&limit=5&country=GB`);
+      const data = await resp.json() as any;
+      const results = data.results || [];
+      if (!results.length) return null;
+
+      let best = results[0];
+      let bestScore = 0;
+      for (const r of results) {
+        const name = r.collectionName || r.trackName || "";
+        let score = titleSimilarity(query, name);
+        if (expectedHost) {
+          const hostScore = titleSimilarity(expectedHost, r.artistName || "");
+          score = score * 0.7 + hostScore * 0.3;
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          best = r;
+        }
+      }
+
+      if (bestScore < 0.2) return null;
+
+      const found = {
+        appleId: String(best.collectionId || best.trackId || ""),
+        title: best.collectionName || best.trackName || query,
+        host: best.artistName || "",
+        imageUrl: best.artworkUrl600 || best.artworkUrl100 || "",
+        feedUrl: best.feedUrl || "",
+      };
+      podcastArtworkCache.set(cacheKey, { url: JSON.stringify(found), ts: Date.now() });
+      return found;
+    } catch {
+      return null;
+    }
+  }
+
   async function enrichPodcastArtwork(podcasts: typeof CURATED_PODCASTS) {
     const enriched = await Promise.all(podcasts.map(async (p) => {
       if (p.imageUrl) return p;
@@ -1217,6 +1275,7 @@ Return ONLY valid JSON with these fields:
     }));
     return enriched;
   }
+
   app.get("/api/curated-podcasts", async (req: Request, res: Response) => {
     const userId = await extractUserId(req);
     const enriched = await enrichPodcastArtwork(CURATED_PODCASTS).catch(() => CURATED_PODCASTS);
@@ -1226,27 +1285,109 @@ Return ONLY valid JSON with these fields:
       return res.json({ podcasts: fallbackResult });
     }
 
-    const cacheKey = `podcasts:${userId}`;
+    const cacheKey = `podcasts:v3:${userId}`;
     const cached = getAICache(cacheKey);
     if (cached) return res.json({ podcasts: cached });
 
     try {
-      const catalog = enriched.map((p, i) => `${i}: [${p.category}] "${p.title}" by ${p.host} — ${p.description}`).join("\n");
-      const result = await callAI([
-        { role: "system", content: `You are a relationship content curator for a couples app called "Us". Given a numbered list of relationship podcasts, pick the 6 most relevant for this specific couple based on their context. Return ONLY a JSON array of 6 index numbers, most relevant first. Example: [2,5,0,8,3,11]` },
-        { role: "user", content: `Here are the available podcasts:\n${catalog}\n\nPick the 6 most relevant for this couple.` },
-      ], undefined, undefined, userId);
+      const knownCatalog = enriched.map((p, i) => `${i}: "${p.title}" by ${p.host} [${p.category}]`).join("\n");
 
-      const content = result.choices?.[0]?.message?.content || "";
-      const match = content.match(/\[[\d,\s]+\]/);
-      if (match) {
-        const indices: number[] = JSON.parse(match[0]);
-        const selected = indices.filter(i => i >= 0 && i < enriched.length).map(i => enriched[i]).slice(0, 6);
-        if (selected.length >= 4) {
-          setAICache(cacheKey, selected);
-          return res.json({ podcasts: selected });
-        }
+      const result = await callAI([
+        {
+          role: "system",
+          content: `You are a podcast curator for a couples/relationship app called "Us". Your job is to recommend the 8 best podcasts for this couple.
+
+STEP 1: Pick up to 4 from the known catalog below (by index number) that fit the couple's interests.
+STEP 2: Suggest up to 4 NEW podcast shows (not in the catalog) that would be perfect for this couple based on their context. These must be REAL podcasts available on Apple Podcasts. Think broadly — relationship podcasts, wellness, intimacy, communication, date ideas, parenting if relevant, personal growth, mindfulness, or any topic matching their interests.
+
+Known catalog:
+${knownCatalog}
+
+Return a JSON object with:
+- "fromCatalog": array of index numbers (up to 4)
+- "newPodcasts": array of objects with { "searchQuery": "exact podcast name to search on Apple Podcasts", "title": "display title", "host": "host name", "description": "1 sentence description", "category": "category", "duration": "typical episode length" }
+
+IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it can be found on Apple Podcasts. Only suggest podcasts you are confident actually exist.`,
+        },
+        { role: "user", content: "Recommend podcasts for this couple." },
+      ], [
+        {
+          type: "function",
+          function: {
+            name: "recommend_podcasts",
+            description: "Recommend podcasts from catalog and new discoveries",
+            parameters: {
+              type: "object",
+              properties: {
+                fromCatalog: { type: "array", items: { type: "number" } },
+                newPodcasts: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      searchQuery: { type: "string" },
+                      title: { type: "string" },
+                      host: { type: "string" },
+                      description: { type: "string" },
+                      category: { type: "string" },
+                      duration: { type: "string" },
+                    },
+                    required: ["searchQuery", "title", "host", "description", "category", "duration"],
+                  },
+                },
+              },
+              required: ["fromCatalog", "newPodcasts"],
+              additionalProperties: false,
+            },
+          },
+        },
+      ], { type: "function", function: { name: "recommend_podcasts" } }, userId);
+
+      const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall?.function?.arguments) {
+        setAICache(cacheKey, fallbackResult);
+        return res.json({ podcasts: fallbackResult });
       }
+
+      const rec = JSON.parse(toolCall.function.arguments);
+      const finalPodcasts: any[] = [];
+
+      const catalogPicks = (rec.fromCatalog || [])
+        .filter((i: number) => i >= 0 && i < enriched.length)
+        .slice(0, 4)
+        .map((i: number) => enriched[i]);
+      finalPodcasts.push(...catalogPicks);
+
+      const newPodcasts = (rec.newPodcasts || []).slice(0, 4);
+      const appleSearches = await Promise.all(
+        newPodcasts.map(async (np: any) => {
+          const found = await searchApplePodcast(np.searchQuery, np.host);
+          if (found && found.appleId) {
+            return {
+              title: found.title || np.title,
+              description: np.description,
+              host: found.host || np.host,
+              category: np.category,
+              spotifyId: "",
+              appleId: found.appleId,
+              imageUrl: found.imageUrl || "",
+              duration: np.duration,
+            };
+          }
+          return null;
+        })
+      );
+      finalPodcasts.push(...appleSearches.filter(Boolean));
+
+      const deduped = finalPodcasts.filter((p, i, arr) =>
+        arr.findIndex(x => x.appleId === p.appleId) === i
+      ).slice(0, 8);
+
+      if (deduped.length >= 3) {
+        setAICache(cacheKey, deduped);
+        return res.json({ podcasts: deduped });
+      }
+
       setAICache(cacheKey, fallbackResult);
       res.json({ podcasts: fallbackResult });
     } catch (e) {
