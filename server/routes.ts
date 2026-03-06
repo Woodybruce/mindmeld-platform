@@ -1285,57 +1285,43 @@ Return ONLY valid JSON with these fields:
       return res.json({ podcasts: fallbackResult });
     }
 
-    const cacheKey = `podcasts:v3:${userId}`;
+    const cacheKey = `podcasts:v4:${userId}`;
     const cached = getAICache(cacheKey);
     if (cached) return res.json({ podcasts: cached });
 
     try {
-      const knownCatalog = enriched.map((p, i) => `${i}: "${p.title}" by ${p.host} [${p.category}]`).join("\n");
+      const knownCatalog = enriched.map((p, i) => `${i}: "${p.title}" by ${p.host} [${p.category}] — ${p.description}`).join("\n");
 
       const result = await callAI([
         {
           role: "system",
-          content: `You are a podcast curator for a couples/relationship app called "Us". Your job is to recommend podcast CHANNELS (shows) that this couple should follow and listen to regularly — not one-off episodes, but shows worth subscribing to.
+          content: `You are a podcast curator for a couples/relationship app called "Us". Your job is to recommend the best podcasts for this couple to listen to together — shows they can play right now in the app.
 
-STEP 1: Pick up to 4 from the known catalog below (by index number) that best match the couple's interests. For each, write a short "whyFollow" sentence explaining why this couple specifically should subscribe (e.g. "Great for your date night planning" or "Matches your interest in attachment styles").
-STEP 2: Suggest up to 4 NEW podcast channels (not in the catalog) that would be perfect for this couple. These must be REAL podcast shows available on Apple Podcasts. Think broadly — relationship shows, wellness, intimacy, communication, cooking together, travel, parenting if relevant, personal growth, mindfulness, humor, or any topic matching their interests and activity.
+STEP 1: Pick up to 4 from the known catalog below (by index number) that best match the couple's interests and current mood.
+STEP 2: Suggest up to 6 NEW podcast shows (not in the catalog) that would be perfect for this couple. These must be REAL podcasts available on Apple Podcasts. Think broadly — relationship podcasts, wellness, intimacy, communication, cooking together, travel, parenting if relevant, personal growth, mindfulness, humor, true crime, music, culture, or any topic that matches their interests and activity in the app.
+
+Be creative with new suggestions. Go beyond just "relationship advice" podcasts — if they like date nights, suggest food/restaurant podcasts. If they're into wellness, suggest meditation or fitness pods. If they chat about travel, suggest travel shows. Match their actual interests.
 
 Known catalog:
 ${knownCatalog}
 
-Think about what makes a good regular listen for THIS couple based on their context. Prioritise shows that:
-- Release new episodes frequently (weekly or fortnightly)
-- Match their specific interests, moods, and conversation topics
-- Have a good back catalog to binge together
-- Cover topics they're actively engaged with in the app
-
 Return a JSON object with:
-- "fromCatalog": array of objects with { "index": catalog number, "whyFollow": "personalised reason to subscribe" }
-- "newPodcasts": array of objects with { "searchQuery": "exact podcast name to search on Apple Podcasts", "title": "display title", "host": "host name", "description": "1 sentence description", "category": "category", "duration": "typical episode length", "whyFollow": "personalised reason to subscribe", "frequency": "how often new episodes drop e.g. Weekly, Fortnightly" }
+- "fromCatalog": array of index numbers (up to 4)
+- "newPodcasts": array of objects with { "searchQuery": "exact real podcast name to search on Apple Podcasts", "title": "display title", "host": "host name", "description": "1 sentence description for the couple", "category": "category", "duration": "typical episode length" }
 
-IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it can be found on Apple Podcasts. Only suggest podcasts you are confident actually exist.`,
+IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it can be found on Apple Podcasts. Only suggest shows you are confident actually exist and are currently active.`,
         },
-        { role: "user", content: "Recommend podcast channels for this couple to follow regularly." },
+        { role: "user", content: "What podcasts should this couple listen to?" },
       ], [
         {
           type: "function",
           function: {
             name: "recommend_podcasts",
-            description: "Recommend podcast channels from catalog and new discoveries",
+            description: "Recommend podcasts from catalog and new Apple Podcasts discoveries",
             parameters: {
               type: "object",
               properties: {
-                fromCatalog: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      index: { type: "number" },
-                      whyFollow: { type: "string" },
-                    },
-                    required: ["index", "whyFollow"],
-                  },
-                },
+                fromCatalog: { type: "array", items: { type: "number" } },
                 newPodcasts: {
                   type: "array",
                   items: {
@@ -1347,10 +1333,8 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
                       description: { type: "string" },
                       category: { type: "string" },
                       duration: { type: "string" },
-                      whyFollow: { type: "string" },
-                      frequency: { type: "string" },
                     },
-                    required: ["searchQuery", "title", "host", "description", "category", "duration", "whyFollow"],
+                    required: ["searchQuery", "title", "host", "description", "category", "duration"],
                   },
                 },
               },
@@ -1371,19 +1355,12 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
       const finalPodcasts: any[] = [];
 
       const catalogPicks = (rec.fromCatalog || [])
-        .filter((item: any) => {
-          const idx = typeof item === "number" ? item : item?.index;
-          return typeof idx === "number" && idx >= 0 && idx < enriched.length;
-        })
+        .filter((i: number) => typeof i === "number" && i >= 0 && i < enriched.length)
         .slice(0, 4)
-        .map((item: any) => {
-          const idx = typeof item === "number" ? item : item.index;
-          const whyFollow = typeof item === "object" ? item.whyFollow || "" : "";
-          return { ...enriched[idx], whyFollow, frequency: "" };
-        });
+        .map((i: number) => enriched[i]);
       finalPodcasts.push(...catalogPicks);
 
-      const newPodcasts = (rec.newPodcasts || []).slice(0, 4);
+      const newPodcasts = (rec.newPodcasts || []).slice(0, 6);
       const appleSearches = await Promise.all(
         newPodcasts.map(async (np: any) => {
           const found = await searchApplePodcast(np.searchQuery, np.host);
@@ -1397,8 +1374,6 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
               appleId: found.appleId,
               imageUrl: found.imageUrl || "",
               duration: np.duration,
-              whyFollow: np.whyFollow || "",
-              frequency: np.frequency || "",
             };
           }
           return null;
@@ -1408,7 +1383,7 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
 
       const deduped = finalPodcasts.filter((p, i, arr) =>
         arr.findIndex(x => x.appleId === p.appleId) === i
-      ).slice(0, 8);
+      ).slice(0, 10);
 
       if (deduped.length >= 3) {
         setAICache(cacheKey, deduped);

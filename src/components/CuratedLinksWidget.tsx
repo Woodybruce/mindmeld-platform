@@ -45,8 +45,6 @@ interface Podcast {
   appleId: string;
   imageUrl: string;
   duration: string;
-  whyFollow?: string;
-  frequency?: string;
 }
 
 interface Video {
@@ -433,7 +431,7 @@ const CuratedLinksWidget = () => {
             <h3 className="font-display text-sm font-bold text-foreground">For You</h3>
             <p className="text-[14px] text-muted-foreground">
               {activeTab === "articles" && "Reads & saved links"}
-              {activeTab === "podcasts" && "Channels to follow together"}
+              {activeTab === "podcasts" && "Listen together in-app"}
               {activeTab === "videos" && "TED Talks & more"}
               {activeTab === "quotes" && "Words to inspire"}
             </p>
@@ -565,7 +563,7 @@ const CuratedLinksWidget = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: i * 0.05 }}
-                        className="flex-shrink-0 w-48 rounded-xl bg-secondary/50 overflow-hidden"
+                        className="flex-shrink-0 w-44 rounded-xl bg-secondary/50 overflow-hidden"
                       >
                         <button
                           onClick={() => {
@@ -578,11 +576,8 @@ const CuratedLinksWidget = () => {
                           <div className="relative w-full h-36 overflow-hidden bg-muted">
                             <PodcastImage imageUrl={pod.imageUrl} title={pod.title} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                            <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
-                              <span className="text-[11px] bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{pod.category}</span>
-                              {pod.frequency && (
-                                <span className="text-[10px] bg-[#8232D2]/70 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{pod.frequency}</span>
-                              )}
+                            <div className="absolute bottom-1.5 left-1.5">
+                              <span className="text-[13px] bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium">{pod.category}</span>
                             </div>
                             <div className="absolute top-1.5 right-1.5">
                               <PlayCircle className="w-5 h-5 drop-shadow text-white/80" />
@@ -590,10 +585,7 @@ const CuratedLinksWidget = () => {
                           </div>
                           <div className="p-2.5">
                             <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{pod.title}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">{pod.host} · {pod.duration}</p>
-                            {pod.whyFollow && (
-                              <p className="text-[10px] text-foreground/50 mt-1 leading-snug line-clamp-2 italic">{pod.whyFollow}</p>
-                            )}
+                            <p className="text-[14px] text-muted-foreground mt-0.5">{pod.host} · {pod.duration}</p>
                           </div>
                         </button>
 
@@ -604,7 +596,7 @@ const CuratedLinksWidget = () => {
                             mutual={isMutualLike(podKey)}
                             onToggle={() => toggleLike(podKey, pod.title)}
                           />
-                          <a href={`https://podcasts.apple.com/podcast/id${pod.appleId}`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-[#8232D2]" data-testid={`podcast-apple-${i}`}>Apple Podcasts</a>
+                          <a href={`https://podcasts.apple.com/podcast/id${pod.appleId}`} target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[#8232D2]" data-testid={`podcast-apple-${i}`}>Apple Podcasts</a>
                         </div>
                       </motion.div>
                     );
@@ -710,7 +702,7 @@ const CuratedLinksWidget = () => {
       <div className="px-4 pb-2.5">
         <p className="text-[13px] text-muted-foreground/50">
           {activeTab === "articles" && "Tap to read in-app · Scroll for more"}
-          {activeTab === "podcasts" && "Tap to listen · Subscribe on Apple Podcasts"}
+          {activeTab === "podcasts" && "Tap to play in-app · Scroll for more"}
           {activeTab === "videos" && "Tap to play inline · Scroll for more"}
           {activeTab === "quotes" && "Share your favourite · Scroll for more"}
         </p>
