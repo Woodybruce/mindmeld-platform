@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Music, Play, Pause, Plus, Trash2, ExternalLink, Search, X, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { useSpotifyPlayer } from "@/contexts/SpotifyPlayerContext";
@@ -48,12 +48,14 @@ export default function SpotifyWidget() {
   const [linkUrl, setLinkUrl] = useState("");
   const { playTrack, playPlaylist } = useSpotifyPlayer();
 
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     loadPlaylistId();
     fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
+    pollIntervalRef.current = setInterval(fetchNowPlaying, nowPlaying?.isPlaying ? 15000 : 60000);
+    return () => { if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); };
+  }, [user, nowPlaying?.isPlaying]);
 
   useEffect(() => {
     if (playlistId) fetchPlaylist();

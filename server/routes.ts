@@ -161,35 +161,35 @@ function injectPreferences(systemPrompt: string, context: string): string {
 }
 
 const REAL_ARTICLES = [
-  { title: "The 5 Love Languages", description: "Discover which love language speaks to you and your partner", source: "Psychology Today", category: "Connection", emoji: "\u{1F4AC}", url: "https://www.psychologytoday.com/us/basics/love", imageHint: "couple talking" },
+  { title: "The 5 Love Languages", description: "Discover which love language speaks to you and your partner", source: "Verywell Mind", category: "Connection", emoji: "\u{1F4AC}", url: "https://www.verywellmind.com/can-the-5-love-languages-help-your-relationship-4783538", imageHint: "couple talking" },
   { title: "Active Listening Skills for Couples", description: "Transform how you connect with your partner through listening", source: "Verywell Mind", category: "Communication", emoji: "\u{1F442}", url: "https://www.verywellmind.com/what-is-active-listening-3024343", imageHint: "listening couple" },
   { title: "The Four Horsemen of Relationships", description: "Four communication patterns that predict relationship breakdown", source: "Gottman Institute", category: "Communication", emoji: "\u26A0\uFE0F", url: "https://www.gottman.com/blog/the-four-horsemen-recognizing-criticism-contempt-defensiveness-and-stonewalling/", imageHint: "couple conflict" },
   { title: "Emotional Bids: How Couples Connect", description: "The small moments that build or break your relationship", source: "Gottman Institute", category: "Communication", emoji: "\u2764\uFE0F", url: "https://www.gottman.com/blog/want-to-improve-your-relationship-start-paying-more-attention-to-bids/", imageHint: "emotional needs" },
-  { title: "How Couples Communicate Better", description: "Research-backed communication skills for stronger relationships", source: "Psychology Today", category: "Communication", emoji: "\u{1F5E3}\uFE0F", url: "https://www.psychologytoday.com/us/basics/communication", imageHint: "couple conversation" },
-  { title: "Building Emotional Intimacy", description: "Simple daily habits that deepen your bond over time", source: "Verywell Mind", category: "Intimacy", emoji: "\u{1F495}", url: "https://www.verywellmind.com/how-to-improve-emotional-intimacy-in-your-relationship-5215372", imageHint: "emotional connection" },
-  { title: "The Role of Physical Affection", description: "Why non-sexual touch is vital for long-term connection", source: "Psychology Today", category: "Intimacy", emoji: "\u{1FAC2}", url: "https://www.psychologytoday.com/us/basics/affection", imageHint: "couple touching" },
+  { title: "How to Communicate Better in a Relationship", description: "Research-backed communication skills for stronger relationships", source: "Positive Psychology", category: "Communication", emoji: "\u{1F5E3}\uFE0F", url: "https://positivepsychology.com/communication-in-relationships/", imageHint: "couple conversation" },
+  { title: "Building Emotional Intimacy", description: "Simple daily habits that deepen your bond over time", source: "Verywell Mind", category: "Intimacy", emoji: "\u{1F495}", url: "https://www.verywellmind.com/what-is-intimacy-2795161", imageHint: "emotional connection" },
+  { title: "The Role of Physical Affection", description: "Why non-sexual touch is vital for long-term connection", source: "mindbodygreen", category: "Intimacy", emoji: "\u{1FAC2}", url: "https://www.mindbodygreen.com/articles/physical-touch-love-language", imageHint: "couple touching" },
   { title: "40 Questions to Build Intimacy", description: "Deepen your connection with thoughtful conversation starters", source: "Verywell Mind", category: "Intimacy", emoji: "\u{1F48B}", url: "https://www.verywellmind.com/questions-to-build-intimacy-in-relationships-1270942", imageHint: "couple intimacy" },
-  { title: "Sex & Intimacy: A Healthy Guide", description: "Open conversations and ideas for a fulfilling intimate life", source: "Psychology Today", category: "Intimacy", emoji: "\u{1F336}\uFE0F", url: "https://www.psychologytoday.com/us/basics/sex", imageHint: "intimate couple" },
+  { title: "Healthy Sex Life in Relationships", description: "Open conversations and ideas for a fulfilling intimate life", source: "Healthline", category: "Intimacy", emoji: "\u{1F336}\uFE0F", url: "https://www.healthline.com/health/healthy-relationship", imageHint: "intimate couple" },
   { title: "17 Fun Couple Activities to Enjoy Together", description: "Creative ways to enjoy each other's company at home or out", source: "Verywell Mind", category: "Date Ideas", emoji: "\u{1F56F}\uFE0F", url: "https://www.verywellmind.com/fun-things-couples-can-do-together-3129598", imageHint: "romantic date home" },
-  { title: "Why Shared Adventures Bond Couples", description: "The neuroscience behind why new experiences deepen love", source: "Greater Good Magazine", category: "Fun", emoji: "\u{1F9D7}", url: "https://greatergood.berkeley.edu/article/item/why_couples_should_seek_out_new_experiences", imageHint: "couple adventure" },
+  { title: "Why New Experiences Strengthen Relationships", description: "The neuroscience behind why shared adventures deepen love", source: "Harvard Health", category: "Fun", emoji: "\u{1F9D7}", url: "https://www.health.harvard.edu/mind-and-mood/the-health-benefits-of-strong-relationships", imageHint: "couple adventure" },
   { title: "Managing Conflict in Relationships", description: "Healthy strategies to navigate disagreements together", source: "Gottman Institute", category: "Communication", emoji: "\u{1F9E9}", url: "https://www.gottman.com/blog/managing-conflict-solvable-vs-perpetual-problems/", imageHint: "couple discussion" },
-  { title: "Relationship Trust Building", description: "How to build and rebuild trust in your relationship", source: "Psychology Today", category: "Growth", emoji: "\u{1F91D}", url: "https://www.psychologytoday.com/us/basics/trust", imageHint: "trust couple" },
+  { title: "Relationship Trust Building", description: "How to build and rebuild trust in your relationship", source: "Healthline", category: "Growth", emoji: "\u{1F91D}", url: "https://www.healthline.com/health/how-to-rebuild-trust", imageHint: "trust couple" },
   { title: "The Science of Gratitude in Love", description: "How saying 'thank you' transforms your relationship", source: "Greater Good Magazine", category: "Gratitude", emoji: "\u{1F64F}", url: "https://greatergood.berkeley.edu/topic/gratitude", imageHint: "grateful couple" },
   { title: "Attachment Styles Explained", description: "Understanding how your attachment style affects your love life", source: "Verywell Mind", category: "Growth", emoji: "\u{1F517}", url: "https://www.verywellmind.com/attachment-styles-2795344", imageHint: "attachment bond" },
-  { title: "How to Keep the Spark Alive", description: "Evidence-based ways to maintain romance in long relationships", source: "Psychology Today", category: "Intimacy", emoji: "\u2728", url: "https://www.psychologytoday.com/us/basics/relationships", imageHint: "romantic couple" },
-  { title: "The Power of Date Nights", description: "Why regular date nights are essential for lasting love", source: "Gottman Institute", category: "Date Ideas", emoji: "\u{1F319}", url: "https://www.gottman.com/blog/relationship-and-opportunity-the-importance-of-date-night/", imageHint: "date night" },
+  { title: "How to Keep the Spark Alive", description: "Evidence-based ways to maintain romance in long relationships", source: "Mark Manson", category: "Intimacy", emoji: "\u2728", url: "https://markmanson.net/healthy-relationship-habits", imageHint: "romantic couple" },
+  { title: "The Power of Date Nights", description: "Why regular date nights are essential for lasting love", source: "Mark Manson", category: "Date Ideas", emoji: "\u{1F319}", url: "https://markmanson.net/love", imageHint: "date night" },
   { title: "Self-Care for Better Relationships", description: "Taking care of yourself so you can love better", source: "Verywell Mind", category: "Wellness", emoji: "\u{1F9D8}", url: "https://www.verywellmind.com/self-care-strategies-overall-stress-reduction-3144729", imageHint: "self care" },
-  { title: "The Art of Compromise in Relationships", description: "How to find middle ground without losing yourself", source: "Psychology Today", category: "Communication", emoji: "\u{1F91D}", url: "https://www.psychologytoday.com/us/blog/in-it-together/201710/the-art-compromise", imageHint: "couple compromise" },
-  { title: "How to Set Healthy Boundaries", description: "Boundaries aren't walls — they're bridges to better connection", source: "Verywell Mind", category: "Growth", emoji: "\u{1F6A7}", url: "https://www.verywellmind.com/how-to-set-healthy-boundaries-4178874", imageHint: "healthy boundaries" },
-  { title: "Why Couples Stop Having Sex", description: "The common reasons intimacy fades and how to reignite it", source: "Psychology Today", category: "Intimacy", emoji: "\u{1F525}", url: "https://www.psychologytoday.com/us/blog/love-in-the-age-technology/201710/why-couples-stop-having-sex", imageHint: "couple intimacy" },
+  { title: "The Art of Compromise in Relationships", description: "How to find middle ground without losing yourself", source: "TIME", category: "Communication", emoji: "\u{1F91D}", url: "https://time.com/5321262/science-compromise-relationship/", imageHint: "couple compromise" },
+  { title: "How to Set Healthy Boundaries", description: "Boundaries aren't walls — they're bridges to better connection", source: "Positive Psychology", category: "Growth", emoji: "\u{1F6A7}", url: "https://positivepsychology.com/healthy-boundaries/", imageHint: "healthy boundaries" },
+  { title: "Rekindling Intimacy in Your Relationship", description: "The common reasons intimacy fades and how to reignite it", source: "Healthline", category: "Intimacy", emoji: "\u{1F525}", url: "https://www.healthline.com/health/mental-health/set-boundaries", imageHint: "couple intimacy" },
   { title: "The Magic Ratio of Relationships", description: "Gottman's 5:1 ratio — five positive interactions for every negative one", source: "Gottman Institute", category: "Communication", emoji: "\u2728", url: "https://www.gottman.com/blog/the-magic-relationship-ratio-according-science/", imageHint: "happy couple ratio" },
   { title: "How to Apologise Properly", description: "The six components of a meaningful apology that actually heals", source: "Verywell Mind", category: "Communication", emoji: "\u{1F64F}", url: "https://www.verywellmind.com/how-to-apologize-more-sincerely-3144467", imageHint: "apology couple" },
-  { title: "Mindfulness for Couples", description: "How practising presence together strengthens your bond", source: "Greater Good Magazine", category: "Wellness", emoji: "\u{1F9D8}", url: "https://greatergood.berkeley.edu/article/item/how_mindfulness_can_help_couples", imageHint: "mindful couple meditation" },
-  { title: "Financial Planning as a Couple", description: "Money conversations that bring you closer instead of driving you apart", source: "Verywell Mind", category: "Practical", emoji: "\u{1F4B0}", url: "https://www.verywellmind.com/managing-finances-as-a-couple-5095973", imageHint: "couple finances" },
-  { title: "The Importance of Play in Relationships", description: "Why laughter and silliness are serious relationship tools", source: "Psychology Today", category: "Fun", emoji: "\u{1F3AE}", url: "https://www.psychologytoday.com/us/blog/the-mindful-self-express/201602/the-importance-play-in-relationships", imageHint: "couple playing laughing" },
-  { title: "Navigating Life Transitions Together", description: "How to stay connected through big changes like moving, babies and career shifts", source: "Gottman Institute", category: "Growth", emoji: "\u{1F331}", url: "https://www.gottman.com/blog/relationship-life-transitions/", imageHint: "couple life change" },
-  { title: "How to Fight Fair", description: "Rules of engagement for productive disagreements that strengthen your bond", source: "Gottman Institute", category: "Communication", emoji: "\u{1F94A}", url: "https://www.gottman.com/blog/how-to-fight-fair/", imageHint: "couple disagreement" },
-  { title: "The Science of Oxytocin and Bonding", description: "Understanding the 'love hormone' and how it deepens attachment", source: "Greater Good Magazine", category: "Science", emoji: "\u{1F9EA}", url: "https://greatergood.berkeley.edu/article/item/the_science_of_love", imageHint: "oxytocin bonding" },
+  { title: "Mindfulness for Couples", description: "How practising presence together strengthens your bond", source: "Positive Psychology", category: "Wellness", emoji: "\u{1F9D8}", url: "https://positivepsychology.com/mindfulness-exercises-techniques-activities/", imageHint: "mindful couple meditation" },
+  { title: "Financial Planning as a Couple", description: "Money conversations that bring you closer instead of driving you apart", source: "APA", category: "Practical", emoji: "\u{1F4B0}", url: "https://www.apa.org/topics/money", imageHint: "couple finances" },
+  { title: "The Importance of Play in Relationships", description: "Why laughter and silliness are serious relationship tools", source: "HelpGuide", category: "Fun", emoji: "\u{1F3AE}", url: "https://www.helpguide.org/mental-health/wellbeing/laughter-is-the-best-medicine", imageHint: "couple playing laughing" },
+  { title: "Navigating Life Transitions Together", description: "How to stay connected through big changes like moving, babies and career shifts", source: "HelpGuide", category: "Growth", emoji: "\u{1F331}", url: "https://www.helpguide.org/mental-health/stress/stress-management", imageHint: "couple life change" },
+  { title: "How to Fight Fair", description: "Rules of engagement for productive disagreements that strengthen your bond", source: "HelpGuide", category: "Communication", emoji: "\u{1F94A}", url: "https://www.helpguide.org/relationships/communication/conflict-resolution-skills", imageHint: "couple disagreement" },
+  { title: "The Science of Love and Bonding", description: "Understanding the 'love hormone' and how it deepens attachment", source: "Harvard Health", category: "Science", emoji: "\u{1F9EA}", url: "https://www.health.harvard.edu/mind-and-mood/oxytocin-the-love-hormone", imageHint: "oxytocin bonding" },
 ];
 
 const CURATED_PODCASTS = [
@@ -963,6 +963,22 @@ Return ONLY valid JSON with these fields:
     }
   });
 
+  // AI content cache: per-user, 2 hours server-side
+  const aiContentCache = new Map<string, { data: any; ts: number }>();
+  const AI_CACHE_TTL = 2 * 60 * 60 * 1000;
+  function getAICache(key: string) {
+    const cached = aiContentCache.get(key);
+    if (cached && Date.now() - cached.ts < AI_CACHE_TTL) return cached.data;
+    return null;
+  }
+  function setAICache(key: string, data: any) {
+    aiContentCache.set(key, { data, ts: Date.now() });
+    if (aiContentCache.size > 200) {
+      const oldest = [...aiContentCache.entries()].sort((a, b) => a[1].ts - b[1].ts);
+      for (let i = 0; i < 50; i++) aiContentCache.delete(oldest[i][0]);
+    }
+  }
+
   // 7. GET /api/suggest-articles
   app.get("/api/suggest-articles", async (req: Request, res: Response) => {
     const userId = await extractUserId(req);
@@ -987,6 +1003,10 @@ Return ONLY valid JSON with these fields:
       return res.json({ articles: fallback() });
     }
 
+    const cacheKey = `articles:${userId}`;
+    const cached = getAICache(cacheKey);
+    if (cached) return res.json({ articles: cached });
+
     try {
       const catalog = REAL_ARTICLES.map((a, i) => `${i}: [${a.category}] ${a.title} — ${a.description}`).join("\n");
       const result = await callAI([
@@ -999,9 +1019,14 @@ Return ONLY valid JSON with these fields:
       if (match) {
         const indices: number[] = JSON.parse(match[0]);
         const selected = indices.filter(i => i >= 0 && i < REAL_ARTICLES.length).map(i => REAL_ARTICLES[i]).slice(0, 7);
-        if (selected.length >= 5) return res.json({ articles: selected });
+        if (selected.length >= 5) {
+          setAICache(cacheKey, selected);
+          return res.json({ articles: selected });
+        }
       }
-      res.json({ articles: fallback() });
+      const fb = fallback();
+      setAICache(cacheKey, fb);
+      res.json({ articles: fb });
     } catch (e) {
       console.error("suggest-articles AI error:", e);
       res.json({ articles: fallback() });
@@ -1023,9 +1048,13 @@ Return ONLY valid JSON with these fields:
     try {
       const resp = await fetch(url, {
         headers: { "User-Agent": "Mozilla/5.0 (compatible; UsApp/1.0)" },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(4000),
       });
-      if (!resp.ok) return res.json({ ogImage: "", ogTitle: "", ogDescription: "", siteName: "" });
+      if (!resp.ok) {
+        const empty = { ogImage: "", ogTitle: "", ogDescription: "", siteName: "", ts: Date.now() };
+        ogCache.set(url, empty);
+        return res.json(empty);
+      }
 
       const html = await resp.text();
 
@@ -1055,7 +1084,9 @@ Return ONLY valid JSON with these fields:
       res.json(result);
     } catch (e) {
       console.error("article-metadata error:", e);
-      res.json({ ogImage: "", ogTitle: "", ogDescription: "", siteName: "" });
+      const empty = { ogImage: "", ogTitle: "", ogDescription: "", siteName: "", ts: Date.now() };
+      ogCache.set(url, empty);
+      res.json(empty);
     }
   });
 
@@ -1172,6 +1203,10 @@ Return ONLY valid JSON with these fields:
       return res.json({ podcasts: fallbackResult });
     }
 
+    const cacheKey = `podcasts:${userId}`;
+    const cached = getAICache(cacheKey);
+    if (cached) return res.json({ podcasts: cached });
+
     try {
       const catalog = enriched.map((p, i) => `${i}: [${p.category}] "${p.title}" by ${p.host} — ${p.description}`).join("\n");
       const result = await callAI([
@@ -1184,8 +1219,12 @@ Return ONLY valid JSON with these fields:
       if (match) {
         const indices: number[] = JSON.parse(match[0]);
         const selected = indices.filter(i => i >= 0 && i < enriched.length).map(i => enriched[i]).slice(0, 6);
-        if (selected.length >= 4) return res.json({ podcasts: selected });
+        if (selected.length >= 4) {
+          setAICache(cacheKey, selected);
+          return res.json({ podcasts: selected });
+        }
       }
+      setAICache(cacheKey, fallbackResult);
       res.json({ podcasts: fallbackResult });
     } catch (e) {
       console.error("curated-podcasts AI error:", e);
@@ -1202,6 +1241,10 @@ Return ONLY valid JSON with these fields:
       return res.json({ videos: fallbackResult });
     }
 
+    const cacheKey = `videos:${userId}`;
+    const cached = getAICache(cacheKey);
+    if (cached) return res.json({ videos: cached });
+
     try {
       const catalog = CURATED_VIDEOS.map((v, i) => `${i}: [${v.category}] "${v.title}" by ${v.creator} — ${v.description}`).join("\n");
       const result = await callAI([
@@ -1214,8 +1257,12 @@ Return ONLY valid JSON with these fields:
       if (match) {
         const indices: number[] = JSON.parse(match[0]);
         const selected = indices.filter(i => i >= 0 && i < CURATED_VIDEOS.length).map(i => CURATED_VIDEOS[i]).slice(0, 6);
-        if (selected.length >= 4) return res.json({ videos: selected });
+        if (selected.length >= 4) {
+          setAICache(cacheKey, selected);
+          return res.json({ videos: selected });
+        }
       }
+      setAICache(cacheKey, fallbackResult);
       res.json({ videos: fallbackResult });
     } catch (e) {
       console.error("curated-videos AI error:", e);
@@ -1232,6 +1279,10 @@ Return ONLY valid JSON with these fields:
       return res.json({ quotes: fallbackResult });
     }
 
+    const cacheKey = `quotes:${userId}`;
+    const cached = getAICache(cacheKey);
+    if (cached) return res.json({ quotes: cached });
+
     try {
       const result = await callAI([
         { role: "system", content: `You are a poetic, warm quote writer for a couples app called "Us". Based on this couple's context (their conversations, moods, interests), generate 5 inspiring, romantic or thoughtful quotes about love and relationships. Make them feel personal and relevant to what this couple is going through. Mix original quotes with well-known ones that fit their situation. Return a JSON array of objects with "text", "author", and "category" fields. For original quotes, use "Us" as the author.` },
@@ -1242,8 +1293,12 @@ Return ONLY valid JSON with these fields:
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const quotes = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(quotes) && quotes.length >= 3) return res.json({ quotes: quotes.slice(0, 5) });
+        if (Array.isArray(quotes) && quotes.length >= 3) {
+          setAICache(cacheKey, quotes.slice(0, 5));
+          return res.json({ quotes: quotes.slice(0, 5) });
+        }
       }
+      setAICache(cacheKey, fallbackResult);
       res.json({ quotes: fallbackResult });
     } catch (e) {
       console.error("curated-quotes AI error:", e);

@@ -1,10 +1,10 @@
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
-import fs from "fs";
-import path from "path";
+import { db } from "./db";
+import { appSettings } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || "";
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || "";
-const TOKEN_FILE = path.join("/tmp", "spotify_tokens.json");
 const SCOPES = [
   "playlist-read-private",
   "playlist-read-collaborative",
@@ -28,86 +28,48 @@ let storedRefreshToken: string | null = null;
 let tokenExpiresAt: number = 0;
 let tokensLoaded = false;
 
-function loadTokensFromFile() {
+async function loadTokensFromDB() {
   if (tokensLoaded) return;
   try {
-    if (fs.existsSync(TOKEN_FILE)) {
-      const data = JSON.parse(fs.readFileSync(TOKEN_FILE, "utf-8"));
+    const row = await db.select().from(appSettings).where(eq(appSettings.key, "spotify_tokens")).limit(1);
+    if (row.length > 0) {
+      const data = JSON.parse(row[0].value);
       storedAccessToken = data.access_token || null;
       storedRefreshToken = data.refresh_token || null;
       tokenExpiresAt = data.expires_at || 0;
-      console.log("Spotify tokens loaded from file");
+      console.log("Spotify tokens loaded from database");
     }
   } catch (e) {
-    console.log("No Spotify tokens file found — user must authorize");
+    console.log("Could not load Spotify tokens from database");
   }
   tokensLoaded = true;
 }
 
-function saveTokensToFile() {
+async function saveTokensToDB() {
   try {
-    fs.writeFileSync(TOKEN_FILE, JSON.stringify({
+    const value = JSON.stringify({
       access_token: storedAccessToken,
       refresh_token: storedRefreshToken,
       expires_at: tokenExpiresAt,
-    }));
-  } catch (e: any) {
-    console.error("Failed to save Spotify tokens:", e.message);
-  }
-}
-
-async function loadTokensFromKV() {
-  if (tokensLoaded) return;
-  const dbUrl = process.env.REPLIT_DB_URL;
-  if (!dbUrl) { tokensLoaded = true; return; }
-  try {
-    const resp = await fetch(`${dbUrl}/spotify_tokens`);
-    if (resp.ok) {
-      const val = await resp.text();
-      if (val) {
-        const data = JSON.parse(val);
-        storedAccessToken = data.access_token || null;
-        storedRefreshToken = data.refresh_token || null;
-        tokenExpiresAt = data.expires_at || 0;
-        console.log("Spotify tokens loaded from KV store");
-      }
-    }
-  } catch (e) {
-    console.log("Could not load Spotify tokens from KV store");
-  }
-  tokensLoaded = true;
-}
-
-async function saveTokensToKV() {
-  const dbUrl = process.env.REPLIT_DB_URL;
-  if (!dbUrl) return;
-  try {
-    await fetch(dbUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `spotify_tokens=${encodeURIComponent(JSON.stringify({
-        access_token: storedAccessToken,
-        refresh_token: storedRefreshToken,
-        expires_at: tokenExpiresAt,
-      }))}`,
     });
+    await db.insert(appSettings)
+      .values({ key: "spotify_tokens", value, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: appSettings.key,
+        set: { value, updatedAt: new Date() },
+      });
   } catch (e: any) {
-    console.error("Failed to save Spotify tokens to KV:", e.message);
+    console.error("Failed to save Spotify tokens to DB:", e.message);
   }
 }
 
 async function loadTokens() {
   if (tokensLoaded) return;
-  loadTokensFromFile();
-  if (!storedRefreshToken) {
-    tokensLoaded = false;
-    await loadTokensFromKV();
-  }
+  await loadTokensFromDB();
 }
 
 async function saveTokens() {
-  saveTokensToFile();
-  await saveTokensToKV();
+  await saveTokensToDB();
 }
 
 export async function initSpotifyTokens() {

@@ -220,5 +220,11 @@ export type FeedContent = typeof feedContent.$inferSelect;
 export type InsertFeedContent = typeof feedContent.$inferInsert;
 export type WeeklyTask = typeof weeklyTasks.$inferSelect;
 export type InsertWeeklyTask = typeof weeklyTasks.$inferInsert;
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type SharedList = typeof sharedLists.$inferSelect;
 export type InsertSharedList = typeof sharedLists.$inferInsert;

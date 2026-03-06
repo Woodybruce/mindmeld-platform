@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, Music, ChevronDown, ChevronUp } from "lucide-react";
 import { apiInvoke } from "@/lib/api";
@@ -45,13 +45,15 @@ const SpotifyBoard = () => {
   const [playlistName, setPlaylistName] = useState("");
   const [playlistExpanded, setPlaylistExpanded] = useState(false);
 
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     checkConnection();
     fetchData();
     loadPlaylistId();
-    const interval = setInterval(fetchNowPlaying, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
+    pollIntervalRef.current = setInterval(fetchNowPlaying, nowPlaying?.isPlaying ? 15000 : 60000);
+    return () => { if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); };
+  }, [user, nowPlaying?.isPlaying]);
 
   async function loadPlaylistId() {
     try {
