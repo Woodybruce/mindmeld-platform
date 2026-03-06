@@ -1295,31 +1295,47 @@ Return ONLY valid JSON with these fields:
       const result = await callAI([
         {
           role: "system",
-          content: `You are a podcast curator for a couples/relationship app called "Us". Your job is to recommend the 8 best podcasts for this couple.
+          content: `You are a podcast curator for a couples/relationship app called "Us". Your job is to recommend podcast CHANNELS (shows) that this couple should follow and listen to regularly — not one-off episodes, but shows worth subscribing to.
 
-STEP 1: Pick up to 4 from the known catalog below (by index number) that fit the couple's interests.
-STEP 2: Suggest up to 4 NEW podcast shows (not in the catalog) that would be perfect for this couple based on their context. These must be REAL podcasts available on Apple Podcasts. Think broadly — relationship podcasts, wellness, intimacy, communication, date ideas, parenting if relevant, personal growth, mindfulness, or any topic matching their interests.
+STEP 1: Pick up to 4 from the known catalog below (by index number) that best match the couple's interests. For each, write a short "whyFollow" sentence explaining why this couple specifically should subscribe (e.g. "Great for your date night planning" or "Matches your interest in attachment styles").
+STEP 2: Suggest up to 4 NEW podcast channels (not in the catalog) that would be perfect for this couple. These must be REAL podcast shows available on Apple Podcasts. Think broadly — relationship shows, wellness, intimacy, communication, cooking together, travel, parenting if relevant, personal growth, mindfulness, humor, or any topic matching their interests and activity.
 
 Known catalog:
 ${knownCatalog}
 
+Think about what makes a good regular listen for THIS couple based on their context. Prioritise shows that:
+- Release new episodes frequently (weekly or fortnightly)
+- Match their specific interests, moods, and conversation topics
+- Have a good back catalog to binge together
+- Cover topics they're actively engaged with in the app
+
 Return a JSON object with:
-- "fromCatalog": array of index numbers (up to 4)
-- "newPodcasts": array of objects with { "searchQuery": "exact podcast name to search on Apple Podcasts", "title": "display title", "host": "host name", "description": "1 sentence description", "category": "category", "duration": "typical episode length" }
+- "fromCatalog": array of objects with { "index": catalog number, "whyFollow": "personalised reason to subscribe" }
+- "newPodcasts": array of objects with { "searchQuery": "exact podcast name to search on Apple Podcasts", "title": "display title", "host": "host name", "description": "1 sentence description", "category": "category", "duration": "typical episode length", "whyFollow": "personalised reason to subscribe", "frequency": "how often new episodes drop e.g. Weekly, Fortnightly" }
 
 IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it can be found on Apple Podcasts. Only suggest podcasts you are confident actually exist.`,
         },
-        { role: "user", content: "Recommend podcasts for this couple." },
+        { role: "user", content: "Recommend podcast channels for this couple to follow regularly." },
       ], [
         {
           type: "function",
           function: {
             name: "recommend_podcasts",
-            description: "Recommend podcasts from catalog and new discoveries",
+            description: "Recommend podcast channels from catalog and new discoveries",
             parameters: {
               type: "object",
               properties: {
-                fromCatalog: { type: "array", items: { type: "number" } },
+                fromCatalog: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      index: { type: "number" },
+                      whyFollow: { type: "string" },
+                    },
+                    required: ["index", "whyFollow"],
+                  },
+                },
                 newPodcasts: {
                   type: "array",
                   items: {
@@ -1331,8 +1347,10 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
                       description: { type: "string" },
                       category: { type: "string" },
                       duration: { type: "string" },
+                      whyFollow: { type: "string" },
+                      frequency: { type: "string" },
                     },
-                    required: ["searchQuery", "title", "host", "description", "category", "duration"],
+                    required: ["searchQuery", "title", "host", "description", "category", "duration", "whyFollow"],
                   },
                 },
               },
@@ -1353,9 +1371,16 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
       const finalPodcasts: any[] = [];
 
       const catalogPicks = (rec.fromCatalog || [])
-        .filter((i: number) => i >= 0 && i < enriched.length)
+        .filter((item: any) => {
+          const idx = typeof item === "number" ? item : item?.index;
+          return typeof idx === "number" && idx >= 0 && idx < enriched.length;
+        })
         .slice(0, 4)
-        .map((i: number) => enriched[i]);
+        .map((item: any) => {
+          const idx = typeof item === "number" ? item : item.index;
+          const whyFollow = typeof item === "object" ? item.whyFollow || "" : "";
+          return { ...enriched[idx], whyFollow, frequency: "" };
+        });
       finalPodcasts.push(...catalogPicks);
 
       const newPodcasts = (rec.newPodcasts || []).slice(0, 4);
@@ -1372,6 +1397,8 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
               appleId: found.appleId,
               imageUrl: found.imageUrl || "",
               duration: np.duration,
+              whyFollow: np.whyFollow || "",
+              frequency: np.frequency || "",
             };
           }
           return null;
