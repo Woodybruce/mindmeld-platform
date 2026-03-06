@@ -2760,4 +2760,138 @@ Focus on real, existing content about relationships, dating, couples, love, and 
       res.status(500).json({ error: "Failed to retrieve session" });
     }
   });
+
+  app.post("/api/stripe/ai-create-products", async (req: Request, res: Response) => {
+    try {
+      const { prompt, count = 3 } = req.body;
+      if (!prompt || typeof prompt !== "string") {
+        return res.status(400).json({ error: "A prompt describing your products is required" });
+      }
+      const safeCount = Math.max(1, Math.min(10, Number(count) || 3));
+
+      const aiResult = await callAI(
+        [
+          {
+            role: "system",
+            content: `You are a product catalog assistant for a couples/relationship app. Based on the user's description, generate ${safeCount} real, specific products to sell in the shop. Each product needs:
+- name: Full product name
+- brand: Brand name
+- description: 1-2 sentence product description
+- priceInPence: Price in GBP pence (e.g. 5400 for £54.00). Use realistic prices.
+- category: One of: Massage, Candles, Wellness, Lingerie, Accessories, Nightwear, Fragrance, Beauty, Skincare, Bath, Date Night, Gifts, Games, Home, Intimacy
+- imageUrl: Leave as empty string — the user will add images later via Stripe Dashboard
+- features: Array of 3-4 short feature bullet points
+
+Make products feel premium, real, and gift-worthy. Use real brand names where possible.`,
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        [
+          {
+            type: "function",
+            function: {
+              name: "create_products",
+              description: `Generate ${safeCount} products for the shop`,
+              parameters: {
+                type: "object",
+                properties: {
+                  products: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string" },
+                        brand: { type: "string" },
+                        description: { type: "string" },
+                        priceInPence: { type: "number" },
+                        category: { type: "string" },
+                        imageUrl: { type: "string" },
+                        features: { type: "array", items: { type: "string" } },
+                      },
+                      required: ["name", "brand", "description", "priceInPence", "category", "features"],
+                    },
+                  },
+                },
+                required: ["products"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        { type: "function", function: { name: "create_products" } }
+      );
+
+      const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall?.function?.arguments) {
+        return res.status(500).json({ error: "AI failed to generate products" });
+      }
+
+      const generated = JSON.parse(toolCall.function.arguments).products || [];
+      if (generated.length === 0) {
+        return res.status(500).json({ error: "AI returned no products" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      const created: any[] = [];
+
+      for (const p of generated) {
+        const priceInPence = Math.max(100, Math.round(Number(p.priceInPence) || 1000));
+
+        const product = await stripe.products.create({
+          name: `${p.name} — ${p.brand}`,
+          description: p.description,
+          images: p.imageUrl ? [p.imageUrl] : [],
+          metadata: {
+            brand: p.brand,
+            category: p.category,
+            shop_product_name: p.name,
+            features: JSON.stringify(p.features || []),
+          },
+        });
+
+        const price = await stripe.prices.create({
+          product: product.id,
+          unit_amount: priceInPence,
+          currency: "gbp",
+        });
+
+        created.push({
+          productId: product.id,
+          priceId: price.id,
+          name: p.name,
+          brand: p.brand,
+          price: `£${(priceInPence / 100).toFixed(2)}`,
+          description: p.description,
+          category: p.category,
+          features: p.features,
+        });
+      }
+
+      res.json({
+        message: `Created ${created.length} products in Stripe`,
+        products: created,
+      });
+    } catch (e: any) {
+      console.error("AI create products error:", e.message);
+      res.status(500).json({ error: e.message || "Failed to create products" });
+    }
+  });
+
+  app.delete("/api/stripe/products/:productId", async (req: Request, res: Response) => {
+    try {
+      const { productId } = req.params;
+      if (!productId || !productId.startsWith("prod_")) {
+        return res.status(400).json({ error: "Valid product ID required" });
+      }
+      const stripe = await getUncachableStripeClient();
+      await stripe.products.update(productId, { active: false });
+      res.json({ success: true, message: "Product deactivated" });
+    } catch (e: any) {
+      console.error("Delete product error:", e.message);
+      res.status(500).json({ error: "Failed to deactivate product" });
+    }
+  });
 }
