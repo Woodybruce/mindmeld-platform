@@ -29,6 +29,8 @@ import AdminFeedContent from "./pages/AdminFeedContent";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import OutlookCallback from "./pages/OutlookCallback";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutCancel from "./pages/CheckoutCancel";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 import VibeOverlay from "./components/VibeOverlay";
@@ -71,6 +73,8 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/outlook-callback" element={<OutlookCallback />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

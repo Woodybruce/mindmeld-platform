@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ShoppingBag, Star, X, ChevronRight, Sparkles, Wine, Gift, Flower2, Flame, Gamepad2, Home, Heart as HeartIcon } from "lucide-react";
+import { RefreshCw, ShoppingBag, Star, X, ChevronRight, Sparkles, Wine, Gift, Flower2, Flame, Gamepad2, Home, Heart as HeartIcon, CreditCard, Loader2 } from "lucide-react";
 
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
@@ -21,6 +21,17 @@ interface ShopProduct {
   imageUrl?: string | null;
   buyUrl: string;
   source: string;
+  stripePriceId?: string;
+  stripeProductId?: string;
+}
+
+interface StripeProduct {
+  id: string;
+  name: string;
+  description: string;
+  metadata: Record<string, string> | null;
+  images: string[] | null;
+  prices: { id: string; unit_amount: number; currency: string }[];
 }
 
 type ShopCategory = "our-picks" | "all" | "date-night" | "gifts" | "wellness" | "intimacy" | "games" | "home";
@@ -133,6 +144,8 @@ const ProductDetailModal = ({
   partnerLiked,
   mutual,
   onToggleLike,
+  onCheckout,
+  checkoutLoading,
 }: {
   product: ShopProduct;
   onClose: () => void;
@@ -140,8 +153,10 @@ const ProductDetailModal = ({
   partnerLiked: boolean;
   mutual: boolean;
   onToggleLike: () => void;
+  onCheckout?: () => void;
+  checkoutLoading?: boolean;
 }) => {
-  const luxury = isLuxuryBrand(product.source);
+  const hasStripeCheckout = !!product.stripePriceId;
 
   return (
     <motion.div
@@ -213,18 +228,39 @@ const ProductDetailModal = ({
           )}
 
           <div className="mt-6 space-y-2.5 pb-4">
-            <button
-              onClick={() => openBuyLink(product.buyUrl)}
-              className={`w-full py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
-                luxury ? "bg-foreground text-background" : "bg-foreground text-background"
-              }`}
-              data-testid="buy-now-button"
-            >
-              {getBuyLabel(product)}
-            </button>
-            <p className="text-[11px] text-center text-muted-foreground/50 uppercase tracking-wider">
-              Opens in your browser
-            </p>
+            {hasStripeCheckout ? (
+              <>
+                <button
+                  onClick={onCheckout}
+                  disabled={checkoutLoading}
+                  className="w-full py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all bg-foreground text-background disabled:opacity-60"
+                  data-testid="button-stripe-checkout"
+                >
+                  {checkoutLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-4 h-4" />
+                  )}
+                  {checkoutLoading ? "Processing..." : `Buy Now — ${product.price}`}
+                </button>
+                <p className="text-[11px] text-center text-muted-foreground/50 uppercase tracking-wider">
+                  Secure checkout via Stripe
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => openBuyLink(product.buyUrl)}
+                  className="w-full py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all bg-foreground text-background"
+                  data-testid="buy-now-button"
+                >
+                  {getBuyLabel(product)}
+                </button>
+                <p className="text-[11px] text-center text-muted-foreground/50 uppercase tracking-wider">
+                  Opens in your browser
+                </p>
+              </>
+            )}
           </div>
         </div>
       </motion.div>
@@ -238,8 +274,68 @@ const DiscoverTogether = () => {
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(null);
   const [loadedCategories, setLoadedCategories] = useState<Set<string>>(new Set());
+  const [stripeProducts, setStripeProducts] = useState<StripeProduct[]>([]);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const stripeLoaded = useRef(false);
 
   const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("shop");
+
+  useEffect(() => {
+    if (stripeLoaded.current) return;
+    stripeLoaded.current = true;
+    fetch("/api/stripe/products")
+      .then(res => res.ok ? res.json() : { products: [] })
+      .then(data => setStripeProducts(data.products || []))
+      .catch(() => {});
+  }, []);
+
+  const matchStripeProduct = useCallback((shopProduct: ShopProduct): ShopProduct => {
+    if (stripeProducts.length === 0) return shopProduct;
+    const shopNameLower = shopProduct.name.toLowerCase().trim();
+    let match = stripeProducts.find(sp => {
+      const meta = sp.metadata || {};
+      return meta.shop_product_name && meta.shop_product_name.toLowerCase().trim() === shopNameLower;
+    });
+    if (!match) {
+      match = stripeProducts.find(sp => sp.name.toLowerCase().trim() === shopNameLower);
+    }
+    if (match && match.prices.length > 0) {
+      const gbpPrice = match.prices.find(p => p.currency === "gbp") || match.prices[0];
+      return {
+        ...shopProduct,
+        stripePriceId: gbpPrice.id,
+        stripeProductId: match.id,
+        price: new Intl.NumberFormat("en-GB", { style: "currency", currency: gbpPrice.currency.toUpperCase() }).format(gbpPrice.unit_amount / 100),
+      };
+    }
+    return shopProduct;
+  }, [stripeProducts]);
+
+  const handleStripeCheckout = useCallback(async (product: ShopProduct) => {
+    if (!product.stripePriceId) return;
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId: product.stripePriceId, productName: `${product.brand} — ${product.name}` }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Checkout failed");
+      }
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      alert(err.message || "Something went wrong. Please try again.");
+      setCheckoutLoading(false);
+    }
+  }, []);
 
   const getCached = useCallback((cat: string) => {
     try {
@@ -437,16 +533,21 @@ const DiscoverTogether = () => {
       </div>
 
       <AnimatePresence>
-        {selectedProduct && (
-          <ProductDetailModal
-            product={selectedProduct}
-            onClose={() => setSelectedProduct(null)}
-            liked={isLikedByMe(selectedProduct.id)}
-            partnerLiked={isLikedByPartner(selectedProduct.id)}
-            mutual={isMutualLike(selectedProduct.id)}
-            onToggleLike={() => toggleLike(selectedProduct.id, selectedProduct.name)}
-          />
-        )}
+        {selectedProduct && (() => {
+          const enriched = matchStripeProduct(selectedProduct);
+          return (
+            <ProductDetailModal
+              product={enriched}
+              onClose={() => setSelectedProduct(null)}
+              liked={isLikedByMe(selectedProduct.id)}
+              partnerLiked={isLikedByPartner(selectedProduct.id)}
+              mutual={isMutualLike(selectedProduct.id)}
+              onToggleLike={() => toggleLike(selectedProduct.id, selectedProduct.name)}
+              onCheckout={() => handleStripeCheckout(enriched)}
+              checkoutLoading={checkoutLoading}
+            />
+          );
+        })()}
       </AnimatePresence>
     </motion.div>
   );

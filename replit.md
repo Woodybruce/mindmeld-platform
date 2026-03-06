@@ -24,6 +24,7 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - Mood check-ins.
 - AI-personalised "For You" content (Articles, Podcasts, Videos, Quotes) — uses couple's context to select/generate relevant content.
 - Spotify integration for shared music experiences and in-app playback.
+- Stripe in-app checkout for the Shop section (products managed via Stripe Dashboard, synced to PostgreSQL `stripe` schema).
 
 **UI/UX Decisions:**
 - The application utilizes TailwindCSS and shadcn/ui components for a consistent and modern aesthetic.
@@ -43,3 +44,4 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - **Firebase Cloud Messaging (FCM):** For native push notifications (requires `FCM_SERVICE_ACCOUNT`).
 - **Web Push API:** For browser-based push notifications (requires `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`).
 - **Pexels API:** For resolving product images in the "Shop" section (requires `PEXELS_API_KEY`).
+- **Stripe:** In-app checkout for the Shop. Uses Replit Stripe connector (OAuth-based). Products/prices managed in Stripe Dashboard, synced to PostgreSQL `stripe` schema via `stripe-replit-sync`. Key files: `server/stripeClient.ts`, `server/webhookHandlers.ts`, `server/seed-stripe-products.ts`. Webhook route registered BEFORE `express.json()` in `server/index.ts`.
