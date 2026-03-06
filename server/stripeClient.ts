@@ -33,8 +33,26 @@ async function getCredentials() {
   const data = await response.json();
   connectionSettings = data.items?.[0];
 
-  if (!connectionSettings || (!connectionSettings.settings.publishable || !connectionSettings.settings.secret)) {
-    throw new Error(`Stripe ${targetEnvironment} connection not found`);
+  if (!connectionSettings || (!connectionSettings.settings?.publishable || !connectionSettings.settings?.secret)) {
+    if (isProduction) {
+      const devUrl = new URL(`https://${hostname}/api/v2/connection`);
+      devUrl.searchParams.set('include_secrets', 'true');
+      devUrl.searchParams.set('connector_names', connectorName);
+      devUrl.searchParams.set('environment', 'development');
+      const devResp = await fetch(devUrl.toString(), {
+        headers: { 'Accept': 'application/json', 'X-Replit-Token': xReplitToken }
+      });
+      const devData = await devResp.json();
+      const devConn = devData.items?.[0];
+      if (devConn?.settings?.publishable && devConn?.settings?.secret) {
+        console.warn('Stripe: No production connection found, falling back to development connection');
+        connectionSettings = devConn;
+      } else {
+        throw new Error(`Stripe ${targetEnvironment} connection not found`);
+      }
+    } else {
+      throw new Error(`Stripe ${targetEnvironment} connection not found`);
+    }
   }
 
   return {

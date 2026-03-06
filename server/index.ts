@@ -6,6 +6,14 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 
+process.on('uncaughtException', (err) => {
+  if (err.message?.includes('terminating connection due to administrator command')) {
+    console.warn('Database connection terminated (expected during deployment restarts)');
+    return;
+  }
+  console.error('Uncaught exception:', err);
+});
+
 if (process.env.SUPABASE_URL) {
   process.env.VITE_SUPABASE_URL = process.env.SUPABASE_URL;
 }
