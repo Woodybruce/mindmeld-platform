@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ShoppingBag, Star, X, Sparkles, Wine, Gift, Flower2, Flame, Home, Heart as HeartIcon, CreditCard, Loader2, ChevronLeft, ChevronRight, Ruler, Package, Shirt, Info } from "lucide-react";
+import { RefreshCw, ShoppingBag, Star, X, Sparkles, Wine, Gift, Flower2, Flame, Home, Heart as HeartIcon, CreditCard, Loader2, ChevronLeft, ChevronRight, Ruler, Package, Shirt, Info, TrendingUp } from "lucide-react";
 
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
@@ -41,7 +41,7 @@ type ShopCategory = "all" | "date-night" | "gifts" | "wellness" | "intimacy" | "
 interface CategoryDef { key: ShopCategory; label: string; icon: typeof Sparkles; }
 
 const CATEGORIES: CategoryDef[] = [
-  { key: "all", label: "All", icon: HeartIcon },
+  { key: "all", label: "Bestsellers", icon: TrendingUp },
   { key: "intimacy", label: "Intimacy", icon: Flame },
   { key: "wellness", label: "Wellness", icon: Flower2 },
   { key: "gifts", label: "Gifts", icon: Gift },
@@ -475,7 +475,19 @@ const DiscoverTogether = () => {
   };
 
   const filteredProducts = category === "all"
-    ? products
+    ? (() => {
+        const cats = ["intimacy", "wellness", "gifts", "date-night", "home"] as ShopCategory[];
+        const picks: typeof products = [];
+        const perCat = Math.max(2, Math.ceil(12 / cats.length));
+        for (const c of cats) {
+          const catProducts = products.filter(p => mapCategory(p.category) === c);
+          picks.push(...catProducts.slice(0, perCat));
+        }
+        const uncategorised = products.filter(p => !picks.some(pk => pk.id === p.id));
+        const remaining = 12 - picks.length;
+        if (remaining > 0) picks.push(...uncategorised.slice(0, remaining));
+        return picks.slice(0, 12);
+      })()
     : products.filter(p => mapCategory(p.category) === category);
 
   const handleRefresh = () => {
