@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Check, Plus, CalendarDays, ChevronDown, Clock, MapPin, ListChecks, ChevronRight, ChevronLeft } from "lucide-react";
+import { Check, Plus, CalendarDays, Clock, MapPin, ListChecks, ChevronRight, ChevronLeft } from "lucide-react";
 import { haptics } from "@/lib/haptics";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useWeeklyTasks } from "@/hooks/useWeeklyTasks";
 import { useCalendarEvents, CalendarEvent } from "@/hooks/useCalendarEvents";
@@ -59,7 +59,6 @@ const TodayCard = () => {
   const { lists, loading: listsLoading } = useSharedLists();
 
   const [activeSection, setActiveSection] = useState<Section>("tasks");
-  const [taskExpanded, setTaskExpanded] = useState(false);
   const [calViewMode, setCalViewMode] = useState<CalendarViewMode>("day");
   const [viewDate, setViewDate] = useState(new Date());
 
@@ -77,12 +76,6 @@ const TodayCard = () => {
   const taskCount = allTodayTasks.length;
   const eventCount = todayEvents.length;
   const listCount = lists.length;
-
-  const previewTasks = todayTasks.slice(0, 2);
-  const remainingTasks = todayTasks.slice(2);
-  const previewEvents = taskExpanded ? todayEvents : todayEvents.slice(0, 2);
-  const hasMore = remainingTasks.length > 0 || (!taskExpanded && todayEvents.length > 2);
-  const moreCount = remainingTasks.length + (taskExpanded ? 0 : Math.max(0, todayEvents.length - 2));
 
   const today = new Date();
   const year = viewDate.getFullYear();
@@ -208,94 +201,55 @@ const TodayCard = () => {
             </button>
           ) : (
             <>
-              {(taskExpanded ? todayEvents : todayEvents.slice(0, 2)).length > 0 && (
-                <div className="px-4 pt-3 pb-1 space-y-1">
-                  {(taskExpanded ? todayEvents : todayEvents.slice(0, 2)).map((event) => (
-                    <div key={event.id} className="flex items-start gap-3 py-1.5" data-testid={`event-today-${event.id}`}>
-                      <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center bg-primary/15 mt-0.5">
-                        <Clock className="w-3 h-3 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground truncate">{event.subject}</p>
-                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                          <span>{formatEventTime(event)}</span>
-                          {event.location && (
-                            <span className="flex items-center gap-0.5 truncate">
-                              <MapPin className="w-2.5 h-2.5" />
-                              {event.location}
-                            </span>
-                          )}
+              <div className="max-h-[280px] overflow-y-auto scrollbar-hide">
+                {todayEvents.length > 0 && (
+                  <div className="px-4 pt-3 pb-1 space-y-1">
+                    {todayEvents.map((event) => (
+                      <div key={event.id} className="flex items-start gap-3 py-1.5" data-testid={`event-today-${event.id}`}>
+                        <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center bg-primary/15 mt-0.5">
+                          <Clock className="w-3 h-3 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground truncate">{event.subject}</p>
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                            <span>{formatEventTime(event)}</span>
+                            {event.location && (
+                              <span className="flex items-center gap-0.5 truncate">
+                                <MapPin className="w-2.5 h-2.5" />
+                                {event.location}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {previewTasks.length > 0 && (
-                <div className="px-4 pb-1 space-y-1">
-                  {previewTasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-3 py-2" data-testid={`task-today-${task.id}`}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
-                        className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
-                          task.done ? "bg-primary text-primary-foreground" : "border-2 border-border"
-                        }`}
-                        data-testid={`button-toggle-task-${task.id}`}
-                      >
-                        {task.done && <Check className="w-3 h-3" />}
-                      </button>
-                      <span className={`flex-1 text-sm ${task.done ? "text-muted-foreground" : "text-foreground"}`}>
-                        {task.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <AnimatePresence>
-                {taskExpanded && remainingTasks.length > 0 && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-4 space-y-1">
-                      {remainingTasks.map((task) => (
-                        <div key={task.id} className="flex items-center gap-3 py-2">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
-                            className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
-                              task.done ? "bg-primary text-primary-foreground" : "border-2 border-border"
-                            }`}
-                          >
-                            {task.done && <Check className="w-3 h-3" />}
-                          </button>
-                          <span className={`flex-1 text-sm ${task.done ? "text-muted-foreground" : "text-foreground"}`}>
-                            {task.text}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
+                    ))}
+                  </div>
                 )}
-              </AnimatePresence>
 
-              {hasMore && (
-                <button
-                  onClick={() => setTaskExpanded(!taskExpanded)}
-                  className="w-full flex items-center justify-center gap-1 py-2 text-xs text-primary font-medium hover:bg-secondary/50 transition-colors"
-                  data-testid="button-expand-tasks"
-                >
-                  {taskExpanded ? "Show less" : `+${moreCount} more`}
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${taskExpanded ? "rotate-180" : ""}`} />
-                </button>
-              )}
+                {todayTasks.length > 0 && (
+                  <div className="px-4 pb-1 space-y-1">
+                    {todayTasks.map((task) => (
+                      <div key={task.id} className="flex items-center gap-3 py-2" data-testid={`task-today-${task.id}`}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
+                          className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
+                            task.done ? "bg-primary text-primary-foreground" : "border-2 border-border"
+                          }`}
+                          data-testid={`button-toggle-task-${task.id}`}
+                        >
+                          {task.done && <Check className="w-3 h-3" />}
+                        </button>
+                        <span className={`flex-1 text-sm ${task.done ? "text-muted-foreground" : "text-foreground"}`}>
+                          {task.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {totalCount > 0 && (
-                <div className="px-4 pb-4">
+                <div className="px-4 pb-4 pt-2">
                   <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
