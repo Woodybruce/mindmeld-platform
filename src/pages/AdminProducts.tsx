@@ -96,6 +96,27 @@ const AdminProducts = () => {
     setGenerating(false);
   };
 
+  const [clearingAll, setClearingAll] = useState(false);
+
+  const handleClearAll = async () => {
+    if (!confirm("This will remove ALL products from the shop. Are you sure?")) return;
+    setClearingAll(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+      const res = await fetch("/api/stripe/products/all", {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setProducts([]);
+        try { localStorage.removeItem("discover_catalog_v5"); } catch {}
+      }
+    } catch {}
+    setClearingAll(false);
+  };
+
   const handleDelete = async (productId: string) => {
     setDeletingId(productId);
     try {
@@ -346,14 +367,27 @@ const AdminProducts = () => {
             <Package className="w-4 h-4" />
             Your Products ({products.length})
           </h2>
-          <button
-            onClick={fetchProducts}
-            disabled={loading}
-            className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
-            data-testid="button-refresh-products"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            {products.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                disabled={clearingAll}
+                className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-1"
+                data-testid="button-clear-all-products"
+              >
+                {clearingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                Clear All
+              </button>
+            )}
+            <button
+              onClick={fetchProducts}
+              disabled={loading}
+              className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+              data-testid="button-refresh-products"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
 
         {loading ? (

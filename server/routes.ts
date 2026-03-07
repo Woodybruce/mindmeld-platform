@@ -2913,6 +2913,7 @@ For each product you MUST provide detailed, accurate:
 - category: From the list above
 - supplier: Specific real supplier name
 - supplierUrl: Real URL where the product can be sourced
+- imageUrl: Direct URL to the actual product image on the brand's website or a major retailer (must be a real, currently accessible .jpg/.png/.webp image URL — NOT a page URL). Use the brand's CDN or a retailer like Amazon, John Lewis, Space NK, Lookfantastic etc.
 - features: Array of 4-5 specific feature bullet points (include sizes, materials, key ingredients)
 - marginNotes: Detailed sourcing strategy with actual estimated margins
 - sizing: Object with type (one of: "volume", "weight", "dimensions", "clothing", "shade", "one-size"), options array (specific sizes/volumes), and optional guide string
@@ -2947,6 +2948,7 @@ For each product you MUST provide detailed, accurate:
                         category: { type: "string", description: "Product category" },
                         supplier: { type: "string", description: "Real wholesale supplier name" },
                         supplierUrl: { type: "string", description: "URL to source the product" },
+                        imageUrl: { type: "string", description: "Direct URL to the real product image (.jpg/.png/.webp)" },
                         features: { type: "array", items: { type: "string" }, description: "4-5 feature bullets" },
                         marginNotes: { type: "string", description: "Sourcing strategy and margin info" },
                         sizing: {
@@ -2961,7 +2963,7 @@ For each product you MUST provide detailed, accurate:
                         materials: { type: "string", description: "Full ingredients/materials list" },
                         whatsIncluded: { type: "array", items: { type: "string" }, description: "Package contents" },
                       },
-                      required: ["name", "brand", "description", "longDescription", "priceInPence", "wholesalePriceEstimate", "category", "supplier", "supplierUrl", "features", "marginNotes", "sizing", "materials", "whatsIncluded"],
+                      required: ["name", "brand", "description", "longDescription", "priceInPence", "wholesalePriceEstimate", "category", "supplier", "supplierUrl", "imageUrl", "features", "marginNotes", "sizing", "materials", "whatsIncluded"],
                     },
                   },
                 },
@@ -2997,10 +2999,12 @@ For each product you MUST provide detailed, accurate:
         }
         const marginPercent = Math.round(((retailPence - wholesalePence) / retailPence) * 100);
 
+        const productImages = p.imageUrl ? [p.imageUrl] : [];
+
         const product = await stripe.products.create({
           name: `${p.name} — ${p.brand}`,
           description: p.description,
-          images: [],
+          images: productImages,
           metadata: {
             brand: p.brand,
             category: p.category,
@@ -3055,6 +3059,31 @@ For each product you MUST provide detailed, accurate:
     } catch (e: any) {
       console.error("AI create products error:", e.message);
       res.status(500).json({ error: e.message || "Failed to create products" });
+    }
+  });
+
+  app.delete("/api/stripe/products/all", async (req: Request, res: Response) => {
+    try {
+      const adminUserId = await requireAdmin(req, res);
+      if (!adminUserId) return;
+
+      const stripe = await getUncachableStripeClient();
+      const allProducts = await stripe.products.list({ active: true, limit: 100 });
+      let deactivated = 0;
+      for (const sp of allProducts.data) {
+        try {
+          await stripe.products.update(sp.id, { active: false });
+          deactivated++;
+        } catch (e: any) {
+          console.error(`Failed to deactivate ${sp.id}:`, e.message);
+        }
+      }
+      shopProductsCache = null;
+      shopCacheTime = 0;
+      res.json({ success: true, message: `Deactivated ${deactivated} products` });
+    } catch (e: any) {
+      console.error("Clear all products error:", e.message);
+      res.status(500).json({ error: "Failed to clear products" });
     }
   });
 
