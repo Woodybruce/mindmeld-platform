@@ -3,8 +3,7 @@ import AppHeader from "@/components/AppHeader";
 import StoriesBar from "@/components/StoriesBar";
 import BottomNav from "@/components/BottomNav";
 import FeedCard from "@/components/FeedCard";
-import DailyListsWidget from "@/components/DailyListsWidget";
-import CalendarWidget from "@/components/CalendarWidget";
+import TodayCard from "@/components/TodayCard";
 import SetupPrompts from "@/components/SetupPrompts";
 import Onboarding from "@/components/Onboarding";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,8 +12,6 @@ import type { FeedItem } from "@/components/FeedCard";
 import GamesCarousel from "@/components/GamesCarousel";
 
 import { useFeedContent } from "@/hooks/useFeedContent";
-import { ListsSummaryWidget } from "@/components/ListsSummaryWidget";
-
 import DailyPromptCard from "@/components/DailyPromptCard";
 import SpotifyBoard from "@/components/SpotifyBoard";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
@@ -82,20 +79,14 @@ const Index = () => {
         <PartnerInviteCard />
 
 
-        {/* Today's tasks — inline at top */}
-        <DailyListsWidget />
+        {/* Today — unified dashboard card */}
+        <TodayCard />
 
         {/* Daily prompt */}
         <DailyPromptCard />
 
         {/* Spotify */}
         <SpotifyBoard />
-
-        {/* Calendar */}
-        <CalendarWidget />
-
-        {/* Lists summary — below calendar */}
-        <ListsSummaryWidget />
 
         {/* Games carousel */}
         <GamesCarousel />
