@@ -32,7 +32,8 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - The "Shop" section (Discover Together) features a luxury editorial aesthetic with a premium layout, hero product cards, and category pills.
 - Product detail modals are designed as bottom-sheet style with spring animations.
 - The "For You" section is expanded with dedicated tabs for Articles, Podcasts, Videos, and Quotes.
-- Performance optimizations include caching authentication sessions and profile data, lazy-loading heavy widgets, optimizing Outlook sync, server-side AI content caching (2hr TTL), and smart Spotify polling (15s when playing, 60s idle).
+- Performance optimizations include caching authentication sessions and profile data, lazy-loading heavy widgets, optimizing Outlook sync, server-side AI content caching (2hr TTL), smart Spotify polling (15s when playing, 60s idle), and comprehensive localStorage caching (user-scoped) for calendar events, weekly tasks, shared lists, Spotify tracks, and article OG metadata — enabling instant-load on return visits with background refresh.
+- QueryClient defaults: `staleTime=5min`, `gcTime=30min`, `refetchOnWindowFocus=false` to reduce unnecessary refetches.
 - Spotify tokens stored in PostgreSQL `app_settings` table for deployment persistence.
 
 ## External Dependencies

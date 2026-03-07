@@ -14,23 +14,39 @@ export interface CalendarEvent {
   created_at: string;
 }
 
+const getCalCache = (userId: string): CalendarEvent[] | null => {
+  try {
+    const raw = localStorage.getItem(`us-calendar-${userId}`);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > 1000 * 60 * 30) return null;
+    return data;
+  } catch { return null; }
+};
+const setCalCache = (userId: string, data: CalendarEvent[]) => {
+  try { localStorage.setItem(`us-calendar-${userId}`, JSON.stringify({ data, ts: Date.now() })); } catch {}
+};
+
 export function useCalendarEvents() {
   const { user } = useAuth();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = user ? getCalCache(user.id) : null;
+  const [events, setEvents] = useState<CalendarEvent[]>(cached || []);
+  const [loading, setLoading] = useState(!cached);
   const [forwardToken, setForwardToken] = useState<string | null>(null);
 
-  // Fetch events
   const fetchEvents = useCallback(async () => {
     if (!user) { setLoading(false); return; }
-    setLoading(true);
+    if (!events.length) setLoading(true);
     const { data, error } = await supabase
       .from("calendar_events")
       .select("*")
       .eq("user_id", user.id)
       .order("start_time", { ascending: true });
 
-    if (!error && data) setEvents(data as CalendarEvent[]);
+    if (!error && data) {
+      setEvents(data as CalendarEvent[]);
+      if (user) setCalCache(user.id, data as CalendarEvent[]);
+    }
     setLoading(false);
   }, [user]);
 

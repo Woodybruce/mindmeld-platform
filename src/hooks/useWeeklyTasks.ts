@@ -23,16 +23,31 @@ export interface WeeklyTask {
   attachments: TaskAttachment[];
 }
 
+const getTasksCache = (userId: string): WeeklyTask[] | null => {
+  try {
+    const raw = localStorage.getItem(`us-tasks-${userId}`);
+    if (!raw) return null;
+    const { data, ts, dateStr } = JSON.parse(raw);
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (dateStr !== todayStr || Date.now() - ts > 1000 * 60 * 15) return null;
+    return data;
+  } catch { return null; }
+};
+const setTasksCache = (userId: string, tasks: WeeklyTask[]) => {
+  const todayStr = new Date().toISOString().split("T")[0];
+  try { localStorage.setItem(`us-tasks-${userId}`, JSON.stringify({ data: tasks, ts: Date.now(), dateStr: todayStr })); } catch {}
+};
+
 export function useWeeklyTasks() {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<WeeklyTask[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = user ? getTasksCache(user.id) : null;
+  const [tasks, setTasks] = useState<WeeklyTask[]>(cached || []);
+  const [loading, setLoading] = useState(!cached);
 
   const fetchTasks = useCallback(async () => {
     if (!user) { setLoading(false); return; }
-    setLoading(true);
+    if (!tasks.length) setLoading(true);
 
-    // Fetch today + 6 days ahead
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const endDate = new Date(now);
@@ -49,7 +64,11 @@ export function useWeeklyTasks() {
       .order("scheduled_date", { ascending: true })
       .order("sort_order", { ascending: true });
 
-    if (!error && data) setTasks(data.map((d: any) => ({ ...d, attachments: Array.isArray(d.attachments) ? d.attachments : [] })) as WeeklyTask[]);
+    if (!error && data) {
+      const mapped = data.map((d: any) => ({ ...d, attachments: Array.isArray(d.attachments) ? d.attachments : [] })) as WeeklyTask[];
+      setTasks(mapped);
+      if (user) setTasksCache(user.id, mapped);
+    }
     setLoading(false);
   }, [user]);
 
@@ -85,6 +104,10 @@ export function useWeeklyTasks() {
     await fetchTasks();
   }, [user, tasks, fetchTasks]);
 
+  const syncCache = useCallback((updated: WeeklyTask[]) => {
+    if (user) setTasksCache(user.id, updated);
+  }, [user]);
+
   const toggleTask = useCallback(async (id: string) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -93,23 +116,39 @@ export function useWeeklyTasks() {
       done: nowDone,
       completed_at: nowDone ? new Date().toISOString() : null,
     } as any).eq("id", id);
-    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, done: nowDone, completed_at: nowDone ? new Date().toISOString() : null } : t));
-  }, [tasks]);
+    setTasks((prev) => {
+      const updated = prev.map((t) => t.id === id ? { ...t, done: nowDone, completed_at: nowDone ? new Date().toISOString() : null } : t);
+      syncCache(updated);
+      return updated;
+    });
+  }, [tasks, syncCache]);
 
   const deleteTask = useCallback(async (id: string) => {
     await supabase.from("weekly_tasks").delete().eq("id", id);
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+    setTasks((prev) => {
+      const updated = prev.filter((t) => t.id !== id);
+      syncCache(updated);
+      return updated;
+    });
+  }, [syncCache]);
 
   const updateTaskText = useCallback(async (id: string, text: string) => {
     await supabase.from("weekly_tasks").update({ text } as any).eq("id", id);
-    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, text } : t));
-  }, []);
+    setTasks((prev) => {
+      const updated = prev.map((t) => t.id === id ? { ...t, text } : t);
+      syncCache(updated);
+      return updated;
+    });
+  }, [syncCache]);
 
   const updateTaskAttachments = useCallback(async (id: string, attachments: TaskAttachment[]) => {
     await supabase.from("weekly_tasks").update({ attachments: JSON.parse(JSON.stringify(attachments)) } as any).eq("id", id);
-    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, attachments } : t));
-  }, []);
+    setTasks((prev) => {
+      const updated = prev.map((t) => t.id === id ? { ...t, attachments } : t);
+      syncCache(updated);
+      return updated;
+    });
+  }, [syncCache]);
   const getTasksForDate = useCallback((dateStr: string) => {
     return tasks.filter((t) => t.scheduled_date === dateStr);
   }, [tasks]);

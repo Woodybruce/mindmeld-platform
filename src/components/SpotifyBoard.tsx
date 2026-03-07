@@ -33,12 +33,26 @@ const SpotifyIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const getSpotifyCache = (userId: string) => {
+  try {
+    const raw = localStorage.getItem(`us-spotify-${userId}`);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > 1000 * 60 * 30) return null;
+    return data;
+  } catch { return null; }
+};
+const setSpotifyCacheFn = (userId: string, recent: RecentTrack[]) => {
+  try { localStorage.setItem(`us-spotify-${userId}`, JSON.stringify({ data: recent, ts: Date.now() })); } catch {}
+};
+
 const SpotifyBoard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const cached = user ? getSpotifyCache(user.id) : null;
   const [nowPlaying, setNowPlaying] = useState<NowPlayingData | null>(null);
-  const [recentTracks, setRecentTracks] = useState<RecentTrack[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [recentTracks, setRecentTracks] = useState<RecentTrack[]>(cached || []);
+  const [loading, setLoading] = useState(!cached);
   const [connected, setConnected] = useState(true);
   const { playTrack, playPlaylist } = useSpotifyPlayer();
   const [playlistId, setPlaylistId] = useState<string | null>(null);
@@ -46,14 +60,21 @@ const SpotifyBoard = () => {
   const [playlistExpanded, setPlaylistExpanded] = useState(false);
 
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastInitUser = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!user?.id || lastInitUser.current === user.id) return;
+    lastInitUser.current = user.id;
     checkConnection();
     fetchData();
     loadPlaylistId();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     pollIntervalRef.current = setInterval(fetchNowPlaying, nowPlaying?.isPlaying ? 15000 : 60000);
     return () => { if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); };
-  }, [user, nowPlaying?.isPlaying]);
+  }, [nowPlaying?.isPlaying]);
 
   async function loadPlaylistId() {
     try {
@@ -112,9 +133,11 @@ const SpotifyBoard = () => {
     try {
       const { data } = await apiInvoke("spotify/recently-played", { method: "GET" });
       const resp = data as any;
-      setRecentTracks((resp?.tracks || []).slice(0, 3));
+      const tracks = (resp?.tracks || []).slice(0, 3);
+      setRecentTracks(tracks);
+      if (user?.id) setSpotifyCacheFn(user.id, tracks);
     } catch {
-      setRecentTracks([]);
+      if (!recentTracks.length) setRecentTracks([]);
     }
   }
 

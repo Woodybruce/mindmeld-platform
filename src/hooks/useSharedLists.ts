@@ -33,14 +33,28 @@ function buildScoreDataPayload(list: UserList): any {
   return Object.keys(base).length > 0 ? base : null;
 }
 
+const getListsCache = (userId: string): UserList[] | null => {
+  try {
+    const raw = localStorage.getItem(`us-lists-${userId}`);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > 1000 * 60 * 15) return null;
+    return data;
+  } catch { return null; }
+};
+const setListsCache = (userId: string, lists: UserList[]) => {
+  try { localStorage.setItem(`us-lists-${userId}`, JSON.stringify({ data: lists, ts: Date.now() })); } catch {}
+};
+
 export function useSharedLists() {
   const { user, profile } = useAuth();
-  const [lists, setLists] = useState<UserList[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = user ? getListsCache(user.id) : null;
+  const [lists, setLists] = useState<UserList[]>(cached || []);
+  const [loading, setLoading] = useState(!cached);
 
   const fetchLists = useCallback(async () => {
     if (!user) { setLoading(false); return; }
-    setLoading(true);
+    if (!lists.length) setLoading(true);
 
     const { data, error } = await supabase
       .from("shared_lists")
@@ -53,6 +67,7 @@ export function useSharedLists() {
         .filter((row: any) => !INTERNAL_PREFIXES.some(p => row.name?.startsWith(p)))
         .map(dbRowToList);
       setLists(result);
+      if (user) setListsCache(user.id, result);
     }
     setLoading(false);
   }, [user]);

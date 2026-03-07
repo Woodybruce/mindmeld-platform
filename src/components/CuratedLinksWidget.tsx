@@ -308,18 +308,35 @@ const CuratedLinksWidget = () => {
 
   useEffect(() => {
     if (!articles.length) return;
+    const cachedMeta: Record<string, OgMeta> = {};
+    try {
+      const raw = localStorage.getItem("foryou-og-meta");
+      if (raw) Object.assign(cachedMeta, JSON.parse(raw));
+    } catch {}
+    const newMeta: Record<string, OgMeta> = {};
     articles.forEach(a => {
       if (fetchedOgUrls.current.has(a.url)) return;
       fetchedOgUrls.current.add(a.url);
+      if (cachedMeta[a.url]?.ogImage) {
+        newMeta[a.url] = cachedMeta[a.url];
+        return;
+      }
       fetch(`/api/article-metadata?url=${encodeURIComponent(a.url)}`)
         .then(r => r.json())
         .then((meta: OgMeta) => {
           if (meta.ogImage) {
-            setOgMetaMap(prev => ({ ...prev, [a.url]: meta }));
+            setOgMetaMap(prev => {
+              const updated = { ...prev, [a.url]: meta };
+              try { localStorage.setItem("foryou-og-meta", JSON.stringify(updated)); } catch {}
+              return updated;
+            });
           }
         })
         .catch(() => {});
     });
+    if (Object.keys(newMeta).length) {
+      setOgMetaMap(prev => ({ ...newMeta, ...prev }));
+    }
   }, [articles]);
 
   const openArticleReader = useCallback(async (article: Article) => {
