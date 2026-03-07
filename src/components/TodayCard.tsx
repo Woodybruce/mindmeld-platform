@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Plus, CalendarDays, Clock, MapPin, ListChecks, ChevronRight, ChevronLeft } from "lucide-react";
+import { Check, Plus, CalendarDays, Clock, MapPin, ListChecks, ChevronRight, ChevronLeft, ChevronDown } from "lucide-react";
 import { haptics } from "@/lib/haptics";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -56,11 +56,26 @@ const TodayCard = () => {
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, toggleTask, getTodayTasks } = useWeeklyTasks();
   const { events, loading: eventsLoading, getEventsForMonth, getUpcomingEvents } = useCalendarEvents();
-  const { lists, loading: listsLoading } = useSharedLists();
+  const { lists, loading: listsLoading, updateList } = useSharedLists();
 
   const [activeSection, setActiveSection] = useState<Section>("tasks");
   const [calViewMode, setCalViewMode] = useState<CalendarViewMode>("day");
   const [viewDate, setViewDate] = useState(new Date());
+  const [expandedListId, setExpandedListId] = useState<string | null>(null);
+
+  const toggleListExpand = (id: string) => {
+    setExpandedListId((prev) => (prev === id ? null : id));
+  };
+
+  const toggleListItem = (listId: string, itemId: string) => {
+    const list = lists.find((l) => l.id === listId);
+    if (!list) return;
+    const updatedItems = list.items.map((i: any) =>
+      i.id === itemId ? { ...i, done: !i.done } : i
+    );
+    updateList(listId, { items: updatedItems });
+    haptics.light();
+  };
 
   const allTodayTasks = getTodayTasks();
   const todayTasks = allTodayTasks.filter((t) => !t.done);
@@ -477,34 +492,99 @@ const TodayCard = () => {
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </button>
 
-              <div className="px-4 pb-4 space-y-2 max-h-[220px] overflow-y-auto scrollbar-hide">
-                {summaries.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => navigate(`/us?tab=lists&listId=${s.id}`)}
-                    className="w-full flex items-center gap-3 bg-secondary/60 rounded-xl px-3 py-2.5 text-left hover:bg-secondary transition-colors"
-                    data-testid={`button-list-${s.id}`}
-                  >
-                    <span className="text-base">{s.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate">{s.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {s.doneCount}/{s.totalCount} completed
-                      </p>
-                    </div>
-                    {s.totalCount > 0 && (
-                      <div className="w-7 h-7 rounded-full border-2 border-border flex items-center justify-center">
-                        {s.doneCount === s.totalCount ? (
-                          <Check className="w-3.5 h-3.5 text-primary" />
-                        ) : (
-                          <span className="text-[10px] font-bold text-muted-foreground">
-                            {Math.round((s.doneCount / s.totalCount) * 100)}%
-                          </span>
+              <div className="px-4 pb-4 space-y-2 max-h-[320px] overflow-y-auto scrollbar-hide">
+                {summaries.map((s) => {
+                  const isExpanded = expandedListId === s.id;
+                  const fullList = activeLists.find((l) => l.id === s.id);
+                  const listItems = fullList?.items.filter((i: any) => !i.isHeading) || [];
+
+                  return (
+                    <div key={s.id} className="rounded-xl bg-secondary/60 overflow-hidden">
+                      <button
+                        onClick={() => toggleListExpand(s.id)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-secondary transition-colors"
+                        data-testid={`button-list-${s.id}`}
+                      >
+                        <span className="text-base">{s.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-foreground truncate">{s.name}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {s.doneCount}/{s.totalCount} completed
+                          </p>
+                        </div>
+                        {s.totalCount > 0 && (
+                          <div className="w-7 h-7 rounded-full border-2 border-border flex items-center justify-center">
+                            {s.doneCount === s.totalCount ? (
+                              <Check className="w-3.5 h-3.5 text-primary" />
+                            ) : (
+                              <span className="text-[10px] font-bold text-muted-foreground">
+                                {Math.round((s.doneCount / s.totalCount) * 100)}%
+                              </span>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    )}
-                  </button>
-                ))}
+                        <motion.div
+                          animate={{ rotate: isExpanded ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        </motion.div>
+                      </button>
+
+                      <motion.div
+                        initial={false}
+                        animate={{ height: isExpanded ? "auto" : 0, opacity: isExpanded ? 1 : 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-3 pb-3 space-y-1 border-t border-border/30 pt-2">
+                          {listItems.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-2">No items yet</p>
+                          ) : (
+                            <div className="max-h-[200px] overflow-y-auto scrollbar-hide space-y-1">
+                              {listItems.map((item: any, idx: number) => (
+                                <button
+                                  key={item.id}
+                                  onClick={() => toggleListItem(s.id, item.id)}
+                                  className="w-full flex items-center gap-2.5 py-1.5 px-1 text-left rounded-lg hover:bg-background/50 transition-colors"
+                                  data-testid={`button-list-item-${item.id}`}
+                                >
+                                  <div
+                                    className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
+                                      item.done
+                                        ? "bg-primary text-primary-foreground"
+                                        : "border-2 border-border"
+                                    }`}
+                                  >
+                                    {item.done ? (
+                                      <Check className="w-3 h-3" />
+                                    ) : (
+                                      <span className="text-[9px] font-medium text-muted-foreground">{idx + 1}</span>
+                                    )}
+                                  </div>
+                                  <span
+                                    className={`text-xs flex-1 ${
+                                      item.done ? "line-through text-muted-foreground" : "text-foreground"
+                                    }`}
+                                  >
+                                    {item.text}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => navigate(`/us?tab=lists&listId=${s.id}`)}
+                            className="w-full text-center text-[11px] text-primary font-medium pt-1.5 hover:underline"
+                            data-testid={`button-open-list-${s.id}`}
+                          >
+                            Open full list →
+                          </button>
+                        </div>
+                      </motion.div>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
