@@ -549,6 +549,18 @@ export async function registerRoutes(app: Express): Promise<void> {
   await initSpotifyTokens();
   ensureStorageBuckets();
 
+  app.get("/api/is-admin", async (req: Request, res: Response) => {
+    const userId = await extractUserId(req);
+    if (!userId) return res.json({ admin: false });
+    try {
+      const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+      const { data } = await sb.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+      res.json({ admin: !!data });
+    } catch {
+      res.json({ admin: false });
+    }
+  });
+
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok" });
   });

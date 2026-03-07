@@ -9,18 +9,14 @@ export const useIsAdmin = () => {
     queryKey: ["is-admin", user?.id],
     queryFn: async () => {
       if (!user) return false;
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (error) {
-        console.error("Admin check error:", error);
-        return false;
-      }
-      return !!data;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return false;
+      const res = await fetch("/api/is-admin", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) return false;
+      const json = await res.json();
+      return json.admin === true;
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 10,
