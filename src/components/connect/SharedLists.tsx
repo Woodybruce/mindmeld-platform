@@ -995,180 +995,6 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
 
       {!showTemplates && <SexBucketList lists={lists} onUpdate={onUpdate} pendingOnly />}
 
-      {!showTemplates && (() => {
-        const pendingLists = lists.filter(l => l.status === "pending_partner");
-        if (pendingLists.length === 0) return null;
-        return (
-          <div className="space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waiting for partner</p>
-            {pendingLists.map((list) => {
-              const isFromMe = list.createdBy === user?.id;
-              const isReviewing = reviewingListId === list.id;
-
-              if (isReviewing) {
-                return (
-                  <motion.div
-                    key={list.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="rounded-xl border-2 border-primary/40 bg-card overflow-hidden"
-                  >
-                    <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{list.icon}</span>
-                        <p className="text-sm font-bold text-foreground">{list.name}</p>
-                      </div>
-                      <button onClick={() => { setReviewingListId(null); setReviewItems([]); }} className="text-xs text-muted-foreground hover:text-foreground">
-                        ← Back
-                      </button>
-                    </div>
-                    <p className="px-4 pt-2 text-xs text-muted-foreground">Your partner's items are shown below. Add yours, then confirm to make the list live.</p>
-                    <div className="px-4 py-3 space-y-1 max-h-80 overflow-y-auto">
-                      {reviewItems.map((item, idx) => {
-                        const isLastBeforeNext = !item.isHeading && (idx === reviewItems.length - 1 || reviewItems[idx + 1]?.isHeading);
-                        const isEmptySection = item.isHeading && (idx === reviewItems.length - 1 || reviewItems[idx + 1]?.isHeading);
-                        const showAdd = isLastBeforeNext || isEmptySection;
-                        return (
-                          <div key={item.id}>
-                            <div className="flex items-center gap-2.5 py-1">
-                              {item.isHeading ? (
-                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">
-                                  {item.text}
-                                  {item.sectionType === "observation" && <span className="ml-1.5 text-[14px] font-normal normal-case text-muted-foreground">💭</span>}
-                                </span>
-                              ) : (
-                                <div className="flex items-center gap-2.5 flex-1">
-                                  <button
-                                    onClick={() => setReviewItems(prev => prev.map(i => i.id === item.id ? { ...i, done: !i.done } : i))}
-                                    className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${
-                                      item.done ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30 hover:border-primary/50"
-                                    }`}
-                                  >
-                                    {item.done && <Check className="w-3.5 h-3.5" />}
-                                  </button>
-                                  <span className={`text-sm ${item.done ? "text-foreground" : "text-muted-foreground"}`}>{item.text}</span>
-                                </div>
-                              )}
-                              <button onClick={() => setReviewItems(prev => prev.filter(i => i.id !== item.id))} className="p-1 rounded-md hover:bg-destructive/10">
-                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                              </button>
-                            </div>
-                            {showAdd && (
-                              <div className="py-1">
-                                {reviewAddingAfter === idx ? (
-                                  <div className="flex gap-1.5">
-                                    <input
-                                      autoFocus
-                                      value={reviewNewItem}
-                                      onChange={(e) => setReviewNewItem(e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter" && reviewNewItem.trim()) {
-                                          const ni = { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false };
-                                          setReviewItems(prev => { const c = [...prev]; c.splice(idx + 1, 0, ni); return c; });
-                                          setReviewNewItem("");
-                                          setReviewAddingAfter(null);
-                                        }
-                                        if (e.key === "Escape") { setReviewAddingAfter(null); setReviewNewItem(""); }
-                                      }}
-                                      placeholder="Add your item…"
-                                      className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                                    />
-                                    <button
-                                      onClick={() => {
-                                        if (!reviewNewItem.trim()) return;
-                                        const ni = { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false };
-                                        setReviewItems(prev => { const c = [...prev]; c.splice(idx + 1, 0, ni); return c; });
-                                        setReviewNewItem("");
-                                        setReviewAddingAfter(null);
-                                      }}
-                                      className="rounded-lg bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-                                    >
-                                      <Plus className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => { setReviewAddingAfter(idx); setReviewNewItem(""); }}
-                                    className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors"
-                                  >
-                                    <Plus className="w-3 h-3" /> Add item
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="px-4 py-3 space-y-2 border-t border-border/30">
-                      <div className="flex gap-2">
-                        <input
-                          value={reviewNewItem}
-                          onChange={(e) => setReviewNewItem(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && reviewNewItem.trim()) {
-                              setReviewItems(prev => [...prev, { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false }]);
-                              setReviewNewItem("");
-                            }
-                          }}
-                          placeholder="Add item…"
-                          className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                        />
-                        <button
-                          onClick={() => {
-                            if (!reviewNewItem.trim()) return;
-                            setReviewItems(prev => [...prev, { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false }]);
-                            setReviewNewItem("");
-                          }}
-                          className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <button
-                        onClick={confirmPartnerReview}
-                        className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                      >
-                        Confirm & Go Live
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              }
-
-              return (
-                <motion.div
-                  key={list.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-dashed border-primary/40 bg-primary/5 overflow-hidden"
-                >
-                  <div className="flex items-center gap-3 p-4">
-                    <span className="text-xl">{list.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{list.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {isFromMe
-                          ? "Waiting for your partner to add their items…"
-                          : "Your partner started this list — tap to add yours!"}
-                      </p>
-                    </div>
-                    {!isFromMe && (
-                      <button
-                        onClick={() => startReviewingList(list)}
-                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
-                      >
-                        Add mine
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        );
-      })()}
-
       {lists.filter(l => l.status !== "pending_partner").length === 0 && !showTemplates && !creatingBlank && (
         <div className="rounded-xl border border-border bg-card p-6 text-center">
           <ListChecks className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
@@ -1809,6 +1635,180 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
           </motion.div>
         );
       })}
+
+      {!showTemplates && (() => {
+        const pendingLists = lists.filter(l => l.status === "pending_partner");
+        if (pendingLists.length === 0) return null;
+        return (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waiting for partner</p>
+            {pendingLists.map((list) => {
+              const isFromMe = list.createdBy === user?.id;
+              const isReviewing = reviewingListId === list.id;
+
+              if (isReviewing) {
+                return (
+                  <motion.div
+                    key={list.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="rounded-xl border-2 border-primary/40 bg-card overflow-hidden"
+                  >
+                    <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{list.icon}</span>
+                        <p className="text-sm font-bold text-foreground">{list.name}</p>
+                      </div>
+                      <button onClick={() => { setReviewingListId(null); setReviewItems([]); }} className="text-xs text-muted-foreground hover:text-foreground">
+                        ← Back
+                      </button>
+                    </div>
+                    <p className="px-4 pt-2 text-xs text-muted-foreground">Your partner's items are shown below. Add yours, then confirm to make the list live.</p>
+                    <div className="px-4 py-3 space-y-1 max-h-80 overflow-y-auto">
+                      {reviewItems.map((item, idx) => {
+                        const isLastBeforeNext = !item.isHeading && (idx === reviewItems.length - 1 || reviewItems[idx + 1]?.isHeading);
+                        const isEmptySection = item.isHeading && (idx === reviewItems.length - 1 || reviewItems[idx + 1]?.isHeading);
+                        const showAdd = isLastBeforeNext || isEmptySection;
+                        return (
+                          <div key={item.id}>
+                            <div className="flex items-center gap-2.5 py-1">
+                              {item.isHeading ? (
+                                <span className="flex-1 text-xs font-bold text-primary uppercase tracking-wider pt-2">
+                                  {item.text}
+                                  {item.sectionType === "observation" && <span className="ml-1.5 text-[14px] font-normal normal-case text-muted-foreground">💭</span>}
+                                </span>
+                              ) : (
+                                <div className="flex items-center gap-2.5 flex-1">
+                                  <button
+                                    onClick={() => setReviewItems(prev => prev.map(i => i.id === item.id ? { ...i, done: !i.done } : i))}
+                                    className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${
+                                      item.done ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30 hover:border-primary/50"
+                                    }`}
+                                  >
+                                    {item.done && <Check className="w-3.5 h-3.5" />}
+                                  </button>
+                                  <span className={`text-sm ${item.done ? "text-foreground" : "text-muted-foreground"}`}>{item.text}</span>
+                                </div>
+                              )}
+                              <button onClick={() => setReviewItems(prev => prev.filter(i => i.id !== item.id))} className="p-1 rounded-md hover:bg-destructive/10">
+                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                              </button>
+                            </div>
+                            {showAdd && (
+                              <div className="py-1">
+                                {reviewAddingAfter === idx ? (
+                                  <div className="flex gap-1.5">
+                                    <input
+                                      autoFocus
+                                      value={reviewNewItem}
+                                      onChange={(e) => setReviewNewItem(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" && reviewNewItem.trim()) {
+                                          const ni = { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false };
+                                          setReviewItems(prev => { const c = [...prev]; c.splice(idx + 1, 0, ni); return c; });
+                                          setReviewNewItem("");
+                                          setReviewAddingAfter(null);
+                                        }
+                                        if (e.key === "Escape") { setReviewAddingAfter(null); setReviewNewItem(""); }
+                                      }}
+                                      placeholder="Add your item…"
+                                      className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        if (!reviewNewItem.trim()) return;
+                                        const ni = { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false };
+                                        setReviewItems(prev => { const c = [...prev]; c.splice(idx + 1, 0, ni); return c; });
+                                        setReviewNewItem("");
+                                        setReviewAddingAfter(null);
+                                      }}
+                                      className="rounded-lg bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => { setReviewAddingAfter(idx); setReviewNewItem(""); }}
+                                    className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" /> Add item
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="px-4 py-3 space-y-2 border-t border-border/30">
+                      <div className="flex gap-2">
+                        <input
+                          value={reviewNewItem}
+                          onChange={(e) => setReviewNewItem(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && reviewNewItem.trim()) {
+                              setReviewItems(prev => [...prev, { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false }]);
+                              setReviewNewItem("");
+                            }
+                          }}
+                          placeholder="Add item…"
+                          className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!reviewNewItem.trim()) return;
+                            setReviewItems(prev => [...prev, { id: `review-${Date.now()}`, text: reviewNewItem.trim(), done: false }]);
+                            setReviewNewItem("");
+                          }}
+                          className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={confirmPartnerReview}
+                        className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Confirm & Go Live
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              }
+
+              return (
+                <motion.div
+                  key={list.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-dashed border-primary/40 bg-primary/5 overflow-hidden"
+                >
+                  <div className="flex items-center gap-3 p-4">
+                    <span className="text-xl">{list.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{list.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isFromMe
+                          ? "Waiting for your partner to add their items…"
+                          : "Your partner started this list — tap to add yours!"}
+                      </p>
+                    </div>
+                    {!isFromMe && (
+                      <button
+                        onClick={() => startReviewingList(list)}
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+                      >
+                        Add mine
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Always-visible templates section */}
       {!hideNewButton && !showTemplates && !creatingBlank && (
