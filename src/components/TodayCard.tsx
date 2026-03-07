@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Check, Plus, ChevronRight, Clock, MapPin, CalendarDays, ListChecks } from "lucide-react";
+import { Check, Plus, CalendarDays, ChevronDown, Clock, MapPin, ListChecks, ChevronRight, ChevronLeft } from "lucide-react";
 import { haptics } from "@/lib/haptics";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useWeeklyTasks } from "@/hooks/useWeeklyTasks";
 import { useCalendarEvents, CalendarEvent } from "@/hooks/useCalendarEvents";
 import { useSharedLists } from "@/hooks/useSharedLists";
+
+type Section = "tasks" | "calendar" | "lists";
 
 function formatEventTime(event: CalendarEvent) {
   if (event.is_all_day) return "All day";
@@ -20,7 +22,6 @@ function getTodayEvents(events: CalendarEvent[]) {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const todayEnd = new Date(todayStart);
   todayEnd.setDate(todayEnd.getDate() + 1);
-
   return events.filter((e) => {
     const start = new Date(e.start_time);
     const end = new Date(e.end_time);
@@ -32,41 +33,110 @@ function getTodayEvents(events: CalendarEvent[]) {
   });
 }
 
+const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
+const eventColors = [
+  "bg-primary", "bg-us-sage", "bg-us-gold", "bg-us-terracotta",
+  "bg-us-coral", "bg-us-blush",
+];
+
+type CalendarViewMode = "month" | "week" | "day";
+
+function getWeekDays(date: Date) {
+  const day = date.getDay();
+  const monday = new Date(date);
+  monday.setDate(date.getDate() - ((day + 6) % 7));
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
 const TodayCard = () => {
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, toggleTask, getTodayTasks } = useWeeklyTasks();
-  const { events, loading: eventsLoading } = useCalendarEvents();
+  const { events, loading: eventsLoading, getEventsForMonth, getUpcomingEvents } = useCalendarEvents();
   const { lists, loading: listsLoading } = useSharedLists();
-  const [expanded, setExpanded] = useState(false);
+
+  const [activeSection, setActiveSection] = useState<Section>("tasks");
+  const [taskExpanded, setTaskExpanded] = useState(false);
+  const [calViewMode, setCalViewMode] = useState<CalendarViewMode>("day");
+  const [viewDate, setViewDate] = useState(new Date());
 
   const allTodayTasks = getTodayTasks();
-  const undoneTasks = allTodayTasks.filter((t) => !t.done);
-  const doneTasks = allTodayTasks.filter((t) => t.done);
+  const todayTasks = allTodayTasks.filter((t) => !t.done);
   const todayEvents = getTodayEvents(events);
 
   const loading = tasksLoading || eventsLoading;
   if (loading) return null;
 
-  const now = new Date();
-  const dateLabel = now.toLocaleDateString("default", { weekday: "long", day: "numeric", month: "long" });
+  const doneCount = allTodayTasks.filter((t) => t.done).length;
+  const totalCount = allTodayTasks.length + todayEvents.length;
+  const todayLabel = new Date().toLocaleDateString("default", { weekday: "long" });
 
-  const doneCount = doneTasks.length;
-  const taskTotal = allTodayTasks.length;
-  const totalItems = taskTotal + todayEvents.length;
-  const progressPercent = totalItems > 0 ? (doneCount / totalItems) * 100 : 0;
+  const taskCount = allTodayTasks.length;
+  const eventCount = todayEvents.length;
+  const listCount = lists.length;
 
-  const hasContent = undoneTasks.length > 0 || todayEvents.length > 0 || doneTasks.length > 0;
+  const previewTasks = todayTasks.slice(0, 2);
+  const remainingTasks = todayTasks.slice(2);
+  const previewEvents = taskExpanded ? todayEvents : todayEvents.slice(0, 2);
+  const hasMore = remainingTasks.length > 0 || (!taskExpanded && todayEvents.length > 2);
+  const moreCount = remainingTasks.length + (taskExpanded ? 0 : Math.max(0, todayEvents.length - 2));
 
-  const activeListCount = lists.filter((l) => {
-    const checkable = l.items.filter((i) => !i.isHeading);
-    return checkable.length > 0;
-  }).length;
+  const today = new Date();
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const monthName = viewDate.toLocaleString("default", { month: "long" });
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+  const currentDay = today.getDate();
 
-  const previewEvents = expanded ? todayEvents : todayEvents.slice(0, 2);
-  const previewTasks = expanded ? undoneTasks : undoneTasks.slice(0, 3);
-  const hiddenEventCount = expanded ? 0 : Math.max(0, todayEvents.length - 2);
-  const hiddenTaskCount = expanded ? 0 : Math.max(0, undoneTasks.length - 3);
-  const hiddenTotal = hiddenEventCount + hiddenTaskCount;
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startOffset = (firstDay + 6) % 7;
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const monthEvents = getEventsForMonth(year, month);
+  const upcoming = getUpcomingEvents(4);
+  const dayEventsMap = new Map<number, typeof monthEvents>();
+  monthEvents.forEach((e) => {
+    const day = new Date(e.start_time).getDate();
+    const existing = dayEventsMap.get(day) || [];
+    existing.push(e);
+    dayEventsMap.set(day, existing);
+  });
+
+  const weekDays = getWeekDays(viewDate);
+  const dayLabel = viewDate.toLocaleDateString("default", { weekday: "long", month: "long", day: "numeric" });
+  const getEventsForDate = (d: Date) =>
+    events.filter((e) => new Date(e.start_time).toDateString() === d.toDateString());
+
+  const calPrev = () => {
+    if (calViewMode === "month") setViewDate(new Date(year, month - 1, 1));
+    else if (calViewMode === "week") { const d = new Date(viewDate); d.setDate(d.getDate() - 7); setViewDate(d); }
+    else { const d = new Date(viewDate); d.setDate(d.getDate() - 1); setViewDate(d); }
+  };
+  const calNext = () => {
+    if (calViewMode === "month") setViewDate(new Date(year, month + 1, 1));
+    else if (calViewMode === "week") { const d = new Date(viewDate); d.setDate(d.getDate() + 7); setViewDate(d); }
+    else { const d = new Date(viewDate); d.setDate(d.getDate() + 1); setViewDate(d); }
+  };
+  const calHeaderLabel = calViewMode === "month"
+    ? `${monthName} ${year}`
+    : calViewMode === "week"
+    ? `${weekDays[0].toLocaleDateString("default", { month: "short", day: "numeric" })} – ${weekDays[6].toLocaleDateString("default", { month: "short", day: "numeric", year: "numeric" })}`
+    : dayLabel;
+
+  const summaries = lists.map((list) => {
+    const checkableItems = list.items.filter((i: any) => !i.isHeading);
+    const done = checkableItems.filter((i: any) => i.done).length;
+    const total = checkableItems.length;
+    return { id: list.id, name: list.name, icon: list.icon, doneCount: done, totalCount: total };
+  });
+
+  const hasTaskContent = todayTasks.length > 0 || todayEvents.length > 0;
 
   return (
     <motion.div
@@ -76,137 +146,414 @@ const TodayCard = () => {
       className="rounded-2xl border border-border bg-card overflow-hidden"
       data-testid="card-today"
     >
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <div>
-          <h3 className="font-display text-base font-bold text-foreground" data-testid="text-today-date">{dateLabel}</h3>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            {taskTotal > 0 && `${doneCount}/${taskTotal} tasks done`}
-            {taskTotal > 0 && todayEvents.length > 0 && " · "}
-            {todayEvents.length > 0 && `${todayEvents.length} event${todayEvents.length !== 1 ? "s" : ""}`}
-            {!taskTotal && !todayEvents.length && "Nothing planned"}
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/us?tab=admin")}
-          className="w-8 h-8 rounded-xl bg-secondary/60 flex items-center justify-center hover:bg-secondary transition-colors"
-          data-testid="button-open-calendar"
-        >
-          <CalendarDays className="w-4 h-4 text-muted-foreground" />
-        </button>
+      <div className="flex border-b border-border/50">
+        {([
+          { key: "tasks" as Section, label: todayLabel, badge: taskCount > 0 ? `${doneCount}/${taskCount}` : null },
+          { key: "calendar" as Section, label: "Calendar", badge: eventCount > 0 ? String(eventCount) : null },
+          { key: "lists" as Section, label: "Lists", badge: listCount > 0 ? String(listCount) : null },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveSection(tab.key)}
+            className={`flex-1 py-3 text-center transition-colors relative ${
+              activeSection === tab.key
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground/70"
+            }`}
+            data-testid={`tab-${tab.key}`}
+          >
+            <span className="text-xs font-semibold">{tab.label}</span>
+            {tab.badge && (
+              <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                activeSection === tab.key ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"
+              }`}>
+                {tab.badge}
+              </span>
+            )}
+            {activeSection === tab.key && (
+              <motion.div
+                layoutId="today-tab-indicator"
+                className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
+              />
+            )}
+          </button>
+        ))}
       </div>
 
-      {!hasContent && (
-        <button
-          onClick={() => navigate("/us?tab=lists")}
-          className="w-full px-4 pb-4 text-center"
-          data-testid="button-add-tasks"
-        >
-          <div className="rounded-xl border border-dashed border-border/60 py-4">
-            <Plus className="w-5 h-5 mx-auto text-muted-foreground/50 mb-1" />
-            <p className="text-xs text-muted-foreground">Add tasks for today</p>
-          </div>
-        </button>
-      )}
-
-      {previewEvents.length > 0 && (
-        <div className="px-4 pb-1 space-y-0.5">
-          {previewEvents.map((event) => (
-            <div key={event.id} className="flex items-start gap-2.5 py-1.5" data-testid={`event-today-${event.id}`}>
-              <div className="w-1.5 h-1.5 rounded-full bg-primary mt-[7px] flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] text-foreground truncate">{event.subject}</p>
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-                  <Clock className="w-2.5 h-2.5" />
-                  <span>{formatEventTime(event)}</span>
-                  {event.location && (
-                    <>
-                      <span className="text-border">·</span>
-                      <MapPin className="w-2.5 h-2.5" />
-                      <span className="truncate">{event.location}</span>
-                    </>
-                  )}
-                </div>
+      {activeSection === "tasks" && (
+        <div>
+          <button onClick={() => navigate("/us?tab=lists")} className="w-full px-4 pt-3 pb-1 flex items-center justify-between text-left" data-testid="button-manage-tasks">
+            <div className="flex items-center gap-2.5">
+              <CalendarDays className="w-5 h-5 text-primary" />
+              <div>
+                <h3 className="font-display text-sm font-bold text-foreground">{todayLabel}'s Tasks</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {taskCount > 0 ? `${doneCount}/${taskCount} done` : ""}
+                  {taskCount > 0 && eventCount > 0 ? " · " : ""}
+                  {eventCount > 0 ? `${eventCount} event${eventCount !== 1 ? "s" : ""}` : ""}
+                </p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </button>
 
-      {previewTasks.length > 0 && (
-        <div className="px-4 pb-1 space-y-0.5">
-          {previewTasks.map((task) => (
-            <div key={task.id} className="flex items-center gap-2.5 py-1.5" data-testid={`task-today-${task.id}`}>
-              <button
-                onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
-                className="w-[18px] h-[18px] rounded-full flex-shrink-0 flex items-center justify-center transition-colors border-2 border-border hover:border-primary/50"
-                data-testid={`button-toggle-task-${task.id}`}
-              >
-              </button>
-              <span className="flex-1 text-[13px] text-foreground">{task.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
+          {!hasTaskContent ? (
+            <button
+              onClick={() => navigate("/us?tab=lists")}
+              className="w-full p-6 text-center"
+              data-testid="button-add-tasks"
+            >
+              <Plus className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+              <h3 className="font-display text-base font-bold text-foreground">Add Today's Tasks</h3>
+              <p className="text-xs text-muted-foreground mt-1">Plan your day in the Weekly List</p>
+            </button>
+          ) : (
+            <>
+              {(taskExpanded ? todayEvents : todayEvents.slice(0, 2)).length > 0 && (
+                <div className="px-4 pt-3 pb-1 space-y-1">
+                  {(taskExpanded ? todayEvents : todayEvents.slice(0, 2)).map((event) => (
+                    <div key={event.id} className="flex items-start gap-3 py-1.5" data-testid={`event-today-${event.id}`}>
+                      <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center bg-primary/15 mt-0.5">
+                        <Clock className="w-3 h-3 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground truncate">{event.subject}</p>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                          <span>{formatEventTime(event)}</span>
+                          {event.location && (
+                            <span className="flex items-center gap-0.5 truncate">
+                              <MapPin className="w-2.5 h-2.5" />
+                              {event.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-      <AnimatePresence>
-        {expanded && doneTasks.length > 0 && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-1 space-y-0.5">
-              {doneTasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-2.5 py-1.5">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
-                    className="w-[18px] h-[18px] rounded-full flex-shrink-0 flex items-center justify-center transition-colors bg-primary text-primary-foreground"
+              {previewTasks.length > 0 && (
+                <div className="px-4 pb-1 space-y-1">
+                  {previewTasks.map((task) => (
+                    <div key={task.id} className="flex items-center gap-3 py-2" data-testid={`task-today-${task.id}`}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
+                        className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
+                          task.done ? "bg-primary text-primary-foreground" : "border-2 border-border"
+                        }`}
+                        data-testid={`button-toggle-task-${task.id}`}
+                      >
+                        {task.done && <Check className="w-3 h-3" />}
+                      </button>
+                      <span className={`flex-1 text-sm ${task.done ? "text-muted-foreground" : "text-foreground"}`}>
+                        {task.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <AnimatePresence>
+                {taskExpanded && remainingTasks.length > 0 && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
                   >
-                    <Check className="w-2.5 h-2.5" />
-                  </button>
-                  <span className="flex-1 text-[13px] text-muted-foreground line-through">{task.text}</span>
+                    <div className="px-4 space-y-1">
+                      {remainingTasks.map((task) => (
+                        <div key={task.id} className="flex items-center gap-3 py-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); haptics.light(); toggleTask(task.id); }}
+                            className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
+                              task.done ? "bg-primary text-primary-foreground" : "border-2 border-border"
+                            }`}
+                          >
+                            {task.done && <Check className="w-3 h-3" />}
+                          </button>
+                          <span className={`flex-1 text-sm ${task.done ? "text-muted-foreground" : "text-foreground"}`}>
+                            {task.text}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {hasMore && (
+                <button
+                  onClick={() => setTaskExpanded(!taskExpanded)}
+                  className="w-full flex items-center justify-center gap-1 py-2 text-xs text-primary font-medium hover:bg-secondary/50 transition-colors"
+                  data-testid="button-expand-tasks"
+                >
+                  {taskExpanded ? "Show less" : `+${moreCount} more`}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${taskExpanded ? "rotate-180" : ""}`} />
+                </button>
+              )}
+
+              {totalCount > 0 && (
+                <div className="px-4 pb-4">
+                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(doneCount / totalCount) * 100}%` }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      className="h-full rounded-full bg-primary"
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {activeSection === "calendar" && (
+        <div>
+          <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+            <h3 className="font-display text-sm font-bold text-foreground truncate flex-1 pr-2">
+              {calHeaderLabel}
+            </h3>
+            <div className="flex items-center gap-1">
+              <button onClick={calPrev} className="w-7 h-7 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground transition-colors" data-testid="button-cal-prev">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button onClick={calNext} className="w-7 h-7 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground transition-colors" data-testid="button-cal-next">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="px-4 pb-3 flex gap-1">
+            {(["month", "week", "day"] as CalendarViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setCalViewMode(mode)}
+                className={`flex-1 py-1 text-xs font-semibold rounded-lg transition-colors capitalize ${
+                  calViewMode === mode
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+                data-testid={`button-cal-${mode}`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+
+          {calViewMode === "month" && (
+            <>
+              <div className="px-4 grid grid-cols-7 gap-0">
+                {DAYS.map((d, i) => (
+                  <div key={i} className="text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider py-1">
+                    {d}
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 pb-3 grid grid-cols-7 gap-0">
+                {cells.map((day, i) => {
+                  const dayEvents = day ? dayEventsMap.get(day) : undefined;
+                  const isToday = isCurrentMonth && day === currentDay;
+                  return (
+                    <div key={i} className="flex flex-col items-center py-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                        isToday ? "bg-primary text-primary-foreground font-bold" : day ? "text-foreground hover:bg-secondary" : ""
+                      }`}>
+                        {day || ""}
+                      </div>
+                      {dayEvents && dayEvents.length > 0 && (
+                        <div className="flex gap-0.5 mt-0.5">
+                          {dayEvents.slice(0, 3).map((_, j) => (
+                            <div key={j} className={`w-1.5 h-1.5 rounded-full ${eventColors[j % eventColors.length]}`} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {upcoming.length > 0 && (
+                <div className="px-4 pb-4 space-y-2 border-t border-border/50 pt-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Upcoming</p>
+                  {upcoming.map((event, idx) => {
+                    const startDate = new Date(event.start_time);
+                    const dayStr = startDate.toLocaleDateString("default", { month: "short", day: "numeric" });
+                    const isEventToday = startDate.toDateString() === today.toDateString();
+                    return (
+                      <div key={event.id} className="flex items-center gap-2.5">
+                        <div className={`w-2 h-2 rounded-full ${eventColors[idx % eventColors.length]} flex-shrink-0`} />
+                        <span className="text-sm text-foreground flex-1 truncate">{event.subject}</span>
+                        <span className="text-[11px] text-muted-foreground">{isEventToday ? "Today" : dayStr}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {monthEvents.length === 0 && (
+                <div className="px-4 pb-4 text-center">
+                  <p className="text-xs text-muted-foreground">No events this month</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {calViewMode === "week" && (
+            <div className="px-2 pb-3">
+              <div className="grid grid-cols-7 gap-0.5 mb-2">
+                {weekDays.map((d, i) => {
+                  const isToday = d.toDateString() === today.toDateString();
+                  const dayEvts = getEventsForDate(d);
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-0.5">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                        {d.toLocaleDateString("default", { weekday: "narrow" })}
+                      </span>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                        isToday ? "bg-primary text-primary-foreground font-bold" : "text-foreground"
+                      }`}>
+                        {d.getDate()}
+                      </div>
+                      {dayEvts.length > 0 && (
+                        <div className="flex gap-0.5">
+                          {dayEvts.slice(0, 3).map((_, j) => (
+                            <div key={j} className={`w-1.5 h-1.5 rounded-full ${eventColors[j % eventColors.length]}`} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="space-y-1.5 border-t border-border/50 pt-2">
+                {weekDays.flatMap((d) => getEventsForDate(d)).length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-2">No events this week</p>
+                ) : (
+                  weekDays.flatMap((d) =>
+                    getEventsForDate(d).map((e, idx) => {
+                      const isToday = d.toDateString() === today.toDateString();
+                      const timeStr = e.is_all_day ? "All day" : new Date(e.start_time).toLocaleTimeString("default", { hour: "numeric", minute: "2-digit" });
+                      return (
+                        <div key={e.id} className="flex items-center gap-2">
+                          <div className={`w-1.5 h-1.5 rounded-full ${eventColors[idx % eventColors.length]} flex-shrink-0`} />
+                          <span className="text-[11px] text-muted-foreground w-12 flex-shrink-0">
+                            {isToday ? "Today" : d.toLocaleDateString("default", { weekday: "short" })}
+                          </span>
+                          <span className="text-sm text-foreground flex-1 truncate">{e.subject}</span>
+                          <span className="text-[11px] text-muted-foreground">{timeStr}</span>
+                        </div>
+                      );
+                    })
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {calViewMode === "day" && (
+            <div className="px-4 pb-3">
+              {(() => {
+                const dayEvts = getEventsForDate(viewDate);
+                if (dayEvts.length === 0) {
+                  return <p className="text-xs text-muted-foreground text-center py-4">No events today</p>;
+                }
+                return (
+                  <div className="space-y-2">
+                    {dayEvts.map((e, idx) => {
+                      const startDate = new Date(e.start_time);
+                      const endDate = new Date(e.end_time);
+                      const timeStr = e.is_all_day
+                        ? "All day"
+                        : `${startDate.toLocaleTimeString("default", { hour: "numeric", minute: "2-digit" })} – ${endDate.toLocaleTimeString("default", { hour: "numeric", minute: "2-digit" })}`;
+                      return (
+                        <div key={e.id} className="flex gap-3 p-3 rounded-xl border border-border/60 bg-secondary/30">
+                          <div className={`w-1 rounded-full self-stretch ${eventColors[idx % eventColors.length]}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{e.subject}</p>
+                            <p className="text-xs text-muted-foreground">{timeStr}</p>
+                            {e.location && <p className="text-xs text-muted-foreground truncate">{e.location}</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeSection === "lists" && (
+        <div>
+          {listsLoading ? (
+            <div className="p-6 space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-3 bg-secondary/40 rounded-xl px-3 py-3 animate-pulse">
+                  <div className="w-6 h-6 rounded bg-secondary" />
+                  <div className="flex-1">
+                    <div className="h-3 bg-secondary rounded w-2/3 mb-1.5" />
+                    <div className="h-2 bg-secondary rounded w-1/3" />
+                  </div>
                 </div>
               ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ) : lists.length === 0 ? (
+            <button
+              onClick={() => navigate("/us?tab=lists")}
+              className="w-full p-6 text-center"
+            >
+              <ListChecks className="w-8 h-8 mx-auto text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">No lists yet</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Create shared lists in the Us tab</p>
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate("/us?tab=lists")}
+                className="w-full flex items-center gap-3 px-4 pt-3 pb-2 text-left"
+                data-testid="button-view-all-lists"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">{lists.length} list{lists.length !== 1 ? "s" : ""} active</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </button>
 
-      {(hiddenTotal > 0 || doneTasks.length > 0) && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-center gap-1 py-1.5 text-[11px] text-primary font-medium hover:bg-secondary/30 transition-colors"
-          data-testid="button-expand-today"
-        >
-          {expanded ? "Show less" : hiddenTotal > 0 ? `+${hiddenTotal} more` : `${doneTasks.length} completed`}
-        </button>
-      )}
-
-      {totalItems > 0 && (
-        <div className="px-4 pb-2.5 pt-1">
-          <div className="h-1 rounded-full bg-secondary overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="h-full rounded-full bg-primary"
-            />
-          </div>
+              <div className="px-4 pb-4 space-y-2 max-h-[220px] overflow-y-auto scrollbar-hide">
+                {summaries.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => navigate(`/us?tab=lists&listId=${s.id}`)}
+                    className="w-full flex items-center gap-3 bg-secondary/60 rounded-xl px-3 py-2.5 text-left hover:bg-secondary transition-colors"
+                    data-testid={`button-list-${s.id}`}
+                  >
+                    <span className="text-base">{s.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">{s.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {s.doneCount}/{s.totalCount} completed
+                      </p>
+                    </div>
+                    {s.totalCount > 0 && (
+                      <div className="w-7 h-7 rounded-full border-2 border-border flex items-center justify-center">
+                        {s.doneCount === s.totalCount ? (
+                          <Check className="w-3.5 h-3.5 text-primary" />
+                        ) : (
+                          <span className="text-[10px] font-bold text-muted-foreground">
+                            {Math.round((s.doneCount / s.totalCount) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
-      )}
-
-      {!listsLoading && activeListCount > 0 && (
-        <button
-          onClick={() => navigate("/us?tab=lists")}
-          className="w-full flex items-center gap-2 px-4 py-2.5 border-t border-border/50 hover:bg-secondary/30 transition-colors"
-          data-testid="button-lists-pill"
-        >
-          <ListChecks className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-muted-foreground">{activeListCount} active list{activeListCount !== 1 ? "s" : ""}</span>
-          <ChevronRight className="w-3 h-3 text-muted-foreground/50 ml-auto" />
-        </button>
       )}
     </motion.div>
   );
