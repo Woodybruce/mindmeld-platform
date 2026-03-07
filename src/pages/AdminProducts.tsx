@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Sparkles, Package, Trash2, Loader2, Plus, RefreshCw, AlertCircle, ExternalLink, TrendingUp, Users, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Sparkles, Package, Trash2, Loader2, Plus, RefreshCw, AlertCircle, ExternalLink, TrendingUp, Users, ShieldAlert, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
@@ -97,6 +97,33 @@ const AdminProducts = () => {
   };
 
   const [clearingAll, setClearingAll] = useState(false);
+  const [fixingImages, setFixingImages] = useState(false);
+  const [fixImageResult, setFixImageResult] = useState("");
+
+  const handleFixImages = async () => {
+    setFixingImages(true);
+    setFixImageResult("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+      const res = await fetch("/api/stripe/fix-images", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFixImageResult(data.message);
+        fetchProducts();
+        try { localStorage.removeItem("discover_catalog_v5"); } catch {}
+      } else {
+        setFixImageResult(data.error || "Failed to fix images");
+      }
+    } catch (e: any) {
+      setFixImageResult(e.message || "Error fixing images");
+    }
+    setFixingImages(false);
+  };
 
   const handleClearAll = async () => {
     if (!confirm("This will remove ALL products from the shop. Are you sure?")) return;
@@ -369,15 +396,26 @@ const AdminProducts = () => {
           </h2>
           <div className="flex items-center gap-2">
             {products.length > 0 && (
-              <button
-                onClick={handleClearAll}
-                disabled={clearingAll}
-                className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-1"
-                data-testid="button-clear-all-products"
-              >
-                {clearingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                Clear All
-              </button>
+              <>
+                <button
+                  onClick={handleFixImages}
+                  disabled={fixingImages}
+                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors flex items-center gap-1"
+                  data-testid="button-fix-images"
+                >
+                  {fixingImages ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+                  Fix Images
+                </button>
+                <button
+                  onClick={handleClearAll}
+                  disabled={clearingAll}
+                  className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-1"
+                  data-testid="button-clear-all-products"
+                >
+                  {clearingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Clear All
+                </button>
+              </>
             )}
             <button
               onClick={fetchProducts}
@@ -389,6 +427,12 @@ const AdminProducts = () => {
             </button>
           </div>
         </div>
+
+        {fixImageResult && (
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 mb-4">
+            <p className="text-xs text-blue-700 dark:text-blue-300" data-testid="text-fix-image-result">{fixImageResult}</p>
+          </div>
+        )}
 
         {loading ? (
           <div className="space-y-2">

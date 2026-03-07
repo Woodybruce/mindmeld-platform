@@ -1835,6 +1835,117 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
     }
   });
 
+  function isSafeUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+      const hostname = parsed.hostname.toLowerCase();
+      if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0" ||
+          hostname.startsWith("192.168.") || hostname.startsWith("10.") || hostname.startsWith("172.") ||
+          hostname.endsWith(".local") || hostname.endsWith(".internal")) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function verifyImageUrl(url: string): Promise<string | null> {
+    if (!url || typeof url !== "string" || !isSafeUrl(url)) return null;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const resp = await fetch(url, { method: "HEAD", signal: controller.signal, redirect: "follow" });
+      clearTimeout(timeout);
+      const ct = resp.headers.get("content-type") || "";
+      if (resp.ok && ct.startsWith("image/")) return url;
+      const getResp = await fetch(url, { method: "GET", signal: AbortSignal.timeout(5000), redirect: "follow" });
+      const getCt = getResp.headers.get("content-type") || "";
+      if (getResp.ok && getCt.startsWith("image/")) return url;
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function scrapeProductImage(pageUrl: string): Promise<string | null> {
+    if (!isSafeUrl(pageUrl)) return null;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const resp = await fetch(pageUrl, {
+        signal: controller.signal,
+        headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
+        redirect: "follow",
+      });
+      clearTimeout(timeout);
+      if (!resp.ok) return null;
+      const html = await resp.text();
+
+      const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+        || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+      if (ogMatch?.[1]) {
+        const verified = await verifyImageUrl(ogMatch[1]);
+        if (verified) return verified;
+      }
+
+      const imgMatches = html.match(/https?:\/\/[^\s"'<>)]+\.(jpg|jpeg|png|webp)(\?[^\s"'<>)]*)?/gi);
+      if (imgMatches) {
+        const productImages = imgMatches.filter((u: string) =>
+          (u.includes("product") || u.includes("catalog") || u.includes("media") || u.includes("images") || u.includes("cdn")) &&
+          !u.includes("logo") && !u.includes("icon") && !u.includes("favicon") && !u.includes("sprite") &&
+          !u.includes("banner") && !u.includes("1x1") && !u.includes("pixel") && !u.includes("thumbnail") &&
+          u.length > 30
+        );
+        const candidates = productImages.length > 0 ? productImages : imgMatches;
+        for (const imgUrl of candidates.slice(0, 5)) {
+          const verified = await verifyImageUrl(imgUrl);
+          if (verified) return verified;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function findRealProductImage(name: string, brand: string, supplierUrl?: string): Promise<string | null> {
+    if (supplierUrl) {
+      const fromSupplier = await scrapeProductImage(supplierUrl);
+      if (fromSupplier) return fromSupplier;
+    }
+
+    try {
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (!openaiKey) return null;
+      const searchResp = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You have web search. Find the official product page for this product. Return ONLY one URL to the product page on an official retailer (e.g. the brand's own website, Amazon UK, John Lewis, Space NK, Lovehoney, LookFantastic). Return just the URL, nothing else. If you cannot find it, return NONE." },
+            { role: "user", content: `${brand} ${name}` },
+          ],
+          max_tokens: 200,
+          temperature: 0,
+          web_search_options: { search_context_size: "medium" },
+        }),
+      });
+      if (searchResp.ok) {
+        const data = await searchResp.json();
+        const content = data.choices?.[0]?.message?.content?.trim() || "";
+        const urlMatch = content.match(/https?:\/\/[^\s"'<>]+/);
+        if (urlMatch && urlMatch[0] !== "NONE") {
+          console.log(`  OpenAI found product page: ${urlMatch[0]}`);
+          const fromPage = await scrapeProductImage(urlMatch[0]);
+          if (fromPage) return fromPage;
+        }
+      }
+    } catch {}
+
+    return null;
+  }
+
   let shopProductsCache: any[] | null = null;
   let shopCacheTime = 0;
   const SHOP_CACHE_TTL = 1000 * 60 * 30;
@@ -3003,100 +3114,6 @@ For each product you MUST provide detailed, accurate:
       const stripe = await getUncachableStripeClient();
       const created: any[] = [];
 
-      async function verifyImageUrl(url: string): Promise<string | null> {
-        if (!url || typeof url !== "string") return null;
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 5000);
-          const resp = await fetch(url, { method: "HEAD", signal: controller.signal, redirect: "follow" });
-          clearTimeout(timeout);
-          const ct = resp.headers.get("content-type") || "";
-          if (resp.ok && ct.startsWith("image/")) return url;
-          const getResp = await fetch(url, { method: "GET", signal: AbortSignal.timeout(5000), redirect: "follow" });
-          const getCt = getResp.headers.get("content-type") || "";
-          if (getResp.ok && getCt.startsWith("image/")) return url;
-          return null;
-        } catch {
-          return null;
-        }
-      }
-
-      async function scrapeProductImage(pageUrl: string): Promise<string | null> {
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 8000);
-          const resp = await fetch(pageUrl, {
-            signal: controller.signal,
-            headers: { "User-Agent": "Mozilla/5.0 (compatible; Bot/1.0)" },
-            redirect: "follow",
-          });
-          clearTimeout(timeout);
-          if (!resp.ok) return null;
-          const html = await resp.text();
-
-          const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-            || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-          if (ogMatch?.[1]) {
-            const verified = await verifyImageUrl(ogMatch[1]);
-            if (verified) return verified;
-          }
-
-          const imgMatches = html.match(/https?:\/\/[^\s"'<>)]+\.(jpg|jpeg|png|webp)(\?[^\s"'<>)]*)?/gi);
-          if (imgMatches) {
-            const productImages = imgMatches.filter(u =>
-              (u.includes("product") || u.includes("catalog") || u.includes("media") || u.includes("images")) &&
-              !u.includes("logo") && !u.includes("icon") && !u.includes("favicon") && !u.includes("sprite") &&
-              !u.includes("banner") && !u.includes("1x1") && !u.includes("pixel")
-            );
-            const candidates = productImages.length > 0 ? productImages : imgMatches;
-            for (const imgUrl of candidates.slice(0, 5)) {
-              const verified = await verifyImageUrl(imgUrl);
-              if (verified) return verified;
-            }
-          }
-          return null;
-        } catch {
-          return null;
-        }
-      }
-
-      async function findRealProductImage(name: string, brand: string, supplierUrl?: string): Promise<string | null> {
-        if (supplierUrl) {
-          const fromSupplier = await scrapeProductImage(supplierUrl);
-          if (fromSupplier) return fromSupplier;
-        }
-
-        try {
-          const openaiKey = process.env.OPENAI_API_KEY;
-          if (!openaiKey) return null;
-          const searchResp = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: [
-                { role: "system", content: "Return ONLY the most likely product page URL for this product on Amazon UK, John Lewis, Space NK, or Lookfantastic. Return just the URL, nothing else. If unsure, return NONE." },
-                { role: "user", content: `${brand} ${name}` },
-              ],
-              max_tokens: 150,
-              temperature: 0,
-              web_search_options: { search_context_size: "medium" },
-            }),
-          });
-          if (searchResp.ok) {
-            const data = await searchResp.json();
-            const content = data.choices?.[0]?.message?.content?.trim() || "";
-            const urlMatch = content.match(/https?:\/\/[^\s"'<>]+/);
-            if (urlMatch && urlMatch[0] !== "NONE") {
-              const fromPage = await scrapeProductImage(urlMatch[0]);
-              if (fromPage) return fromPage;
-            }
-          }
-        } catch {}
-
-        return null;
-      }
-
       for (const p of generated) {
         const retailPence = Math.max(100, Math.round(Number(p.priceInPence) || 1000));
         let wholesalePence = Math.max(50, Math.round(Number(p.wholesalePriceEstimate) || 500));
@@ -3202,6 +3219,69 @@ For each product you MUST provide detailed, accurate:
     } catch (e: any) {
       console.error("Clear all products error:", e.message);
       res.status(500).json({ error: "Failed to clear products" });
+    }
+  });
+
+  app.post("/api/stripe/fix-images", async (req: Request, res: Response) => {
+    try {
+      const adminUserId = await requireAdmin(req, res);
+      if (!adminUserId) return;
+
+      const stripe = await getUncachableStripeClient();
+      const allProductsList: any[] = [];
+      let hasMore = true;
+      let startingAfter: string | undefined;
+      while (hasMore) {
+        const params: any = { active: true, limit: 100 };
+        if (startingAfter) params.starting_after = startingAfter;
+        const batch = await stripe.products.list(params);
+        allProductsList.push(...batch.data);
+        hasMore = batch.has_more;
+        if (batch.data.length > 0) startingAfter = batch.data[batch.data.length - 1].id;
+      }
+      const results: { name: string; status: string; imageUrl?: string }[] = [];
+
+      for (const sp of allProductsList) {
+        const productName = sp.metadata?.shop_product_name || sp.name;
+        const brand = sp.metadata?.brand || "";
+
+        if (sp.images && sp.images.length > 0) {
+          const existingVerified = await verifyImageUrl(sp.images[0]);
+          if (existingVerified) {
+            results.push({ name: productName, status: "already_has_image", imageUrl: existingVerified });
+            continue;
+          }
+        }
+
+        console.log(`Fixing image for: ${productName} (${brand})`);
+        const supplierUrl = sp.metadata?.supplier_url || "";
+        const foundImage = await findRealProductImage(productName, brand, supplierUrl || undefined);
+
+        if (foundImage) {
+          await stripe.products.update(sp.id, { images: [foundImage] });
+          console.log(`  Fixed: ${foundImage}`);
+          results.push({ name: productName, status: "fixed", imageUrl: foundImage });
+        } else {
+          console.log(`  No image found`);
+          results.push({ name: productName, status: "no_image_found" });
+        }
+      }
+
+      shopProductsCache = null;
+      shopCacheTime = 0;
+
+      const fixed = results.filter(r => r.status === "fixed").length;
+      const alreadyOk = results.filter(r => r.status === "already_has_image").length;
+      const failed = results.filter(r => r.status === "no_image_found").length;
+
+      res.json({
+        success: true,
+        message: `Fixed ${fixed} images, ${alreadyOk} already OK, ${failed} could not be found`,
+        results,
+      });
+    } catch (e: any) {
+      console.error("Fix images error:", e.message);
+      res.status(500).json({ error: "Failed to fix images" });
     }
   });
 
