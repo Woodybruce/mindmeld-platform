@@ -60,7 +60,7 @@ const CATEGORIES: CategoryDef[] = [
   { key: "home", label: "Home", icon: Home },
 ];
 
-const CACHE_KEY = "discover_catalog_v2";
+const CACHE_KEY = "discover_catalog_v3";
 const CACHE_TTL = 1000 * 60 * 30;
 
 const isLuxuryBrand = (source: string) => {
@@ -77,6 +77,8 @@ const getBuyLabel = (product: ShopProduct) => {
   if (s.includes("lelo")) return "Shop LELO";
   if (s.includes("lovehoney")) return "Shop Lovehoney";
   if (s.includes("sophie") || s.includes("olivia")) return "Shop Sophie & Olivia";
+  if (s.includes("amazon")) return "Buy on Amazon";
+  if (product.source && product.source !== "Shop") return `Shop ${product.source}`;
   return `Buy Now`;
 };
 

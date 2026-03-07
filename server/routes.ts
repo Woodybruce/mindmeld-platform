@@ -1878,14 +1878,16 @@ Each product needs:
 - category: One of: Date Night, Gifts, Wellness, Intimacy, Games, Home
 - emoji: Single relevant emoji
 - imageKeyword: A descriptive 2-3 word search term for finding a relevant lifestyle/product photo (e.g. "massage candles romantic", "couples board game", "silk pajamas luxury")
-- source: Where to buy - use "Amazon" for most products
+- source: Where to buy (brand name or retailer name e.g. "Diptyque", "John Lewis", "Le Creuset")
+- productUrl: Direct URL to the actual product page on the brand or retailer website. Use the real product page URL, NOT a search page. For example: "https://www.diptyque.com/products/baies-candle" not "https://www.amazon.co.uk/s?k=...". Use the brand's own website or a major retailer like John Lewis, Space NK, Selfridges, etc. If you are unsure of the exact URL, use the brand's main shop/category page.
 
 Make products feel premium and gift-worthy. Include a mix of price points from £15-£150.
-Products should be things couples would actually buy for each other or to enjoy together.`,
+Products should be things couples would actually buy for each other or to enjoy together.
+IMPORTANT: Always provide direct product page URLs, never Amazon search URLs.`,
           },
           {
             role: "user",
-            content: `Generate 6 premium product recommendations for couples. ${categoryHint}. Make them varied, real products from well-known brands.`,
+            content: `Generate 6 premium product recommendations for couples. ${categoryHint}. Make them varied, real products from well-known brands. Provide direct product URLs.`,
           },
         ],
         [
@@ -1912,8 +1914,9 @@ Products should be things couples would actually buy for each other or to enjoy 
                         features: { type: "array", items: { type: "string" } },
                         imageKeyword: { type: "string" },
                         source: { type: "string" },
+                        productUrl: { type: "string", description: "Direct URL to the product page on the brand or retailer website" },
                       },
-                      required: ["name", "brand", "price", "description", "category", "emoji", "longDescription", "features", "imageKeyword", "source"],
+                      required: ["name", "brand", "price", "description", "category", "emoji", "longDescription", "features", "imageKeyword", "source", "productUrl"],
                       additionalProperties: false,
                     },
                   },
@@ -1939,6 +1942,17 @@ Products should be things couples would actually buy for each other or to enjoy 
       );
       const images = await Promise.all(imagePromises);
 
+      const sanitizeProductUrl = (url: string | undefined, productName: string): string => {
+        if (!url) return buildAmazonUrl(productName);
+        try {
+          const u = new URL(url);
+          if (u.protocol !== "https:" && u.protocol !== "http:") return buildAmazonUrl(productName);
+          return url;
+        } catch {
+          return buildAmazonUrl(productName);
+        }
+      };
+
       const enriched: any[] = rawProducts.map((p: any, i: number) => ({
         id: `shop-${category}-${Date.now()}-${i}`,
         name: p.name,
@@ -1951,8 +1965,8 @@ Products should be things couples would actually buy for each other or to enjoy 
         emoji: p.emoji || "",
         imageKeyword: p.imageKeyword || p.name,
         imageUrl: images[i] || null,
-        buyUrl: buildAmazonUrl(p.name),
-        source: p.source || "Amazon",
+        buyUrl: sanitizeProductUrl(p.productUrl, p.name),
+        source: p.source || p.brand || "Shop",
       }));
 
       const catLower = category.toLowerCase();
