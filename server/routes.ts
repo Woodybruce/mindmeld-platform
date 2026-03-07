@@ -1870,38 +1870,78 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
         }
       }
 
-      const products = LUXURY_INTIMACY_PRODUCTS
-        .map((lp: any, i: number) => {
-          const stripeMatch = stripeMap.get(lp.name.toLowerCase().trim());
-          if (!stripeMatch) return null;
-          const imageUrl = lp.imageUrl || (stripeMatch.images?.[0]) || null;
-          const price = new Intl.NumberFormat("en-GB", { style: "currency", currency: stripeMatch.currency.toUpperCase() }).format(stripeMatch.unitAmount / 100);
+      const matchedNames = new Set<string>();
+      const products: any[] = [];
 
-          const allImages = (lp.images?.length > 0 ? lp.images : [imageUrl]).filter(Boolean);
+      for (let i = 0; i < LUXURY_INTIMACY_PRODUCTS.length; i++) {
+        const lp: any = LUXURY_INTIMACY_PRODUCTS[i];
+        const stripeMatch = stripeMap.get(lp.name.toLowerCase().trim());
+        if (!stripeMatch) continue;
+        matchedNames.add(lp.name.toLowerCase().trim());
+        const imageUrl = lp.imageUrl || (stripeMatch.images?.[0]) || null;
+        const price = new Intl.NumberFormat("en-GB", { style: "currency", currency: stripeMatch.currency.toUpperCase() }).format(stripeMatch.unitAmount / 100);
+        const allImages = (lp.images?.length > 0 ? lp.images : [imageUrl]).filter(Boolean);
+        products.push({
+          id: `curated-${i}`,
+          name: lp.name,
+          brand: lp.brand,
+          price,
+          description: lp.description,
+          longDescription: lp.longDescription || lp.description,
+          features: lp.features || [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
+          category: normalizeShopCategory(lp.category),
+          imageKeyword: lp.imageKeyword || `${lp.category} luxury couples`,
+          imageUrl,
+          images: allImages,
+          source: lp.brand,
+          stripePriceId: stripeMatch.priceId,
+          stripeProductId: stripeMatch.productId,
+          sizing: lp.sizing || null,
+          materials: lp.materials || null,
+          dimensions: lp.dimensions || null,
+          whatsIncluded: lp.whatsIncluded || null,
+          careInstructions: lp.careInstructions || null,
+        });
+      }
 
-          return {
-            id: `curated-${i}`,
-            name: lp.name,
-            brand: lp.brand,
-            price,
-            description: lp.description,
-            longDescription: lp.longDescription || lp.description,
-            features: lp.features || [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
-            category: normalizeShopCategory(lp.category),
-            imageKeyword: lp.imageKeyword || `${lp.category} luxury couples`,
-            imageUrl,
-            images: allImages,
-            source: lp.brand,
-            stripePriceId: stripeMatch.priceId,
-            stripeProductId: stripeMatch.productId,
-            sizing: lp.sizing || null,
-            materials: lp.materials || null,
-            dimensions: lp.dimensions || null,
-            whatsIncluded: lp.whatsIncluded || null,
-            careInstructions: lp.careInstructions || null,
-          };
-        })
-        .filter(Boolean);
+      for (const sp of stripeProducts.data) {
+        const shopName = sp.metadata?.shop_product_name?.toLowerCase()?.trim();
+        if (!shopName || matchedNames.has(shopName)) continue;
+        const meta = sp.metadata || {};
+        const stripeMatch = stripeMap.get(shopName);
+        if (!stripeMatch) continue;
+
+        const imageUrl = sp.images?.[0] || null;
+        const price = new Intl.NumberFormat("en-GB", { style: "currency", currency: stripeMatch.currency.toUpperCase() }).format(stripeMatch.unitAmount / 100);
+        let features: string[] = [];
+        try { features = JSON.parse(meta.features || "[]"); } catch { features = [`By ${meta.brand || "Us"}`, "Premium quality", "Perfect for couples"]; }
+        let sizing = null;
+        try { sizing = JSON.parse(meta.sizing || "null"); } catch {}
+        let whatsIncluded = null;
+        try { whatsIncluded = JSON.parse(meta.whats_included || "null"); } catch {}
+
+        products.push({
+          id: `ai-${sp.id}`,
+          name: meta.shop_product_name || sp.name,
+          brand: meta.brand || "",
+          price,
+          description: sp.description || "",
+          longDescription: meta.long_description || sp.description || "",
+          features,
+          category: normalizeShopCategory(meta.category || "Gifts"),
+          imageKeyword: `${meta.category || "luxury"} couples product`,
+          imageUrl,
+          images: sp.images?.length ? sp.images : (imageUrl ? [imageUrl] : []),
+          source: meta.brand || "",
+          stripePriceId: stripeMatch.priceId,
+          stripeProductId: stripeMatch.productId,
+          sizing,
+          materials: meta.materials || null,
+          dimensions: null,
+          whatsIncluded,
+          careInstructions: null,
+        });
+      }
 
       shopProductsCache = products;
       shopCacheTime = Date.now();
@@ -3005,6 +3045,9 @@ For each product you MUST provide detailed, accurate:
         });
       }
 
+      shopProductsCache = null;
+      shopCacheTime = 0;
+
       res.json({
         message: `Created ${created.length} products in Stripe`,
         products: created,
@@ -3026,6 +3069,8 @@ For each product you MUST provide detailed, accurate:
       }
       const stripe = await getUncachableStripeClient();
       await stripe.products.update(productId, { active: false });
+      shopProductsCache = null;
+      shopCacheTime = 0;
       res.json({ success: true, message: "Product deactivated" });
     } catch (e: any) {
       console.error("Delete product error:", e.message);
