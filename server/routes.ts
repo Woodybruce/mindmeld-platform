@@ -3021,16 +3021,51 @@ For each product you MUST provide detailed, accurate:
         }
       }
 
-      async function searchPexelsImage(query: string): Promise<string | null> {
-        const pexelsKey = process.env.PEXELS_API_KEY;
-        if (!pexelsKey) return null;
+      async function findRealProductImage(name: string, brand: string): Promise<string | null> {
         try {
-          const resp = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=square`, {
-            headers: { Authorization: pexelsKey },
+          const searchQuery = `${brand} ${name} product image`;
+          const openaiKey = process.env.OPENAI_API_KEY;
+          if (!openaiKey) return null;
+
+          const searchResp = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${openaiKey}`,
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "system",
+                  content: `You are a product image finder. Given a product name and brand, you must return ONLY a single direct image URL (.jpg, .png, or .webp) for that exact product from a major retailer's CDN (Amazon, John Lewis, Space NK, Lookfantastic, Selfridges, etc).
+
+Rules:
+- Return ONLY the URL, nothing else
+- The URL must be a direct link to an image file, not a product page
+- Use retailer CDNs like images-na.ssl-images-amazon.com, johnlewis.scene7.com, static.thcdn.com, media.spacenk.com etc
+- If you cannot find a reliable URL, respond with "NONE"`,
+                },
+                {
+                  role: "user",
+                  content: `Find the product image URL for: "${name}" by "${brand}"`,
+                },
+              ],
+              max_tokens: 200,
+              temperature: 0,
+              web_search_options: { search_context_size: "medium" },
+            }),
           });
-          if (!resp.ok) return null;
-          const data = await resp.json();
-          return data.photos?.[0]?.src?.medium || null;
+          if (!searchResp.ok) return null;
+          const searchData = await searchResp.json();
+          const imageUrl = searchData.choices?.[0]?.message?.content?.trim();
+          if (!imageUrl || imageUrl === "NONE" || imageUrl.length > 500) return null;
+
+          const urlMatch = imageUrl.match(/https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|webp)(\?[^\s"'<>]*)?/i);
+          const cleanUrl = urlMatch ? urlMatch[0] : imageUrl;
+
+          const verified = await verifyImageUrl(cleanUrl);
+          return verified;
         } catch {
           return null;
         }
@@ -3046,7 +3081,13 @@ For each product you MUST provide detailed, accurate:
 
         let verifiedImage = await verifyImageUrl(p.imageUrl);
         if (!verifiedImage) {
-          verifiedImage = await searchPexelsImage(`${p.name} ${p.brand} product`);
+          console.log(`Image verification failed for "${p.name}", searching for real image...`);
+          verifiedImage = await findRealProductImage(p.name, p.brand);
+          if (verifiedImage) {
+            console.log(`Found real image for "${p.name}": ${verifiedImage}`);
+          } else {
+            console.log(`No verified image found for "${p.name}"`);
+          }
         }
         const productImages = verifiedImage ? [verifiedImage] : [];
 
