@@ -97,7 +97,7 @@ async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?:
     }
   }
 
-  const model = options?.model || process.env.AI_MODEL || "gpt-4o-mini";
+  const model = options?.model || process.env.AI_MODEL || "gpt-5.4";
   const temperature = options?.temperature ?? 0.8;
 
   const url = process.env.AI_GATEWAY_URL || "https://api.openai.com/v1/chat/completions";
@@ -2973,7 +2973,7 @@ For each product you MUST provide detailed, accurate:
         ],
         { type: "function", function: { name: "create_products" } },
         undefined,
-        { model: "gpt-4.1", temperature: 0.7 }
+        { model: "gpt-5.4", temperature: 0.7 }
       );
 
       const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
