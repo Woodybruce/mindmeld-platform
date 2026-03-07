@@ -22,7 +22,6 @@ import SharedFileManager from "@/components/connect/SharedFileManager";
 import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
 import PartnerQuizBanner from "@/components/connect/PartnerQuizBanner";
 import { useSharedLists } from "@/hooks/useSharedLists";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import SpotifyWidget from "@/components/SpotifyWidget";
 
 const Us = () => {
@@ -32,7 +31,6 @@ const Us = () => {
   const listId = searchParams.get("listId") || null;
 
   const { lists: userLists, loading: listsLoading, handleBulkUpdate, reorderLists } = useSharedLists();
-  const { data: isAdmin } = useIsAdmin();
   const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
 
   return (
@@ -58,11 +56,9 @@ const Us = () => {
             <TabsTrigger value="photos" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
               <Camera className="w-4 h-4 text-pink-500" /> Photos
             </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="admin" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
-                <Settings className="w-4 h-4 text-muted-foreground" /> Admin
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="admin" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
+              <Settings className="w-4 h-4 text-muted-foreground" /> Admin
+            </TabsTrigger>
           </TabsList>
 
         {/* Lists — default tab */}
