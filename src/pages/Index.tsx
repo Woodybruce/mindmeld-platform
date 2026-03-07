@@ -21,7 +21,6 @@ import PartnerInviteCard from "@/components/PartnerInviteCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import AnnouncementsWidget from "@/components/AnnouncementsWidget";
 import { useOutlookAutoSync } from "@/hooks/useOutlookAutoSync";
 
 const CuratedLinksWidget = lazy(() => import("@/components/CuratedLinksWidget"));
@@ -97,9 +96,6 @@ const Index = () => {
 
         {/* Lists summary — below calendar */}
         <ListsSummaryWidget />
-
-        {/* Shared announcements board */}
-        <AnnouncementsWidget />
 
         {/* Games carousel */}
         <GamesCarousel />
