@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ShoppingBag, Star, X, Sparkles, Wine, Gift, Flower2, Flame, Home, Heart as HeartIcon, CreditCard, Loader2, ChevronLeft, ChevronRight, Ruler, Package, Shirt, Info, TrendingUp } from "lucide-react";
+import { RefreshCw, ShoppingBag, Star, X, Sparkles, Wine, Gift, Flower2, Flame, Home, Heart as HeartIcon, CreditCard, Loader2, ChevronLeft, ChevronRight, Ruler, Package, Shirt, Info, TrendingUp, Settings } from "lucide-react";
 
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import LikeButton from "@/components/LikeButton";
+import { useNavigate } from "react-router-dom";
 
 interface ProductSizing {
   type: string;
@@ -396,6 +398,8 @@ const ProductDetailModal = ({
 };
 
 const DiscoverTogether = () => {
+  const navigate = useNavigate();
+  const { data: isAdmin } = useIsAdmin();
   const [category, setCategory] = useState<ShopCategory>("all");
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(false);
@@ -504,14 +508,25 @@ const DiscoverTogether = () => {
           <h3 className="font-display text-base font-bold text-foreground tracking-tight">Shop</h3>
           <p className="text-[13px] text-muted-foreground mt-0.5">Curated luxury for couples</p>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={loading}
-          className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
-          data-testid="refresh-discover"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
-        </button>
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/admin/products")}
+              className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+              data-testid="button-admin-products"
+            >
+              <Settings className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          )}
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+            data-testid="refresh-discover"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
       </div>
 
       <div className="px-3 pb-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
