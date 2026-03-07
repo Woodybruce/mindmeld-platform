@@ -1853,198 +1853,66 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
     }
   });
 
-  // POST /api/shop/generate — In-app shop product catalog
-  app.post("/api/shop/generate", async (req: Request, res: Response) => {
-    try {
-      const { category = "all" } = req.body || {};
-
-      const categoryHint = category === "all"
-        ? "Mix of categories: Date Night, Gifts, Wellness, Intimacy, Games, Home"
-        : `Focus on: ${category}`;
-
-      const data = await callAI(
-        [
-          {
-            role: "system",
-            content: `You are a premium product curator for a couples/relationship app shop.
-Generate 6 SPECIFIC, REAL products that couples would love. Use exact product names and real brands you know exist.
-Each product needs:
-- name: Full product name (real product that exists)
-- brand: Real brand name
-- price: Realistic GBP price as string like "£29.99"
-- description: Short one-line tagline (max 50 chars)
-- longDescription: 2-3 sentences about why couples would love this product, what makes it special
-- features: Array of 3-4 key highlights/features (short phrases)
-- category: One of: Date Night, Gifts, Wellness, Intimacy, Games, Home
-- emoji: Single relevant emoji
-- imageKeyword: A descriptive 2-3 word search term for finding a relevant lifestyle/product photo (e.g. "massage candles romantic", "couples board game", "silk pajamas luxury")
-- source: Where to buy (brand name or retailer name e.g. "Diptyque", "John Lewis", "Le Creuset")
-- productUrl: Direct URL to the actual product page on the brand or retailer website. Use the real product page URL, NOT a search page. For example: "https://www.diptyque.com/products/baies-candle" not "https://www.amazon.co.uk/s?k=...". Use the brand's own website or a major retailer like John Lewis, Space NK, Selfridges, etc. If you are unsure of the exact URL, use the brand's main shop/category page.
-
-Make products feel premium and gift-worthy. Include a mix of price points from £15-£150.
-Products should be things couples would actually buy for each other or to enjoy together.
-IMPORTANT: Always provide direct product page URLs, never Amazon search URLs.`,
-          },
-          {
-            role: "user",
-            content: `Generate 6 premium product recommendations for couples. ${categoryHint}. Make them varied, real products from well-known brands. Provide direct product URLs.`,
-          },
-        ],
-        [
-          {
-            type: "function",
-            function: {
-              name: "generate_shop_products",
-              description: "Return 6 curated shop products for couples",
-              parameters: {
-                type: "object",
-                properties: {
-                  products: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        name: { type: "string" },
-                        brand: { type: "string" },
-                        price: { type: "string" },
-                        description: { type: "string" },
-                        category: { type: "string" },
-                        emoji: { type: "string" },
-                        longDescription: { type: "string" },
-                        features: { type: "array", items: { type: "string" } },
-                        imageKeyword: { type: "string" },
-                        source: { type: "string" },
-                        productUrl: { type: "string", description: "Direct URL to the product page on the brand or retailer website" },
-                      },
-                      required: ["name", "brand", "price", "description", "category", "emoji", "longDescription", "features", "imageKeyword", "source", "productUrl"],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                required: ["products"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        { type: "function", function: { name: "generate_shop_products" } },
-        req.body?.userId
-      );
-
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-      let rawProducts: any[] = [];
-      if (toolCall?.function?.arguments) {
-        rawProducts = JSON.parse(toolCall.function.arguments).products || [];
-      }
-
-      const imagePromises = rawProducts.map((p: any) =>
-        searchPexelsImage(p.imageKeyword || p.name)
-      );
-      const images = await Promise.all(imagePromises);
-
-      const sanitizeProductUrl = (url: string | undefined, productName: string): string => {
-        if (!url) return buildAmazonUrl(productName);
-        try {
-          const u = new URL(url);
-          if (u.protocol !== "https:" && u.protocol !== "http:") return buildAmazonUrl(productName);
-          return url;
-        } catch {
-          return buildAmazonUrl(productName);
-        }
-      };
-
-      const enriched: any[] = rawProducts.map((p: any, i: number) => ({
-        id: `shop-${category}-${Date.now()}-${i}`,
-        name: p.name,
-        brand: p.brand,
-        price: p.price,
-        description: p.description || "",
-        longDescription: p.longDescription || p.description || "",
-        features: p.features || [],
-        category: p.category || "Gifts",
-        emoji: p.emoji || "",
-        imageKeyword: p.imageKeyword || p.name,
-        imageUrl: images[i] || null,
-        buyUrl: sanitizeProductUrl(p.productUrl, p.name),
-        source: p.source || p.brand || "Shop",
-      }));
-
-      const catLower = category.toLowerCase();
-      if (catLower.includes("intimacy") || catLower === "all" || catLower.includes("mix")) {
-        const isIntimacy = catLower.includes("intimacy");
-        const luxuryPick = shuffle(LUXURY_INTIMACY_PRODUCTS).slice(0, isIntimacy ? 2 : 1);
-        const luxuryResolved = await Promise.all(
-          luxuryPick.map(async (lp: any, i: number) => {
-            const resolvedImage = await resolveProductImage(lp);
-            return {
-              id: `shop-luxury-${Date.now()}-${i}`,
-              name: lp.name,
-              brand: lp.brand,
-              price: lp.price,
-              description: lp.description,
-              longDescription: lp.longDescription || lp.description,
-              features: lp.features || [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
-              category: normalizeShopCategory(lp.category || "Intimacy"),
-              emoji: "",
-              imageKeyword: lp.imageKeyword || `${lp.category} luxury couples`,
-              imageUrl: resolvedImage,
-              buyUrl: lp.productUrl,
-              source: lp.brand,
-            };
-          })
-        );
-        enriched.push(...luxuryResolved);
-      }
-
-      res.json({ products: shuffle(enriched) });
-    } catch (e: any) {
-      console.error("shop/generate error:", e);
-      // Return fallback products
-      const fallback = await Promise.all(
-        LUXURY_INTIMACY_PRODUCTS.slice(0, 4).map(async (lp, i) => {
-          const resolvedImage = await resolveProductImage(lp);
-          return {
-            id: `shop-fallback-${i}`,
-            name: lp.name,
-            brand: lp.brand,
-            price: lp.price,
-            description: lp.description,
-            longDescription: lp.longDescription || lp.description,
-            features: lp.features || [`By ${lp.brand}`, "Premium quality"],
-            category: normalizeShopCategory(lp.category),
-            emoji: "",
-            imageKeyword: lp.imageKeyword || `${lp.category} luxury`,
-            imageUrl: resolvedImage,
-            buyUrl: lp.productUrl,
-            source: lp.brand,
-          };
-        })
-      );
-      res.json({ products: fallback });
-    }
-  });
-
   app.get("/api/shop/curated", async (_req: Request, res: Response) => {
     try {
-      const products = await Promise.all(
-        LUXURY_INTIMACY_PRODUCTS.map(async (lp: any, i: number) => {
-          const resolvedImage = await resolveProductImage(lp);
+      const stripeResult = await db.execute(
+        sql`SELECT 
+          p.id as product_id,
+          p.name as product_name,
+          p.description as product_description,
+          p.metadata as product_metadata,
+          p.images as product_images,
+          pr.id as price_id,
+          pr.unit_amount,
+          pr.currency
+        FROM stripe.products p
+        LEFT JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
+        WHERE p.active = true
+        ORDER BY p.name`
+      );
+
+      const stripeMap = new Map<string, { priceId: string; productId: string; unitAmount: number; currency: string; images: string[] }>();
+      for (const row of stripeResult.rows) {
+        const meta = (row.product_metadata as any) || {};
+        const shopName = meta.shop_product_name?.toLowerCase()?.trim();
+        if (shopName && row.price_id) {
+          const existing = stripeMap.get(shopName);
+          if (!existing || (row.currency === 'gbp' && existing.currency !== 'gbp')) {
+            stripeMap.set(shopName, {
+              priceId: row.price_id as string,
+              productId: row.product_id as string,
+              unitAmount: row.unit_amount as number,
+              currency: row.currency as string,
+              images: (row.product_images as string[]) || [],
+            });
+          }
+        }
+      }
+
+      const products = LUXURY_INTIMACY_PRODUCTS
+        .map((lp: any, i: number) => {
+          const stripeMatch = stripeMap.get(lp.name.toLowerCase().trim());
+          if (!stripeMatch) return null;
+          const imageUrl = lp.imageUrl || (stripeMatch.images?.[0]) || null;
+          const price = new Intl.NumberFormat("en-GB", { style: "currency", currency: stripeMatch.currency.toUpperCase() }).format(stripeMatch.unitAmount / 100);
+
           return {
             id: `curated-${i}`,
             name: lp.name,
             brand: lp.brand,
-            price: lp.price,
+            price,
             description: lp.description,
             longDescription: lp.longDescription || lp.description,
             features: lp.features || [`By ${lp.brand}`, "Premium quality", "Perfect for couples"],
             category: normalizeShopCategory(lp.category),
             imageKeyword: lp.imageKeyword || `${lp.category} luxury couples`,
-            imageUrl: resolvedImage,
-            buyUrl: lp.productUrl,
+            imageUrl,
             source: lp.brand,
+            stripePriceId: stripeMatch.priceId,
+            stripeProductId: stripeMatch.productId,
           };
         })
-      );
+        .filter(Boolean);
 
       res.json({ products });
     } catch (e: any) {
@@ -2902,7 +2770,6 @@ Focus on real, existing content about relationships, dating, couples, love, and 
       const baseUrl = `https://${domains[0]}`;
 
       const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: safeQuantity }],
         mode: 'payment',
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,

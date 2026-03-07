@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ShoppingBag, Star, X, ChevronRight, Sparkles, Wine, Gift, Flower2, Flame, Gamepad2, Home, Heart as HeartIcon, CreditCard, Loader2 } from "lucide-react";
+import { RefreshCw, ShoppingBag, Star, X, Sparkles, Wine, Gift, Flower2, Flame, Home, Heart as HeartIcon, CreditCard, Loader2 } from "lucide-react";
 
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
@@ -19,78 +19,34 @@ interface ShopProduct {
   emoji: string;
   imageKeyword: string;
   imageUrl?: string | null;
-  buyUrl: string;
   source: string;
-  stripePriceId?: string;
-  stripeProductId?: string;
+  stripePriceId?: string | null;
+  stripeProductId?: string | null;
 }
 
-interface StripeProduct {
-  id: string;
-  name: string;
-  description: string;
-  metadata: Record<string, string> | null;
-  images: string[] | null;
-  prices: { id: string; unit_amount: number; currency: string }[];
-}
-
-type ShopCategory = "our-picks" | "all" | "date-night" | "gifts" | "wellness" | "intimacy" | "games" | "home";
-
-const CATEGORY_TO_LABEL: Record<ShopCategory, string> = {
-  "our-picks": "Our Picks",
-  "all": "Mix of categories: Date Night, Gifts, Wellness, Intimacy, Games, Home",
-  "date-night": "Date Night",
-  "gifts": "Gifts",
-  "wellness": "Wellness",
-  "intimacy": "Intimacy",
-  "games": "Games",
-  "home": "Home",
-};
+type ShopCategory = "all" | "date-night" | "gifts" | "wellness" | "intimacy" | "home";
 
 interface CategoryDef { key: ShopCategory; label: string; icon: typeof Sparkles; }
 
 const CATEGORIES: CategoryDef[] = [
-  { key: "our-picks", label: "Our Picks", icon: HeartIcon },
-  { key: "all", label: "For You", icon: Sparkles },
-  { key: "date-night", label: "Date Night", icon: Wine },
-  { key: "gifts", label: "Gifts", icon: Gift },
-  { key: "wellness", label: "Wellness", icon: Flower2 },
+  { key: "all", label: "All", icon: HeartIcon },
   { key: "intimacy", label: "Intimacy", icon: Flame },
-  { key: "games", label: "Games", icon: Gamepad2 },
+  { key: "wellness", label: "Wellness", icon: Flower2 },
+  { key: "gifts", label: "Gifts", icon: Gift },
+  { key: "date-night", label: "Date Night", icon: Wine },
   { key: "home", label: "Home", icon: Home },
 ];
 
-const CACHE_KEY = "discover_catalog_v3";
+const CATEGORY_MAP: Record<string, ShopCategory> = {
+  "intimacy": "intimacy",
+  "wellness": "wellness",
+  "gifts": "gifts",
+  "date night": "date-night",
+  "home": "home",
+};
+
+const CACHE_KEY = "discover_catalog_v4";
 const CACHE_TTL = 1000 * 60 * 30;
-
-const isLuxuryBrand = (source: string) => {
-  const s = source.toLowerCase();
-  return s.includes("coco de mer") || s.includes("agent provocateur") || s.includes("goop") || s.includes("sophie") || s.includes("olivia") || s.includes("space nk") || s.includes("lelo") || s.includes("lovehoney");
-};
-
-const getBuyLabel = (product: ShopProduct) => {
-  const s = product.source.toLowerCase();
-  if (s.includes("coco de mer")) return "Shop Coco de Mer";
-  if (s.includes("agent provocateur")) return "Shop Agent Provocateur";
-  if (s.includes("goop")) return "Shop goop";
-  if (s.includes("space nk")) return "Shop Space NK";
-  if (s.includes("lelo")) return "Shop LELO";
-  if (s.includes("lovehoney")) return "Shop Lovehoney";
-  if (s.includes("sophie") || s.includes("olivia")) return "Shop Sophie & Olivia";
-  if (s.includes("amazon")) return "Buy on Amazon";
-  if (product.source && product.source !== "Shop") return `Shop ${product.source}`;
-  return `Buy Now`;
-};
-
-const openBuyLink = (url: string) => {
-  const a = document.createElement("a");
-  a.href = url;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-};
 
 const BRAND_GRADIENTS: Record<string, string> = {
   "coco de mer": "from-stone-950 via-stone-900 to-stone-800",
@@ -155,16 +111,17 @@ const ProductDetailModal = ({
   partnerLiked: boolean;
   mutual: boolean;
   onToggleLike: () => void;
-  onCheckout?: () => void;
+  onCheckout: () => void;
   checkoutLoading?: boolean;
 }) => {
-  const hasStripeCheckout = !!product.stripePriceId;
+  const hasPrice = !!product.stripePriceId;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
       onClick={onClose}
     >
@@ -172,7 +129,7 @@ const ProductDetailModal = ({
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        transition={{ type: "tween", duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
         className="w-full max-w-lg bg-background rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -230,39 +187,22 @@ const ProductDetailModal = ({
           )}
 
           <div className="mt-6 space-y-2.5 pb-4">
-            {hasStripeCheckout ? (
-              <>
-                <button
-                  onClick={onCheckout}
-                  disabled={checkoutLoading}
-                  className="w-full py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all bg-foreground text-background disabled:opacity-60"
-                  data-testid="button-stripe-checkout"
-                >
-                  {checkoutLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <CreditCard className="w-4 h-4" />
-                  )}
-                  {checkoutLoading ? "Processing..." : `Buy Now — ${product.price}`}
-                </button>
-                <p className="text-[11px] text-center text-muted-foreground/50 uppercase tracking-wider">
-                  Secure checkout via Stripe
-                </p>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => openBuyLink(product.buyUrl)}
-                  className="w-full py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all bg-foreground text-background"
-                  data-testid="buy-now-button"
-                >
-                  {getBuyLabel(product)}
-                </button>
-                <p className="text-[11px] text-center text-muted-foreground/50 uppercase tracking-wider">
-                  Opens in your browser
-                </p>
-              </>
-            )}
+            <button
+              onClick={onCheckout}
+              disabled={checkoutLoading || !hasPrice}
+              className="w-full py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all bg-foreground text-background disabled:opacity-60"
+              data-testid="button-stripe-checkout"
+            >
+              {checkoutLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4" />
+              )}
+              {checkoutLoading ? "Processing..." : hasPrice ? `Buy Now — ${product.price}` : "Coming Soon"}
+            </button>
+            <p className="text-[11px] text-center text-muted-foreground/50 uppercase tracking-wider">
+              {hasPrice ? "Secure checkout · Apple Pay · Google Pay" : ""}
+            </p>
           </div>
         </div>
       </motion.div>
@@ -271,47 +211,15 @@ const ProductDetailModal = ({
 };
 
 const DiscoverTogether = () => {
-  const [category, setCategory] = useState<ShopCategory>("our-picks");
+  const [category, setCategory] = useState<ShopCategory>("all");
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(null);
-  const [loadedCategories, setLoadedCategories] = useState<Set<string>>(new Set());
-  const [stripeProducts, setStripeProducts] = useState<StripeProduct[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const stripeLoaded = useRef(false);
+  const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("shop");
-
-  useEffect(() => {
-    if (stripeLoaded.current) return;
-    stripeLoaded.current = true;
-    fetch("/api/stripe/products")
-      .then(res => res.ok ? res.json() : { products: [] })
-      .then(data => setStripeProducts(data.products || []))
-      .catch(() => {});
-  }, []);
-
-  const matchStripeProduct = useCallback((shopProduct: ShopProduct): ShopProduct => {
-    if (stripeProducts.length === 0) return shopProduct;
-    const shopNameLower = shopProduct.name.toLowerCase().trim();
-    let match = stripeProducts.find(sp => {
-      const meta = sp.metadata || {};
-      return meta.shop_product_name && meta.shop_product_name.toLowerCase().trim() === shopNameLower;
-    });
-    if (!match) {
-      match = stripeProducts.find(sp => sp.name.toLowerCase().trim() === shopNameLower);
-    }
-    if (match && match.prices.length > 0) {
-      const gbpPrice = match.prices.find(p => p.currency === "gbp") || match.prices[0];
-      return {
-        ...shopProduct,
-        stripePriceId: gbpPrice.id,
-        stripeProductId: match.id,
-        price: new Intl.NumberFormat("en-GB", { style: "currency", currency: gbpPrice.currency.toUpperCase() }).format(gbpPrice.unit_amount / 100),
-      };
-    }
-    return shopProduct;
-  }, [stripeProducts]);
 
   const handleStripeCheckout = useCallback(async (product: ShopProduct) => {
     if (!product.stripePriceId) return;
@@ -339,99 +247,57 @@ const DiscoverTogether = () => {
     }
   }, []);
 
-  const getCached = useCallback((cat: string) => {
-    try {
-      const raw = localStorage.getItem(`${CACHE_KEY}_${cat}`);
-      if (!raw) return null;
-      const { data, ts } = JSON.parse(raw);
-      if (Date.now() - ts > CACHE_TTL) return null;
-      return data as ShopProduct[];
-    } catch { return null; }
-  }, []);
-
-  const setCache = useCallback((cat: string, data: ShopProduct[]) => {
-    try {
-      localStorage.setItem(`${CACHE_KEY}_${cat}`, JSON.stringify({ data, ts: Date.now() }));
-    } catch {}
-  }, []);
-
-  const fetchProducts = useCallback(async (cat: ShopCategory, force = false) => {
+  const fetchProducts = useCallback(async (force = false) => {
     if (!force) {
-      const cached = getCached(cat);
-      if (cached) {
-        setProducts(prev => {
-          const existing = new Set(prev.map(p => p.id));
-          const newItems = cached.filter((p: ShopProduct) => !existing.has(p.id));
-          return [...prev, ...newItems];
-        });
-        setLoadedCategories(prev => new Set([...prev, cat]));
-        return;
-      }
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const { data, ts } = JSON.parse(raw);
+          if (Date.now() - ts < CACHE_TTL && data?.length > 0) {
+            setProducts(data);
+            setLoaded(true);
+            return;
+          }
+        }
+      } catch {}
     }
 
     setLoading(true);
     try {
-      let fetchedProducts: ShopProduct[] = [];
-
-      if (cat === "our-picks") {
-        const { data } = await apiInvoke<{ products: ShopProduct[] }>("shop/curated", { method: "GET" });
-        fetchedProducts = data?.products || [];
-      } else {
-        const { data } = await apiInvoke<{ products: ShopProduct[] }>("shop/generate", {
-          body: { category: CATEGORY_TO_LABEL[cat] || cat },
-        });
-        fetchedProducts = data?.products || [];
-      }
-
-      if (fetchedProducts.length > 0) {
-        setCache(cat, fetchedProducts);
-        setProducts(prev => {
-          const existing = new Set(prev.map(p => p.id));
-          const newItems = fetchedProducts.filter(p => !existing.has(p.id));
-          return [...prev, ...newItems];
-        });
-        setLoadedCategories(prev => new Set([...prev, cat]));
+      const { data } = await apiInvoke<{ products: ShopProduct[] }>("shop/curated", { method: "GET" });
+      const fetched = data?.products || [];
+      if (fetched.length > 0) {
+        setProducts(fetched);
+        setLoaded(true);
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: fetched, ts: Date.now() }));
+        } catch {}
       }
     } catch (err) {
-      console.error("Discover fetch error:", err);
+      console.error("Shop fetch error:", err);
     } finally {
       setLoading(false);
     }
-  }, [getCached, setCache]);
+  }, []);
 
   useEffect(() => {
-    if (!loadedCategories.has(category)) {
-      fetchProducts(category);
-    }
-  }, [category, loadedCategories, fetchProducts]);
+    if (!loaded) fetchProducts();
+  }, [loaded, fetchProducts]);
 
-  const filteredProducts = (() => {
-    if (category === "our-picks") {
-      return products.filter(p => p.id.startsWith("curated-"));
-    }
-    if (category === "all") {
-      return products.filter(p => !p.id.startsWith("curated-"));
-    }
-    return products.filter(p => !p.id.startsWith("curated-") && p.category.toLowerCase().replace(/\s+/g, "-") === category);
-  })();
+  const mapCategory = (cat: string): ShopCategory => {
+    const lower = cat.toLowerCase().trim();
+    return CATEGORY_MAP[lower] || "all";
+  };
+
+  const filteredProducts = category === "all"
+    ? products
+    : products.filter(p => mapCategory(p.category) === category);
 
   const handleRefresh = () => {
-    try { localStorage.removeItem(`${CACHE_KEY}_${category}`); } catch {}
-    if (category === "our-picks") {
-      setProducts(prev => prev.filter(p => !p.id.startsWith("curated-")));
-    } else {
-      setProducts(prev => prev.filter(p => {
-        if (p.id.startsWith("curated-")) return true;
-        if (category === "all") return false;
-        return p.category.toLowerCase().replace(/\s+/g, "-") !== category;
-      }));
-    }
-    setLoadedCategories(prev => {
-      const next = new Set(prev);
-      next.delete(category);
-      return next;
-    });
-    fetchProducts(category, true);
+    try { localStorage.removeItem(CACHE_KEY); } catch {}
+    setLoaded(false);
+    setProducts([]);
+    fetchProducts(true);
   };
 
   return (
@@ -439,9 +305,7 @@ const DiscoverTogether = () => {
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <div>
           <h3 className="font-display text-base font-bold text-foreground tracking-tight">Shop</h3>
-          <p className="text-[13px] text-muted-foreground mt-0.5">
-            {category === "our-picks" ? "Curated luxury for couples" : "Picked for you both"}
-          </p>
+          <p className="text-[13px] text-muted-foreground mt-0.5">Curated luxury for couples</p>
         </div>
         <button
           onClick={handleRefresh}
@@ -470,7 +334,7 @@ const DiscoverTogether = () => {
         ))}
       </div>
 
-      <div className="pb-4 overflow-x-auto scrollbar-hide">
+      <div ref={scrollRef} className="pb-4 overflow-x-auto scrollbar-hide">
         {loading && filteredProducts.length === 0 ? (
           <div className="px-3 grid grid-rows-2 grid-flow-col auto-cols-[140px] gap-1.5">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -482,47 +346,37 @@ const DiscoverTogether = () => {
         ) : filteredProducts.length === 0 ? (
           <div className="px-3 flex flex-col items-center justify-center py-8">
             <ShoppingBag className="w-6 h-6 text-muted-foreground/20 mb-2" />
-            <p className="text-xs text-muted-foreground">No products yet</p>
-            <button onClick={handleRefresh} className="mt-2 text-[12px] text-foreground font-medium underline underline-offset-4" data-testid="discover-load">
-              Browse collection
-            </button>
+            <p className="text-xs text-muted-foreground">No products in this category</p>
           </div>
         ) : (
           <div className="px-3 grid grid-rows-2 grid-flow-col auto-cols-[140px] gap-1.5">
-            <AnimatePresence mode="popLayout">
-              {filteredProducts.slice(0, 12).map((product, i) => (
-                <motion.div
-                  key={product.id}
-                  layout
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  onClick={() => setSelectedProduct(product)}
-                  className="rounded-lg overflow-hidden cursor-pointer active:scale-[0.97] transition-transform bg-stone-50 dark:bg-stone-900/50"
-                  data-testid={`discover-product-${product.id}`}
-                >
-                  <div className="relative w-full aspect-[3/4] overflow-hidden">
-                    <ProductImage product={product} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                    <div className="absolute top-1.5 right-1.5">
-                      <LikeButton
-                        liked={isLikedByMe(product.id)}
-                        partnerLiked={isLikedByPartner(product.id)}
-                        mutual={isMutualLike(product.id)}
-                        onToggle={() => toggleLike(product.id, product.name)}
-                        size="sm"
-                      />
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-1.5">
-                      <p className="text-[8px] uppercase tracking-[0.15em] text-white/60 font-medium truncate">{product.brand}</p>
-                      <p className="text-[11px] font-medium text-white leading-tight mt-0.5 line-clamp-1">{product.name}</p>
-                      <p className="text-[11px] font-semibold text-white mt-0.5">{product.price}</p>
-                    </div>
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                onClick={() => setSelectedProduct(product)}
+                className="rounded-lg overflow-hidden cursor-pointer active:scale-[0.97] transition-transform bg-stone-50 dark:bg-stone-900/50"
+                data-testid={`discover-product-${product.id}`}
+              >
+                <div className="relative w-full aspect-[3/4] overflow-hidden">
+                  <ProductImage product={product} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <div className="absolute top-1.5 right-1.5">
+                    <LikeButton
+                      liked={isLikedByMe(product.id)}
+                      partnerLiked={isLikedByPartner(product.id)}
+                      mutual={isMutualLike(product.id)}
+                      onToggle={() => toggleLike(product.id, product.name)}
+                      size="sm"
+                    />
                   </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                  <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                    <p className="text-[8px] uppercase tracking-[0.15em] text-white/60 font-medium truncate">{product.brand}</p>
+                    <p className="text-[11px] font-medium text-white leading-tight mt-0.5 line-clamp-1">{product.name}</p>
+                    <p className="text-[11px] font-semibold text-white mt-0.5">{product.price}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -535,21 +389,18 @@ const DiscoverTogether = () => {
       </div>
 
       <AnimatePresence>
-        {selectedProduct && (() => {
-          const enriched = matchStripeProduct(selectedProduct);
-          return (
-            <ProductDetailModal
-              product={enriched}
-              onClose={() => setSelectedProduct(null)}
-              liked={isLikedByMe(selectedProduct.id)}
-              partnerLiked={isLikedByPartner(selectedProduct.id)}
-              mutual={isMutualLike(selectedProduct.id)}
-              onToggleLike={() => toggleLike(selectedProduct.id, selectedProduct.name)}
-              onCheckout={() => handleStripeCheckout(enriched)}
-              checkoutLoading={checkoutLoading}
-            />
-          );
-        })()}
+        {selectedProduct && (
+          <ProductDetailModal
+            product={selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+            liked={isLikedByMe(selectedProduct.id)}
+            partnerLiked={isLikedByPartner(selectedProduct.id)}
+            mutual={isMutualLike(selectedProduct.id)}
+            onToggleLike={() => toggleLike(selectedProduct.id, selectedProduct.name)}
+            onCheckout={() => handleStripeCheckout(selectedProduct)}
+            checkoutLoading={checkoutLoading}
+          />
+        )}
       </AnimatePresence>
     </motion.div>
   );

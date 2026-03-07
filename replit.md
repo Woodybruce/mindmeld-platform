@@ -24,13 +24,13 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - Mood check-ins.
 - AI-personalised "For You" content (Articles, Podcasts, Videos, Quotes) — uses couple's context to select/generate relevant content. Podcasts use Apple Podcasts exclusively (iTunes Search API for discovery + verification, Apple embed player, Apple Podcasts links). AI dynamically discovers new podcasts beyond the curated catalog based on couple context.
 - Spotify integration for shared music experiences and in-app playback.
-- Stripe in-app checkout for the Shop section (products managed via Stripe Dashboard, synced to PostgreSQL `stripe` schema).
+- Stripe in-app checkout for the Shop section — ALL products are owned inventory purchased via Stripe checkout (Apple Pay, Google Pay, card). Products seeded via `server/seed-stripe-products.ts`, synced to PostgreSQL `stripe` schema via `stripe-replit-sync`. No external buy links.
 - AI Product Sourcer: Admin tool at `/admin/products` that uses couple context (preferences, moods, liked content, lists) to recommend real, sourceable products with supplier info, wholesale pricing, and margin calculations. Server-side admin auth enforced via `requireAdmin()`. Private message data excluded from AI context.
 
 **UI/UX Decisions:**
 - The application utilizes TailwindCSS and shadcn/ui components for a consistent and modern aesthetic.
 - The "Shop" section (Discover Together) features a luxury editorial aesthetic with a premium layout, hero product cards, and category pills.
-- Product detail modals are designed as bottom-sheet style with spring animations.
+- Product detail modals are designed as bottom-sheet style with smooth tween animations (no spring bounce).
 - The "For You" section is expanded with dedicated tabs for Articles, Podcasts, Videos, and Quotes.
 - Performance optimizations include caching authentication sessions and profile data, lazy-loading heavy widgets, optimizing Outlook sync, server-side AI content caching (2hr TTL), smart Spotify polling (15s when playing, 60s idle), and comprehensive localStorage caching (user-scoped) for calendar events, weekly tasks, shared lists, Spotify tracks, and article OG metadata — enabling instant-load on return visits with background refresh.
 - QueryClient defaults: `staleTime=5min`, `gcTime=30min`, `refetchOnWindowFocus=false` to reduce unnecessary refetches.
@@ -46,4 +46,4 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - **Firebase Cloud Messaging (FCM):** For native push notifications (requires `FCM_SERVICE_ACCOUNT`).
 - **Web Push API:** For browser-based push notifications (requires `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`).
 - **Pexels API:** For resolving product images in the "Shop" section (requires `PEXELS_API_KEY`).
-- **Stripe:** In-app checkout for the Shop. Uses Replit Stripe connector (OAuth-based). Products/prices managed in Stripe Dashboard, synced to PostgreSQL `stripe` schema via `stripe-replit-sync`. Key files: `server/stripeClient.ts`, `server/webhookHandlers.ts`, `server/seed-stripe-products.ts`. Webhook route registered BEFORE `express.json()` in `server/index.ts`.
+- **Stripe:** In-app checkout for the Shop. Uses Replit Stripe connector (OAuth-based). Products created via Stripe API (`server/seed-stripe-products.ts`), synced to PostgreSQL `stripe` schema via `stripe-replit-sync`. Checkout supports Apple Pay, Google Pay, and card. Key files: `server/stripeClient.ts`, `server/webhookHandlers.ts`, `server/seed-stripe-products.ts`. Webhook route registered BEFORE `express.json()` in `server/index.ts`.
