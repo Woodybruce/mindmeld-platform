@@ -3003,6 +3003,39 @@ For each product you MUST provide detailed, accurate:
       const stripe = await getUncachableStripeClient();
       const created: any[] = [];
 
+      async function verifyImageUrl(url: string): Promise<string | null> {
+        if (!url || typeof url !== "string") return null;
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000);
+          const resp = await fetch(url, { method: "HEAD", signal: controller.signal, redirect: "follow" });
+          clearTimeout(timeout);
+          const ct = resp.headers.get("content-type") || "";
+          if (resp.ok && ct.startsWith("image/")) return url;
+          const getResp = await fetch(url, { method: "GET", signal: AbortSignal.timeout(5000), redirect: "follow" });
+          const getCt = getResp.headers.get("content-type") || "";
+          if (getResp.ok && getCt.startsWith("image/")) return url;
+          return null;
+        } catch {
+          return null;
+        }
+      }
+
+      async function searchPexelsImage(query: string): Promise<string | null> {
+        const pexelsKey = process.env.PEXELS_API_KEY;
+        if (!pexelsKey) return null;
+        try {
+          const resp = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=square`, {
+            headers: { Authorization: pexelsKey },
+          });
+          if (!resp.ok) return null;
+          const data = await resp.json();
+          return data.photos?.[0]?.src?.medium || null;
+        } catch {
+          return null;
+        }
+      }
+
       for (const p of generated) {
         const retailPence = Math.max(100, Math.round(Number(p.priceInPence) || 1000));
         let wholesalePence = Math.max(50, Math.round(Number(p.wholesalePriceEstimate) || 500));
@@ -3011,7 +3044,11 @@ For each product you MUST provide detailed, accurate:
         }
         const marginPercent = Math.round(((retailPence - wholesalePence) / retailPence) * 100);
 
-        const productImages = p.imageUrl ? [p.imageUrl] : [];
+        let verifiedImage = await verifyImageUrl(p.imageUrl);
+        if (!verifiedImage) {
+          verifiedImage = await searchPexelsImage(`${p.name} ${p.brand} product`);
+        }
+        const productImages = verifiedImage ? [verifiedImage] : [];
 
         const product = await stripe.products.create({
           name: `${p.name} — ${p.brand}`,
