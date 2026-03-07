@@ -7,7 +7,7 @@ import { notifyPartner } from "@/lib/notifyPartner";
 
 type Player = "Player 1" | "Player 2";
 
-const dares = [
+const funDares = [
   "Do your best impression of your partner right now",
   "Serenade your partner with any song for 30 seconds",
   "Give your partner a 60-second shoulder massage",
@@ -40,10 +40,46 @@ const dares = [
   "Tell your partner your most embarrassing moment",
 ];
 
+const spicyDares = [
+  "Strip completely naked and let your partner look at you for 60 seconds — no touching allowed",
+  "Go down on your partner for exactly 2 minutes — then stop. No matter what.",
+  "Let your partner sit on your face for 60 seconds",
+  "Give your partner the sloppiest, filthiest kiss you can manage",
+  "Get on your knees and beg your partner to tell you what they want done to them",
+  "Bend over and let your partner spank you 10 times — they choose how hard",
+  "Perform oral on your partner but only use the tip of your tongue",
+  "Describe your dirtiest fantasy about your partner — in graphic detail. Leave nothing out.",
+  "Let your partner undress you completely and then pose you however they want",
+  "Straddle your partner's face and grind slowly for 60 seconds",
+  "Lick your partner from their navel all the way down — as slowly as humanly possible",
+  "Get naked, lie face down, and let your partner do whatever they want to your body for 3 minutes",
+  "Demonstrate your favourite sex position on your partner right now — clothes optional",
+  "Give your partner a hand job or finger them for exactly 90 seconds — then stop completely",
+  "Whisper the filthiest thing you've ever thought about your partner directly into their ear",
+  "Let your partner tie your wrists behind your back — then they decide what happens next",
+  "Kiss, lick and bite your way from your partner's inner thigh to where they really want you",
+  "Put your partner's fingers in your mouth and show them exactly what your tongue can do",
+  "Strip your partner completely naked using only your mouth",
+  "Ride your partner (or let them ride you) for 60 seconds — then you MUST stop",
+  "Pin your partner down and kiss every inch of their body — save the best bits for last",
+  "Let your partner pull your hair while you go down on them",
+  "Give your partner a lap dance — fully naked. Make them keep their hands to themselves.",
+  "Eat whipped cream, chocolate, or ice off your partner's body — you choose where to put it",
+  "Edge your partner — bring them close and then stop. Repeat 3 times.",
+  "Tell your partner exactly how you want to be fucked tonight — step by step, in detail",
+  "Let your partner choke you lightly while you make out — use a safe word",
+  "Get into the 69 position for 2 minutes — loser is whoever stops first",
+  "Blindfold your partner, then use your mouth on them — they have to guess where you'll go next",
+  "Record a filthy voice note to your partner describing what you're going to do to them after this game",
+];
+
+type Mode = "fun" | "spicy" | "mixed";
+
 const DareDuel = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const [phase, setPhase] = useState<"setup" | "playing" | "complete">("setup");
+  const [mode, setMode] = useState<Mode>("fun");
 
   const [notified, setNotified] = useState(false);
   const [currentPlayer, setCurrentPlayer] = useState<Player>("Player 1");
@@ -56,9 +92,16 @@ const DareDuel = () => {
 
   const opponent: Player = currentPlayer === "Player 1" ? "Player 2" : "Player 1";
 
+  const getDarePool = () => {
+    if (mode === "fun") return funDares;
+    if (mode === "spicy") return spicyDares;
+    return [...funDares, ...spicyDares];
+  };
+
   const drawDare = () => {
-    const pool = dares.filter((d) => !used.has(d));
-    const source = pool.length === 0 ? dares : pool;
+    const allDares = getDarePool();
+    const pool = allDares.filter((d) => !used.has(d));
+    const source = pool.length === 0 ? allDares : pool;
     const pick = source[Math.floor(Math.random() * source.length)];
     setCurrentDare(pick);
     setUsed((prev) => new Set(prev).add(pick));
@@ -110,6 +153,7 @@ const DareDuel = () => {
 
   const reset = () => {
     setPhase("setup");
+    setMode("fun");
     setCurrentPlayer("Player 1");
     setScores({ "Player 1": 0, "Player 2": 0 });
     setCurrentDare(null);
@@ -132,9 +176,16 @@ const DareDuel = () => {
             <Swords className="w-5 h-5 text-us-coral" /> Dare Duel
           </h1>
           {phase === "playing" && (
-            <span className="ml-auto text-xs text-muted-foreground font-medium">
-              Round {round}/{maxRounds}
-            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                mode === "spicy" ? "bg-rose-500/15 text-rose-500" : mode === "mixed" ? "bg-purple-500/15 text-purple-500" : "bg-us-coral/10 text-us-coral"
+              }`}>
+                {mode === "spicy" ? "🔥 Spicy" : mode === "mixed" ? "🎲 Mixed" : "😄 Fun"}
+              </span>
+              <span className="text-xs text-muted-foreground font-medium">
+                Round {round}/{maxRounds}
+              </span>
+            </div>
           )}
         </div>
       </header>
@@ -154,6 +205,36 @@ const DareDuel = () => {
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
                 Take turns drawing dares. Complete them to score 2 points — or call a <strong>Duel</strong> to make your partner do it for 3!
               </p>
+            </div>
+
+            <div className="rounded-2xl bg-secondary/60 border border-border/30 p-4 space-y-3">
+              <p className="text-xs font-bold text-foreground uppercase tracking-wider">Choose your mode</p>
+              <div className="flex gap-2">
+                {([
+                  { key: "fun" as Mode, label: "Fun", icon: "😄", desc: "Playful & silly" },
+                  { key: "spicy" as Mode, label: "Spicy", icon: "🔥", desc: "Filthy & explicit" },
+                  { key: "mixed" as Mode, label: "Mixed", icon: "🎲", desc: "Best of both" },
+                ]).map((m) => (
+                  <button
+                    key={m.key}
+                    onClick={() => setMode(m.key)}
+                    className={`flex-1 rounded-xl p-3 text-center border transition-all ${
+                      mode === m.key
+                        ? m.key === "spicy"
+                          ? "bg-gradient-to-br from-rose-500/15 to-pink-500/20 border-rose-400/40"
+                          : m.key === "mixed"
+                          ? "bg-gradient-to-br from-purple-500/15 to-pink-500/20 border-purple-400/40"
+                          : "bg-gradient-to-br from-us-coral/15 to-us-blush/20 border-us-coral/40"
+                        : "bg-secondary/30 border-border/30 opacity-60"
+                    }`}
+                    data-testid={`button-mode-${m.key}`}
+                  >
+                    <span className="text-lg block">{m.icon}</span>
+                    <p className="text-xs font-bold text-foreground mt-1">{m.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{m.desc}</p>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="rounded-2xl bg-secondary/60 border border-border/30 p-4 space-y-2">
@@ -213,7 +294,9 @@ const DareDuel = () => {
                   exit={{ opacity: 0, scale: 0.92, y: -16 }}
                   className="rounded-2xl bg-gradient-to-br from-us-coral/10 to-us-blush/20 border border-us-coral/20 p-6"
                 >
-                  <p className="text-xs font-bold uppercase tracking-wider text-us-coral mb-3">🔥 Dare</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-us-coral mb-3">
+                    {mode === "spicy" ? "🔥 Spicy Dare" : mode === "mixed" && spicyDares.includes(currentDare || "") ? "🔥 Spicy Dare" : "⚡ Dare"}
+                  </p>
                   <p className="font-display text-xl font-bold text-foreground leading-snug">{currentDare}</p>
                 </motion.div>
               )}
