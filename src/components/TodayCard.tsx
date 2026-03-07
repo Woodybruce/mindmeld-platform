@@ -75,7 +75,8 @@ const TodayCard = () => {
 
   const taskCount = allTodayTasks.length;
   const eventCount = todayEvents.length;
-  const listCount = lists.length;
+  const activeLists = lists.filter((l) => l.status !== "pending_partner");
+  const listCount = activeLists.length;
 
   const today = new Date();
   const year = viewDate.getFullYear();
@@ -122,7 +123,7 @@ const TodayCard = () => {
     ? `${weekDays[0].toLocaleDateString("default", { month: "short", day: "numeric" })} – ${weekDays[6].toLocaleDateString("default", { month: "short", day: "numeric", year: "numeric" })}`
     : dayLabel;
 
-  const summaries = lists.map((list) => {
+  const summaries = activeLists.map((list) => {
     const checkableItems = list.items.filter((i: any) => !i.isHeading);
     const done = checkableItems.filter((i: any) => i.done).length;
     const total = checkableItems.length;
