@@ -3021,54 +3021,80 @@ For each product you MUST provide detailed, accurate:
         }
       }
 
-      async function findRealProductImage(name: string, brand: string): Promise<string | null> {
+      async function scrapeProductImage(pageUrl: string): Promise<string | null> {
         try {
-          const searchQuery = `${brand} ${name} product image`;
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 8000);
+          const resp = await fetch(pageUrl, {
+            signal: controller.signal,
+            headers: { "User-Agent": "Mozilla/5.0 (compatible; Bot/1.0)" },
+            redirect: "follow",
+          });
+          clearTimeout(timeout);
+          if (!resp.ok) return null;
+          const html = await resp.text();
+
+          const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+          if (ogMatch?.[1]) {
+            const verified = await verifyImageUrl(ogMatch[1]);
+            if (verified) return verified;
+          }
+
+          const imgMatches = html.match(/https?:\/\/[^\s"'<>)]+\.(jpg|jpeg|png|webp)(\?[^\s"'<>)]*)?/gi);
+          if (imgMatches) {
+            const productImages = imgMatches.filter(u =>
+              (u.includes("product") || u.includes("catalog") || u.includes("media") || u.includes("images")) &&
+              !u.includes("logo") && !u.includes("icon") && !u.includes("favicon") && !u.includes("sprite") &&
+              !u.includes("banner") && !u.includes("1x1") && !u.includes("pixel")
+            );
+            const candidates = productImages.length > 0 ? productImages : imgMatches;
+            for (const imgUrl of candidates.slice(0, 5)) {
+              const verified = await verifyImageUrl(imgUrl);
+              if (verified) return verified;
+            }
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      }
+
+      async function findRealProductImage(name: string, brand: string, supplierUrl?: string): Promise<string | null> {
+        if (supplierUrl) {
+          const fromSupplier = await scrapeProductImage(supplierUrl);
+          if (fromSupplier) return fromSupplier;
+        }
+
+        try {
           const openaiKey = process.env.OPENAI_API_KEY;
           if (!openaiKey) return null;
-
           const searchResp = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${openaiKey}`,
-            },
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
             body: JSON.stringify({
               model: "gpt-4o-mini",
               messages: [
-                {
-                  role: "system",
-                  content: `You are a product image finder. Given a product name and brand, you must return ONLY a single direct image URL (.jpg, .png, or .webp) for that exact product from a major retailer's CDN (Amazon, John Lewis, Space NK, Lookfantastic, Selfridges, etc).
-
-Rules:
-- Return ONLY the URL, nothing else
-- The URL must be a direct link to an image file, not a product page
-- Use retailer CDNs like images-na.ssl-images-amazon.com, johnlewis.scene7.com, static.thcdn.com, media.spacenk.com etc
-- If you cannot find a reliable URL, respond with "NONE"`,
-                },
-                {
-                  role: "user",
-                  content: `Find the product image URL for: "${name}" by "${brand}"`,
-                },
+                { role: "system", content: "Return ONLY the most likely product page URL for this product on Amazon UK, John Lewis, Space NK, or Lookfantastic. Return just the URL, nothing else. If unsure, return NONE." },
+                { role: "user", content: `${brand} ${name}` },
               ],
-              max_tokens: 200,
+              max_tokens: 150,
               temperature: 0,
               web_search_options: { search_context_size: "medium" },
             }),
           });
-          if (!searchResp.ok) return null;
-          const searchData = await searchResp.json();
-          const imageUrl = searchData.choices?.[0]?.message?.content?.trim();
-          if (!imageUrl || imageUrl === "NONE" || imageUrl.length > 500) return null;
+          if (searchResp.ok) {
+            const data = await searchResp.json();
+            const content = data.choices?.[0]?.message?.content?.trim() || "";
+            const urlMatch = content.match(/https?:\/\/[^\s"'<>]+/);
+            if (urlMatch && urlMatch[0] !== "NONE") {
+              const fromPage = await scrapeProductImage(urlMatch[0]);
+              if (fromPage) return fromPage;
+            }
+          }
+        } catch {}
 
-          const urlMatch = imageUrl.match(/https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|webp)(\?[^\s"'<>]*)?/i);
-          const cleanUrl = urlMatch ? urlMatch[0] : imageUrl;
-
-          const verified = await verifyImageUrl(cleanUrl);
-          return verified;
-        } catch {
-          return null;
-        }
+        return null;
       }
 
       for (const p of generated) {
@@ -3081,13 +3107,15 @@ Rules:
 
         let verifiedImage = await verifyImageUrl(p.imageUrl);
         if (!verifiedImage) {
-          console.log(`Image verification failed for "${p.name}", searching for real image...`);
-          verifiedImage = await findRealProductImage(p.name, p.brand);
+          console.log(`Image verification failed for "${p.name}" (${p.imageUrl || 'no URL'}), searching for real image...`);
+          verifiedImage = await findRealProductImage(p.name, p.brand, p.supplierUrl);
           if (verifiedImage) {
             console.log(`Found real image for "${p.name}": ${verifiedImage}`);
           } else {
             console.log(`No verified image found for "${p.name}"`);
           }
+        } else {
+          console.log(`Image verified for "${p.name}": ${verifiedImage}`);
         }
         const productImages = verifiedImage ? [verifiedImage] : [];
 
