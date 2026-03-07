@@ -1853,48 +1853,50 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
     }
   });
 
+  let shopProductsCache: any[] | null = null;
+  let shopCacheTime = 0;
+  const SHOP_CACHE_TTL = 1000 * 60 * 30;
+
   app.get("/api/shop/curated", async (_req: Request, res: Response) => {
     try {
-      const stripeResult = await db.execute(
-        sql`SELECT 
-          p.id as product_id,
-          p.name as product_name,
-          p.description as product_description,
-          p.metadata as product_metadata,
-          p.images as product_images,
-          pr.id as price_id,
-          pr.unit_amount,
-          pr.currency
-        FROM stripe.products p
-        LEFT JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
-        WHERE p.active = true
-        ORDER BY p.name`
-      );
+      if (shopProductsCache && Date.now() - shopCacheTime < SHOP_CACHE_TTL) {
+        return res.json({ products: shopProductsCache });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      const stripeProducts = await stripe.products.list({ active: true, limit: 100, expand: ['data.default_price'] });
 
       const stripeMap = new Map<string, { priceId: string; productId: string; unitAmount: number; currency: string; images: string[] }>();
-      for (const row of stripeResult.rows) {
-        let meta: any = row.product_metadata || {};
-        if (typeof meta === 'string') {
-          try { meta = JSON.parse(meta); } catch { meta = {}; }
-        }
-        let imgs: string[] = [];
-        if (Array.isArray(row.product_images)) {
-          imgs = row.product_images as string[];
-        } else if (typeof row.product_images === 'string') {
-          try { imgs = JSON.parse(row.product_images as string); } catch { imgs = []; }
-        }
-        const shopName = meta.shop_product_name?.toLowerCase()?.trim();
-        if (shopName && row.price_id) {
-          const existing = stripeMap.get(shopName);
-          if (!existing || (row.currency === 'gbp' && existing.currency !== 'gbp')) {
-            stripeMap.set(shopName, {
-              priceId: row.price_id as string,
-              productId: row.product_id as string,
-              unitAmount: row.unit_amount as number,
-              currency: row.currency as string,
-              images: imgs,
-            });
+      for (const sp of stripeProducts.data) {
+        const shopName = sp.metadata?.shop_product_name?.toLowerCase()?.trim();
+        if (!shopName) continue;
+
+        let priceId = '';
+        let unitAmount = 0;
+        let currency = 'gbp';
+
+        if (sp.default_price && typeof sp.default_price === 'object') {
+          priceId = sp.default_price.id;
+          unitAmount = (sp.default_price as any).unit_amount || 0;
+          currency = (sp.default_price as any).currency || 'gbp';
+        } else {
+          const prices = await stripe.prices.list({ product: sp.id, active: true, limit: 5 });
+          const gbpPrice = prices.data.find(p => p.currency === 'gbp') || prices.data[0];
+          if (gbpPrice) {
+            priceId = gbpPrice.id;
+            unitAmount = gbpPrice.unit_amount || 0;
+            currency = gbpPrice.currency;
           }
+        }
+
+        if (priceId) {
+          stripeMap.set(shopName, {
+            priceId,
+            productId: sp.id,
+            unitAmount,
+            currency,
+            images: sp.images || [],
+          });
         }
       }
 
@@ -1923,9 +1925,14 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
         })
         .filter(Boolean);
 
+      shopProductsCache = products;
+      shopCacheTime = Date.now();
       res.json({ products });
     } catch (e: any) {
       console.error("shop/curated error:", e);
+      if (shopProductsCache) {
+        return res.json({ products: shopProductsCache });
+      }
       res.json({ products: [] });
     }
   });
