@@ -1873,7 +1873,16 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
 
       const stripeMap = new Map<string, { priceId: string; productId: string; unitAmount: number; currency: string; images: string[] }>();
       for (const row of stripeResult.rows) {
-        const meta = (row.product_metadata as any) || {};
+        let meta: any = row.product_metadata || {};
+        if (typeof meta === 'string') {
+          try { meta = JSON.parse(meta); } catch { meta = {}; }
+        }
+        let imgs: string[] = [];
+        if (Array.isArray(row.product_images)) {
+          imgs = row.product_images as string[];
+        } else if (typeof row.product_images === 'string') {
+          try { imgs = JSON.parse(row.product_images as string); } catch { imgs = []; }
+        }
         const shopName = meta.shop_product_name?.toLowerCase()?.trim();
         if (shopName && row.price_id) {
           const existing = stripeMap.get(shopName);
@@ -1883,7 +1892,7 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
               productId: row.product_id as string,
               unitAmount: row.unit_amount as number,
               currency: row.currency as string,
-              images: (row.product_images as string[]) || [],
+              images: imgs,
             });
           }
         }
