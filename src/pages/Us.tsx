@@ -4,7 +4,7 @@ import {
   ListChecks, FolderOpen,
   FileText, Image, File,
   Camera, Calendar,
-  ChevronRight
+  ChevronRight, ShoppingBag, Settings
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -22,6 +22,7 @@ import SharedFileManager from "@/components/connect/SharedFileManager";
 import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
 import PartnerQuizBanner from "@/components/connect/PartnerQuizBanner";
 import { useSharedLists } from "@/hooks/useSharedLists";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import SpotifyWidget from "@/components/SpotifyWidget";
 
 const Us = () => {
@@ -31,6 +32,7 @@ const Us = () => {
   const listId = searchParams.get("listId") || null;
 
   const { lists: userLists, loading: listsLoading, handleBulkUpdate, reorderLists } = useSharedLists();
+  const { data: isAdmin } = useIsAdmin();
   const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
 
   return (
@@ -56,6 +58,11 @@ const Us = () => {
             <TabsTrigger value="photos" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
               <Camera className="w-4 h-4 text-pink-500" /> Photos
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="admin" className="gap-1.5 text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground text-muted-foreground">
+                <Settings className="w-4 h-4 text-muted-foreground" /> Admin
+              </TabsTrigger>
+            )}
           </TabsList>
 
         {/* Lists — default tab */}
@@ -91,8 +98,23 @@ const Us = () => {
           <OurPhotos />
         </TabsContent>
 
-        {/* Admin — Events, Photos & Files */}
+        {/* Admin — Events, Photos, Files & Shop */}
         <TabsContent value="admin" className="mt-4 space-y-6">
+          <button
+            onClick={() => navigate("/admin/products")}
+            className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-4 text-left hover:bg-secondary/50 transition-colors"
+            data-testid="button-manage-shop"
+          >
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <ShoppingBag className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Manage Shop Products</p>
+              <p className="text-xs text-muted-foreground">AI product sourcer, add/remove products</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
+
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-us-gold" />
