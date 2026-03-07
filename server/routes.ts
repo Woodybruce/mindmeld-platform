@@ -85,7 +85,7 @@ async function requireAdmin(req: Request, res: Response): Promise<string | null>
   }
 }
 
-async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?: string) {
+async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?: string, options?: { model?: string; temperature?: number }) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
 
@@ -97,6 +97,9 @@ async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?:
     }
   }
 
+  const model = options?.model || process.env.AI_MODEL || "gpt-4o-mini";
+  const temperature = options?.temperature ?? 0.8;
+
   const url = process.env.AI_GATEWAY_URL || "https://api.openai.com/v1/chat/completions";
   const response = await fetch(url, {
     method: "POST",
@@ -105,10 +108,10 @@ async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: process.env.AI_MODEL || "gpt-4o-mini",
+      model,
       messages: finalMessages,
       ...(tools ? { tools, tool_choice: toolChoice } : {}),
-      temperature: 0.8,
+      temperature,
     }),
   });
 
@@ -2826,36 +2829,55 @@ Use their interests, moods, liked content, recent conversations and list themes 
         [
           {
             role: "system",
-            content: `You are a product sourcing specialist for a couples/relationship app shop. Your job is to recommend ${safeCount} REAL products that:
-1. Actually exist and can be purchased from well-known UK/international suppliers or wholesalers
-2. Would appeal to couples based on their interests
-3. Have good resale margin potential
+            content: `You are an elite product sourcing specialist and buyer for a premium couples/relationship app called "Us". You have deep expertise in luxury consumer goods, wholesale sourcing, and e-commerce margins.
 
-For each product provide:
-- name: The exact real product name as it appears on the supplier site
-- brand: The real brand/manufacturer name
-- description: 1-2 sentence customer-facing description
-- priceInPence: Your recommended RETAIL price in GBP pence (e.g. 4999 for £49.99). This should be the price customers pay — build in a healthy margin (aim for 40-60% markup over wholesale)
-- wholesalePriceEstimate: Estimated wholesale/cost price in GBP pence
-- category: One of: Massage, Candles, Wellness, Lingerie, Accessories, Nightwear, Fragrance, Beauty, Skincare, Bath, Date Night, Gifts, Games, Home, Intimacy
-- supplier: Where to source this product for resale — use real supplier names like "Amazon Business", "Faire", "Beauty Wholesale Direct", "The Hut Group (THG)", "Alibaba", "Sephora Wholesale", "Boots Trade", "eBay Business Supply", the brand's own wholesale programme, or other real wholesale/trade platforms. Be specific.
-- supplierUrl: The best URL to find or order this product from the supplier (use real URLs like "https://www.faire.com", "https://business.amazon.co.uk", "https://www.alibaba.com", the brand's trade site, etc.)
-- features: Array of 3-4 short feature bullet points
-- marginNotes: Brief note on sourcing strategy — e.g. "Available on Faire at ~£12 wholesale, RRP £28" or "Brand offers trade accounts with 40% discount"
+YOUR MISSION: Find and recommend exactly ${safeCount} REAL, SPECIFIC products that genuinely exist in the market right now.
 
-Focus on products that are:
-- Readily available from known suppliers (not one-off items)
-- Premium enough for a luxury couples app but accessible enough to source
-- From brands that offer wholesale/trade pricing
-- Good margin potential (at least 30-40% profit after costs)
+CRITICAL RULES — FOLLOW THESE EXACTLY:
+1. ONLY recommend products that ACTUALLY EXIST — use real product names, real brands, real SKUs where possible
+2. Every product must be currently available to purchase (not discontinued)
+3. Use the EXACT product name as it appears on the brand's website or retailer listings
+4. Prices must be realistic — based on actual UK retail prices, not invented numbers
+5. Wholesale estimates should reflect real trade pricing (typically 40-55% off RRP for beauty/lifestyle)
 
-Prioritise these supplier channels (in order):
-1. Faire (curated wholesale marketplace — excellent for premium lifestyle products)
-2. Amazon Business / Amazon Vendor (easy sourcing, good variety)
-3. Brand direct wholesale (many beauty/wellness brands offer trade accounts)
-4. The Hut Group brands (Lookfantastic, ESPA, etc.)
-5. Alibaba / AliExpress (for white-label or unbranded items)
-6. Other specialist wholesalers${personalisationBlock}`,
+PRODUCT QUALITY STANDARDS:
+- Premium quality befitting a luxury couples app (think Net-a-Porter, Space NK, Liberty London calibre)
+- Products couples would genuinely use together or gift to each other
+- Strong brand recognition or compelling emerging brand story
+- Beautiful packaging / giftability is a major plus
+- Avoid generic, mass-market, or cheap-looking products
+
+SOURCING INTELLIGENCE — be specific and realistic:
+- Faire.com: Check their actual categories — they carry excellent indie beauty, candles, homeware, and wellness brands
+- Amazon Business UK: Good for established brands at volume pricing
+- Brand direct wholesale: Many premium brands (Diptyque, ESPA, Rituals, Neal's Yard, Lush) offer trade accounts at 35-50% off RRP
+- The Hut Group (THG): Lookfantastic, Dermstore — major beauty/wellness distributor with trade terms
+- Sephora / Space NK: Key retailers for premium beauty
+- Independent brands: Often offer the best margins (50-60% off RRP) via direct trade accounts
+- Liberty London / Selfridges wholesale programmes for premium positioning
+
+PRICING GUIDANCE:
+- Sweet spot: £25-£150 retail price range (most impulse-giftable)
+- Target 40-60% gross margin (e.g., wholesale £20, sell for £45-50)
+- Always price in whole pence amounts (e.g. 4500 for £45.00, not 4999)
+
+CATEGORIES (use exactly one): Massage, Candles, Wellness, Lingerie, Accessories, Nightwear, Fragrance, Beauty, Skincare, Bath, Date Night, Gifts, Games, Home, Intimacy
+
+For each product you MUST provide detailed, accurate:
+- name: Exact real product name
+- brand: Real brand name
+- description: 2-3 sentence luxurious customer-facing description that sells the product
+- longDescription: 4-5 sentence detailed description covering ingredients/materials, usage, and why it's special for couples
+- priceInPence: Recommended retail price in pence (must be realistic)
+- wholesalePriceEstimate: Trade/wholesale price in pence
+- category: From the list above
+- supplier: Specific real supplier name
+- supplierUrl: Real URL where the product can be sourced
+- features: Array of 4-5 specific feature bullet points (include sizes, materials, key ingredients)
+- marginNotes: Detailed sourcing strategy with actual estimated margins
+- sizing: Object with type (one of: "volume", "weight", "dimensions", "clothing", "shade", "one-size"), options array (specific sizes/volumes), and optional guide string
+- materials: Detailed ingredients or materials list
+- whatsIncluded: Array of what comes in the package${personalisationBlock}`,
           },
           {
             role: "user",
@@ -2867,7 +2889,7 @@ Prioritise these supplier channels (in order):
             type: "function",
             function: {
               name: "create_products",
-              description: `Generate ${safeCount} sourceable products for resale in the shop`,
+              description: `Source ${safeCount} real, purchasable premium products for a couples app shop`,
               parameters: {
                 type: "object",
                 properties: {
@@ -2876,18 +2898,30 @@ Prioritise these supplier channels (in order):
                     items: {
                       type: "object",
                       properties: {
-                        name: { type: "string" },
-                        brand: { type: "string" },
-                        description: { type: "string" },
-                        priceInPence: { type: "number" },
-                        wholesalePriceEstimate: { type: "number" },
-                        category: { type: "string" },
-                        supplier: { type: "string" },
-                        supplierUrl: { type: "string" },
-                        features: { type: "array", items: { type: "string" } },
-                        marginNotes: { type: "string" },
+                        name: { type: "string", description: "Exact real product name" },
+                        brand: { type: "string", description: "Real brand/manufacturer" },
+                        description: { type: "string", description: "2-3 sentence customer description" },
+                        longDescription: { type: "string", description: "4-5 sentence detailed description" },
+                        priceInPence: { type: "number", description: "Retail price in GBP pence" },
+                        wholesalePriceEstimate: { type: "number", description: "Wholesale/trade price in GBP pence" },
+                        category: { type: "string", description: "Product category" },
+                        supplier: { type: "string", description: "Real wholesale supplier name" },
+                        supplierUrl: { type: "string", description: "URL to source the product" },
+                        features: { type: "array", items: { type: "string" }, description: "4-5 feature bullets" },
+                        marginNotes: { type: "string", description: "Sourcing strategy and margin info" },
+                        sizing: {
+                          type: "object",
+                          properties: {
+                            type: { type: "string" },
+                            options: { type: "array", items: { type: "string" } },
+                            guide: { type: "string" },
+                          },
+                          required: ["type", "options"],
+                        },
+                        materials: { type: "string", description: "Full ingredients/materials list" },
+                        whatsIncluded: { type: "array", items: { type: "string" }, description: "Package contents" },
                       },
-                      required: ["name", "brand", "description", "priceInPence", "wholesalePriceEstimate", "category", "supplier", "supplierUrl", "features", "marginNotes"],
+                      required: ["name", "brand", "description", "longDescription", "priceInPence", "wholesalePriceEstimate", "category", "supplier", "supplierUrl", "features", "marginNotes", "sizing", "materials", "whatsIncluded"],
                     },
                   },
                 },
@@ -2897,7 +2931,9 @@ Prioritise these supplier channels (in order):
             },
           },
         ],
-        { type: "function", function: { name: "create_products" } }
+        { type: "function", function: { name: "create_products" } },
+        undefined,
+        { model: "gpt-4.1", temperature: 0.7 }
       );
 
       const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
@@ -2929,7 +2965,11 @@ Prioritise these supplier channels (in order):
             brand: p.brand,
             category: p.category,
             shop_product_name: p.name,
-            features: JSON.stringify(p.features || []),
+            features: JSON.stringify(p.features || []).slice(0, 500),
+            long_description: (p.longDescription || p.description).slice(0, 500),
+            sizing: JSON.stringify(p.sizing || {}).slice(0, 500),
+            materials: (p.materials || "").slice(0, 500),
+            whats_included: JSON.stringify(p.whatsIncluded || []).slice(0, 500),
             supplier: p.supplier || "",
             supplier_url: p.supplierUrl || "",
             wholesale_price: String(wholesalePence),
@@ -2953,11 +2993,15 @@ Prioritise these supplier channels (in order):
           wholesalePrice: `£${(wholesalePence / 100).toFixed(2)}`,
           margin: `${marginPercent}%`,
           description: p.description,
+          longDescription: p.longDescription,
           category: p.category,
           features: p.features,
           supplier: p.supplier,
           supplierUrl: p.supplierUrl,
           marginNotes: p.marginNotes,
+          sizing: p.sizing,
+          materials: p.materials,
+          whatsIncluded: p.whatsIncluded,
         });
       }
 

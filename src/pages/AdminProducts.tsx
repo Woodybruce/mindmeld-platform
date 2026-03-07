@@ -23,11 +23,15 @@ interface CreatedProduct {
   wholesalePrice: string;
   margin: string;
   description: string;
+  longDescription?: string;
   category: string;
   features: string[];
   supplier: string;
   supplierUrl: string;
   marginNotes: string;
+  sizing?: { type: string; options: string[]; guide?: string };
+  materials?: string;
+  whatsIncluded?: string[];
 }
 
 const AdminProducts = () => {
@@ -247,33 +251,72 @@ const AdminProducts = () => {
               <h3 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-3">
                 Sourced {lastCreated.length} products
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {lastCreated.map((p) => (
-                  <div key={p.productId} className="bg-white/50 dark:bg-white/5 rounded-xl p-3">
+                  <div key={p.productId} className="bg-white/50 dark:bg-white/5 rounded-xl p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground">{p.name}</p>
+                        <p className="text-sm font-semibold text-foreground">{p.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{p.brand} · {p.category}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-semibold text-foreground">{p.retailPrice}</p>
+                        <p className="text-sm font-bold text-foreground">{p.retailPrice}</p>
                         <p className="text-[11px] text-green-600 dark:text-green-400 font-medium">{p.margin} margin</p>
                       </div>
                     </div>
 
-                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
+                    <p className="text-xs text-muted-foreground mt-2">{p.description}</p>
+
+                    {p.features && p.features.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {p.features.map((f, i) => (
+                            <span key={i} className="text-[10px] bg-secondary/60 text-muted-foreground px-2 py-0.5 rounded-full">{f}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
                         <TrendingUp className="w-3 h-3" />
-                        Cost: {p.wholesalePrice}
-                      </span>
-                      <span className="flex items-center gap-1">
+                        <span>Cost: {p.wholesalePrice}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
                         <Package className="w-3 h-3" />
-                        {p.supplier}
-                      </span>
+                        <span>{p.supplier}</span>
+                      </div>
                     </div>
 
+                    {p.sizing && p.sizing.options?.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-1">
+                          {p.sizing.type === "volume" ? "Sizes" : p.sizing.type === "clothing" ? "Sizes" : p.sizing.type === "shade" ? "Shades" : "Options"}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {p.sizing.options.map((opt, i) => (
+                            <span key={i} className="text-[10px] border border-border/40 text-muted-foreground px-1.5 py-0.5 rounded">{opt}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {p.whatsIncluded && p.whatsIncluded.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-1">Includes</p>
+                        <p className="text-[11px] text-muted-foreground">{p.whatsIncluded.join(" · ")}</p>
+                      </div>
+                    )}
+
+                    {p.materials && (
+                      <div className="mt-2">
+                        <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-1">Materials</p>
+                        <p className="text-[11px] text-muted-foreground line-clamp-2">{p.materials}</p>
+                      </div>
+                    )}
+
                     {p.marginNotes && (
-                      <p className="text-[11px] text-muted-foreground/70 mt-1.5 italic">{p.marginNotes}</p>
+                      <p className="text-[11px] text-muted-foreground/70 mt-2 italic border-l-2 border-green-300 dark:border-green-700 pl-2">{p.marginNotes}</p>
                     )}
 
                     {p.supplierUrl && (
@@ -281,7 +324,7 @@ const AdminProducts = () => {
                         href={p.supplierUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-foreground/60 hover:text-foreground mt-1.5 underline underline-offset-2"
+                        className="inline-flex items-center gap-1 text-[11px] text-foreground/60 hover:text-foreground mt-2 underline underline-offset-2"
                         data-testid={`link-supplier-${p.productId}`}
                       >
                         <ExternalLink className="w-3 h-3" />
