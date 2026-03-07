@@ -29,8 +29,8 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 
 **UI/UX Decisions:**
 - The application utilizes TailwindCSS and shadcn/ui components for a consistent and modern aesthetic.
-- The "Shop" section (Discover Together) features a luxury editorial aesthetic with a premium layout, hero product cards, and category pills.
-- Product detail modals are designed as bottom-sheet style with smooth tween animations (no spring bounce).
+- The "Shop" section (Discover Together) features a luxury editorial aesthetic with a premium layout, hero product cards, and category pills. Product data is in `server/shopProducts.ts` with enhanced fields: multiple images (carousel in modal), sizing info (selectable sizes/shades/volumes), materials, dimensions, what's included, and care instructions. Cache key `discover_catalog_v5`.
+- Product detail modals are designed as bottom-sheet style with smooth tween animations (no spring bounce). Modals include image carousel with navigation dots, size selector, and expandable sections for product details.
 - The "For You" section is expanded with dedicated tabs for Articles, Podcasts, Videos, and Quotes.
 - Performance optimizations include caching authentication sessions and profile data, lazy-loading heavy widgets, optimizing Outlook sync, server-side AI content caching (2hr TTL), smart Spotify polling (15s when playing, 60s idle), and comprehensive localStorage caching (user-scoped) for calendar events, weekly tasks, shared lists, Spotify tracks, and article OG metadata — enabling instant-load on return visits with background refresh.
 - QueryClient defaults: `staleTime=5min`, `gcTime=30min`, `refetchOnWindowFocus=false` to reduce unnecessary refetches.

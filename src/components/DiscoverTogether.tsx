@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, ShoppingBag, Star, X, Sparkles, Wine, Gift, Flower2, Flame, Home, Heart as HeartIcon, CreditCard, Loader2 } from "lucide-react";
+import { RefreshCw, ShoppingBag, Star, X, Sparkles, Wine, Gift, Flower2, Flame, Home, Heart as HeartIcon, CreditCard, Loader2, ChevronLeft, ChevronRight, Ruler, Package, Shirt, Info } from "lucide-react";
 
 import { apiInvoke } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
+
+interface ProductSizing {
+  type: string;
+  options: string[];
+  guide?: string;
+}
 
 interface ShopProduct {
   id: string;
@@ -19,9 +25,15 @@ interface ShopProduct {
   emoji: string;
   imageKeyword: string;
   imageUrl?: string | null;
+  images?: string[];
   source: string;
   stripePriceId?: string | null;
   stripeProductId?: string | null;
+  sizing?: ProductSizing | null;
+  materials?: string | null;
+  dimensions?: string | null;
+  whatsIncluded?: string[] | null;
+  careInstructions?: string | null;
 }
 
 type ShopCategory = "all" | "date-night" | "gifts" | "wellness" | "intimacy" | "home";
@@ -45,7 +57,7 @@ const CATEGORY_MAP: Record<string, ShopCategory> = {
   "home": "home",
 };
 
-const CACHE_KEY = "discover_catalog_v4";
+const CACHE_KEY = "discover_catalog_v5";
 const CACHE_TTL = 1000 * 60 * 30;
 
 const BRAND_GRADIENTS: Record<string, string> = {
@@ -68,15 +80,17 @@ const getBrandGradient = (brand: string) => {
 
 const isGoopBrand = (brand: string) => brand.toLowerCase().includes("goop");
 
-const ProductImage = ({ product }: { product: ShopProduct }) => {
+const ProductImage = ({ product, index = 0 }: { product: ShopProduct; index?: number }) => {
   const [failed, setFailed] = useState(false);
   const gradient = getBrandGradient(product.brand);
   const lightBrand = isGoopBrand(product.brand);
+  const images = product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
+  const src = images[index] || product.imageUrl;
 
-  if (product.imageUrl && !failed) {
+  if (src && !failed) {
     return (
       <img
-        src={product.imageUrl}
+        src={src}
         alt={product.name}
         className="w-full h-full object-cover"
         loading="lazy"
@@ -91,6 +105,118 @@ const ProductImage = ({ product }: { product: ShopProduct }) => {
       <p className={`text-[10px] uppercase tracking-[0.25em] ${lightBrand ? "text-stone-400" : "text-white/40"} mb-2`}>{product.brand}</p>
       <p className={`text-sm font-medium ${lightBrand ? "text-stone-700" : "text-white/80"} text-center leading-snug max-w-[80%]`}>{product.name}</p>
       <p className={`text-[13px] font-semibold ${lightBrand ? "text-stone-900" : "text-white/90"} mt-2`}>{product.price}</p>
+    </div>
+  );
+};
+
+const ImageCarousel = ({ product }: { product: ShopProduct }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [failedIndices, setFailedIndices] = useState<Set<number>>(new Set());
+  const images = product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
+  const gradient = getBrandGradient(product.brand);
+  const lightBrand = isGoopBrand(product.brand);
+  const validImages = images.filter((_, i) => !failedIndices.has(i));
+
+  const handleImageError = (idx: number) => {
+    const updated = new Set(failedIndices).add(idx);
+    setFailedIndices(updated);
+    if (idx === currentIndex) {
+      const nextValid = images.findIndex((_, i) => i !== idx && !updated.has(i));
+      if (nextValid !== -1) setCurrentIndex(nextValid);
+    }
+  };
+
+  if (validImages.length === 0) {
+    return (
+      <div className={`w-full aspect-[3/2] bg-gradient-to-br ${gradient} flex flex-col items-center justify-center p-4`}>
+        <p className={`text-[10px] uppercase tracking-[0.25em] ${lightBrand ? "text-stone-400" : "text-white/40"} mb-2`}>{product.brand}</p>
+        <p className={`text-sm font-medium ${lightBrand ? "text-stone-700" : "text-white/80"} text-center leading-snug max-w-[80%]`}>{product.name}</p>
+        <p className={`text-[13px] font-semibold ${lightBrand ? "text-stone-900" : "text-white/90"} mt-2`}>{product.price}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full aspect-[3/2] overflow-hidden bg-stone-100 dark:bg-stone-900">
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={currentIndex}
+          src={images[currentIndex]}
+          alt={`${product.name} - Image ${currentIndex + 1}`}
+          className="w-full h-full object-cover"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onError={() => handleImageError(currentIndex)}
+          data-testid={`product-carousel-image-${currentIndex}`}
+        />
+      </AnimatePresence>
+
+      {images.length > 1 && (
+        <>
+          {currentIndex > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => Math.max(0, i - 1)); }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center"
+              data-testid="carousel-prev"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          {currentIndex < images.length - 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => Math.min(images.length - 1, i + 1)); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center"
+              data-testid="carousel-next"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentIndex ? "bg-white w-4" : "bg-white/40"}`}
+                data-testid={`carousel-dot-${i}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const DetailSection = ({ icon: Icon, title, children, defaultOpen = false }: { icon: typeof Ruler; title: string; children: React.ReactNode; defaultOpen?: boolean }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-t border-border/50">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-3 text-sm font-medium text-foreground"
+        data-testid={`section-toggle-${title.toLowerCase().replace(/\s+/g, '-')}`}
+      >
+        <span className="flex items-center gap-2">
+          <Icon className="w-4 h-4 text-muted-foreground" />
+          {title}
+        </span>
+        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="pb-3">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -115,6 +241,8 @@ const ProductDetailModal = ({
   checkoutLoading?: boolean;
 }) => {
   const hasPrice = !!product.stripePriceId;
+  const hasSizing = product.sizing && product.sizing.options.length > 0;
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   return (
     <motion.div
@@ -133,14 +261,11 @@ const ProductDetailModal = ({
         className="w-full max-w-lg bg-background rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative">
-          <div className="w-full aspect-[3/2] overflow-hidden rounded-t-3xl sm:rounded-t-3xl bg-stone-100">
-            <ProductImage product={product} />
-          </div>
-
+        <div className="relative rounded-t-3xl overflow-hidden">
+          <ImageCarousel product={product} />
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center z-10"
             data-testid="close-product-detail"
           >
             <X className="w-4 h-4" />
@@ -173,6 +298,34 @@ const ProductDetailModal = ({
 
           <p className="text-sm text-foreground/80 mt-4 leading-relaxed">{product.longDescription}</p>
 
+          {hasSizing && (
+            <div className="mt-5">
+              <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Ruler className="w-3.5 h-3.5" />
+                {product.sizing!.type === "shade" ? "Shade" : product.sizing!.type === "bra" || product.sizing!.type === "clothing" || product.sizing!.type === "corset" || product.sizing!.type === "hosiery" ? "Size" : "Size / Volume"}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {product.sizing!.options.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setSelectedSize(selectedSize === opt ? null : opt)}
+                    className={`px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-all ${
+                      selectedSize === opt
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-transparent text-foreground/70 border-border/60 hover:border-foreground/40"
+                    }`}
+                    data-testid={`size-option-${opt}`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+              {product.sizing!.guide && (
+                <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">{product.sizing!.guide}</p>
+              )}
+            </div>
+          )}
+
           {product.features.length > 0 && (
             <div className="mt-5 pt-4 border-t border-border/50">
               <div className="grid grid-cols-2 gap-2">
@@ -185,6 +338,38 @@ const ProductDetailModal = ({
               </div>
             </div>
           )}
+
+          <div className="mt-4 space-y-0">
+            {product.whatsIncluded && product.whatsIncluded.length > 0 && (
+              <DetailSection icon={Package} title="What's Included" defaultOpen>
+                <ul className="space-y-1">
+                  {product.whatsIncluded.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[13px] text-foreground/70">
+                      <span className="text-muted-foreground mt-0.5">•</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </DetailSection>
+            )}
+
+            {product.materials && (
+              <DetailSection icon={Shirt} title="Materials">
+                <p className="text-[13px] text-foreground/70 leading-relaxed">{product.materials}</p>
+                {product.dimensions && (
+                  <p className="text-[13px] text-foreground/70 mt-1.5">
+                    <span className="text-foreground/50">Dimensions:</span> {product.dimensions}
+                  </p>
+                )}
+              </DetailSection>
+            )}
+
+            {product.careInstructions && (
+              <DetailSection icon={Info} title="Care Instructions">
+                <p className="text-[13px] text-foreground/70 leading-relaxed">{product.careInstructions}</p>
+              </DetailSection>
+            )}
+          </div>
 
           <div className="mt-6 space-y-2.5 pb-4">
             <button
