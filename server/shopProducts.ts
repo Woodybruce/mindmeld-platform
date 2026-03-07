@@ -477,30 +477,6 @@ export const LUXURY_INTIMACY_PRODUCTS: ProductData[] = [
     careInstructions: "Replace lid after each use. Store at room temperature. Use within 12 months of opening."
   },
   {
-    name: "Daisy Lingerie Set",
-    brand: "Sophie & Olivia",
-    price: "£95.00",
-    description: "Delicate floral-inspired lingerie set with hand-finished lace",
-    longDescription: "The Daisy set features intricate floral lace applique on a sheer tulle base. Each piece is hand-finished with satin-bound edges. Includes balconette bra, thong, and suspender belt.",
-    features: ["Hand-finished lace", "Balconette + thong + suspender", "Satin-bound edges", "Sizes XS-XL"],
-    category: "Lingerie",
-    imageUrl: "https://sophieolivia-lingerie.com/cdn/shop/files/Frame187_1024x1024.png?v=1771671712",
-    images: [
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame187_1024x1024.png?v=1771671712",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame188_1024x1024.png?v=1771671712",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame189_1024x1024.png?v=1771671712"
-    ],
-    productUrl: "https://sophieolivia-lingerie.com/products/daisy-lingerie-set",
-    sizing: {
-      type: "clothing",
-      options: ["XS (UK 6)", "S (UK 8)", "M (UK 10)", "L (UK 12)", "XL (UK 14)"],
-      guide: "Runs true to size. Balconette style suits A-D cups. Adjustable suspender straps. If between sizes, size up for comfort."
-    },
-    materials: "French lace, tulle, satin binding, adjustable elastic straps",
-    whatsIncluded: ["Balconette bra", "Thong", "Suspender belt", "Branded bag"],
-    careInstructions: "Hand wash at 30°C. Do not tumble dry. Lay flat to dry."
-  },
-  {
     name: "Gia Bodysuit",
     brand: "Sophie & Olivia",
     price: "£107.00",
@@ -523,78 +499,6 @@ export const LUXURY_INTIMACY_PRODUCTS: ProductData[] = [
     materials: "Italian power-mesh, velvet-soft lining, flexible boning, snap-button closures",
     whatsIncluded: ["Gia Bodysuit", "Branded bag"],
     careInstructions: "Hand wash at 30°C. Do not bleach. Lay flat to dry. Do not iron."
-  },
-  {
-    name: "Joyce 4-Piece Set",
-    brand: "Sophie & Olivia",
-    price: "£107.00",
-    description: "Complete luxury lingerie set with bra, brief, thong and suspender",
-    longDescription: "The ultimate lingerie wardrobe in one box. Four coordinating pieces in midnight navy lace with gold hardware. Designed to mix, match and layer for countless configurations.",
-    features: ["4 pieces in one set", "Midnight navy lace", "Gold-plated hardware", "Gift-boxed"],
-    category: "Lingerie",
-    imageUrl: "https://sophieolivia-lingerie.com/cdn/shop/files/Frame78_1024x1024.png?v=1771528463",
-    images: [
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame78_1024x1024.png?v=1771528463",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame79_1024x1024.png?v=1771528463",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame80_1024x1024.png?v=1771528463"
-    ],
-    productUrl: "https://sophieolivia-lingerie.com/products/joyce-4-piece-set",
-    sizing: {
-      type: "clothing",
-      options: ["XS (UK 6)", "S (UK 8)", "M (UK 10)", "L (UK 12)", "XL (UK 14)"],
-      guide: "Bra suits A-D cups. Brief and thong have elasticated waist. Suspender belt is adjustable. If between sizes, size up."
-    },
-    materials: "Midnight navy lace, mesh, gold-plated hardware, adjustable elastic",
-    whatsIncluded: ["Bra", "Brief", "Thong", "Suspender belt", "Gift box"],
-    careInstructions: "Hand wash at 30°C. Do not tumble dry. Lay flat to dry."
-  },
-  {
-    name: "Jade 3-Piece Set",
-    brand: "Sophie & Olivia",
-    price: "£74.00",
-    description: "Elegant three-piece lingerie set in delicate sheer fabric",
-    longDescription: "The Jade set combines sheer tulle with intricate lace detailing for an effortlessly seductive look. Three coordinating pieces designed to be mixed and layered.",
-    features: ["3-piece set", "Sheer tulle & lace", "Coordinating design", "Sizes XS-XL"],
-    category: "Lingerie",
-    imageUrl: "https://sophieolivia-lingerie.com/cdn/shop/files/Frame93.png?v=1771670560&width=1024",
-    images: [
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame93.png?v=1771670560&width=1024",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame94.png?v=1771670560&width=1024",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame95.png?v=1771670560&width=1024"
-    ],
-    productUrl: "https://sophieolivia-lingerie.com/products/jade-3-piece-lingerie-set",
-    sizing: {
-      type: "clothing",
-      options: ["XS (UK 6)", "S (UK 8)", "M (UK 10)", "L (UK 12)", "XL (UK 14)"],
-      guide: "True to size. Sheer tulle has slight stretch. If between sizes, size up."
-    },
-    materials: "Sheer tulle, intricate lace, elastic trim",
-    whatsIncluded: ["Bra", "Thong", "Suspender belt", "Branded bag"],
-    careInstructions: "Hand wash at 30°C. Do not bleach or tumble dry. Lay flat to dry."
-  },
-  {
-    name: "Magda Lingerie Set",
-    brand: "Sophie & Olivia",
-    price: "£74.00",
-    description: "Romantic white lace lingerie set with a classic silhouette",
-    longDescription: "The Magda set features classic white lace with a modern cut. A beautifully romantic choice for special occasions or everyday luxury. Delicate, feminine, and flattering.",
-    features: ["White lace design", "Classic romantic silhouette", "Special occasion or everyday", "Sizes XS-XL"],
-    category: "Lingerie",
-    imageUrl: "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_511.png?v=1771857683&width=1024",
-    images: [
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_511.png?v=1771857683&width=1024",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_512.png?v=1771857683&width=1024",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_513.png?v=1771857683&width=1024"
-    ],
-    productUrl: "https://sophieolivia-lingerie.com/products/magda-lingerie",
-    sizing: {
-      type: "clothing",
-      options: ["XS (UK 6)", "S (UK 8)", "M (UK 10)", "L (UK 12)", "XL (UK 14)"],
-      guide: "True to size. Classic cut with moderate coverage. If between sizes, size up."
-    },
-    materials: "White lace, satin trim, adjustable elastic straps",
-    whatsIncluded: ["Bra", "Thong", "Branded bag"],
-    careInstructions: "Hand wash in cold water. Do not bleach. Lay flat to dry. Iron on lowest setting if needed."
   },
   {
     name: "Noa Slip Dress",
@@ -620,54 +524,6 @@ export const LUXURY_INTIMACY_PRODUCTS: ProductData[] = [
     dimensions: "Length: approximately 80cm from shoulder (size M)",
     whatsIncluded: ["Noa Slip Dress", "Branded bag"],
     careInstructions: "Machine wash at 30°C in a laundry bag. Do not tumble dry. Hang to dry. Iron on low heat."
-  },
-  {
-    name: "Amber Lingerie Set",
-    brand: "Sophie & Olivia",
-    price: "£69.00",
-    description: "Bold and sensual lingerie set with cut-out detailing",
-    longDescription: "The Amber set features daring cut-out panels and delicate strap work for a contemporary, confident look. Designed to make you feel empowered and irresistible.",
-    features: ["Cut-out detailing", "Strap-work design", "Contemporary styling", "Sizes XS-XL"],
-    category: "Lingerie",
-    imageUrl: "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_700.png?v=1772031000&width=1024",
-    images: [
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_700.png?v=1772031000&width=1024",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_701.png?v=1772031000&width=1024",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_702.png?v=1772031000&width=1024"
-    ],
-    productUrl: "https://sophieolivia-lingerie.com/products/amber-lingerie-set",
-    sizing: {
-      type: "clothing",
-      options: ["XS (UK 6)", "S (UK 8)", "M (UK 10)", "L (UK 12)", "XL (UK 14)"],
-      guide: "Fitted style. Strap work is adjustable. If between sizes, size up for comfort."
-    },
-    materials: "Mesh, elastic straps, metal hardware, satin trim",
-    whatsIncluded: ["Bra/harness top", "Thong", "Branded bag"],
-    careInstructions: "Hand wash at 30°C. Do not tumble dry. Lay flat to dry."
-  },
-  {
-    name: "Celeste Bodysuit",
-    brand: "Sophie & Olivia",
-    price: "£60.00",
-    description: "Sleek bodysuit with sheer panels and lace trim",
-    longDescription: "The Celeste bodysuit combines opaque and sheer panels for a play of reveal and conceal. Flattering lace trim at the neckline and high-cut legs elongate the silhouette.",
-    features: ["Sheer panel design", "Lace neckline trim", "High-cut silhouette", "Sizes XS-XL"],
-    category: "Lingerie",
-    imageUrl: "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_827.png?v=1772032365&width=1024",
-    images: [
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_827.png?v=1772032365&width=1024",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_828.png?v=1772032365&width=1024",
-      "https://sophieolivia-lingerie.com/cdn/shop/files/Frame_829.png?v=1772032365&width=1024"
-    ],
-    productUrl: "https://sophieolivia-lingerie.com/products/celeste-bodysuit",
-    sizing: {
-      type: "clothing",
-      options: ["XS (UK 6)", "S (UK 8)", "M (UK 10)", "L (UK 12)", "XL (UK 14)"],
-      guide: "Fitted silhouette with slight stretch. Snap-button closure. If between sizes, size up."
-    },
-    materials: "Mesh, lace trim, opaque panels, snap-button closures",
-    whatsIncluded: ["Celeste Bodysuit", "Branded bag"],
-    careInstructions: "Hand wash at 30°C. Do not bleach. Lay flat to dry."
   },
   {
     name: "Charlotte Lingerie Set",
