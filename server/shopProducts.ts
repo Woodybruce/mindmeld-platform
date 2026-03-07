@@ -267,7 +267,7 @@ export const LUXURY_INTIMACY_PRODUCTS: ProductData[] = [
     description: "Double-ended personal massager in medical-grade silicone",
     longDescription: "Designed in collaboration with intimacy experts, this beautifully sculpted vibrator features dual motors and 10 intensity settings. Medical-grade silicone with a whisper-quiet motor.",
     features: ["Medical-grade silicone", "10 intensity settings", "USB rechargeable", "Waterproof IPX7"],
-    category: "Wellness",
+    category: "Intimacy",
     imageUrl: null,
     images: [],
     productUrl: "https://goop.com/wellness/sexual-health/",
@@ -405,7 +405,7 @@ export const LUXURY_INTIMACY_PRODUCTS: ProductData[] = [
     description: "Sonic clitoral massager with Cruise Control technology",
     longDescription: "LELO's most advanced sonic massager uses SenSonic technology to stimulate the entire clitoris, not just the surface. Cruise Control reserves 20% power so intensity never drops when pressed harder.",
     features: ["SenSonic technology", "Cruise Control power", "12 intensity settings", "Waterproof & rechargeable"],
-    category: "Wellness",
+    category: "Intimacy",
     imageUrl: "https://static.thcdn.com/productimg/original/12669854-1544930111945017.jpg",
     images: [
       "https://static.thcdn.com/productimg/original/12669854-1544930111945017.jpg",
@@ -445,7 +445,7 @@ export const LUXURY_INTIMACY_PRODUCTS: ProductData[] = [
     description: "Rechargeable curved vibrator with 20 patterns and storage case",
     longDescription: "The bestselling Desire range combines premium silicone with powerful motors. This curved G-spot vibrator has 20 vibration patterns, whisper-quiet operation, and comes in a sleek storage case.",
     features: ["20 vibration patterns", "Premium silicone", "USB rechargeable", "Travel storage case"],
-    category: "Wellness",
+    category: "Intimacy",
     imageUrl: "https://m.media-amazon.com/images/I/41tvtOkCVbL._SL500_.jpg",
     images: [
       "https://m.media-amazon.com/images/I/41tvtOkCVbL._SL500_.jpg"
