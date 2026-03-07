@@ -201,7 +201,7 @@ const TodayCard = () => {
             </button>
           ) : (
             <>
-              <div className="max-h-[280px] overflow-y-auto scrollbar-hide">
+              <div className="max-h-[140px] overflow-y-auto scrollbar-hide">
                 {todayEvents.length > 0 && (
                   <div className="px-4 pt-3 pb-1 space-y-1">
                     {todayEvents.map((event) => (
