@@ -30,7 +30,7 @@ const Us = () => {
   const defaultTab = searchParams.get("tab") || "lists";
   const listId = searchParams.get("listId") || null;
 
-  const { lists: userLists, loading: listsLoading, handleBulkUpdate } = useSharedLists();
+  const { lists: userLists, loading: listsLoading, handleBulkUpdate, reorderLists } = useSharedLists();
   const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
 
   return (
@@ -69,6 +69,7 @@ const Us = () => {
               allExistingTemplates={userLists.map(l => l.template).filter(Boolean) as string[]}
               initialExpandedId={listId}
               onUpdate={handleBulkUpdate}
+              onReorder={reorderLists}
             />
           </div>
         </TabsContent>

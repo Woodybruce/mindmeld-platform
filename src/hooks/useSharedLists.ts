@@ -46,10 +46,33 @@ const setListsCache = (userId: string, lists: UserList[]) => {
   try { localStorage.setItem(`us-lists-${userId}`, JSON.stringify({ data: lists, ts: Date.now() })); } catch {}
 };
 
+const getListOrder = (userId: string): string[] | null => {
+  try {
+    const raw = localStorage.getItem(`us-list-order-${userId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+const setListOrder = (userId: string, order: string[]) => {
+  try { localStorage.setItem(`us-list-order-${userId}`, JSON.stringify(order)); } catch {}
+};
+
+function applyOrder(lists: UserList[], order: string[] | null): UserList[] {
+  if (!order || order.length === 0) return lists;
+  const map = new Map(lists.map(l => [l.id, l]));
+  const ordered: UserList[] = [];
+  for (const id of order) {
+    const l = map.get(id);
+    if (l) { ordered.push(l); map.delete(id); }
+  }
+  map.forEach(l => ordered.push(l));
+  return ordered;
+}
+
 export function useSharedLists() {
   const { user, profile } = useAuth();
   const cached = user ? getListsCache(user.id) : null;
-  const [lists, setLists] = useState<UserList[]>(cached || []);
+  const savedOrder = user ? getListOrder(user.id) : null;
+  const [lists, setLists] = useState<UserList[]>(applyOrder(cached || [], savedOrder));
   const [loading, setLoading] = useState(!cached);
 
   const fetchLists = useCallback(async () => {
@@ -66,8 +89,10 @@ export function useSharedLists() {
       const result = data
         .filter((row: any) => !INTERNAL_PREFIXES.some(p => row.name?.startsWith(p)))
         .map(dbRowToList);
-      setLists(result);
-      if (user) setListsCache(user.id, result);
+      const order = getListOrder(user.id);
+      const ordered = applyOrder(result, order);
+      setLists(ordered);
+      if (user) setListsCache(user.id, ordered);
     }
     setLoading(false);
   }, [user]);
@@ -142,5 +167,18 @@ export function useSharedLists() {
     }
   }, [lists, addList, updateList, deleteList]);
 
-  return { lists, loading, addList, updateList, deleteList, handleBulkUpdate, fetchLists };
+  const reorderLists = useCallback((fromIndex: number, toIndex: number) => {
+    if (!user) return;
+    setLists(prev => {
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      const order = updated.map(l => l.id);
+      setListOrder(user.id, order);
+      setListsCache(user.id, updated);
+      return updated;
+    });
+  }, [user]);
+
+  return { lists, loading, addList, updateList, deleteList, handleBulkUpdate, fetchLists, reorderLists };
 }

@@ -76,6 +76,7 @@ CREATE TABLE public.shared_lists (
   created_at timestamptz DEFAULT now() NOT NULL,
   updated_at timestamptz DEFAULT now() NOT NULL
 );
+-- NOTE: List ordering is handled client-side via localStorage (us-list-order-{userId})
 
 -- 7. Device tokens (push notifications)
 CREATE TABLE public.device_tokens (

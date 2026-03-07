@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Heart, Pencil, Search, ClipboardList, MoreHorizontal, ShoppingCart, ExternalLink } from "lucide-react";
+import { Plus, Check, Trash2, ChevronRight, ChevronDown, ListChecks, Calendar, Target, Zap, Paperclip, Image, CalendarPlus, Eye, EyeOff, RefreshCw, TrendingUp, Heart, Pencil, Search, ClipboardList, MoreHorizontal, ShoppingCart, ExternalLink, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiInvoke } from "@/lib/api";
@@ -370,9 +370,10 @@ interface SharedListsProps {
   hideNewButton?: boolean;
   /** Auto-expand a specific list by ID */
   initialExpandedId?: string | null;
+  onReorder?: (fromIndex: number, toIndex: number) => void;
 }
 
-const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, initialExpandedId }: SharedListsProps) => {
+const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, initialExpandedId, onReorder }: SharedListsProps) => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
 
@@ -396,6 +397,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     }
   };
   const [expandedId, setExpandedId] = useState<string | null>(initialExpandedId || null);
+  const [reorderMode, setReorderMode] = useState(false);
   const [newItemText, setNewItemText] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -1185,8 +1187,21 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
         data-testid="list-file-input"
       />
 
-      {lists.filter(l => l.status !== "pending_partner").map((list, i) => {
-        const isExpanded = expandedId === list.id;
+      {onReorder && lists.filter(l => l.status !== "pending_partner").length > 1 && (
+        <button
+          onClick={() => setReorderMode(!reorderMode)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            reorderMode ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+          }`}
+          data-testid="button-reorder-lists"
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+          {reorderMode ? "Done" : "Reorder"}
+        </button>
+      )}
+
+      {lists.filter(l => l.status !== "pending_partner").map((list, i, filteredArr) => {
+        const isExpanded = !reorderMode && expandedId === list.id;
         const doneCount = list.items.filter((i) => i.done && !i.isHeading && !i.isObservation).length;
         const activeItems = list.items.filter((i) => !i.done || i.isHeading || i.isObservation);
         const completedItems = list.items.filter((i) => i.done && !i.isHeading && !i.isObservation);
@@ -1198,39 +1213,68 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
         const totalCountable = countable.length;
         const query = searchQuery[list.id]?.toLowerCase() || "";
 
+        const originalIndex = lists.indexOf(list);
+        const isFirst = i === 0;
+        const isLast = i === filteredArr.length - 1;
+
         return (
           <motion.div
             key={list.id}
+            layout={reorderMode}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
+            transition={{ delay: reorderMode ? 0 : i * 0.05 }}
             className="rounded-xl border border-border/50 bg-card overflow-hidden"
           >
-            <button
-              onClick={() => setExpandedId(isExpanded ? null : list.id)}
-              className="w-full flex items-center gap-3 p-4 text-left"
-            >
-              <span className="text-xl">{list.icon}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{list.name}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-xs text-muted-foreground">
-                    {doneCount}/{totalCountable} done
-                    {list.scoreData && ` · ${completionPct}%`}
-                  </p>
-                  {totalCountable > 0 && (
-                    <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${completionPct}%` }}
-                        className="h-full rounded-full bg-primary"
-                      />
-                    </div>
-                  )}
+            <div className="flex items-center">
+              {reorderMode && onReorder && (
+                <div className="flex flex-col pl-2 py-2 gap-0.5" data-testid={`reorder-controls-${list.id}`}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (!isFirst) onReorder(originalIndex, lists.indexOf(filteredArr[i - 1])); }}
+                    disabled={isFirst}
+                    className="p-1.5 rounded-md hover:bg-secondary disabled:opacity-25 transition-colors"
+                    data-testid={`button-move-up-${list.id}`}
+                  >
+                    <ChevronRight className="w-4 h-4 text-muted-foreground -rotate-90" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (!isLast) onReorder(originalIndex, lists.indexOf(filteredArr[i + 1])); }}
+                    disabled={isLast}
+                    className="p-1.5 rounded-md hover:bg-secondary disabled:opacity-25 transition-colors"
+                    data-testid={`button-move-down-${list.id}`}
+                  >
+                    <ChevronRight className="w-4 h-4 text-muted-foreground rotate-90" />
+                  </button>
                 </div>
-              </div>
-              <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-            </button>
+              )}
+              <button
+                onClick={() => !reorderMode && setExpandedId(isExpanded ? null : list.id)}
+                className="flex-1 flex items-center gap-3 p-4 text-left"
+              >
+                <span className="text-xl">{list.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{list.name}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-xs text-muted-foreground">
+                      {doneCount}/{totalCountable} done
+                      {list.scoreData && ` · ${completionPct}%`}
+                    </p>
+                    {totalCountable > 0 && (
+                      <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${completionPct}%` }}
+                          className="h-full rounded-full bg-primary"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {!reorderMode && (
+                  <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                )}
+              </button>
+            </div>
 
             {isExpanded && (
               <motion.div
