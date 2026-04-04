@@ -1911,7 +1911,7 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
   }
 
   async function findRealProductImage(name: string, brand: string, supplierUrl?: string): Promise<string | null> {
-    if (supplierUrl) {
+    if (supplierUrl && supplierUrl.length > 10) {
       const fromSupplier = await scrapeProductImage(supplierUrl);
       if (fromSupplier) return fromSupplier;
     }
@@ -1919,31 +1919,47 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
     try {
       const openaiKey = process.env.OPENAI_API_KEY;
       if (!openaiKey) return null;
+
       const searchResp = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
-            { role: "system", content: "You have web search. Find the official product page for this product. Return ONLY one URL to the product page on an official retailer (e.g. the brand's own website, Amazon UK, John Lewis, Space NK, Lovehoney, LookFantastic). Return just the URL, nothing else. If you cannot find it, return NONE." },
+            { role: "system", content: `You have web search. Find a DIRECT image URL for this product. 
+
+RULES:
+1. Search for the product on the brand's official website, Amazon UK, John Lewis, or major retailers
+2. Return the DIRECT image file URL (must end in .jpg, .jpeg, .png, or .webp, OR be from a known CDN like m.media-amazon.com/images, cdn.shopify.com, static.thcdn.com, i.johnlewis.com)
+3. For Amazon products, use URLs like: https://m.media-amazon.com/images/I/XXXXX._SL500_.jpg
+4. For Shopify stores, use URLs like: https://brand.com/cdn/shop/products/NAME_1024x.jpg
+5. Return ONLY the direct image URL on a single line, nothing else
+6. If you truly cannot find an image, return NONE
+
+Do NOT return product page URLs. Only return direct image file URLs.` },
             { role: "user", content: `${brand} ${name}` },
           ],
-          max_tokens: 200,
+          max_tokens: 300,
           temperature: 0,
-          web_search_options: { search_context_size: "medium" },
+          web_search_options: { search_context_size: "high" },
         }),
       });
       if (searchResp.ok) {
         const data = await searchResp.json();
         const content = data.choices?.[0]?.message?.content?.trim() || "";
-        const urlMatch = content.match(/https?:\/\/[^\s"'<>]+/);
-        if (urlMatch && urlMatch[0] !== "NONE") {
-          console.log(`  OpenAI found product page: ${urlMatch[0]}`);
-          const fromPage = await scrapeProductImage(urlMatch[0]);
+        const urls = content.match(/https?:\/\/[^\s"'<>\)]+/g) || [];
+        for (const url of urls) {
+          if (url === "NONE") continue;
+          console.log(`  OpenAI suggested image: ${url}`);
+          const verified = await verifyImageUrl(url);
+          if (verified) return verified;
+          const fromPage = await scrapeProductImage(url);
           if (fromPage) return fromPage;
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error(`  Image search error for "${name}":`, e);
+    }
 
     return null;
   }
