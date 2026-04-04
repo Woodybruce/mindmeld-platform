@@ -68,6 +68,16 @@ const BRAND_GRADIENTS: Record<string, string> = {
   "sophie & olivia": "from-rose-950 via-stone-900 to-stone-950",
   "lelo": "from-stone-950 via-stone-900 to-stone-800",
   "lovehoney": "from-purple-950 via-stone-900 to-stone-950",
+  "jo malone": "from-stone-100 via-amber-50 to-stone-50",
+  "le creuset": "from-red-950 via-orange-900 to-red-800",
+  "diptyque": "from-stone-900 via-stone-800 to-stone-700",
+  "the white company": "from-stone-100 via-white to-stone-50",
+  "our place": "from-stone-800 via-teal-900 to-stone-900",
+  "piglet in bed": "from-pink-100 via-stone-50 to-pink-50",
+  "neom": "from-emerald-900 via-stone-800 to-emerald-950",
+  "the school of life": "from-yellow-900 via-amber-800 to-stone-900",
+  "aged & charred": "from-amber-950 via-stone-900 to-stone-950",
+  "under lucky stars": "from-indigo-950 via-stone-900 to-indigo-900",
 };
 
 const getBrandGradient = (brand: string) => {
@@ -78,12 +88,15 @@ const getBrandGradient = (brand: string) => {
   return "from-stone-900 via-stone-800 to-stone-700";
 };
 
-const isGoopBrand = (brand: string) => brand.toLowerCase().includes("goop");
+const isLightBrand = (brand: string) => {
+  const b = brand.toLowerCase();
+  return b.includes("goop") || b.includes("jo malone") || b.includes("white company") || b.includes("piglet in bed");
+};
 
 const ProductImage = ({ product, index = 0 }: { product: ShopProduct; index?: number }) => {
   const [failed, setFailed] = useState(false);
   const gradient = getBrandGradient(product.brand);
-  const lightBrand = isGoopBrand(product.brand);
+  const lightBrand = isLightBrand(product.brand);
   const images = product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
   const src = images[index] || product.imageUrl;
 
@@ -114,7 +127,7 @@ const ImageCarousel = ({ product }: { product: ShopProduct }) => {
   const [failedIndices, setFailedIndices] = useState<Set<number>>(new Set());
   const images = product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
   const gradient = getBrandGradient(product.brand);
-  const lightBrand = isGoopBrand(product.brand);
+  const lightBrand = isLightBrand(product.brand);
   const validImages = images.filter((_, i) => !failedIndices.has(i));
 
   const handleImageError = (idx: number) => {
@@ -455,7 +468,6 @@ const DiscoverTogether = () => {
       const fetched = data?.products || [];
       if (fetched.length > 0) {
         setProducts(fetched);
-        setLoaded(true);
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify({ data: fetched, ts: Date.now() }));
         } catch {}
@@ -463,6 +475,7 @@ const DiscoverTogether = () => {
     } catch (err) {
       console.error("Shop fetch error:", err);
     } finally {
+      setLoaded(true);
       setLoading(false);
     }
   }, []);

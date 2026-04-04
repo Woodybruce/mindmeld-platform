@@ -99,6 +99,8 @@ const AdminProducts = () => {
   const [clearingAll, setClearingAll] = useState(false);
   const [fixingImages, setFixingImages] = useState(false);
   const [fixImageResult, setFixImageResult] = useState("");
+  const [refreshingCatalogue, setRefreshingCatalogue] = useState(false);
+  const [refreshResult, setRefreshResult] = useState("");
 
   const handleFixImages = async () => {
     setFixingImages(true);
@@ -115,7 +117,7 @@ const AdminProducts = () => {
       if (res.ok) {
         setFixImageResult(data.message);
         fetchProducts();
-        try { localStorage.removeItem("discover_catalog_v5"); } catch {}
+        try { localStorage.removeItem("discover_catalog_v6"); } catch {}
       } else {
         setFixImageResult(data.error || "Failed to fix images");
       }
@@ -123,6 +125,32 @@ const AdminProducts = () => {
       setFixImageResult(e.message || "Error fixing images");
     }
     setFixingImages(false);
+  };
+
+  const handleRefreshCatalogue = async () => {
+    if (!confirm("This will archive products not in the curated catalogue and create any missing products. Continue?")) return;
+    setRefreshingCatalogue(true);
+    setRefreshResult("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+      const res = await fetch("/api/stripe/refresh-catalogue", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRefreshResult(data.message);
+        fetchProducts();
+        try { localStorage.removeItem("discover_catalog_v6"); } catch {}
+      } else {
+        setRefreshResult(data.error || "Failed to refresh catalogue");
+      }
+    } catch (e: any) {
+      setRefreshResult(e.message || "Error refreshing catalogue");
+    }
+    setRefreshingCatalogue(false);
   };
 
   const handleClearAll = async () => {
@@ -138,7 +166,7 @@ const AdminProducts = () => {
       });
       if (res.ok) {
         setProducts([]);
-        try { localStorage.removeItem("discover_catalog_v5"); } catch {}
+        try { localStorage.removeItem("discover_catalog_v6"); } catch {}
       }
     } catch {}
     setClearingAll(false);
@@ -398,6 +426,15 @@ const AdminProducts = () => {
             {products.length > 0 && (
               <>
                 <button
+                  onClick={handleRefreshCatalogue}
+                  disabled={refreshingCatalogue}
+                  className="text-xs text-emerald-500 hover:text-emerald-600 px-2 py-1 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors flex items-center gap-1"
+                  data-testid="button-refresh-catalogue"
+                >
+                  {refreshingCatalogue ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  Refresh Catalogue
+                </button>
+                <button
                   onClick={handleFixImages}
                   disabled={fixingImages}
                   className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors flex items-center gap-1"
@@ -428,9 +465,10 @@ const AdminProducts = () => {
           </div>
         </div>
 
-        {fixImageResult && (
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 mb-4">
-            <p className="text-xs text-blue-700 dark:text-blue-300" data-testid="text-fix-image-result">{fixImageResult}</p>
+        {(fixImageResult || refreshResult) && (
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 mb-4 space-y-1">
+            {refreshResult && <p className="text-xs text-emerald-700 dark:text-emerald-300" data-testid="text-refresh-result">{refreshResult}</p>}
+            {fixImageResult && <p className="text-xs text-blue-700 dark:text-blue-300" data-testid="text-fix-image-result">{fixImageResult}</p>}
           </div>
         )}
 

@@ -299,6 +299,8 @@ const normalizeShopCategory = (cat: string): string => {
     "massage": "Wellness", "candles": "Date Night", "bath": "Wellness",
     "lingerie": "Intimacy", "nightwear": "Intimacy", "accessories": "Gifts",
     "fragrance": "Gifts", "beauty": "Wellness", "skincare": "Wellness",
+    "games": "Date Night", "cocktails": "Date Night", "kitchenware": "Home",
+    "bedding": "Home", "homeware": "Home", "décor": "Home", "decor": "Home",
   };
   return map[c] || cat;
 };
@@ -3024,7 +3026,14 @@ PRICING GUIDANCE:
 - Target 40-60% gross margin (e.g., wholesale £20, sell for £45-50)
 - Always price in whole pence amounts (e.g. 4500 for £45.00, not 4999)
 
-CATEGORIES (use exactly one): Massage, Candles, Wellness, Lingerie, Accessories, Nightwear, Fragrance, Beauty, Skincare, Bath, Date Night, Gifts, Games, Home, Intimacy
+CATEGORIES (use exactly one from this list):
+- Wellness (massage oils, bath products, skincare, personal care, self-care rituals)
+- Intimacy (lingerie, blindfolds, couples' toys, nightwear, bodysuits)
+- Gifts (fragrances, jewellery, personalised items, beauty products, accessories)
+- Date Night (candles, cocktail kits, board games, conversation cards, wine accessories, fondue sets)
+- Home (throws, bedding, glassware, cookware, diffusers, décor for couples)
+
+IMPORTANT CATEGORY BALANCE: If the prompt doesn't specify a category, spread products across ALL 5 categories. Avoid loading up on any single category. Each category should ideally get at least 1 product.
 
 For each product you MUST provide detailed, accurate:
 - name: Exact real product name
@@ -3036,7 +3045,12 @@ For each product you MUST provide detailed, accurate:
 - category: From the list above
 - supplier: Specific real supplier name
 - supplierUrl: Real URL where the product can be sourced
-- imageUrl: Direct URL to the actual product image on the brand's website or a major retailer (must be a real, currently accessible .jpg/.png/.webp image URL — NOT a page URL). Use the brand's CDN or a retailer like Amazon, John Lewis, Space NK, Lookfantastic etc.
+- imageUrl: Direct URL to the actual product image. CRITICAL IMAGE RULES:
+  * Must be a direct image file URL ending in .jpg, .png, .webp or from a known CDN (NOT a page URL)
+  * Best sources: Shopify CDNs (brand.com/cdn/shop/...), Amazon (m.media-amazon.com/images/I/...), thcdn.com/productimg, static.lookfantastic.com
+  * For Shopify stores, use: https://brand.com/cdn/shop/products/PRODUCT-NAME_1024x.jpg or /cdn/shop/files/PRODUCT-NAME_1024x.png
+  * AVOID URLs that require authentication, contain session tokens, or redirect to HTML pages
+  * If you're unsure about the image URL, provide the brand's product page URL in supplierUrl and leave imageUrl as empty string — we'll scrape it automatically
 - features: Array of 4-5 specific feature bullet points (include sizes, materials, key ingredients)
 - marginNotes: Detailed sourcing strategy with actual estimated margins
 - sizing: Object with type (one of: "volume", "weight", "dimensions", "clothing", "shade", "one-size"), options array (specific sizes/volumes), and optional guide string
@@ -3122,7 +3136,7 @@ For each product you MUST provide detailed, accurate:
         }
         const marginPercent = Math.round(((retailPence - wholesalePence) / retailPence) * 100);
 
-        let verifiedImage = await verifyImageUrl(p.imageUrl);
+        let verifiedImage = p.imageUrl && p.imageUrl.trim() ? await verifyImageUrl(p.imageUrl) : null;
         if (!verifiedImage) {
           console.log(`Image verification failed for "${p.name}" (${p.imageUrl || 'no URL'}), searching for real image...`);
           verifiedImage = await findRealProductImage(p.name, p.brand, p.supplierUrl);
@@ -3219,6 +3233,70 @@ For each product you MUST provide detailed, accurate:
     } catch (e: any) {
       console.error("Clear all products error:", e.message);
       res.status(500).json({ error: "Failed to clear products" });
+    }
+  });
+
+  app.post("/api/stripe/refresh-catalogue", async (req: Request, res: Response) => {
+    try {
+      const adminUserId = await requireAdmin(req, res);
+      if (!adminUserId) return;
+
+      const stripe = await getUncachableStripeClient();
+      const validNames = new Set(LUXURY_INTIMACY_PRODUCTS.map(p => p.name.toLowerCase().trim()));
+
+      const allProducts: any[] = [];
+      let hasMore = true;
+      let startingAfter: string | undefined;
+      while (hasMore) {
+        const params: any = { active: true, limit: 100 };
+        if (startingAfter) params.starting_after = startingAfter;
+        const batch = await stripe.products.list(params);
+        allProducts.push(...batch.data);
+        hasMore = batch.has_more;
+        if (batch.data.length > 0) startingAfter = batch.data[batch.data.length - 1].id;
+      }
+
+      let archived = 0;
+      for (const sp of allProducts) {
+        const shopName = sp.metadata?.shop_product_name?.toLowerCase()?.trim();
+        if (!shopName || !validNames.has(shopName)) {
+          await stripe.products.update(sp.id, { active: false });
+          archived++;
+        }
+      }
+
+      const existingNames = new Set(allProducts.filter(sp => sp.active !== false).map(sp => sp.metadata?.shop_product_name?.toLowerCase()?.trim()).filter(Boolean));
+      let created = 0;
+      for (const lp of LUXURY_INTIMACY_PRODUCTS) {
+        if (existingNames.has(lp.name.toLowerCase().trim())) continue;
+        const existing = await stripe.products.search({ query: `name~'${lp.name.replace(/'/g, "\\'")}'` });
+        if (existing.data.length > 0 && existing.data.some((p: any) => p.active)) continue;
+
+        const imageUrl = lp.imageUrl || null;
+        const product = await stripe.products.create({
+          name: `${lp.name} — ${lp.brand}`,
+          description: lp.description,
+          images: imageUrl ? [imageUrl] : [],
+          metadata: {
+            brand: lp.brand,
+            category: lp.category,
+            shop_product_name: lp.name,
+          },
+        });
+        const priceMatch = lp.price.match(/[\d.]+/);
+        const unitAmount = priceMatch ? Math.round(parseFloat(priceMatch[0]) * 100) : 0;
+        if (unitAmount > 0) {
+          await stripe.prices.create({ product: product.id, unit_amount: unitAmount, currency: 'gbp' });
+        }
+        created++;
+      }
+
+      shopProductsCache = null;
+      shopCacheTime = 0;
+      res.json({ success: true, message: `Archived ${archived} old products, created ${created} new products` });
+    } catch (e: any) {
+      console.error("Refresh catalogue error:", e.message);
+      res.status(500).json({ error: e.message || "Failed to refresh catalogue" });
     }
   });
 
