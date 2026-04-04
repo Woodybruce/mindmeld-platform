@@ -261,13 +261,16 @@ const SharedFileManager = () => {
               const count = files.filter((f) => f.folder_id === folder.id).length;
               const subCount = folders.filter((f) => f.parent_id === folder.id).length;
               return (
-                <motion.button
+                <motion.div
                   key={folder.id}
+                  role="button"
+                  tabIndex={0}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
                   onClick={() => navigateToFolder(folder)}
-                  className="relative flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-4 text-left hover:bg-secondary/50 transition-colors group"
+                  onKeyDown={(e) => { if (e.key === "Enter") navigateToFolder(folder); }}
+                  className="relative flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-4 text-left hover:bg-secondary/50 transition-colors group cursor-pointer"
                 >
                   <FolderOpen className="w-7 h-7 text-[hsl(var(--us-gold))]" />
                   <p className="text-sm font-semibold text-foreground truncate w-full">{folder.name}</p>
@@ -298,7 +301,7 @@ const SharedFileManager = () => {
                       )}
                     </div>
                   </div>
-                </motion.button>
+                </motion.div>
               );
             })}
           </div>
@@ -426,13 +429,16 @@ const SharedFileManager = () => {
             const count = files.filter((f) => f.folder_id === folder.id).length;
             const subCount = folders.filter((f) => f.parent_id === folder.id).length;
             return (
-              <motion.button
+              <motion.div
                 key={folder.id}
+                role="button"
+                tabIndex={0}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => navigateToFolder(folder)}
-                className="relative flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-4 text-left hover:bg-secondary/50 transition-colors group"
+                onKeyDown={(e) => { if (e.key === "Enter") navigateToFolder(folder); }}
+                className="relative flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-4 text-left hover:bg-secondary/50 transition-colors group cursor-pointer"
               >
                 <FolderOpen className="w-8 h-8 text-[hsl(var(--us-gold))]" />
                 <p className="text-sm font-semibold text-foreground truncate w-full">{folder.name}</p>
@@ -463,7 +469,7 @@ const SharedFileManager = () => {
                     )}
                   </div>
                 </div>
-              </motion.button>
+              </motion.div>
             );
           })}
         </div>

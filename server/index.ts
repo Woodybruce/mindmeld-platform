@@ -114,7 +114,6 @@ async function initStripe() {
 }
 
 (async () => {
-  await initStripe();
   await registerRoutes(app);
 
   const server = createServer(app);
@@ -129,4 +128,6 @@ async function initStripe() {
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
+
+  initStripe().catch(err => console.error('Stripe init error:', err));
 })();
