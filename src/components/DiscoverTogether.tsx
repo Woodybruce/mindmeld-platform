@@ -57,8 +57,8 @@ const CATEGORY_MAP: Record<string, ShopCategory> = {
   "home": "home",
 };
 
-const CACHE_KEY = "discover_catalog_v5";
-const CACHE_TTL = 1000 * 60 * 30;
+const CACHE_KEY = "discover_catalog_v6";
+const CACHE_TTL = 1000 * 60 * 120;
 
 const BRAND_GRADIENTS: Record<string, string> = {
   "coco de mer": "from-stone-950 via-stone-900 to-stone-800",
@@ -433,21 +433,23 @@ const DiscoverTogether = () => {
   }, []);
 
   const fetchProducts = useCallback(async (force = false) => {
+    let hadCache = false;
     if (!force) {
       try {
         const raw = localStorage.getItem(CACHE_KEY);
         if (raw) {
           const { data, ts } = JSON.parse(raw);
-          if (Date.now() - ts < CACHE_TTL && data?.length > 0) {
+          if (data?.length > 0) {
             setProducts(data);
             setLoaded(true);
-            return;
+            hadCache = true;
+            if (Date.now() - ts < CACHE_TTL) return;
           }
         }
       } catch {}
     }
 
-    setLoading(true);
+    if (!hadCache) setLoading(true);
     try {
       const { data } = await apiInvoke<{ products: ShopProduct[] }>("shop/curated", { method: "GET" });
       const fetched = data?.products || [];

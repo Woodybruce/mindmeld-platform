@@ -129,5 +129,11 @@ async function initStripe() {
     log(`serving on port ${port}`);
   });
 
-  initStripe().catch(err => console.error('Stripe init error:', err));
+  initStripe().then(() => {
+    setTimeout(() => {
+      fetch(`http://0.0.0.0:${port}/api/shop/curated`)
+        .then(() => console.log('Shop cache pre-warmed'))
+        .catch(() => {});
+    }, 1000);
+  }).catch(err => console.error('Stripe init error:', err));
 })();

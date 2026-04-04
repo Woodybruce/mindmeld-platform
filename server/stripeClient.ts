@@ -1,8 +1,10 @@
 import Stripe from 'stripe';
 
 let connectionSettings: any;
+let cachedCredentials: { publishableKey: string; secretKey: string } | null = null;
 
 async function getCredentials() {
+  if (cachedCredentials) return cachedCredentials;
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
@@ -55,17 +57,26 @@ async function getCredentials() {
     }
   }
 
-  return {
+  cachedCredentials = {
     publishableKey: connectionSettings.settings.publishable,
     secretKey: connectionSettings.settings.secret,
   };
+  return cachedCredentials;
 }
+
+let cachedStripeClient: Stripe | null = null;
+let cachedKeyHash = '';
 
 export async function getUncachableStripeClient() {
   const { secretKey } = await getCredentials();
-  return new Stripe(secretKey, {
+  if (cachedStripeClient && cachedKeyHash === secretKey) {
+    return cachedStripeClient;
+  }
+  cachedStripeClient = new Stripe(secretKey, {
     apiVersion: '2025-08-27.basil' as any,
   });
+  cachedKeyHash = secretKey;
+  return cachedStripeClient;
 }
 
 export async function getStripePublishableKey() {

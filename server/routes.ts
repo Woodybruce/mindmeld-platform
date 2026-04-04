@@ -1948,7 +1948,7 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
 
   let shopProductsCache: any[] | null = null;
   let shopCacheTime = 0;
-  const SHOP_CACHE_TTL = 1000 * 60 * 30;
+  const SHOP_CACHE_TTL = 1000 * 60 * 120;
 
   app.get("/api/shop/curated", async (_req: Request, res: Response) => {
     try {
