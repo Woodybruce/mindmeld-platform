@@ -437,7 +437,7 @@ const AdminProducts = () => {
                 <button
                   onClick={handleFixImages}
                   disabled={fixingImages}
-                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors flex items-center gap-1"
+                  className="text-xs text-primary hover:text-primary/80 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors flex items-center gap-1"
                   data-testid="button-fix-images"
                 >
                   {fixingImages ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
@@ -466,9 +466,9 @@ const AdminProducts = () => {
         </div>
 
         {(fixImageResult || refreshResult) && (
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 mb-4 space-y-1">
+          <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-3 mb-4 space-y-1">
             {refreshResult && <p className="text-xs text-emerald-700 dark:text-emerald-300" data-testid="text-refresh-result">{refreshResult}</p>}
-            {fixImageResult && <p className="text-xs text-blue-700 dark:text-blue-300" data-testid="text-fix-image-result">{fixImageResult}</p>}
+            {fixImageResult && <p className="text-xs text-primary dark:text-primary/80" data-testid="text-fix-image-result">{fixImageResult}</p>}
           </div>
         )}
 

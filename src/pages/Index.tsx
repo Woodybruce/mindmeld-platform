@@ -72,7 +72,7 @@ const Index = () => {
       </div>
 
       <PullToRefresh onRefresh={async () => { window.location.reload(); }}>
-      <main className="px-3 py-4 space-y-4 pb-24">
+      <main className="px-4 py-4 space-y-4 pb-24">
         <SetupPrompts />
 
         {/* Partner invite (only shows if no partner linked) */}

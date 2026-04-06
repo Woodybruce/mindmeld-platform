@@ -1164,17 +1164,17 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                       href="https://www.ocado.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-xl bg-[#6a2c91]/10 border border-[#6a2c91]/20 px-4 py-3 hover:bg-[#6a2c91]/15 transition-colors"
+                      className="flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3 hover:bg-primary/15 transition-colors"
                       data-testid="link-ocado-shopping"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-[#6a2c91] flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
                         <ShoppingCart className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground">Shop on Ocado</p>
                         <p className="text-[11px] text-muted-foreground">Open Ocado to order your groceries</p>
                       </div>
-                      <ExternalLink className="w-4 h-4 text-[#6a2c91] flex-shrink-0" />
+                      <ExternalLink className="w-4 h-4 text-primary flex-shrink-0" />
                     </a>
                   </div>
                 )}
