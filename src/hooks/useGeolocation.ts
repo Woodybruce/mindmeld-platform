@@ -52,10 +52,13 @@ export const useGeolocation = (enabled: boolean = false) => {
     if (isNative) {
       let watchId: string | undefined;
 
+      let geoPlugin: any = null;
+
       const startWatch = async () => {
         try {
           console.log("[Geo] Importing @capacitor/geolocation...");
           const { Geolocation } = await import("@capacitor/geolocation");
+          geoPlugin = Geolocation;
           console.log("[Geo] Plugin imported, requesting permissions...");
           const permResult = await Geolocation.requestPermissions();
           console.log("[Geo] Permission result:", JSON.stringify(permResult));
@@ -97,10 +100,8 @@ export const useGeolocation = (enabled: boolean = false) => {
 
       return () => {
         clearTimeout(fallbackTimer);
-        if (watchId) {
-          import("@capacitor/geolocation").then(({ Geolocation }) =>
-            Geolocation.clearWatch({ id: watchId! })
-          );
+        if (watchId && geoPlugin) {
+          geoPlugin.clearWatch({ id: watchId });
         }
       };
     } else {

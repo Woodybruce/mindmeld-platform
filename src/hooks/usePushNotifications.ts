@@ -80,11 +80,13 @@ export function usePushNotifications() {
       }
     }
 
+    let cancelled = false;
     let cleanup: (() => void) | undefined;
 
     async function setupNativePush() {
       try {
         const { PushNotifications } = await import("@capacitor/push-notifications");
+        if (cancelled) return;
 
         const permResult = await PushNotifications.requestPermissions();
         if (permResult.receive !== "granted") {
@@ -93,6 +95,7 @@ export function usePushNotifications() {
         }
 
         await PushNotifications.register();
+        if (cancelled) return;
 
         const handleFcmToken = async (e: Event) => {
           const token = (e as CustomEvent).detail as string;
@@ -143,6 +146,9 @@ export function usePushNotifications() {
       }
     }
 
-    return () => cleanup?.();
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
   }, [user]);
 }
