@@ -954,7 +954,7 @@ Return ONLY valid JSON with these fields:
       const data = await callAI([
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
-      ], undefined, undefined, req.body?.userId);
+      ], undefined, undefined, await extractUserId(req));
 
       const raw = data.choices?.[0]?.message?.content || "";
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -1043,9 +1043,27 @@ Return ONLY valid JSON with these fields:
   // 7a-2. GET /api/article-metadata — fetch OG metadata for article URLs
   const ogCache = new Map<string, { ogImage: string; ogTitle: string; ogDescription: string; siteName: string; ts: number }>();
 
+  const isValidExternalUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url);
+      if (!["http:", "https:"].includes(parsed.protocol)) return false;
+      const host = parsed.hostname.toLowerCase();
+      if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "[::1]") return false;
+      if (host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".corp")) return false;
+      if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|100\.64\.|100\.65\.)/.test(host)) return false;
+      if (host === "metadata.google.internal" || host === "169.254.169.254") return false;
+      if (host.startsWith("169.254.")) return false;
+      const port = parsed.port ? parseInt(parsed.port) : (parsed.protocol === "https:" ? 443 : 80);
+      if (![80, 443].includes(port)) return false;
+      if (!/\.[a-z]{2,}$/.test(host)) return false;
+      return true;
+    } catch { return false; }
+  };
+
   app.get("/api/article-metadata", async (req: Request, res: Response) => {
     const url = req.query.url as string;
     if (!url) return res.status(400).json({ error: "url required" });
+    if (!isValidExternalUrl(url)) return res.status(400).json({ error: "Invalid URL" });
 
     const cached = ogCache.get(url);
     if (cached && Date.now() - cached.ts < 86400000) {
@@ -1101,6 +1119,7 @@ Return ONLY valid JSON with these fields:
   app.get("/api/article-content", async (req: Request, res: Response) => {
     const url = req.query.url as string;
     if (!url) return res.status(400).json({ error: "url required" });
+    if (!isValidExternalUrl(url)) return res.status(400).json({ error: "Invalid URL" });
 
     try {
       const resp = await fetch(url, {
@@ -1502,7 +1521,7 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
           },
         ],
         { type: "function", function: { name: "suggest_dreams" } },
-        req.body?.userId
+        await extractUserId(req)
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1571,7 +1590,7 @@ Keep descriptions under 60 chars.`,
           },
         ],
         { type: "function", function: { name: "suggest_experiences" } },
-        req.body?.userId
+        await extractUserId(req)
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1656,7 +1675,7 @@ Keep descriptions under 60 chars.`,
           },
         ],
         { type: "function", function: { name: "generate_family_tasks" } },
-        req.body?.userId
+        await extractUserId(req)
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1723,7 +1742,7 @@ Use exact brand names and real product titles. Keep descriptions under 60 chars.
           },
         ],
         { type: "function", function: { name: "suggest_intimacy" } },
-        req.body?.userId
+        await extractUserId(req)
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -1814,7 +1833,7 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
           },
         ],
         { type: "function", function: { name: "suggest_products" } },
-        req.body?.userId
+        await extractUserId(req)
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -2139,7 +2158,7 @@ Do NOT return product page URLs. Only return direct image file URLs.` },
           },
         ],
         { type: "function", function: { name: "suggest_tasks" } },
-        req.body?.userId
+        await extractUserId(req)
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -2210,7 +2229,7 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
           },
         ],
         { type: "function", function: { name: "suggest_travel" } },
-        req.body?.userId
+        await extractUserId(req)
       );
 
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -2842,7 +2861,7 @@ Focus on real, existing content about relationships, dating, couples, love, and 
         { role: "user", content: query },
       ];
 
-      const result = await callAI(messages, undefined, undefined, req.body?.userId);
+      const result = await callAI(messages, undefined, undefined, await extractUserId(req));
       const content = result.choices?.[0]?.message?.content || "{}";
       const cleaned = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
 

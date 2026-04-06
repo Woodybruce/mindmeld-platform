@@ -19,10 +19,19 @@ import PullToRefresh from "@/components/PullToRefresh";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useOutlookAutoSync } from "@/hooks/useOutlookAutoSync";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const CuratedLinksWidget = lazy(() => import("@/components/CuratedLinksWidget"));
 const DiscoverTogether = lazy(() => import("@/components/DiscoverTogether"));
 const PhotosPreview = lazy(() => import("@/components/UsSectionPreviews").then(m => ({ default: m.PhotosPreview })));
+
+const WidgetSkeleton = () => (
+  <div className="rounded-2xl bg-card border border-border animate-pulse p-4 space-y-3">
+    <div className="h-4 bg-secondary rounded-lg w-1/3" />
+    <div className="h-3 bg-secondary rounded-lg w-2/3" />
+    <div className="h-24 bg-secondary rounded-xl" />
+  </div>
+);
 // Groups feed items: consecutive "half" items pair up, others standalone
 const layoutItems = (items: FeedItem[]) => {
   const rows: (FeedItem | [FeedItem, FeedItem])[] = [];
@@ -42,6 +51,7 @@ const layoutItems = (items: FeedItem[]) => {
 
 const Index = () => {
   const rows = layoutItems(sampleFeedData);
+  usePageTitle("Home");
   useWidgetSync();
   usePushNotifications();
   useOutlookAutoSync();
@@ -104,17 +114,17 @@ const Index = () => {
         )}
 
         {/* Our Photos */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<WidgetSkeleton />}>
           <PhotosPreview />
         </Suspense>
 
         {/* For You — combined saved links + suggested reads (randomised) */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<WidgetSkeleton />}>
           <CuratedLinksWidget />
         </Suspense>
 
         {/* Shopping suggestions with categories */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<WidgetSkeleton />}>
           <DiscoverTogether />
         </Suspense>
 

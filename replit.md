@@ -33,9 +33,17 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - The "Shop" section (Discover Together) features a luxury editorial aesthetic with a premium layout, hero product cards, and category pills. Product data is in `server/shopProducts.ts` with enhanced fields: multiple images (carousel in modal), sizing info (selectable sizes/shades/volumes), materials, dimensions, what's included, and care instructions. Cache key `discover_catalog_v6`. Balanced catalogue: 30 products, 6 per category (Wellness, Intimacy, Gifts, Date Night, Home). Stripe client and credentials are cached for performance. Shop cache pre-warms on startup and has 2-hour TTL (both server and client). Frontend uses stale-while-revalidate pattern — shows cached data instantly, refreshes in background.
 - Product detail modals are designed as bottom-sheet style with smooth tween animations (no spring bounce). Modals include image carousel with navigation dots, size selector, and expandable sections for product details.
 - The "For You" section is expanded with dedicated tabs for Articles, Podcasts, Videos, and Quotes.
-- Performance optimizations include caching authentication sessions and profile data, lazy-loading heavy widgets, optimizing Outlook sync, server-side AI content caching (2hr TTL), smart Spotify polling (15s when playing, 60s idle), and comprehensive localStorage caching (user-scoped) for calendar events, weekly tasks, shared lists, Spotify tracks, and article OG metadata — enabling instant-load on return visits with background refresh.
+- Performance optimizations include caching authentication sessions and profile data, lazy-loading heavy widgets and routes (games, admin, quizzes code-split via `React.lazy`), optimizing Outlook sync, server-side AI content caching (2hr TTL), smart Spotify polling (15s when playing, 60s idle), and comprehensive localStorage caching (user-scoped) for calendar events, weekly tasks, shared lists, Spotify tracks, and article OG metadata — enabling instant-load on return visits with background refresh.
 - QueryClient defaults: `staleTime=5min`, `gcTime=30min`, `refetchOnWindowFocus=false` to reduce unnecessary refetches.
 - Spotify tokens stored in PostgreSQL `app_settings` table for deployment persistence.
+- Error boundary (`src/components/ErrorBoundary.tsx`) wraps all routes to prevent white-screen crashes — shows retry UI with the rest of the app intact.
+- Dynamic page titles via `usePageTitle` hook — each page sets its own browser tab title (e.g., "Chat — Us").
+- Accessibility: aria-labels on all icon-only buttons (AppHeader, BottomNav), `aria-current` on active nav, unread count announced to screen readers, password toggle labeled.
+- Muted text contrast improved to meet WCAG AA 4.5:1 ratio.
+- SEO: `og:image`, `og:description`, and canonical URL set in `index.html`.
+- Database indexes on frequently-queried columns: messages (receiver_id, created_at), shared_lists (user_id), weekly_tasks (user_id, scheduled_date), calendar_events (user_id, start_time), content_likes (user_id, content_id), profiles (partner_id).
+- SSRF protection: article-metadata and article-content endpoints validate URLs against localhost, private IPs, and cloud metadata endpoints via `isValidExternalUrl()`.
+- API auth hardened: all AI suggestion endpoints now extract userId from the auth token via `extractUserId(req)` instead of trusting `req.body.userId`.
 
 ## External Dependencies
 - **Supabase:** Used for authentication, database, storage (e.g., `couple-photos`, `chat-images`), and real-time subscriptions.

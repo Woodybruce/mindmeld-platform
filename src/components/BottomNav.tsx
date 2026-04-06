@@ -30,16 +30,18 @@ const BottomNav = () => {
               className={`relative flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-95 ${
                 isActive ? "text-primary" : "text-muted-foreground"
               }`}
+              aria-label={showBadge ? `${tab.label}, ${unreadCount} unread` : tab.label}
+              aria-current={isActive ? "page" : undefined}
             >
               <div className="relative">
-                <tab.icon className={`w-5 h-5 transition-transform ${isActive ? "fill-primary/20 scale-110" : ""}`} />
+                <tab.icon className={`w-5 h-5 transition-transform ${isActive ? "fill-primary/20 scale-110" : ""}`} aria-hidden="true" />
                 {showBadge && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 rounded-full bg-destructive text-destructive-foreground text-[13px] font-bold flex items-center justify-center px-1">
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 rounded-full bg-destructive text-destructive-foreground text-[13px] font-bold flex items-center justify-center px-1" aria-hidden="true">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium">{tab.label}</span>
+              <span className="text-xs font-medium" aria-hidden="true">{tab.label}</span>
               {isActive && (
                 <span className="w-1 h-1 rounded-full bg-primary -mt-0.5" />
               )}

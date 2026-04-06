@@ -303,6 +303,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
                 onClick={() => { setVibeOpen(!vibeOpen); }}
                 className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
                 data-testid="button-send-vibe"
+                aria-label="Send a vibe"
               >
                 <Heart className="w-5 h-5" />
               </button>
@@ -337,10 +338,11 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
               onClick={openBoard}
               className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative"
               data-testid="button-open-board"
+              aria-label={hasUpdate ? "Notifications — new updates" : "Notifications"}
             >
               <Bell className="w-5 h-5" />
               {hasUpdate && (
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-us-coral" />
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-us-coral" aria-hidden="true" />
               )}
             </button>
 
@@ -348,6 +350,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
               onClick={() => navigate("/profile")}
               className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               data-testid="button-profile"
+              aria-label="Profile settings"
             >
               <Settings className="w-5 h-5" />
             </button>

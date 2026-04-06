@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -40,6 +41,7 @@ const Chat = () => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const partnerId = profile?.partner_id;
+  usePageTitle("Chat");
 
   const { partnerTyping, sendTyping, sendStopTyping } = useTypingIndicator(user?.id, partnerId || undefined);
 

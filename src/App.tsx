@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,35 +8,43 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SpotifyPlayerProvider } from "@/contexts/SpotifyPlayerContext";
 import PersistentSpotifyPlayer from "@/components/PersistentSpotifyPlayer";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Us from "./pages/Us";
-import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
-import KissChasePage from "./pages/KissChase";
-import QuizPlay from "./pages/QuizPlay";
-import ChecklistQuizPlay from "./pages/ChecklistQuizPlay";
-import LoveLanguageGuide from "./pages/LoveLanguageGuide";
-import ReflectionQuizPlay from "./pages/ReflectionQuizPlay";
-import OurChallenges from "./pages/OurChallenges";
-import OurSexList from "./pages/OurSexList";
-import TruthOrDare from "./pages/TruthOrDare";
-import WouldYouRather from "./pages/WouldYouRather";
-import PhotoChallenge from "./pages/PhotoChallenge";
-import DareDuel from "./pages/DareDuel";
-import DesignMyNight from "./pages/DesignMyNight";
-import FamilyQuiz from "./pages/FamilyQuiz";
-import SexBucketGame from "./pages/SexBucketGame";
-import AdminFeedContent from "./pages/AdminFeedContent";
-import AdminProducts from "./pages/AdminProducts";
 import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import OutlookCallback from "./pages/OutlookCallback";
-import CheckoutSuccess from "./pages/CheckoutSuccess";
-import CheckoutCancel from "./pages/CheckoutCancel";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 import VibeOverlay from "./components/VibeOverlay";
 import OfflineBanner from "./components/OfflineBanner";
+
+const Profile = lazy(() => import("./pages/Profile"));
+const KissChasePage = lazy(() => import("./pages/KissChase"));
+const QuizPlay = lazy(() => import("./pages/QuizPlay"));
+const ChecklistQuizPlay = lazy(() => import("./pages/ChecklistQuizPlay"));
+const LoveLanguageGuide = lazy(() => import("./pages/LoveLanguageGuide"));
+const ReflectionQuizPlay = lazy(() => import("./pages/ReflectionQuizPlay"));
+const OurChallenges = lazy(() => import("./pages/OurChallenges"));
+const OurSexList = lazy(() => import("./pages/OurSexList"));
+const TruthOrDare = lazy(() => import("./pages/TruthOrDare"));
+const WouldYouRather = lazy(() => import("./pages/WouldYouRather"));
+const PhotoChallenge = lazy(() => import("./pages/PhotoChallenge"));
+const DareDuel = lazy(() => import("./pages/DareDuel"));
+const DesignMyNight = lazy(() => import("./pages/DesignMyNight"));
+const FamilyQuiz = lazy(() => import("./pages/FamilyQuiz"));
+const SexBucketGame = lazy(() => import("./pages/SexBucketGame"));
+const AdminFeedContent = lazy(() => import("./pages/AdminFeedContent"));
+const AdminProducts = lazy(() => import("./pages/AdminProducts"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const OutlookCallback = lazy(() => import("./pages/OutlookCallback"));
+const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const CheckoutCancel = lazy(() => import("./pages/CheckoutCancel"));
+
+const PageLoader = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +69,8 @@ const App = () => (
           <SpotifyPlayerProvider>
             <BrowserRouter>
               <PersistentSpotifyPlayer />
+              <ErrorBoundary fallbackTitle="Something went wrong">
+              <Suspense fallback={<PageLoader />}>
               <Routes>
               <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
               <Route path="/us" element={<AuthGuard><Us /></AuthGuard>} />
@@ -88,6 +99,8 @@ const App = () => (
               <Route path="/checkout/cancel" element={<CheckoutCancel />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
+              </ErrorBoundary>
             </BrowserRouter>
           </SpotifyPlayerProvider>
         </AuthProvider>

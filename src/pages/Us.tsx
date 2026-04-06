@@ -9,6 +9,7 @@ import {
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import BottomNav from "@/components/BottomNav";
 
 import GameCard from "@/components/connect/GameCard";
@@ -30,6 +31,7 @@ const Us = () => {
   const defaultTab = searchParams.get("tab") || "lists";
   const listId = searchParams.get("listId") || null;
 
+  usePageTitle("Us");
   const { lists: userLists, loading: listsLoading, handleBulkUpdate, reorderLists } = useSharedLists();
   const { partnerActivity, dismiss: dismissActivity } = usePartnerQuizActivity();
 

@@ -13,10 +13,12 @@ import { useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const Profile = () => {
   const { user, profile, signOut, linkPartnerByEmail, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  usePageTitle("Profile");
   const { data: isAdmin } = useIsAdmin();
   const { forwardUrl, forwardToken, generateForwardToken } = useCalendarEvents();
   const navigate = useNavigate();
