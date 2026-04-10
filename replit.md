@@ -17,6 +17,7 @@ The application features a React SPA frontend built with Vite, TailwindCSS, and 
 - Partner messaging with push notifications.
 - Shared calendar with Outlook sync capabilities.
 - Shared lists and bucket lists, including template-based lists and an internal `__ai_preferences__` list.
+- Shared saved links (bookmarks) — both partners can save URLs (restaurants, recipes, articles, holidays, etc.) with automatic platform detection (Instagram, YouTube, TikTok, Article, Link), notes, and real-time sync. "You both saved this!" matched-link highlighting when both partners save the same URL. Located in Us → Lists tab → Saved Links section. Data in `shared_links` table, hook in `useSharedLinks.ts`, UI in `LinksAndMedia.tsx`.
 - AI-powered suggestions for experiences, products, travel, intimacy, and family tasks ("Discover Together").
 - AI-generated feed content.
 - Photo sharing and interactive games (Kiss Chase, Truth or Dare, Would You Rather).

@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ListChecks, FolderOpen,
   FileText, Image, File,
-  Camera, Calendar,
+  Camera, Calendar, Link2,
   ChevronRight, ShoppingBag, Settings
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -18,6 +18,7 @@ import type { UserList } from "@/components/connect/SharedLists";
 import WeeklyList from "@/components/connect/WeeklyList";
 import OurPhotos from "@/components/connect/OurPhotos";
 import OurEvents from "@/components/connect/OurEvents";
+import LinksAndMedia from "@/components/connect/LinksAndMedia";
 
 import SharedFileManager from "@/components/connect/SharedFileManager";
 import { usePartnerQuizActivity } from "@/hooks/usePartnerQuizActivity";
@@ -67,6 +68,14 @@ const Us = () => {
         <TabsContent value="lists" className="mt-4 space-y-5">
           <SpotifyWidget />
           <WeeklyList />
+          <div className="border-t border-border/50 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Link2 className="w-4 h-4 text-primary" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Saved Links</p>
+            </div>
+            <LinksAndMedia />
+          </div>
+
           <div className="border-t border-border/50 pt-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Our Lists</p>
             <SharedLists
