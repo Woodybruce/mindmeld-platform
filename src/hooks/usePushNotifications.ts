@@ -23,10 +23,17 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export function usePushNotifications() {
   const { user } = useAuth();
-  const registeredRef = useRef(false);
+  const registeredRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user || registeredRef.current) return;
+    if (!user) return;
+    // Prevent duplicate registration for the same user across remounts/StrictMode.
+    if (registeredRef.current === user.id) return;
+    registeredRef.current = user.id;
+
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+    let fcmHandler: ((e: Event) => void) | undefined;
 
     if (Capacitor.isNativePlatform()) {
       setupNativePush();
@@ -42,13 +49,12 @@ export function usePushNotifications() {
         }
 
         const reg = await navigator.serviceWorker.register("/push-sw.js");
+        if (cancelled) return;
         await navigator.serviceWorker.ready;
+        if (cancelled) return;
 
         const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          console.log("[WebPush] Permission denied");
-          return;
-        }
+        if (cancelled || permission !== "granted") return;
 
         const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
         if (!vapidKey) {
@@ -57,15 +63,14 @@ export function usePushNotifications() {
         }
 
         let subscription = await reg.pushManager.getSubscription();
+        if (cancelled) return;
         if (!subscription) {
           subscription = await reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(vapidKey),
           });
         }
-
-        registeredRef.current = true;
-        console.log("[WebPush] Subscription active");
+        if (cancelled) return;
 
         await fetch("/api/web-push-subscribe", {
           method: "POST",
@@ -80,32 +85,20 @@ export function usePushNotifications() {
       }
     }
 
-    let cancelled = false;
-    let cleanup: (() => void) | undefined;
-
     async function setupNativePush() {
       try {
         const { PushNotifications } = await import("@capacitor/push-notifications");
         if (cancelled) return;
 
         const permResult = await PushNotifications.requestPermissions();
-        if (permResult.receive !== "granted") {
-          console.log("[Push] Permission not granted");
-          return;
-        }
+        if (cancelled || permResult.receive !== "granted") return;
 
-        await PushNotifications.register();
-        if (cancelled) return;
-
-        const handleFcmToken = async (e: Event) => {
+        fcmHandler = async (e: Event) => {
+          if (cancelled) return;
           const token = (e as CustomEvent).detail as string;
-          if (!token || registeredRef.current) return;
-          console.log("[Push] FCM token:", token);
-          registeredRef.current = true;
-
+          if (!token) return;
           const platform = Capacitor.getPlatform();
-
-          await supabase.from("device_tokens").upsert(
+          const { error } = await supabase.from("device_tokens").upsert(
             {
               user_id: user!.id,
               token,
@@ -114,9 +107,12 @@ export function usePushNotifications() {
             },
             { onConflict: "user_id,token" }
           );
+          if (error) console.error("[Push] token upsert failed", error);
         };
+        window.addEventListener("fcmToken", fcmHandler);
 
-        window.addEventListener("fcmToken", handleFcmToken);
+        await PushNotifications.register();
+        if (cancelled) return;
 
         const foregroundListener = await PushNotifications.addListener(
           "pushNotificationReceived",
@@ -128,16 +124,12 @@ export function usePushNotifications() {
         const actionListener = await PushNotifications.addListener(
           "pushNotificationActionPerformed",
           (action) => {
-            console.log("[Push] Action performed:", action);
             const route = action.notification?.data?.route as string | undefined;
-            if (route) {
-              window.location.href = route;
-            }
+            if (route) window.location.href = route;
           }
         );
 
         cleanup = () => {
-          window.removeEventListener("fcmToken", handleFcmToken);
           foregroundListener.remove();
           actionListener.remove();
         };
@@ -148,7 +140,10 @@ export function usePushNotifications() {
 
     return () => {
       cancelled = true;
+      if (fcmHandler) window.removeEventListener("fcmToken", fcmHandler);
       cleanup?.();
+      // Allow re-registration when the user changes (login/logout cycle).
+      if (registeredRef.current === user.id) registeredRef.current = null;
     };
   }, [user]);
 }

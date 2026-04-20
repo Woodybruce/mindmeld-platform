@@ -97,7 +97,7 @@ async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?:
     }
   }
 
-  const model = options?.model || process.env.AI_MODEL || "gpt-5.4";
+  const model = options?.model || process.env.AI_MODEL || "gpt-4o-mini";
   const temperature = options?.temperature ?? 0.8;
 
   const url = process.env.AI_GATEWAY_URL || "https://api.openai.com/v1/chat/completions";
@@ -700,7 +700,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ error: "recipientUserId and title are required" });
       }
 
-      const [{ data: tokens, error: tokenError }, { count: unreadCount }] = await Promise.all([
+      const [
+        { data: tokens, error: tokenError },
+        { count: unreadCount, error: unreadError },
+      ] = await Promise.all([
         supabase
           .from("device_tokens")
           .select("token, platform")
@@ -713,11 +716,17 @@ export async function registerRoutes(app: Express): Promise<void> {
           .neq("message_type", "vibe"),
       ]);
 
-      const badgeCount = (unreadCount || 0) + 1;
-
       if (tokenError) {
         throw new Error(`Failed to fetch tokens: ${tokenError.message}`);
       }
+      if (unreadError) {
+        throw new Error(`Failed to fetch unread count: ${unreadError.message}`);
+      }
+
+      // Use the current unread count as-is. The caller inserts the message
+      // before calling this endpoint, so unreadCount already reflects it.
+      // Avoids double-counting when the endpoint is retried.
+      const badgeCount = Math.max(0, unreadCount || 0);
 
       if (!tokens || tokens.length === 0) {
         return res.json({ success: true, sent: 0, reason: "no_tokens" });
@@ -746,7 +755,8 @@ export async function registerRoutes(app: Express): Promise<void> {
                 return { success: true };
               } catch (err: any) {
                 if (err.statusCode === 410 || err.statusCode === 404) {
-                  await supabase.from("device_tokens").delete().eq("token", token);
+                  const { error: delErr } = await supabase.from("device_tokens").delete().eq("token", token);
+                  if (delErr) console.error("Failed to delete stale web push token:", delErr);
                 }
                 throw err;
               }
@@ -1538,8 +1548,6 @@ IMPORTANT: For newPodcasts, use the EXACT real podcast name as searchQuery so it
   // 9. POST /api/suggest-experiences
   app.post("/api/suggest-experiences", async (req: Request, res: Response) => {
     try {
-      try { req.body; } catch {}
-
       const data = await callAI(
         [
           {
@@ -1692,8 +1700,6 @@ Keep descriptions under 60 chars.`,
   // 11. POST /api/suggest-intimacy
   app.post("/api/suggest-intimacy", async (req: Request, res: Response) => {
     try {
-      try { req.body; } catch {}
-
       const data = await callAI(
         [
           {
@@ -2175,8 +2181,6 @@ Do NOT return product page URLs. Only return direct image file URLs.` },
   // 14. POST /api/suggest-travel
   app.post("/api/suggest-travel", async (req: Request, res: Response) => {
     try {
-      try { req.body; } catch {}
-
       const data = await callAI(
         [
           {
@@ -2554,6 +2558,28 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
       const events = parseIcs(icsContent);
       if (events.length === 0) {
         return res.status(400).json({ error: "Could not parse any events" });
+      }
+
+      const MAX_EVENTS_PER_IMPORT = 200;
+      const MAX_EVENTS_PER_DAY = 2000;
+      if (events.length > MAX_EVENTS_PER_IMPORT) {
+        return res.status(413).json({
+          error: `Too many events in one import (max ${MAX_EVENTS_PER_IMPORT})`,
+        });
+      }
+
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count: recentCount, error: quotaError } = await adminClient
+        .from("calendar_events")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("source", "forwarded")
+        .gte("created_at", since);
+      if (quotaError) throw quotaError;
+      if ((recentCount || 0) + events.length > MAX_EVENTS_PER_DAY) {
+        return res.status(429).json({
+          error: "Daily import quota exceeded. Try again tomorrow.",
+        });
       }
 
       const rows = events.map((e) => ({
@@ -2953,7 +2979,11 @@ Focus on real, existing content about relationships, dating, couples, love, and 
       if (!priceId || typeof priceId !== "string" || !priceId.startsWith("price_")) {
         return res.status(400).json({ error: "Valid priceId is required" });
       }
-      const safeQuantity = Math.max(1, Math.min(10, Number(quantity) || 1));
+      const rawQuantity = Number(quantity);
+      if (!Number.isInteger(rawQuantity) || rawQuantity < 1 || rawQuantity > 10) {
+        return res.status(400).json({ error: "Quantity must be an integer between 1 and 10" });
+      }
+      const safeQuantity = rawQuantity;
       const safeName = typeof productName === "string" ? productName.slice(0, 200) : "";
 
       const stripe = await getUncachableStripeClient();

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePresence } from "@/hooks/usePresence";
 import type { User, Session } from "@supabase/supabase-js";
@@ -80,12 +80,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(cachedProfile);
   const [loading, setLoading] = useState(!cachedUser);
+  const profileFetchIdRef = useRef<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
+    // Guard against stale/overlapping fetches when auth state flips quickly.
+    profileFetchIdRef.current = userId;
     const [profileRes, prefsRes] = await Promise.all([
       supabase.from("profiles").select("id, username, partner_id, partner_code, phone_number").eq("id", userId).single(),
       supabase.from("shared_lists").select("score_data").eq("user_id", userId).eq("name", "__ai_preferences__").maybeSingle(),
     ]);
+    if (profileFetchIdRef.current !== userId) return;
+    if (profileRes.error) {
+      console.error("fetchProfile error:", profileRes.error);
+      return;
+    }
     if (profileRes.data) {
       const aiPrefs = (prefsRes.data?.score_data as any)?.preferences || null;
       const p: Profile = {
@@ -112,8 +120,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         cacheUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          fetchProfile(session.user.id).catch((e) => console.error("fetchProfile failed", e));
         } else {
+          profileFetchIdRef.current = null;
           setProfile(null);
           cacheProfile(null);
         }
@@ -151,8 +160,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    profileFetchIdRef.current = null;
     setProfile(null);
+    setUser(null);
+    setSession(null);
+    cacheProfile(null);
+    cacheUser(null);
+    await supabase.auth.signOut();
   };
 
   const linkPartnerByEmail = async (email: string): Promise<LinkResult> => {

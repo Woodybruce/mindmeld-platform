@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UserList } from "@/components/connect/SharedLists";
@@ -99,15 +99,21 @@ export function useSharedLists() {
 
   useEffect(() => { fetchLists(); }, [fetchLists]);
 
-  // Realtime sync
+  // Realtime sync — keyed by user.id so we don't re-subscribe on fetchLists
+  // identity changes (which would leak channels).
+  const fetchListsRef = useRef(fetchLists);
+  useEffect(() => { fetchListsRef.current = fetchLists; }, [fetchLists]);
+
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     const channel = supabase
-      .channel("shared-lists-rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "shared_lists" }, () => fetchLists())
+      .channel(`shared-lists-rt-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "shared_lists" }, () => {
+        fetchListsRef.current();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, fetchLists]);
+  }, [user?.id]);
 
   const addList = useCallback(async (list: UserList) => {
     if (!user) return;

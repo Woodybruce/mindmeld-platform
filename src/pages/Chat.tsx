@@ -34,6 +34,7 @@ const Chat = () => {
   const { addEvent } = useCalendarEvents();
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const [partnerName, setPartnerName] = useState("Partner");
   const [partnerPhone, setPartnerPhone] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; content: string; senderName: string } | null>(null);
@@ -87,7 +88,8 @@ const Chat = () => {
 
     // Mark unread as read
     supabase.from("messages").update({ read: true })
-      .eq("receiver_id", user.id).eq("sender_id", partnerId).eq("read", false).then();
+      .eq("receiver_id", user.id).eq("sender_id", partnerId).eq("read", false)
+      .then(({ error }) => { if (error) console.error("mark-as-read failed", error); });
 
     // Realtime
     const channel = supabase
@@ -99,9 +101,10 @@ const Chat = () => {
           ((msg.sender_id === user.id && msg.receiver_id === partnerId) ||
           (msg.sender_id === partnerId && msg.receiver_id === user.id))
         ) {
-          setMessages((prev) => [...prev, msg]);
+          setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
           if (msg.receiver_id === user.id) {
-            supabase.from("messages").update({ read: true }).eq("id", msg.id).then();
+            supabase.from("messages").update({ read: true }).eq("id", msg.id)
+              .then(({ error }) => { if (error) console.error("realtime mark-as-read failed", error); });
           }
         }
       })
@@ -151,7 +154,9 @@ const Chat = () => {
   }, []);
 
   const handleSend = async (content: string, imageFiles?: File[] | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => {
-    if (!user || !partnerId || sending) return;
+    if (!user || !partnerId) return;
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
 
     try {
@@ -240,6 +245,7 @@ const Chat = () => {
         }
       }
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   };
