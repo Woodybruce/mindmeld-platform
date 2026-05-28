@@ -75,13 +75,14 @@ const SharedFolderEmbed = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("shared_lists")
-      .select("id, score_data")
+    // See OurChallenges: the wide shared_lists row type blows up TS inference
+    // ("excessively deep") on this filter chain; loosen the builder past select().
+    const query: any = supabase.from("shared_lists").select("id, score_data");
+    query
       .eq("game_type", GAME_TYPE)
       .limit(1)
       .maybeSingle()
-      .then(({ data: row }) => {
+      .then(({ data: row }: { data: { id: string; score_data: unknown } | null }) => {
         if (row) {
           setRowId(row.id);
           const sd = row.score_data as any;

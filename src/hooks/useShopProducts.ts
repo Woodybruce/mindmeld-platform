@@ -163,7 +163,7 @@ export function useShopProducts() {
 
     if (data) {
       setListId(data.id);
-      let items = Array.isArray(data.items) ? data.items as ShopProduct[] : [];
+      let items = Array.isArray(data.items) ? (data.items as unknown as ShopProduct[]) : [];
       let needsSave = false;
       const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       items = items.map(p => {

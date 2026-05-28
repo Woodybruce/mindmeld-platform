@@ -58,55 +58,57 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <VibeOverlay />
-          <OfflineBanner />
-          <SpotifyPlayerProvider>
-            <BrowserRouter>
-              <PersistentSpotifyPlayer />
-              <ErrorBoundary fallbackTitle="Something went wrong">
-              <Suspense fallback={<PageLoader />}>
-              <Routes>
-              <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
-              <Route path="/us" element={<AuthGuard><Us /></AuthGuard>} />
-              <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-              <Route path="/chat" element={<AuthGuard><Chat /></AuthGuard>} />
-              <Route path="/kiss-chase" element={<AuthGuard><KissChasePage /></AuthGuard>} />
-              <Route path="/quiz/:quizId" element={<AuthGuard><QuizPlay /></AuthGuard>} />
-              <Route path="/checklist-quiz/:quizId" element={<AuthGuard><ChecklistQuizPlay /></AuthGuard>} />
-              <Route path="/love-languages" element={<AuthGuard><LoveLanguageGuide /></AuthGuard>} />
-              <Route path="/reflection-quiz/:quizId" element={<AuthGuard><ReflectionQuizPlay /></AuthGuard>} />
-              <Route path="/our-challenges" element={<AuthGuard><OurChallenges /></AuthGuard>} />
-              <Route path="/our-sex-list" element={<AuthGuard><OurSexList /></AuthGuard>} />
-              <Route path="/truth-or-dare" element={<AuthGuard><TruthOrDare /></AuthGuard>} />
-              <Route path="/would-you-rather" element={<AuthGuard><WouldYouRather /></AuthGuard>} />
-              <Route path="/photo-challenge" element={<AuthGuard><PhotoChallenge /></AuthGuard>} />
-              <Route path="/dare-duel" element={<AuthGuard><DareDuel /></AuthGuard>} />
-              <Route path="/design-my-night" element={<AuthGuard><DesignMyNight /></AuthGuard>} />
-              <Route path="/family-quiz" element={<AuthGuard><FamilyQuiz /></AuthGuard>} />
-              <Route path="/sex-bucket-game" element={<AuthGuard><SexBucketGame /></AuthGuard>} />
-              <Route path="/admin/feed" element={<AuthGuard><AdminFeedContent /></AuthGuard>} />
-              <Route path="/admin/products" element={<AuthGuard><AdminProducts /></AuthGuard>} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/outlook-callback" element={<OutlookCallback />} />
-              <Route path="/checkout/success" element={<CheckoutSuccess />} />
-              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
-              <Route path="*" element={<NotFound />} />
-              </Routes>
-              </Suspense>
-              </ErrorBoundary>
-            </BrowserRouter>
-          </SpotifyPlayerProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary fullScreen fallbackTitle="Couldn't start the app">
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <VibeOverlay />
+            <OfflineBanner />
+            <SpotifyPlayerProvider>
+              <BrowserRouter>
+                <PersistentSpotifyPlayer />
+                <ErrorBoundary fallbackTitle="Something went wrong">
+                <Suspense fallback={<PageLoader />}>
+                <Routes>
+                <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+                <Route path="/us" element={<AuthGuard><Us /></AuthGuard>} />
+                <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+                <Route path="/chat" element={<AuthGuard><Chat /></AuthGuard>} />
+                <Route path="/kiss-chase" element={<AuthGuard><KissChasePage /></AuthGuard>} />
+                <Route path="/quiz/:quizId" element={<AuthGuard><QuizPlay /></AuthGuard>} />
+                <Route path="/checklist-quiz/:quizId" element={<AuthGuard><ChecklistQuizPlay /></AuthGuard>} />
+                <Route path="/love-languages" element={<AuthGuard><LoveLanguageGuide /></AuthGuard>} />
+                <Route path="/reflection-quiz/:quizId" element={<AuthGuard><ReflectionQuizPlay /></AuthGuard>} />
+                <Route path="/our-challenges" element={<AuthGuard><OurChallenges /></AuthGuard>} />
+                <Route path="/our-sex-list" element={<AuthGuard><OurSexList /></AuthGuard>} />
+                <Route path="/truth-or-dare" element={<AuthGuard><TruthOrDare /></AuthGuard>} />
+                <Route path="/would-you-rather" element={<AuthGuard><WouldYouRather /></AuthGuard>} />
+                <Route path="/photo-challenge" element={<AuthGuard><PhotoChallenge /></AuthGuard>} />
+                <Route path="/dare-duel" element={<AuthGuard><DareDuel /></AuthGuard>} />
+                <Route path="/design-my-night" element={<AuthGuard><DesignMyNight /></AuthGuard>} />
+                <Route path="/family-quiz" element={<AuthGuard><FamilyQuiz /></AuthGuard>} />
+                <Route path="/sex-bucket-game" element={<AuthGuard><SexBucketGame /></AuthGuard>} />
+                <Route path="/admin/feed" element={<AuthGuard><AdminFeedContent /></AuthGuard>} />
+                <Route path="/admin/products" element={<AuthGuard><AdminProducts /></AuthGuard>} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/outlook-callback" element={<OutlookCallback />} />
+                <Route path="/checkout/success" element={<CheckoutSuccess />} />
+                <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+                <Route path="*" element={<NotFound />} />
+                </Routes>
+                </Suspense>
+                </ErrorBoundary>
+              </BrowserRouter>
+            </SpotifyPlayerProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
