@@ -8,10 +8,30 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+// True only when both env vars are present. Consumers can use this to show a
+// "backend not configured" state instead of failing silently.
+export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+
+if (!isSupabaseConfigured) {
+  // Without this guard, createClient() below would throw "supabaseUrl is required"
+  // synchronously at module load — before React ever mounts. That leaves the app
+  // frozen on the "Loading Us…" boot spinner with no error boundary able to catch
+  // it. Logging + falling back to a valid placeholder URL lets the UI mount so the
+  // user sees a real (recoverable) error state instead of a blank screen.
+  console.error(
+    "[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY — " +
+      "the app cannot reach its backend. Check the environment configuration."
+  );
+}
+
+export const supabase = createClient<Database>(
+  SUPABASE_URL ?? "https://placeholder.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY ?? "placeholder-anon-key",
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
   }
-});
+);

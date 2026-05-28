@@ -33,7 +33,12 @@ export const useSharedLinks = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchLinks = useCallback(async () => {
-    if (!user) return;
+    // Without clearing the loading flag here, the "Links & Media" section would
+    // spin forever whenever there's no authenticated user yet.
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from("shared_links")
       .select("*")
