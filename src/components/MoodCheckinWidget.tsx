@@ -62,7 +62,7 @@ const MoodCheckinWidget = () => {
         "postgres_changes",
         { event: "*", schema: "public", table: "mood_checkins", filter: `user_id=eq.${profile.partner_id}` },
         (payload) => {
-          const row = payload.new as { user_id: string; mood: string };
+          const row = payload.new as { user_id: string; mood: string; check_date?: string };
           if (row?.check_date === today) setPartnerMood(row.mood);
         }
       )

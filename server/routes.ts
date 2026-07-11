@@ -1983,7 +1983,9 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
 
   // fetch() that re-validates every redirect hop against isSafeUrl, defeating
   // redirect-to-internal SSRF (e.g. a 302 to http://169.254.169.254/...).
-  async function safeFetch(url: string, init: RequestInit = {}, maxRedirects = 4): Promise<Response> {
+  // Return type is inferred from fetch (the global fetch Response), not annotated —
+  // annotating `Response` would resolve to Express's Response type imported above.
+  async function safeFetch(url: string, init: RequestInit = {}, maxRedirects = 4) {
     let current = url;
     for (let i = 0; i <= maxRedirects; i++) {
       if (!isSafeUrl(current)) throw new Error("Blocked non-public URL");

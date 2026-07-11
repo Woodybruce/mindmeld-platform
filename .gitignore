@@ -33,3 +33,6 @@ migrations
 
 # Build artifacts
 *.cjs
+
+# TypeScript build info
+*.tsbuildinfo

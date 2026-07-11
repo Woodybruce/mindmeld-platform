@@ -8,6 +8,7 @@
     "build": "vite build && esbuild server/index.ts --bundle --platform=node --outfile=dist/index.cjs --format=cjs --packages=external",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
