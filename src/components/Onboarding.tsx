@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ArrowRight, Sparkles, Users, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -16,7 +17,7 @@ const steps = [
 ];
 
 const Onboarding = ({ onComplete }: OnboardingProps) => {
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshProfile, linkPartnerByEmail } = useAuth();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [partnerEmail, setPartnerEmail] = useState("");
@@ -40,8 +41,19 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
   };
 
   const handleInvite = async () => {
-    // For now, just skip — partner linking happens on profile page
-    next();
+    if (!partnerEmail.trim()) { next(); return; }
+    // Wire the email field to the real partner-link flow (same one PartnerInviteCard uses).
+    // It links a partner who already has an account; on failure we stay honest and don't
+    // advance with a false success.
+    setSaving(true);
+    const result = await linkPartnerByEmail(partnerEmail.trim());
+    setSaving(false);
+    if (result.success) {
+      toast.success("Partner linked! 🎉");
+      next();
+    } else {
+      toast.error(result.error || "Couldn't link — they may need an account first. You can try again from Profile.");
+    }
   };
 
   const currentStep = steps[step].id;
@@ -167,13 +179,15 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                 />
               </div>
               <p className="text-[13px] text-muted-foreground text-center">
-                They'll get a magic link to join. You can also do this later from your Profile.
+                If your partner already has an account, we'll link you now. You can also invite
+                them anytime from your Profile.
               </p>
               <button
                 onClick={handleInvite}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                disabled={saving}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {partnerEmail.trim() ? "Send Invite" : "Skip for now"} <ArrowRight className="w-4 h-4" />
+                {saving ? "Linking…" : partnerEmail.trim() ? "Link Partner" : "Skip for now"} <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>
           )}

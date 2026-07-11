@@ -7,6 +7,8 @@ interface GeolocationState {
   accuracy: number | null;
   error: string | null;
   loading: boolean;
+  /** True when latitude/longitude are the hardcoded fallback, not a real fix. */
+  isFallback: boolean;
 }
 
 const FALLBACK = { latitude: 51.4545, longitude: -0.1081, accuracy: 100 };
@@ -18,6 +20,7 @@ export const useGeolocation = (enabled: boolean = false) => {
     accuracy: null,
     error: null,
     loading: false,
+    isFallback: false,
   });
 
   useEffect(() => {
@@ -32,8 +35,10 @@ export const useGeolocation = (enabled: boolean = false) => {
       console.warn("[Geo] Using fallback. Reason:", reason);
       setState({
         ...FALLBACK,
-        error: null,
+        // Report a truthful error + flag so consumers can tell this is a fake fix.
+        error: reason || "Location unavailable — using approximate location",
         loading: false,
+        isFallback: true,
       });
     };
 
@@ -42,7 +47,12 @@ export const useGeolocation = (enabled: boolean = false) => {
       setState((prev) => {
         if (prev.loading) {
           console.warn("Geolocation timed out, using fallback");
-          return { ...FALLBACK, error: null, loading: false };
+          return {
+            ...FALLBACK,
+            error: "Location request timed out — using approximate location",
+            loading: false,
+            isFallback: true,
+          };
         }
         return prev;
       });
@@ -85,6 +95,7 @@ export const useGeolocation = (enabled: boolean = false) => {
                 accuracy: position.coords.accuracy,
                 error: null,
                 loading: false,
+                isFallback: false,
               });
             }
           );
@@ -121,6 +132,7 @@ export const useGeolocation = (enabled: boolean = false) => {
             accuracy: position.coords.accuracy,
             error: null,
             loading: false,
+            isFallback: false,
           });
         },
         (err) => {

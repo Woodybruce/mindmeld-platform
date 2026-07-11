@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, ShoppingBag, Star, X, Sparkles, Wine, Gift, Flower2, Flame, Home, Heart as HeartIcon, CreditCard, Loader2, ChevronLeft, ChevronRight, Ruler, Package, Shirt, Info, TrendingUp } from "lucide-react";
 
-import { apiInvoke } from "@/lib/api";
+import { apiInvoke, authHeaders } from "@/lib/api";
 import { useContentLikes } from "@/hooks/useContentLikes";
 import LikeButton from "@/components/LikeButton";
 
@@ -250,7 +250,7 @@ const ProductDetailModal = ({
   partnerLiked: boolean;
   mutual: boolean;
   onToggleLike: () => void;
-  onCheckout: () => void;
+  onCheckout: (size?: string | null) => void;
   checkoutLoading?: boolean;
 }) => {
   const hasPrice = !!product.stripePriceId;
@@ -386,8 +386,8 @@ const ProductDetailModal = ({
 
           <div className="mt-6 space-y-2.5 pb-4">
             <button
-              onClick={onCheckout}
-              disabled={checkoutLoading || !hasPrice}
+              onClick={() => onCheckout(selectedSize)}
+              disabled={checkoutLoading || !hasPrice || (hasSizing && !selectedSize)}
               className="w-full py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all bg-foreground text-background disabled:opacity-60"
               data-testid="button-stripe-checkout"
             >
@@ -396,7 +396,13 @@ const ProductDetailModal = ({
               ) : (
                 <CreditCard className="w-4 h-4" />
               )}
-              {checkoutLoading ? "Processing..." : hasPrice ? `Buy Now — ${product.price}` : "Coming Soon"}
+              {checkoutLoading
+                ? "Processing..."
+                : !hasPrice
+                ? "Coming Soon"
+                : hasSizing && !selectedSize
+                ? "Select a size"
+                : `Buy Now — ${product.price}`}
             </button>
             <p className="text-[11px] text-center text-muted-foreground/50 uppercase tracking-wider">
               {hasPrice ? "Secure checkout · Apple Pay · Google Pay" : ""}
@@ -419,14 +425,18 @@ const DiscoverTogether = () => {
 
   const { toggleLike, isLikedByMe, isLikedByPartner, isMutualLike } = useContentLikes("shop");
 
-  const handleStripeCheckout = useCallback(async (product: ShopProduct) => {
+  const handleStripeCheckout = useCallback(async (product: ShopProduct, size?: string | null) => {
     if (!product.stripePriceId) return;
     setCheckoutLoading(true);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: product.stripePriceId, productName: `${product.brand} — ${product.name}` }),
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+        body: JSON.stringify({
+          priceId: product.stripePriceId,
+          productName: `${product.brand} — ${product.name}`,
+          size: size || undefined,
+        }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -609,7 +619,7 @@ const DiscoverTogether = () => {
             partnerLiked={isLikedByPartner(selectedProduct.id)}
             mutual={isMutualLike(selectedProduct.id)}
             onToggleLike={() => toggleLike(selectedProduct.id, selectedProduct.name)}
-            onCheckout={() => handleStripeCheckout(selectedProduct)}
+            onCheckout={(size) => handleStripeCheckout(selectedProduct, size)}
             checkoutLoading={checkoutLoading}
           />
         )}

@@ -8,6 +8,8 @@ interface UseWebRTCProps {
   userId: string | undefined;
   partnerId: string | undefined;
   partnerName: string;
+  /** The current user's own display name, sent to the partner on an outgoing call. */
+  selfName?: string;
 }
 
 const ICE_SERVERS: RTCConfiguration = {
@@ -17,7 +19,7 @@ const ICE_SERVERS: RTCConfiguration = {
   ],
 };
 
-export function useWebRTC({ userId, partnerId, partnerName }: UseWebRTCProps) {
+export function useWebRTC({ userId, partnerId, partnerName, selfName }: UseWebRTCProps) {
   const [callState, setCallState] = useState<CallState>("idle");
   const [callType, setCallType] = useState<CallType>("audio");
   const [isMuted, setIsMuted] = useState(false);
@@ -33,6 +35,11 @@ export function useWebRTC({ userId, partnerId, partnerName }: UseWebRTCProps) {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const durationInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
+  // Mirror of callState readable from effect cleanups without stale closures.
+  const callStateRef = useRef<CallState>(callState);
+  useEffect(() => {
+    callStateRef.current = callState;
+  }, [callState]);
 
   const getChannelName = useCallback(() => {
     if (!userId || !partnerId) return null;
@@ -48,7 +55,10 @@ export function useWebRTC({ userId, partnerId, partnerName }: UseWebRTCProps) {
     peerConnection.current?.close();
     peerConnection.current = null;
     iceCandidateQueue.current = [];
-    if (durationInterval.current) clearInterval(durationInterval.current);
+    if (durationInterval.current) {
+      clearInterval(durationInterval.current);
+      durationInterval.current = null;
+    }
     setCallDuration(0);
     setIsMuted(false);
     setIsVideoOff(false);
@@ -85,6 +95,8 @@ export function useWebRTC({ userId, partnerId, partnerName }: UseWebRTCProps) {
         if (pc.connectionState === "connected") {
           setCallState("connected");
           setCallDuration(0);
+          // Clear any prior interval so reconnects don't leak/double-count.
+          if (durationInterval.current) clearInterval(durationInterval.current);
           durationInterval.current = setInterval(() => {
             setCallDuration((d) => d + 1);
           }, 1000);
@@ -125,7 +137,8 @@ export function useWebRTC({ userId, partnerId, partnerName }: UseWebRTCProps) {
         channelRef.current?.send({
           type: "broadcast",
           event: "call-offer-incoming",
-          payload: { type, from: userId, name: partnerName },
+          // Send the CALLER's own name so the callee sees who is ringing them.
+          payload: { type, from: userId, name: selfName },
         });
 
         // Create offer
@@ -143,7 +156,7 @@ export function useWebRTC({ userId, partnerId, partnerName }: UseWebRTCProps) {
         setCallState("idle");
       }
     },
-    [userId, partnerId, getMediaStream, setupPeerConnection, cleanup, partnerName]
+    [userId, partnerId, getMediaStream, setupPeerConnection, cleanup, selfName]
   );
 
   // Accept incoming call
@@ -317,6 +330,16 @@ export function useWebRTC({ userId, partnerId, partnerName }: UseWebRTCProps) {
       .subscribe();
 
     return () => {
+      // If a call is still live when this effect tears down (unmount / partner
+      // change), tell the peer and release camera/mic/PC/duration interval.
+      if (callStateRef.current !== "idle") {
+        channel.send({
+          type: "broadcast",
+          event: "call-ended",
+          payload: { from: userId },
+        });
+        cleanup();
+      }
       supabase.removeChannel(channel);
       channelRef.current = null;
     };

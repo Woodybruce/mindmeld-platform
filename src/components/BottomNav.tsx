@@ -20,6 +20,8 @@ const BottomNav = () => {
         {tabs.map((tab) => {
           const isActive = tab.id === "admin"
             ? location.pathname === "/us" && location.search.includes("tab=admin")
+            : tab.id === "us"
+            ? location.pathname === "/us" && !location.search.includes("tab=admin")
             : location.pathname === tab.path;
           const showBadge = tab.id === "chat" && unreadCount > 0;
 

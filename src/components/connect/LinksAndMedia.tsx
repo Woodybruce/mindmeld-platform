@@ -3,7 +3,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, Plus, Link2, Trash2, MoreHorizontal, Instagram, Youtube, Globe, Newspaper, Sparkles, Heart, Loader2, X } from "lucide-react";
 import { useSharedLinks } from "@/hooks/useSharedLinks";
 import type { SharedLinkRow } from "@/hooks/useSharedLinks";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+/** Only allow http(s) links to be rendered as anchors — blocks stored javascript: XSS. */
+const sanitizeHref = (url: string): string | null => {
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+};
 
 const platformIcon = (platform: string) => {
   switch (platform) {
@@ -39,7 +51,8 @@ const timeAgo = (date: string) => {
 };
 
 const LinksAndMedia = () => {
-  const { myLinks, partnerLinks, matchedLinks, addLink, removeLink, loading } = useSharedLinks();
+  const { user } = useAuth();
+  const { myLinks, partnerLinks, matchedLinks, addLink, loading } = useSharedLinks();
   const [showAdd, setShowAdd] = useState(false);
   const [newUrl, setNewUrl] = useState("");
   const [newTitle, setNewTitle] = useState("");
@@ -70,7 +83,13 @@ const LinksAndMedia = () => {
 
   const handleRemove = async (id: string) => {
     setOpenActionMenu(null);
-    await removeLink(id);
+    // Verify the delete actually removed a row before claiming success — RLS blocks
+    // deleting a partner's link, which previously still toasted "removed".
+    const { data, error } = await supabase.from("shared_links").delete().eq("id", id).select();
+    if (error || !data || data.length === 0) {
+      toast.error("Couldn't remove — you can only delete your own links");
+      return;
+    }
     toast.success("Link removed");
   };
 
@@ -188,7 +207,7 @@ const LinksAndMedia = () => {
                 </div>
               </div>
               <a
-                href={match.url}
+                href={sanitizeHref(match.url) || undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-start gap-3 px-3 py-2.5"
@@ -240,7 +259,7 @@ const LinksAndMedia = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <a
-                  href={link.url}
+                  href={sanitizeHref(link.url) || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block"
@@ -272,7 +291,7 @@ const LinksAndMedia = () => {
                     <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenu(null)} />
                     <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
                       <a
-                        href={link.url}
+                        href={sanitizeHref(link.url) || undefined}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => setOpenActionMenu(null)}
@@ -281,14 +300,18 @@ const LinksAndMedia = () => {
                       >
                         <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" /> Open link
                       </a>
-                      <div className="border-t border-border my-1" />
-                      <button
-                        onClick={() => handleRemove(link.id)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                        data-testid={`button-delete-link-${link.id}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete
-                      </button>
+                      {link.user_id === user?.id && (
+                        <>
+                          <div className="border-t border-border my-1" />
+                          <button
+                            onClick={() => handleRemove(link.id)}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                            data-testid={`button-delete-link-${link.id}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </button>
+                        </>
+                      )}
                     </div>
                   </>
                 )}

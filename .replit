@@ -40,13 +40,13 @@ outputType = "webview"
 localPort = 5000
 externalPort = 80
 
+# SECRETS REMOVED FROM SOURCE CONTROL.
+# VAPID keys and the Spotify client id must be configured as Replit Secrets
+# (Tools -> Secrets) / environment variables, NOT committed here.
+# ACTION REQUIRED: the previously-committed VAPID_PRIVATE_KEY is compromised and
+# must be ROTATED (generate a new keypair; existing web-push subscribers must
+# re-subscribe). Consider scrubbing it from git history (git filter-repo/BFG).
 [userenv]
-
-[userenv.shared]
-VAPID_PUBLIC_KEY = "BA8x4ZjjNpnx9bkTw14fKMdgyrA96FRvutINZ2Hmpd83VNMd0MquFxil2xOKVyKBbPcAvNYw23HywR7WvCZgGoc"
-VAPID_PRIVATE_KEY = "pQ0r169JUjArzbGTSRbDY58tyZ4SizYHfEp8v-bGZV4"
-VITE_VAPID_PUBLIC_KEY = "BA8x4ZjjNpnx9bkTw14fKMdgyrA96FRvutINZ2Hmpd83VNMd0MquFxil2xOKVyKBbPcAvNYw23HywR7WvCZgGoc"
-SPOTIFY_CLIENT_ID = "b2a5f5088a88466d866b496ff34cc07b"
 
 [userenv.production]
 SPOTIFY_REDIRECT_URI = "https://mindmeld-platform.replit.app/api/spotify/callback"

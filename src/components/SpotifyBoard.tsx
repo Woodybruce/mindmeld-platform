@@ -93,6 +93,8 @@ const SpotifyBoard = () => {
           .from("shared_lists")
           .select("items")
           .eq("name", "__spotify_playlist__")
+          .order("created_at", { ascending: true })
+          .limit(1)
           .maybeSingle();
         if (data?.items?.[0]) {
           const info = (data.items as any)[0];

@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Camera, Shuffle, Check, Upload, Image, X, Loader2 } from "lucide-react";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { authHeaders } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -34,20 +35,26 @@ const PhotoChallenge = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
 
-  useEffect(() => {
-    if (profile?.partner_id) {
-      notifyPartner({ partnerId: profile.partner_id, title: "📸 Photo Challenge!", body: `${profile.username || "Your partner"} started a Photo Challenge`, route: "/photo-challenge" });
-    }
-  }, []);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<number, string>>({});
   const [uploading, setUploading] = useState(false);
+  const [notified, setNotified] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const challenge = challenges[currentIdx];
 
+  // Notify the partner on the first explicit action (marking done or uploading),
+  // not on mount — avoids spam and works even if the profile loads late.
+  const notifyPartnerOnce = () => {
+    if (!notified && profile?.partner_id) {
+      setNotified(true);
+      notifyPartner({ partnerId: profile.partner_id, title: "📸 Photo Challenge!", body: `${profile.username || "Your partner"} started a Photo Challenge`, route: "/photo-challenge" });
+    }
+  };
+
   const markDone = () => {
+    notifyPartnerOnce();
     setCompleted((prev) => new Set(prev).add(currentIdx));
   };
 
@@ -82,8 +89,8 @@ const PhotoChallenge = () => {
         method: "POST",
         headers: {
           "Content-Type": file.type || "image/jpeg",
-          "x-user-id": user.id,
-          "x-caption": caption,
+          "x-caption": encodeURIComponent(caption),
+          ...(await authHeaders()),
         },
         body: file,
       });
@@ -92,6 +99,7 @@ const PhotoChallenge = () => {
 
       setUploadedPhotos((prev) => ({ ...prev, [currentIdx]: result.publicUrl }));
       setCompleted((prev) => new Set(prev).add(currentIdx));
+      notifyPartnerOnce();
       toast.success("Photo saved to your shared album!");
     } catch (err: any) {
       console.error(err);

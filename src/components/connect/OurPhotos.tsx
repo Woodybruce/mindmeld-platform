@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { ImageIcon, X, MessageCircle, Upload, Loader2, Camera, MoreHorizontal, Trash2 } from "lucide-react";
 import { SkeletonPhotoGrid } from "@/components/SkeletonCard";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedUrls } from "@/lib/storage";
+import { authHeaders } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -27,7 +29,7 @@ const OurPhotos = () => {
   const partnerId = profile?.partner_id;
 
   const fetchPhotos = async () => {
-    if (!user || !partnerId) return;
+    if (!user || !partnerId) { setLoading(false); return; }
     setLoading(true);
 
     // Fetch chat photos
@@ -65,19 +67,18 @@ const OurPhotos = () => {
       source: "chat" as const,
     }));
 
-    const uploadedPhotos: Photo[] = (uploadData || []).map((p) => {
-      const { data: urlData } = supabase.storage
-        .from("couple-photos")
-        .getPublicUrl(p.storage_path);
-      return {
+    // couple-photos is a private bucket — resolve signed URLs (batched) from storage paths.
+    const signedMap = await getSignedUrls("couple-photos", (uploadData || []).map((p) => p.storage_path));
+    const uploadedPhotos: Photo[] = (uploadData || [])
+      .map((p) => ({
         id: p.id,
         storage_path: p.storage_path,
-        image_url: urlData.publicUrl,
+        image_url: signedMap[p.storage_path] || "",
         created_at: p.created_at,
         sender_name: p.user_id === user.id ? "You" : partnerName,
         source: "upload" as const,
-      };
-    });
+      }))
+      .filter((p) => p.image_url);
 
     // Merge and sort by date
     const all = [...chatPhotos, ...uploadedPhotos].sort(
@@ -109,7 +110,7 @@ const OurPhotos = () => {
           method: "POST",
           headers: {
             "Content-Type": file.type || "image/jpeg",
-            "x-user-id": user.id,
+            ...(await authHeaders()),
           },
           body: file,
         });
@@ -179,13 +180,16 @@ const OurPhotos = () => {
       {photos.length > 0 ? (
         <div className="grid grid-cols-3 gap-1.5">
           {photos.map((photo, i) => (
-            <motion.button
+            <motion.div
               key={photo.id}
+              role="button"
+              tabIndex={0}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.03 }}
               onClick={() => setSelectedPhoto(photo)}
-              className="relative aspect-square rounded-xl bg-secondary overflow-hidden group"
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedPhoto(photo); } }}
+              className="relative aspect-square rounded-xl bg-secondary overflow-hidden group cursor-pointer"
             >
               <img
                 src={photo.image_url}
@@ -220,7 +224,7 @@ const OurPhotos = () => {
                   )}
                 </div>
               </div>
-            </motion.button>
+            </motion.div>
           ))}
         </div>
       ) : (

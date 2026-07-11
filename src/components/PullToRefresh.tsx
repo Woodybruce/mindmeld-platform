@@ -18,7 +18,9 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if (containerRef.current && containerRef.current.scrollTop <= 0) {
+    // The window scrolls, not this wrapper, so containerRef.scrollTop is always 0 and
+    // pull-to-refresh could fire mid-feed. Gate on the actual page scroll position.
+    if (window.scrollY <= 0) {
       startY.current = e.touches[0].clientY;
       pulling.current = true;
     }

@@ -65,6 +65,9 @@ const InstaFeedWidget = () => {
   const [saving, setSaving] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [embedCache, setEmbedCache] = useState<Record<string, OEmbedData>>({});
+  // Track which link ids we've already requested an oEmbed for, so the fetch effect
+  // doesn't re-fire O(N^2) as embedCache changes (mirrors CuratedLinksWidget.fetchedOgUrls).
+  const requestedEmbeds = useRef<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const partnerId = profile?.partner_id;
@@ -113,7 +116,8 @@ const InstaFeedWidget = () => {
 
   // Fetch oEmbed data for saved links
   const fetchEmbed = useCallback(async (url: string, id: string) => {
-    if (embedCache[id]) return;
+    if (requestedEmbeds.current.has(id)) return;
+    requestedEmbeds.current.add(id);
     try {
       const { data } = await apiInvoke("instagram-oembed", {
         body: { url },
@@ -131,7 +135,7 @@ const InstaFeedWidget = () => {
     } catch {
       // silently fail
     }
-  }, [embedCache]);
+  }, []);
 
   useEffect(() => {
     savedLinks.forEach((link) => fetchEmbed(link.url, link.id));

@@ -62,7 +62,11 @@ const WouldYouRather = () => {
   };
 
   const next = () => {
-    const remaining = questions.map((_, i) => i).filter((i) => !revealed.has(i));
+    // Exclude already-revealed questions, the current one, and any picked-but-
+    // unrevealed questions so "Next" never re-draws what we're already on.
+    const remaining = questions
+      .map((_, i) => i)
+      .filter((i) => !revealed.has(i) && picked[i] === undefined && i !== index);
     if (remaining.length === 0) {
       setPicked({});
       setRevealed(new Set());

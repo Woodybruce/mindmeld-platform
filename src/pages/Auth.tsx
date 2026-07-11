@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useSearchParams } from "react-router-dom";
@@ -22,9 +22,15 @@ const Auth = () => {
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
-  // Auto-link partner when logged in with invite code
+  // Auto-link partner when logged in with invite code.
+  // `profile` changes identity on every fetch, so guard with a ref so the link
+  // is attempted only once (and stops for good once a partner is linked).
+  const linkAttemptedRef = useRef(false);
   useEffect(() => {
+    if (linkAttemptedRef.current) return;
+    if (profile?.partner_id) return; // already linked — nothing to do
     if (user && inviteCode && profile && !profile.partner_id) {
+      linkAttemptedRef.current = true;
       linkPartnerByCode(inviteCode).then((result) => {
         if (result.success) {
           toast.success("Partner linked! 🎉");
@@ -71,7 +77,8 @@ const Auth = () => {
     setSubmitting(false);
   };
 
-  const isPreview = window.location.hostname.includes("lovable.app") && window.location.hostname.includes("preview");
+  // Dev-only preview bypass — must NEVER be available in a production build.
+  const isPreview = import.meta.env.DEV && window.location.hostname.includes("lovable.app") && window.location.hostname.includes("preview");
 
   const handleDevBypass = () => {
     localStorage.setItem("dev-auth-bypass", "true");

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams, useSearchParams, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ChevronRight, ChevronLeft, Check, Flame, ListPlus } from "lucide-react";
 import { checklistQuizzes } from "@/data/checklistQuizData";
@@ -31,9 +31,44 @@ const ChecklistQuizPlay = () => {
   const retestListId = isRetest ? localStorage.getItem("retestListId") : null;
   const retestMilestone = isRetest ? Number(localStorage.getItem("retestMilestone") || "0") : 0;
 
+  // Handle retest completion as a post-render side effect (DB write + toast +
+  // navigate) rather than during render. Guarded against double-run.
+  const retestSavedRef = useRef(false);
+  useEffect(() => {
+    if (!finished || !isRetest || !retestListId || !quiz) return;
+    if (retestSavedRef.current) return;
+
+    const existingList = sharedLists.find((l) => l.id === retestListId);
+    if (!existingList || !existingList.scoreData) return;
+
+    retestSavedRef.current = true;
+
+    const afs = quiz.sections.filter((s) => !s.forGender || s.forGender === gender);
+    const scSections = afs.slice(0, SCORE_SECTION_COUNT);
+    const scoreAnswers: Record<string, number | string> = {};
+    scSections.forEach((sec) => {
+      sec.items.forEach((item) => {
+        if ((item.type === "rating" || item.type === "choice") && answers[item.id] !== undefined) {
+          scoreAnswers[item.id] = answers[item.id] as number | string;
+        }
+      });
+    });
+
+    const newSnapshot: ScoreSnapshot = {
+      takenAt: new Date().toISOString(),
+      answers: scoreAnswers,
+      milestone: retestMilestone,
+    };
+    const updatedSnapshots = [...existingList.scoreData.snapshots, newSnapshot];
+    updateSharedList(existingList.id, { scoreData: { ...existingList.scoreData, snapshots: updatedSnapshots } });
+    localStorage.removeItem("retestListId");
+    localStorage.removeItem("retestMilestone");
+    toast({ title: "Score updated ✓", description: `${retestMilestone}% milestone recorded!` });
+    navigate("/us?tab=lists");
+  }, [finished, isRetest, retestListId, retestMilestone, quiz, gender, answers, sharedLists, updateSharedList, navigate]);
+
   if (!quiz) {
-    navigate("/us");
-    return null;
+    return <Navigate to="/us" replace />;
   }
 
   const allFilteredSections = quiz.sections.filter(
@@ -132,17 +167,8 @@ const ChecklistQuizPlay = () => {
     if (isRetest && retestListId) {
       const existingList = sharedLists.find((l) => l.id === retestListId);
       if (existingList && existingList.scoreData) {
-        const newSnapshot: ScoreSnapshot = {
-          takenAt: new Date().toISOString(),
-          answers: scoreAnswers,
-          milestone: retestMilestone,
-        };
-        const updatedSnapshots = [...existingList.scoreData.snapshots, newSnapshot];
-        updateSharedList(existingList.id, { scoreData: { ...existingList.scoreData, snapshots: updatedSnapshots } });
-        localStorage.removeItem("retestListId");
-        localStorage.removeItem("retestMilestone");
-        toast({ title: "Score updated ✓", description: `${retestMilestone}% milestone recorded!` });
-        navigate("/us?tab=lists");
+        // The snapshot write + toast + navigate is handled by the effect above.
+        // Render nothing while that runs to avoid a flash of the results screen.
         return null;
       }
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Check, CheckCheck, Reply, MapPin, BarChart3, CalendarPlus, ExternalLink, ListPlus, CalendarCheck, Navigation, Clock, Trash2, ImageOff } from "lucide-react";
 import { useSpotifyPlayer } from "@/contexts/SpotifyPlayerContext";
@@ -61,11 +61,14 @@ interface ChatBubbleProps {
 }
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+// Non-global regex for per-part testing: a global regex's lastIndex persists across
+// .test() calls in a render, so it would skip/misclassify parts intermittently.
+const URL_TEST = /^https?:\/\//;
 
 const renderContentWithLinks = (text: string) => {
   const parts = text.split(URL_REGEX);
   return parts.map((part, i) =>
-    URL_REGEX.test(part) ? (
+    URL_TEST.test(part) ? (
       <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all">
         {part}
       </a>
@@ -436,6 +439,13 @@ const PollCard = ({ parsed, isMine, msgId, onPollVote, userId, onSaveToList }: {
 // Location sub-component
 const LocationCard = ({ parsed, isMine }: { parsed: any; isMine: boolean }) => {
   const isLive = parsed.live === true;
+  // Re-render every minute so live-location expiry updates without a manual refresh.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!isLive) return;
+    const t = setInterval(() => setTick((n) => n + 1), 60000);
+    return () => clearInterval(t);
+  }, [isLive]);
   const expiresAt = isLive && parsed.duration ? new Date(new Date(parsed.sentAt || Date.now()).getTime() + parsed.duration * 60000) : null;
   const isExpired = expiresAt ? new Date() > expiresAt : false;
   const durationLabel = parsed.duration === 15 ? "15 min" : parsed.duration === 60 ? "1 hour" : parsed.duration === 480 ? "8 hours" : `${parsed.duration} min`;

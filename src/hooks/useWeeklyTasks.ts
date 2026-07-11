@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { localDateKey, localDateKeyOffset } from "@/lib/dateKey";
 
 export interface TaskAttachment {
   type: "photo" | "file" | "event";
@@ -28,13 +29,13 @@ const getTasksCache = (userId: string): WeeklyTask[] | null => {
     const raw = localStorage.getItem(`us-tasks-${userId}`);
     if (!raw) return null;
     const { data, ts, dateStr } = JSON.parse(raw);
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = localDateKey();
     if (dateStr !== todayStr || Date.now() - ts > 1000 * 60 * 15) return null;
     return data;
   } catch { return null; }
 };
 const setTasksCache = (userId: string, tasks: WeeklyTask[]) => {
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = localDateKey();
   try { localStorage.setItem(`us-tasks-${userId}`, JSON.stringify({ data: tasks, ts: Date.now(), dateStr: todayStr })); } catch {}
 };
 
@@ -48,13 +49,8 @@ export function useWeeklyTasks() {
     if (!user) { setLoading(false); return; }
     if (!tasks.length) setLoading(true);
 
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const endDate = new Date(now);
-    endDate.setDate(now.getDate() + 6);
-
-    const startStr = now.toISOString().split("T")[0];
-    const endStr = endDate.toISOString().split("T")[0];
+    const startStr = localDateKey();
+    const endStr = localDateKeyOffset(6);
 
     const { data, error } = await supabase
       .from("weekly_tasks")
@@ -154,7 +150,7 @@ export function useWeeklyTasks() {
   }, [tasks]);
 
   const getTodayTasks = useCallback(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = localDateKey();
     return tasks.filter((t) => t.scheduled_date === todayStr);
   }, [tasks]);
 
@@ -162,7 +158,7 @@ export function useWeeklyTasks() {
   const getWeekDates = useCallback(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    const todayStr = now.toISOString().split("T")[0];
+    const todayStr = localDateKey(now);
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     const dates: { date: Date; dateStr: string; label: string; isToday: boolean }[] = [];
@@ -170,7 +166,7 @@ export function useWeeklyTasks() {
     for (let i = 0; i < 7; i++) {
       const d = new Date(now);
       d.setDate(now.getDate() + i);
-      const dateStr = d.toISOString().split("T")[0];
+      const dateStr = localDateKey(d);
       const isToday = dateStr === todayStr;
       dates.push({ date: d, dateStr, label: dayNames[d.getDay()], isToday });
     }

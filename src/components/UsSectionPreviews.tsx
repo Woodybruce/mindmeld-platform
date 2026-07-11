@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { UserList } from "@/components/connect/SharedLists";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedUrls } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SectionPreviewProps {
@@ -187,9 +188,10 @@ export const PhotosPreview = () => {
         .order("created_at", { ascending: false })
         .limit(10);
 
+      const signedMap = await getSignedUrls("couple-photos", (uploadData || []).map((p) => p.storage_path));
       (uploadData || []).forEach((p) => {
-        const { data: urlData } = supabase.storage.from("couple-photos").getPublicUrl(p.storage_path);
-        urls.push(urlData.publicUrl);
+        const signed = signedMap[p.storage_path];
+        if (signed) urls.push(signed);
       });
 
       // Shuffle for variety

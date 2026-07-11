@@ -96,7 +96,22 @@ const SharedFileManager = () => {
   };
 
   const deleteFolder = async (id: string) => {
-    await supabase.from("shared_folders").delete().eq("id", id);
+    // Remove the storage objects for files in this folder (and its direct subfolders)
+    // so we don't orphan them in the bucket when the DB rows go away.
+    const folderIds = new Set<string>([id]);
+    folders.forEach((f) => { if (f.parent_id === id) folderIds.add(f.id); });
+    const paths = files.filter((f) => folderIds.has(f.folder_id)).map((f) => f.storage_path).filter(Boolean);
+    if (paths.length > 0) {
+      await supabase.storage.from("shared-files").remove(paths);
+    }
+
+    // Check the delete actually affected a row — RLS blocks deleting a partner's folder,
+    // so only update the UI / toast success on a real delete.
+    const { data, error } = await supabase.from("shared_folders").delete().eq("id", id).select();
+    if (error || !data || data.length === 0) {
+      toast({ title: "Couldn't delete folder", description: "You can only delete folders you created.", variant: "destructive" });
+      return;
+    }
     setFolderStack((prev) => prev.filter((f) => f.id !== id));
     fetchFolders();
     fetchFiles();
@@ -108,6 +123,7 @@ const SharedFileManager = () => {
     if (!fileList || !user || !activeFolder) return;
     setUploading(true);
 
+    let successCount = 0;
     for (const file of Array.from(fileList)) {
       const ext = file.name.split(".").pop();
       const path = `${user.id}/${activeFolder.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -118,7 +134,7 @@ const SharedFileManager = () => {
         continue;
       }
 
-      await supabase.from("shared_files").insert({
+      const { error: insertErr } = await supabase.from("shared_files").insert({
         folder_id: activeFolder.id,
         user_id: user.id,
         file_name: file.name,
@@ -126,17 +142,32 @@ const SharedFileManager = () => {
         file_size: file.size,
         mime_type: file.type || "application/octet-stream",
       } as any);
+      if (insertErr) {
+        // Roll back the orphaned storage object if the DB row couldn't be created.
+        await supabase.storage.from("shared-files").remove([path]);
+        toast({ title: `Upload failed: ${file.name}`, variant: "destructive" });
+        continue;
+      }
+      successCount++;
     }
 
     setUploading(false);
-    fetchFiles();
-    toast({ title: "Files uploaded ✓" });
+    if (successCount > 0) {
+      fetchFiles();
+      toast({ title: `${successCount} file${successCount !== 1 ? "s" : ""} uploaded ✓` });
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const deleteFile = async (f: SharedFile) => {
+    // Check the delete affected a row — RLS blocks deleting a partner's file, so only
+    // remove the storage object / update the UI on a real delete.
+    const { data, error } = await supabase.from("shared_files").delete().eq("id", f.id).select();
+    if (error || !data || data.length === 0) {
+      toast({ title: "Couldn't delete file", description: "You can only delete files you added.", variant: "destructive" });
+      return;
+    }
     await supabase.storage.from("shared-files").remove([f.storage_path]);
-    await supabase.from("shared_files").delete().eq("id", f.id);
     setFiles((prev) => prev.filter((x) => x.id !== f.id));
     toast({ title: "File deleted" });
   };
@@ -278,6 +309,7 @@ const SharedFileManager = () => {
                     {count} file{count !== 1 ? "s" : ""}{subCount > 0 ? ` · ${subCount} folder${subCount !== 1 ? "s" : ""}` : ""}
                   </p>
                   <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/40" />
+                  {folder.user_id === user?.id && (
                   <div className="absolute bottom-3 right-3" onClick={(e) => e.stopPropagation()}>
                     <div className="relative">
                       <button
@@ -301,6 +333,7 @@ const SharedFileManager = () => {
                       )}
                     </div>
                   </div>
+                  )}
                 </motion.div>
               );
             })}
@@ -351,13 +384,17 @@ const SharedFileManager = () => {
                         >
                           <Download className="w-3.5 h-3.5 text-muted-foreground" /> Download
                         </button>
-                        <div className="border-t border-border my-1" />
-                        <button
-                          onClick={() => { deleteFile(f); setOpenActionMenu(null); }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </button>
+                        {f.user_id === user?.id && (
+                          <>
+                            <div className="border-t border-border my-1" />
+                            <button
+                              onClick={() => { deleteFile(f); setOpenActionMenu(null); }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     </>
                   )}
@@ -446,6 +483,7 @@ const SharedFileManager = () => {
                   {count} file{count !== 1 ? "s" : ""}{subCount > 0 ? ` · ${subCount} folder${subCount !== 1 ? "s" : ""}` : ""}
                 </p>
                 <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/40" />
+                {folder.user_id === user?.id && (
                 <div className="absolute bottom-3 right-3" onClick={(e) => e.stopPropagation()}>
                   <div className="relative">
                     <button
@@ -469,6 +507,7 @@ const SharedFileManager = () => {
                     )}
                   </div>
                 </div>
+                )}
               </motion.div>
             );
           })}

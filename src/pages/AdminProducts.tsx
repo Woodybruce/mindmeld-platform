@@ -50,7 +50,11 @@ const AdminProducts = () => {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/stripe/products");
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch("/api/stripe/products", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         setProducts(data.products || []);
@@ -59,9 +63,11 @@ const AdminProducts = () => {
     setLoading(false);
   }, []);
 
+  // Only fetch once the admin check has passed — this route/effect must not fire
+  // for non-admin logged-in users.
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    if (isAdmin === true) fetchProducts();
+  }, [isAdmin, fetchProducts]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;

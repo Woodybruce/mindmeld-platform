@@ -79,7 +79,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(cachedUser);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(cachedProfile);
-  const [loading, setLoading] = useState(!cachedUser);
+  // The cached user is only *optimistic* — we render it immediately for a fast
+  // first paint, but keep loading=true until getSession()/onAuthStateChange
+  // verifies the session. Trusting the cache before verification flashes authed
+  // UI and fires 401s when the cached token is stale.
+  const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
     const [profileRes, prefsRes] = await Promise.all([

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { apiInvoke } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { notifyPartner } from "@/lib/notifyPartner";
+import { localDateKey } from "@/lib/dateKey";
 import SexBucketList from "./SexBucketList";
 
 export interface ListItemAttachment {
@@ -382,7 +383,7 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
       toast({ title: "Sign in to add to your weekly list" });
       return;
     }
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateKey();
     const { error } = await supabase.from("weekly_tasks").insert({
       user_id: user.id,
       text,
@@ -669,18 +670,37 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
     onUpdate(updated);
   };
 
-  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!attachingItemId || !e.target.files?.[0]) return;
     const file = e.target.files[0];
     const isImage = file.type.startsWith("image/");
-    const url = URL.createObjectURL(file);
-    addAttachment(attachingItemId.listId, attachingItemId.itemId, {
-      type: isImage ? "photo" : "file",
-      url,
-      name: file.name,
-    });
+    const target = attachingItemId;
     setAttachingItemId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (!user) {
+      toast({ title: "Sign in to attach files" });
+      return;
+    }
+
+    // Upload to Supabase Storage so the attachment survives reloads and is visible to
+    // the partner. (Object URLs are per-session/per-device and die on reload.)
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/list-attachments/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("shared-files").upload(path, file);
+      if (upErr) throw upErr;
+      const { data: signed } = await supabase.storage
+        .from("shared-files")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
+      addAttachment(target.listId, target.itemId, {
+        type: isImage ? "photo" : "file",
+        url: signed?.signedUrl || "",
+        name: file.name,
+      });
+    } catch {
+      toast({ title: "Attachment upload failed", variant: "destructive" });
+    }
   };
 
   const saveEdit = (listId: string, itemId: string) => {
@@ -1246,12 +1266,15 @@ const SharedLists = ({ lists, onUpdate, allExistingTemplates, hideNewButton, ini
                                     <span className="ml-1.5 text-[14px] font-normal normal-case text-muted-foreground">💭</span>
                                   )}
                                 </span>
-                                <button
+                                <span
+                                  role="button"
+                                  tabIndex={0}
                                   onClick={(e) => { e.stopPropagation(); removeItem(list.id, section.heading!.id); }}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); removeItem(list.id, section.heading!.id); } }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 cursor-pointer"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                                </button>
+                                </span>
                               </button>
                             </div>
                           )}

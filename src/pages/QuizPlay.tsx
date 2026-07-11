@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ChevronRight, Check, Users, ListPlus } from "lucide-react";
 import { quizDefinitions, generateActionItems } from "@/data/quizData";
@@ -49,13 +49,11 @@ const QuizPlay = () => {
   }, [quiz, user]);
 
   if (!quiz) {
-    navigate("/us");
-    return null;
+    return <Navigate to="/us" replace />;
   }
 
   if (!user) {
-    navigate("/auth");
-    return null;
+    return <Navigate to="/auth" replace />;
   }
 
   const question = quiz.questions[currentQ];

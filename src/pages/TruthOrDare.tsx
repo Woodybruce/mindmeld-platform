@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Shuffle, Heart, Flame } from "lucide-react";
@@ -55,16 +55,16 @@ const TruthOrDare = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const [mode, setMode] = useState<"truth" | "dare" | null>(null);
-
-  useEffect(() => {
-    if (profile?.partner_id) {
-      notifyPartner({ partnerId: profile.partner_id, title: "😈 Truth or Dare!", body: `${profile.username || "Your partner"} started Truth or Dare`, route: "/truth-or-dare" });
-    }
-  }, []);
+  const [notified, setNotified] = useState(false);
   const [current, setCurrent] = useState<string | null>(null);
   const [used, setUsed] = useState<Set<string>>(new Set());
 
   const draw = (type: "truth" | "dare") => {
+    // Notify the partner on the explicit start (first draw), not on mount.
+    if (!notified && profile?.partner_id) {
+      setNotified(true);
+      notifyPartner({ partnerId: profile.partner_id, title: "😈 Truth or Dare!", body: `${profile.username || "Your partner"} started Truth or Dare`, route: "/truth-or-dare" });
+    }
     const pool = (type === "truth" ? truths : dares).filter((q) => !used.has(q));
     if (pool.length === 0) {
       setUsed(new Set());

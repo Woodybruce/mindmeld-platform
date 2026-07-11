@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ChevronRight, ChevronLeft, Lock, Eye, EyeOff } from "lucide-react";
 import { reflectionQuizzes } from "@/data/reflectionQuizData";
@@ -16,8 +16,7 @@ const ReflectionQuizPlay = () => {
   const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
 
   if (!quiz) {
-    navigate("/us");
-    return null;
+    return <Navigate to="/us" replace />;
   }
 
   const question = quiz.questions[currentQ];

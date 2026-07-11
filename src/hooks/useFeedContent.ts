@@ -37,7 +37,7 @@ const weightedSample = (rows: FeedContentRow[], count: number): FeedContentRow[]
 
 export const useFeedContent = (count = 3) => {
   return useQuery({
-    queryKey: ["feed-content"],
+    queryKey: ["feed-content", count],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("feed_content")

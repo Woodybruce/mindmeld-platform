@@ -20,6 +20,10 @@ export const useRealtimeLocation = (
   const { user, profile } = useAuth();
   const [partnerPos, setPartnerPos] = useState<PartnerLocation | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // Latest coords, read by the broadcast interval so it never sends a position
+  // captured at subscribe time.
+  const latestPos = useRef<{ lat: number | null; lng: number | null }>({ lat: myLat, lng: myLng });
+  latestPos.current = { lat: myLat, lng: myLng };
 
   const partnerId = profile?.partner_id;
   const userId = user?.id;
@@ -31,18 +35,19 @@ export const useRealtimeLocation = (
 
   // Broadcast my position
   const broadcastPosition = useCallback(() => {
-    if (!channelRef.current || myLat == null || myLng == null) return;
+    const { lat, lng } = latestPos.current;
+    if (!channelRef.current || lat == null || lng == null) return;
     channelRef.current.send({
       type: "broadcast",
       event: "location",
       payload: {
         userId,
-        lat: myLat,
-        lng: myLng,
+        lat,
+        lng,
         timestamp: Date.now(),
       },
     });
-  }, [myLat, myLng, userId]);
+  }, [userId]);
 
   useEffect(() => {
     if (!active || !channelName || !userId) return;
@@ -80,10 +85,10 @@ export const useRealtimeLocation = (
     };
   }, [active, channelName, userId]);
 
-  // Re-broadcast when position changes
+  // Re-broadcast whenever my position changes
   useEffect(() => {
     broadcastPosition();
-  }, [broadcastPosition]);
+  }, [myLat, myLng, broadcastPosition]);
 
   return {
     partnerPos,

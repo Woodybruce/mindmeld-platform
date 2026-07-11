@@ -14,6 +14,10 @@ process.on('uncaughtException', (err) => {
   console.error('Uncaught exception:', err);
 });
 
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+
 if (process.env.SUPABASE_URL) {
   process.env.VITE_SUPABASE_URL = process.env.SUPABASE_URL;
 }
@@ -47,7 +51,14 @@ app.post(
   }
 );
 
-app.use(express.json({ limit: "5mb" }));
+// The inbound-calendar route parses its own raw text body; don't let the JSON
+// parser consume it first (a client sending ICS as application/json would
+// otherwise be turned into "[object Object]").
+const jsonParser = express.json({ limit: "5mb" });
+app.use((req, res, next) => {
+  if (req.path === "/api/inbound-calendar") return next();
+  return jsonParser(req, res, next);
+});
 app.use(express.urlencoded({ extended: false, limit: "5mb" }));
 
 app.use((req, res, next) => {
@@ -65,7 +76,10 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      // Never log response bodies for routes that carry secrets or PII.
+      const SENSITIVE = ["/api/stripe", "/api/spotify", "/api/web-push", "/api/send-push", "/api/upload-photo", "/api/publishable-key"];
+      const isSensitive = SENSITIVE.some((p) => path.startsWith(p));
+      if (capturedJsonResponse && !isSensitive) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse).slice(0, 80)}`;
       }
       log(logLine);

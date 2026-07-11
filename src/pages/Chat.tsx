@@ -3,7 +3,8 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiInvoke } from "@/lib/api";
+import { apiInvoke, authHeaders } from "@/lib/api";
+import { getSignedUrl, SIGNED_MEDIA_TTL } from "@/lib/storage";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
@@ -49,6 +50,7 @@ const Chat = () => {
     userId: user?.id,
     partnerId: partnerId || undefined,
     partnerName,
+    selfName: profile?.username || undefined,
   });
 
   // Fetch partner name
@@ -124,7 +126,8 @@ const Chat = () => {
     const path = `${user.id}/${Date.now()}.webm`;
     const { error } = await supabase.storage.from("voice-notes").upload(path, blob);
     if (error) return null;
-    return supabase.storage.from("voice-notes").getPublicUrl(path).data.publicUrl;
+    // Bucket is private; store a long-lived signed URL (the message row itself is RLS-protected to the couple).
+    return getSignedUrl("voice-notes", path, SIGNED_MEDIA_TTL);
   };
 
   const handleDelete = useCallback(async (msgId: string) => {
@@ -144,10 +147,14 @@ const Chat = () => {
     });
   }, []);
 
-  // Load reactions from localStorage
+  // Load reactions from localStorage (guard against corrupt JSON)
   useEffect(() => {
-    const stored = localStorage.getItem("us-chat-reactions");
-    if (stored) setReactions(JSON.parse(stored));
+    try {
+      const stored = localStorage.getItem("us-chat-reactions");
+      if (stored) setReactions(JSON.parse(stored));
+    } catch {
+      // corrupt data — ignore and start fresh
+    }
   }, []);
 
   const handleSend = async (content: string, imageFiles?: File[] | null, audioBlob?: Blob | null, galleryImageUrl?: string | null) => {
@@ -160,6 +167,11 @@ const Chat = () => {
 
       if (audioBlob) {
         audioUrl = await uploadAudio(audioBlob);
+        if (!audioUrl) {
+          // Upload failed — don't insert an empty voice message.
+          toast.error("Failed to send voice message");
+          return;
+        }
         messageType = "voice";
       }
 
@@ -170,7 +182,7 @@ const Chat = () => {
           try {
             const resp = await fetch("/api/upload-photo", {
               method: "POST",
-              headers: { "Content-Type": file.type || "image/jpeg", "x-user-id": user.id, "x-bucket": "chat-images" },
+              headers: { "Content-Type": file.type || "image/jpeg", "x-bucket": "chat-images", ...(await authHeaders()) },
               body: file,
             });
             const result = await resp.json();
@@ -181,7 +193,7 @@ const Chat = () => {
             const storagePath = `${user.id}/${Date.now()}-${i}.${ext}`;
             const { error } = await supabase.storage.from("chat-images").upload(storagePath, file);
             if (!error) {
-              imageUrl = supabase.storage.from("chat-images").getPublicUrl(storagePath).data.publicUrl;
+              imageUrl = await getSignedUrl("chat-images", storagePath, SIGNED_MEDIA_TTL);
             }
           }
           if (imageUrl) {
@@ -277,10 +289,14 @@ const Chat = () => {
 
   const handlePollVote = async (msgId: string, optionIdx: number) => {
     if (!user) return;
-    const msg = messages.find((m) => m.id === msgId);
-    if (!msg) return;
     try {
-      const parsed = JSON.parse(msg.content);
+      // Re-fetch the latest row before writing so concurrent votes from both
+      // partners don't clobber each other (read-modify-write lost update).
+      const { data: latest } = await supabase.from("messages").select("content").eq("id", msgId).single();
+      const source = latest?.content ?? messages.find((m) => m.id === msgId)?.content;
+      if (!source) return;
+
+      const parsed = JSON.parse(source);
       const votes: Record<number, string[]> = parsed.votes || {};
       // Check if already voted
       const alreadyVoted = Object.values(votes).flat().includes(user.id);
@@ -290,7 +306,7 @@ const Chat = () => {
       await supabase.from("messages").update({ content: updatedContent } as any).eq("id", msgId);
       // Optimistic update
       setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, content: updatedContent } : m));
-    } catch { /* ignore parse errors */ }
+    } catch { /* ignore parse/fetch errors */ }
   };
 
   const handleReply = (msgId: string) => {

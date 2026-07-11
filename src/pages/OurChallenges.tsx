@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Plus, X, Check, Shield, Sparkles, CheckCircle2, MoreHorizontal, Trash2 } from "lucide-react";
@@ -81,20 +81,40 @@ const OurChallenges = () => {
       });
   }, [user]);
 
+  // Track the row id + any in-flight first insert via refs so two rapid saves
+  // before the first insert resolves don't create duplicate rows.
+  const rowIdRef = useRef<string | null>(null);
+  const insertPromiseRef = useRef<Promise<string | null> | null>(null);
+
   const save = async (next: ChallengesData) => {
     setData(next);
     if (!user) return;
-    if (rowId) {
-      await supabase.from("shared_lists").update({ score_data: next as any }).eq("id", rowId);
-    } else {
+
+    let id = rowId ?? rowIdRef.current;
+    if (!id && insertPromiseRef.current) {
+      id = await insertPromiseRef.current;
+    }
+
+    if (id) {
+      await supabase.from("shared_lists").update({ score_data: next as any }).eq("id", id);
+      return;
+    }
+
+    insertPromiseRef.current = (async () => {
       const { data: row } = await supabase.from("shared_lists").insert({
         user_id: user.id,
         game_type: GAME_TYPE,
         name: "Our Challenges",
         score_data: next as any,
       } as any).select("id").single();
-      if (row) setRowId(row.id);
-    }
+      if (row) {
+        rowIdRef.current = row.id;
+        setRowId(row.id);
+        return row.id as string;
+      }
+      return null;
+    })();
+    await insertPromiseRef.current;
   };
 
   const addChallenge = () => {

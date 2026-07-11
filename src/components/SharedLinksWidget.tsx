@@ -15,6 +15,16 @@ interface SharedLink {
   sender: string;
 }
 
+/** Only allow http(s) links to be rendered as anchors — blocks stored javascript: XSS. */
+const sanitizeHref = (url: string): string | null => {
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+};
+
 const detectPlatform = (url: string) => {
   if (url.includes("instagram.com") || url.includes("instagr.am"))
     return { platform: "Instagram", icon: <Instagram className="w-4 h-4" />, color: "from-pink-500 to-purple-500" };
@@ -196,10 +206,11 @@ const SharedLinksWidget = ({ dbLinks, onSendLink }: SharedLinksWidgetProps) => {
         <div className="divide-y divide-border/50">
           {displayLinks.map((link) => {
             const isInstagram = link.url.includes("instagram.com") || link.url.includes("instagr.am");
+            const safeHref = sanitizeHref(link.url);
             return (
               <div key={link.id} className="px-4 py-3 hover:bg-secondary/50 transition-colors">
                 <a
-                  href={link.url}
+                  href={safeHref || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-start gap-3"
@@ -224,18 +235,22 @@ const SharedLinksWidget = ({ dbLinks, onSendLink }: SharedLinksWidgetProps) => {
                   </div>
                 </a>
                 {/* Instagram embed preview */}
-                {isInstagram && (
-                  <div className="mt-2 ml-13">
-                    <iframe
-                      src={`${link.url.split("?")[0]}embed`}
-                      className="w-full rounded-lg border border-border/30"
-                      style={{ height: 320, maxWidth: 320 }}
-                      scrolling="no"
-                      allowTransparency
-                      title="Instagram embed"
-                    />
-                  </div>
-                )}
+                {isInstagram && safeHref && (() => {
+                  const base = link.url.split("?")[0];
+                  const embedSrc = `${base.endsWith("/") ? base : `${base}/`}embed`;
+                  return (
+                    <div className="mt-2 ml-13">
+                      <iframe
+                        src={embedSrc}
+                        className="w-full rounded-lg border border-border/30"
+                        style={{ height: 320, maxWidth: 320 }}
+                        scrolling="no"
+                        allowTransparency
+                        title="Instagram embed"
+                      />
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

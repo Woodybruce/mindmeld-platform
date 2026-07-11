@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowLeft, Package, AlertCircle, Clock } from "lucide-react";
+import { authHeaders } from "@/lib/api";
 
 interface SessionInfo {
   status: string;
@@ -26,19 +27,19 @@ const CheckoutSuccess = () => {
       return;
     }
 
-    fetch(`/api/stripe/session/${sessionId}`)
-      .then(res => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/stripe/session/${sessionId}`, {
+          headers: { ...(await authHeaders()) },
+        });
         if (!res.ok) throw new Error("Failed to verify payment");
-        return res.json();
-      })
-      .then(data => {
-        setSession(data);
+        setSession(await res.json());
         setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         setError(true);
         setLoading(false);
-      });
+      }
+    })();
   }, [searchParams]);
 
   const formatAmount = (amount: number | null, currency: string | null) => {

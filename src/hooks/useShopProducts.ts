@@ -15,6 +15,7 @@ export interface ShopProduct {
 }
 
 const SHOP_LIST_NAME = "Our Shopping List";
+// TODO: move to app/runtime config rather than hardcoding the affiliate tag.
 const AMAZON_TAG = "woodybruce-21";
 
 const ensureAffiliateTag = (url: string, productName?: string): string => {
@@ -23,9 +24,8 @@ const ensureAffiliateTag = (url: string, productName?: string): string => {
     const u = new URL(url);
     if (u.hostname.includes("coco-de-mer.com") || u.hostname.includes("agentprovocateur.com") || u.hostname.includes("goop.com")) return url;
     if (u.hostname.includes("amazon")) {
-      if (u.pathname.includes("/dp/") || u.pathname.includes("/gp/")) {
-        return `https://www.amazon.co.uk/s?k=${encodeURIComponent(productName || "couples gift")}&tag=${AMAZON_TAG}`;
-      }
+      // Preserve the actual product URL (including /dp/ and /gp/ pages) and
+      // simply attach the affiliate tag — never rewrite it to a search page.
       u.searchParams.set("tag", AMAZON_TAG);
     }
     return u.toString();
@@ -146,6 +146,8 @@ export function useShopProducts() {
   const [loading, setLoading] = useState(true);
   const [listId, setListId] = useState<string | null>(null);
   const seeded = useRef(false);
+  // Guards the first-save insert so two rapid saves don't both create a row.
+  const insertInFlight = useRef<Promise<string | null> | null>(null);
 
   const fetchProducts = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -209,12 +211,27 @@ export function useShopProducts() {
         .update({ items: newProducts as any })
         .eq("id", listId);
     } else if (user) {
-      const { data } = await supabase
-        .from("shared_lists")
-        .insert({ name: SHOP_LIST_NAME, icon: "🛒", template: "shopping", items: newProducts as any, user_id: user.id })
-        .select("id")
-        .single();
-      if (data) setListId(data.id);
+      // Only one insert may be in flight; concurrent first-saves await it and
+      // then update the freshly created row instead of inserting a duplicate.
+      if (!insertInFlight.current) {
+        insertInFlight.current = (async () => {
+          const { data } = await supabase
+            .from("shared_lists")
+            .insert({ name: SHOP_LIST_NAME, icon: "🛒", template: "shopping", items: newProducts as any, user_id: user.id })
+            .select("id")
+            .single();
+          return data?.id ?? null;
+        })();
+      }
+      const newId = await insertInFlight.current;
+      if (newId) {
+        setListId(newId);
+        // A concurrent save that lost the insert race persists its items here.
+        await supabase
+          .from("shared_lists")
+          .update({ items: newProducts as any })
+          .eq("id", newId);
+      }
     }
     setProducts(newProducts);
   }, [listId, user]);

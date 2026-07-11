@@ -7,6 +7,7 @@ import OutlookEventPicker from "@/components/OutlookEventPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { localDateKey, localDateKeyFromTimestamp } from "@/lib/dateKey";
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -37,12 +38,15 @@ const OurEvents = () => {
 
   const handleCreate = async () => {
     if (!newSubject.trim() || !newDate) return;
+    // For all-day events anchor at local noon (not midnight): midnight local converts to
+    // the previous day under toISOString() in any UTC+ timezone, landing the event on the
+    // wrong day. Noon stays on the intended calendar day everywhere.
     const startDt = newTime
       ? new Date(`${newDate}T${newTime}:00`).toISOString()
-      : new Date(`${newDate}T00:00:00`).toISOString();
+      : new Date(`${newDate}T12:00:00`).toISOString();
     const endDt = newTime
       ? new Date(new Date(`${newDate}T${newTime}:00`).getTime() + 3600000).toISOString()
-      : new Date(`${newDate}T23:59:59`).toISOString();
+      : new Date(`${newDate}T13:00:00`).toISOString();
 
     try {
       await addEvent({
@@ -66,7 +70,7 @@ const OurEvents = () => {
   const eventsByDate = useMemo(() => {
     const map = new Map<string, typeof events>();
     events.forEach((e) => {
-      const key = new Date(e.start_time).toISOString().slice(0, 10);
+      const key = localDateKeyFromTimestamp(e.start_time);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     });
@@ -89,7 +93,7 @@ const OurEvents = () => {
   const dateKey = (day: number) =>
     `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-  const todayKey = today.toISOString().slice(0, 10);
+  const todayKey = localDateKey(today);
 
   const eventsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];

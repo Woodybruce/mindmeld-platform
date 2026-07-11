@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Bookmark, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -31,32 +31,24 @@ const typeStyles: Record<FeedCardType, { bg: string; border: string }> = {
   milestone: { bg: "bg-gradient-to-br from-us-sage/15 to-emerald-50", border: "border-us-sage/20" },
 };
 
+// Only Share is wired to real behaviour. Like/Comment/Bookmark were dead (no onClick, and
+// item.liked/saved never changed), so they're removed rather than left as misleading UI.
 const ActionBar = ({ item, compact = false }: { item: FeedItem; compact?: boolean }) => (
-  <div className="flex items-center justify-between">
-    <div className="flex items-center gap-3">
-      <button className="text-muted-foreground hover:text-us-coral transition-colors">
-        <Heart className={`${compact ? "w-4 h-4" : "w-[18px] h-[18px]"} ${item.liked ? "fill-us-coral text-us-coral" : ""}`} />
-      </button>
-      <button className="text-muted-foreground hover:text-foreground transition-colors">
-        <MessageCircle className={compact ? "w-4 h-4" : "w-[18px] h-[18px]"} />
-      </button>
-      <button
-        className="text-muted-foreground hover:text-foreground transition-colors"
-        onClick={(e) => {
-          e.stopPropagation();
-          const url = item.link ? `${window.location.origin}${item.link}` : window.location.href;
-          if (navigator.share) {
-            navigator.share({ title: item.title, text: item.body, url }).catch(() => {});
-          } else {
-            navigator.clipboard.writeText(url);
-          }
-        }}
-      >
-        <Share2 className={compact ? "w-4 h-4" : "w-[18px] h-[18px]"} />
-      </button>
-    </div>
-    <button className="text-muted-foreground hover:text-foreground transition-colors">
-      <Bookmark className={`${compact ? "w-4 h-4" : "w-[18px] h-[18px]"} ${item.saved ? "fill-foreground" : ""}`} />
+  <div className="flex items-center justify-end">
+    <button
+      className="text-muted-foreground hover:text-foreground transition-colors"
+      aria-label="Share"
+      onClick={(e) => {
+        e.stopPropagation();
+        const url = item.link ? `${window.location.origin}${item.link}` : window.location.href;
+        if (navigator.share) {
+          navigator.share({ title: item.title, text: item.body, url }).catch(() => {});
+        } else {
+          navigator.clipboard.writeText(url);
+        }
+      }}
+    >
+      <Share2 className={compact ? "w-4 h-4" : "w-[18px] h-[18px]"} />
     </button>
   </div>
 );

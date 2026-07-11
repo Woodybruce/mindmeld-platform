@@ -82,10 +82,33 @@ export const useSharedLinks = () => {
 
   const addLink = async (url: string, note?: string, title?: string) => {
     if (!user) return;
-    const platform = detectPlatform(url);
+
+    const raw = url.trim();
+    if (!raw) throw new Error("Please enter a link");
+
+    // Parse as-is; if it has no scheme (bare domain), retry with https://.
+    let parsed: URL | null = null;
+    try {
+      parsed = new URL(raw);
+    } catch {
+      try {
+        parsed = new URL(`https://${raw}`);
+      } catch {
+        parsed = null;
+      }
+    }
+    if (!parsed) throw new Error("That doesn't look like a valid link");
+
+    // Reject anything that isn't a real web link (blocks stored javascript: XSS etc.)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error("Only http and https links are allowed");
+    }
+
+    const finalUrl = parsed.toString();
+    const platform = detectPlatform(finalUrl);
     await supabase.from("shared_links").insert({
       user_id: user.id,
-      url: url.trim(),
+      url: finalUrl,
       title: title || null,
       note: note || null,
       platform,

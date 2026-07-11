@@ -80,15 +80,19 @@ const KissChaseGame = ({ reward, timeMinutes, onCatch, onTimeUp, onQuit }: KissC
 
   // No longer need to wait — session sync ensures both partners are playing
 
-  // Timer
+  // Countdown — only starts once location is ready so it doesn't silently burn game time
+  // while stuck on "Finding your location…". Single interval with functional decrement
+  // (no per-tick rebuild).
   useEffect(() => {
-    if (timeLeft <= 0) {
-      onTimeUp();
-      return;
-    }
-    const t = setInterval(() => setTimeLeft((s) => s - 1), 1000);
+    if (effectiveLat == null) return;
+    const t = setInterval(() => setTimeLeft((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(t);
-  }, [timeLeft]);
+  }, [effectiveLat]);
+
+  // Fire time-up once the clock reaches zero (only after the timer actually started)
+  useEffect(() => {
+    if (effectiveLat != null && timeLeft <= 0) onTimeUp();
+  }, [effectiveLat, timeLeft, onTimeUp]);
 
   // Distance check
   useEffect(() => {

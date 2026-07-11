@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { localDateKey, localDateKeyFromTimestamp } from "@/lib/dateKey";
 
 interface OutlookEvent {
   subject: string;
@@ -116,7 +117,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
   const eventsByDate = useMemo(() => {
     const map = new Map<string, number[]>();
     events.forEach((e, i) => {
-      const key = new Date(e.start_time).toISOString().slice(0, 10);
+      const key = localDateKeyFromTimestamp(e.start_time);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(i);
     });
@@ -140,7 +141,7 @@ const OutlookEventPicker = ({ onClose, onImported }: Props) => {
   const dateKey = (day: number) =>
     `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-  const todayKey = today.toISOString().slice(0, 10);
+  const todayKey = localDateKey(today);
 
   const eventsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];

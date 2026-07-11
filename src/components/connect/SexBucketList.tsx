@@ -83,9 +83,11 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
     if (!user) return;
     fetchProposals();
 
-    // Realtime subscription
+    // Realtime subscription — unique topic per instance (this component is mounted
+    // twice: once as the pendingOnly card, once in the templates list). A shared static
+    // topic across both mounts collides, so key it by role.
     const channel = supabase
-      .channel("bucket-proposals")
+      .channel(`bucket-proposals-${pendingOnly ? "pending" : "main"}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "bucket_list_proposals" },
@@ -94,7 +96,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, pendingOnly]);
 
   const fetchProposals = async () => {
     if (!user) return;
@@ -202,7 +204,11 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
     fetchProposals();
   };
 
+  // Only the pendingOnly instance owns proposal/loading UI; the normal instance owns
+  // the "start / creating" UI. This split prevents both mounted instances from rendering
+  // the same proposal card (duplicate cards).
   if (loading) {
+    if (!pendingOnly) return null;
     return (
       <div className="flex items-center justify-center py-6">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -210,8 +216,9 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
     );
   }
 
-  // Partner sent a proposal — review mode
+  // Partner sent a proposal — review mode (pendingOnly instance only)
   if (pendingProposal) {
+    if (!pendingOnly) return null;
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -268,8 +275,9 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
     );
   }
 
-  // I already sent a proposal — waiting
+  // I already sent a proposal — waiting (pendingOnly instance only)
   if (myProposal) {
+    if (!pendingOnly) return null;
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -294,6 +302,9 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
       </motion.div>
     );
   }
+
+  // No pending proposals: the pendingOnly instance renders nothing further.
+  if (pendingOnly) return null;
 
   // Creating mode — add up to 10 items
   if (mode === "creating") {
@@ -452,9 +463,7 @@ const SexBucketList = ({ lists, onUpdate, pendingOnly }: SexBucketListProps) => 
     );
   }
 
-  // Idle — show start button (hide when pendingOnly mode)
-  if (pendingOnly) return null;
-
+  // Idle — show start button (pendingOnly already returned above)
   return (
     <motion.button
       initial={{ opacity: 0, y: 10 }}

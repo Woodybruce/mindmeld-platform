@@ -20,12 +20,15 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ["favicon.ico", "pwa-192.png", "pwa-512.png"],
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
+        // Fold web-push handling into this single Workbox service worker so there
+        // aren't two competing service workers registered at scope "/".
+        importScripts: ["push-sw.js"],
         // Cache all built JS/CSS in precache
         globPatterns: ["**/*.{js,css,html,ico,png,jpg,jpeg,svg,webp,woff,woff2}"],
         // Runtime caching strategies
         runtimeCaching: [
           {
-            // Cache images from Supabase storage
+            // Cache images from Supabase storage (private, per-user signed URLs).
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/.*/i,
             handler: "CacheFirst",
             options: {
@@ -34,17 +37,9 @@ export default defineConfig(({ mode }) => ({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          {
-            // Cache Supabase REST/API with network-first (show stale if offline)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-api",
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-              networkTimeoutSeconds: 5,
-            },
-          },
+          // NOTE: Supabase REST (/rest/v1/) responses are intentionally NOT cached.
+          // They are RLS-filtered private data; caching them by URL leaked another
+          // account's rows on shared devices and survived logout.
           {
             // Cache Google Fonts
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

@@ -6,9 +6,10 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  // Dev bypass for preview
-  const isPreview = window.location.hostname.includes("lovable.app") && window.location.hostname.includes("preview");
-  const devBypass = localStorage.getItem("dev-auth-bypass") === "true";
+  // Dev bypass for preview — gated behind import.meta.env.DEV so it can never
+  // activate in a production build.
+  const isPreview = import.meta.env.DEV && window.location.hostname.includes("lovable.app") && window.location.hostname.includes("preview");
+  const devBypass = import.meta.env.DEV && localStorage.getItem("dev-auth-bypass") === "true";
 
   if (isPreview && devBypass) {
     return <>{children}</>;

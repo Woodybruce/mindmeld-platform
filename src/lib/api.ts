@@ -1,5 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/** Authorization header for the current session (empty if signed out). Use for direct fetch() calls to authenticated /api routes. */
+export async function authHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+
 export async function apiInvoke<T = any>(
   functionName: string,
   options?: { body?: any; method?: string; query?: Record<string, string> }

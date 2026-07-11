@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Shuffle, RotateCcw, Sparkles, Heart } from "lucide-react";
@@ -116,12 +116,7 @@ const DesignMyNight = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const [phase, setPhase] = useState<"intro" | "drawing" | "result">("intro");
-
-  useEffect(() => {
-    if (profile?.partner_id) {
-      notifyPartner({ partnerId: profile.partner_id, title: "🌙 Design My Night!", body: `${profile.username || "Your partner"} started Design My Night`, route: "/design-my-night" });
-    }
-  }, []);
+  const [notified, setNotified] = useState(false);
   const [drawn, setDrawn] = useState<Card[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealed, setRevealed] = useState<boolean[]>([]);
@@ -137,6 +132,11 @@ const DesignMyNight = () => {
   };
 
   const start = () => {
+    // Notify the partner on the explicit start action, not on mount.
+    if (!notified && profile?.partner_id) {
+      setNotified(true);
+      notifyPartner({ partnerId: profile.partner_id, title: "🌙 Design My Night!", body: `${profile.username || "Your partner"} started Design My Night`, route: "/design-my-night" });
+    }
     const hand = buildHand();
     setDrawn(hand);
     setCurrentIndex(0);

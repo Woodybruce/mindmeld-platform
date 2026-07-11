@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Plus, X, Check, Lock, ExternalLink, CheckCircle2, MoreHorizontal, Trash2 } from "lucide-react";
@@ -79,6 +79,17 @@ const defaultData: SexListData = {
 
 const uid = () => crypto.randomUUID().slice(0, 8);
 
+// Hoisted to module scope so it keeps a stable component identity across renders
+// — defining it inside OurSexList would remount it (and blur the input) on every
+// keystroke.
+const InlineInput = ({ placeholder, onSubmit, value, onChange }: { placeholder: string; onSubmit: () => void; value: string; onChange: (v: string) => void }) => (
+  <div className="flex gap-2">
+    <input autoFocus value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={(e) => e.key === "Enter" && onSubmit()} placeholder={placeholder}
+      className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+    <button onClick={onSubmit} className="rounded-xl bg-primary px-3 py-2.5 text-primary-foreground"><Check className="w-4 h-4" /></button>
+  </div>
+);
+
 const OurSexList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -106,20 +117,42 @@ const OurSexList = () => {
       });
   }, [user]);
 
+  // Track the row id + any in-flight first insert via refs so two rapid saves
+  // before the first insert resolves don't create duplicate rows.
+  const rowIdRef = useRef<string | null>(null);
+  const insertPromiseRef = useRef<Promise<string | null> | null>(null);
+
   const save = async (next: SexListData) => {
     setData(next);
     if (!user) return;
-    if (rowId) {
-      await supabase.from("shared_lists").update({ score_data: next as any }).eq("id", rowId);
-    } else {
+
+    let id = rowId ?? rowIdRef.current;
+    // If a first insert is already in flight, wait for it and reuse its row id
+    // instead of inserting a second row.
+    if (!id && insertPromiseRef.current) {
+      id = await insertPromiseRef.current;
+    }
+
+    if (id) {
+      await supabase.from("shared_lists").update({ score_data: next as any }).eq("id", id);
+      return;
+    }
+
+    insertPromiseRef.current = (async () => {
       const { data: row } = await supabase.from("shared_lists").insert({
         user_id: user.id,
         game_type: GAME_TYPE,
         name: "Our Sex List",
         score_data: next as any,
       } as any).select("id").single();
-      if (row) setRowId(row.id);
-    }
+      if (row) {
+        rowIdRef.current = row.id;
+        setRowId(row.id);
+        return row.id as string;
+      }
+      return null;
+    })();
+    await insertPromiseRef.current;
   };
 
   const toggleCheck = (section: "goodSexLife" | "motivations" | "hitPriorities", id: string) => {
@@ -150,10 +183,23 @@ const OurSexList = () => {
   };
 
   const addLink = () => {
-    if (!newUrl.trim()) return;
-    let url = newUrl.trim();
-    if (!url.startsWith("http")) url = `https://${url}`;
-    const label = new URL(url).hostname.replace("www.", "");
+    const raw = newUrl.trim();
+    if (!raw) return;
+
+    // Prefix bare domains (e.g. "example.com") with https://
+    let url = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
+    let label = raw;
+    try {
+      const parsed = new URL(url);
+      // Reject non-http(s) schemes (javascript:, ftp:, data:, …)
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return;
+      label = parsed.hostname.replace(/^www\./, "");
+    } catch {
+      // Not a parseable URL — store the raw string as both url and label.
+      url = raw;
+      label = raw;
+    }
+
     save({ ...data, ideas: [...data.ideas, { id: uid(), url, label }] });
     setNewUrl("");
     setAddingTo(null);
@@ -174,14 +220,6 @@ const OurSexList = () => {
     <button onClick={() => { setAddingTo(sectionKey); setNewText(""); setNewUrl(""); }} className="flex items-center gap-2 text-xs text-primary font-medium hover:text-primary/80 transition-colors mt-1">
       <Plus className="w-3.5 h-3.5" /> {label}
     </button>
-  );
-
-  const InlineInput = ({ placeholder, onSubmit, value, onChange }: { placeholder: string; onSubmit: () => void; value: string; onChange: (v: string) => void }) => (
-    <div className="flex gap-2">
-      <input autoFocus value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={(e) => e.key === "Enter" && onSubmit()} placeholder={placeholder}
-        className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
-      <button onClick={onSubmit} className="rounded-xl bg-primary px-3 py-2.5 text-primary-foreground"><Check className="w-4 h-4" /></button>
-    </div>
   );
 
   return (

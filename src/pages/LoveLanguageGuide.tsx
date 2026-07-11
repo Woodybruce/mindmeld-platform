@@ -19,7 +19,9 @@ import type { LoveLanguageIdea } from "@/data/loveLanguageData";
 const LoveLanguageGuide = () => {
   const navigate = useNavigate();
   const [activeIdx, setActiveIdx] = useState(0);
-  const [expandedSection, setExpandedSection] = useState<string | null>("what");
+  // Default to the "ideas" section (the interactive everyday-ideas checklist),
+  // which is the intended default-open section — "what" matched no section id.
+  const [expandedSection, setExpandedSection] = useState<string | null>("ideas");
   const [triedIdeas, setTriedIdeas] = useState<Record<string, boolean>>({});
 
   const lang = loveLanguageIdeas[activeIdx];
@@ -61,7 +63,7 @@ const LoveLanguageGuide = () => {
               key={l.id}
               onClick={() => {
                 setActiveIdx(i);
-                setExpandedSection("what");
+                setExpandedSection("ideas");
               }}
               className={`flex-shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all ${
                 i === activeIdx
@@ -145,7 +147,6 @@ const LoveLanguageGuide = () => {
             title={`Everyday Ideas (${triedCount}/${lang.everydayIdeas.length} tried)`}
             expanded={expandedSection === "ideas"}
             onToggle={() => toggleSection("ideas")}
-            defaultOpen
           >
             <div className="space-y-1.5">
               {lang.everydayIdeas.map((idea, i) => {
@@ -202,7 +203,7 @@ const LoveLanguageGuide = () => {
               <button
                 onClick={() => {
                   setActiveIdx((p) => p - 1);
-                  setExpandedSection("what");
+                  setExpandedSection("ideas");
                 }}
                 className="flex-1 flex items-center justify-center gap-1 rounded-xl border border-border bg-card py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
               >
@@ -215,7 +216,7 @@ const LoveLanguageGuide = () => {
               <button
                 onClick={() => {
                   setActiveIdx((p) => p + 1);
-                  setExpandedSection("what");
+                  setExpandedSection("ideas");
                 }}
                 className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
               >
@@ -237,7 +238,6 @@ interface SectionCardProps {
   title: string;
   expanded: boolean;
   onToggle: () => void;
-  defaultOpen?: boolean;
   children: React.ReactNode;
 }
 

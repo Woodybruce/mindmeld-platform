@@ -5,6 +5,8 @@ import { useWeeklyTasks, TaskAttachment } from "@/hooks/useWeeklyTasks";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { localDateKey, localDateKeyFromTimestamp } from "@/lib/dateKey";
 
 const WeeklyList = () => {
   const { tasks, loading, addTask, toggleTask, deleteTask, updateTaskText, updateTaskAttachments, getTasksForDate, getWeekDates } = useWeeklyTasks();
@@ -12,8 +14,7 @@ const WeeklyList = () => {
   const { user } = useAuth();
   const weekDates = getWeekDates();
   const [expandedDays, setExpandedDays] = useState<Set<string>>(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
-    return new Set([todayStr]);
+    return new Set([localDateKey()]);
   });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [addingTo, setAddingTo] = useState<string | null>(null);
@@ -68,7 +69,7 @@ const WeeklyList = () => {
 
   const getCalendarEventsForDate = (dateStr: string) => {
     return events.filter((e) => {
-      const eventDate = new Date(e.start_time).toISOString().split("T")[0];
+      const eventDate = localDateKeyFromTimestamp(e.start_time);
       return eventDate === dateStr;
     });
   };
@@ -80,17 +81,35 @@ const WeeklyList = () => {
     setEditText("");
   };
 
-  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!attachingTaskId || !e.target.files?.[0]) return;
     const file = e.target.files[0];
     const isImage = file.type.startsWith("image/");
-    const url = URL.createObjectURL(file);
-    const task = tasks.find((t) => t.id === attachingTaskId);
-    if (!task) return;
-    const newAttachment: TaskAttachment = { type: isImage ? "photo" : "file", url, name: file.name };
-    updateTaskAttachments(attachingTaskId, [...(task.attachments || []), newAttachment]);
+    const taskId = attachingTaskId;
+    const task = tasks.find((t) => t.id === taskId);
     setAttachingTaskId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!task) return;
+    if (!user) {
+      toast({ title: "Sign in to attach files" });
+      return;
+    }
+
+    // Upload to Supabase Storage so the attachment persists across reloads and is
+    // visible to the partner (object URLs die on reload and are device-local).
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/weekly-attachments/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("shared-files").upload(path, file);
+      if (upErr) throw upErr;
+      const { data: signed } = await supabase.storage
+        .from("shared-files")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
+      const newAttachment: TaskAttachment = { type: isImage ? "photo" : "file", url: signed?.signedUrl || "", name: file.name };
+      updateTaskAttachments(taskId, [...(task.attachments || []), newAttachment]);
+    } catch {
+      toast({ title: "Attachment upload failed", variant: "destructive" });
+    }
   };
 
   const handleAddEvent = async (taskId: string, taskText: string) => {

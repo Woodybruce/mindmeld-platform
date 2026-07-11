@@ -10,7 +10,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useSharedLists } from "@/hooks/useSharedLists";
 import { useNavigate } from "react-router-dom";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -35,11 +35,20 @@ const Profile = () => {
   const [aiPreferences, setAiPreferences] = useState("");
   const [savingAiPrefs, setSavingAiPrefs] = useState(false);
 
-  const quizCount = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem("completedQuizzes") || "[]").length; } catch { return 0; }
-  }, []);
+  const [quizCount, setQuizCount] = useState(0);
   const { lists: sharedListsData } = useSharedLists();
   const listCount = sharedListsData.length;
+
+  // Count this user's completed quiz sessions (real data, not a dead localStorage key)
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("quiz_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .not("completed_at", "is", null)
+      .then(({ count }) => setQuizCount(count || 0));
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -338,7 +347,7 @@ const Profile = () => {
           <h3 className="font-display font-semibold text-foreground mb-3 flex items-center gap-2">
             <Heart className="w-4 h-4 text-us-coral" /> Relationship Stats
           </h3>
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-2 gap-3 text-center">
             <div className="rounded-lg bg-secondary p-3">
               <span className="text-lg font-bold text-foreground">{listCount}</span>
               <p className="text-[14px] text-muted-foreground mt-0.5">Shared Lists</p>
@@ -346,10 +355,6 @@ const Profile = () => {
             <div className="rounded-lg bg-secondary p-3">
               <span className="text-lg font-bold text-foreground">{quizCount}</span>
               <p className="text-[14px] text-muted-foreground mt-0.5">Quizzes Done</p>
-            </div>
-            <div className="rounded-lg bg-secondary p-3">
-              <span className="text-lg font-bold text-foreground">0</span>
-              <p className="text-[14px] text-muted-foreground mt-0.5">Games Played</p>
             </div>
           </div>
         </div>

@@ -69,11 +69,17 @@ export function useNotifications() {
 
   const markAllRead = useCallback(async () => {
     if (!user) return;
+    // The `read` column on plain chat messages (text/image/voice) is the chat
+    // read receipt shown to the partner. Marking those read here — when the user
+    // only glanced at the notification bell, not the conversation — would falsely
+    // tell the partner their messages were seen. So only persist read state for
+    // true notification-type rows and leave conversational messages untouched.
     await supabase
       .from("messages")
       .update({ read: true } as any)
       .eq("receiver_id", user.id)
-      .eq("read", false);
+      .eq("read", false)
+      .not("message_type", "in", "(text,image,voice)");
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }, [user]);
 

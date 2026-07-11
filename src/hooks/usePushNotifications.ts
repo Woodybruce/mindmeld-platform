@@ -9,6 +9,7 @@ import { useEffect, useRef } from "react";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { authHeaders } from "@/lib/api";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -41,8 +42,9 @@ export function usePushNotifications() {
           return;
         }
 
-        const reg = await navigator.serviceWorker.register("/push-sw.js");
-        await navigator.serviceWorker.ready;
+        // Use the single (Workbox) service worker, which imports push-sw.js —
+        // don't register a second SW at scope "/".
+        const reg = await navigator.serviceWorker.ready;
 
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
@@ -69,9 +71,8 @@ export function usePushNotifications() {
 
         await fetch("/api/web-push-subscribe", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(await authHeaders()) },
           body: JSON.stringify({
-            userId: user!.id,
             subscription: subscription.toJSON(),
           }),
         });

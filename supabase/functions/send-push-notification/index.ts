@@ -93,13 +93,31 @@ Deno.serve(async (req) => {
     const { recipientUserId, title, body, data: rawData } = await req.json();
     // FCM v1 requires all data values to be strings
     const data = rawData ? Object.fromEntries(Object.entries(rawData).map(([k, v]) => [k, String(v)])) : undefined;
-    console.log("Push request:", { recipientUserId, title, body, data });
 
     if (!recipientUserId || !title) {
       return new Response(
         JSON.stringify({ error: "recipientUserId and title are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Require a valid session, and only allow pushing to the caller or their partner.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const supabaseUser = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (user.id !== recipientUserId) {
+      const { data: prof } = await supabase.from("profiles").select("partner_id").eq("id", user.id).maybeSingle();
+      if (prof?.partner_id !== recipientUserId) {
+        return new Response(JSON.stringify({ error: "Not permitted" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     // Get all device tokens for the recipient

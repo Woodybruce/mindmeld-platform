@@ -69,6 +69,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
   const [vibeOpen, setVibeOpen] = useState(false);
   const [boardOpen, setBoardOpen] = useState(false);
   const vibeRef = useRef<HTMLDivElement>(null);
+  const vibeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -185,6 +186,21 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Create the vibe broadcast channel ONCE per couple and reuse it for every vibe.
+  // Previously sendVibe created + subscribed a fresh channel on every send and never
+  // removed it, leaking a subscription each time.
+  useEffect(() => {
+    if (!user || !profile?.partner_id) return;
+    const channelName = `vibe-overlay-${[user.id, profile.partner_id].sort().join("-")}`;
+    const ch = supabase.channel(channelName);
+    ch.subscribe();
+    vibeChannelRef.current = ch;
+    return () => {
+      supabase.removeChannel(ch);
+      vibeChannelRef.current = null;
+    };
+  }, [user, profile?.partner_id]);
+
   const postAnnouncement = async () => {
     if (!text.trim() || !user) return;
     const { error } = await supabase.from("couple_announcements").insert({
@@ -226,11 +242,11 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
 
     if (user && profile?.partner_id) {
       const pId = profile.partner_id;
-      const channelName = `vibe-overlay-${[user.id, pId].sort().join("-")}`;
       const ts = Date.now();
 
       const sendBroadcast = () => {
-        const ch = supabase.channel(channelName);
+        const ch = vibeChannelRef.current;
+        if (!ch) return;
         const doSend = () => ch.send({
           type: "broadcast",
           event: "vibe",
@@ -239,6 +255,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
         if ((ch as any).state === "joined") {
           doSend();
         } else {
+          // Channel still connecting — send once it's ready (no new channel created).
           ch.subscribe((status) => {
             if (status === "SUBSCRIBED") doSend();
           });

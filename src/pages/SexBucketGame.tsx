@@ -8,6 +8,7 @@ import { useSharedLists } from "@/hooks/useSharedLists";
 import { notifyPartner } from "@/lib/notifyPartner";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import { localDateKeyFromTimestamp } from "@/lib/dateKey";
 
 type GamePhase = "loading" | "no-list" | "draw" | "reveal" | "confirm" | "schedule" | "done";
 
@@ -19,29 +20,21 @@ interface DrawnItem {
 const SexBucketGame = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { lists } = useSharedLists();
+  const { lists, loading: listsLoading } = useSharedLists();
   const [phase, setPhase] = useState<GamePhase>("loading");
   const [allItems, setAllItems] = useState<string[]>([]);
   const [drawn, setDrawn] = useState<DrawnItem[]>([]);
   const [revealedCount, setRevealedCount] = useState(0);
   const [scheduleDates, setScheduleDates] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
-
-  // Notify partner on mount
-  useEffect(() => {
-    if (profile?.partner_id) {
-      notifyPartner({
-        partnerId: profile.partner_id,
-        title: "🔥 Sex Bucket Challenge!",
-        body: `${profile?.username || "Your partner"} started the Sex Bucket Challenge`,
-        route: "/sex-bucket-game",
-      });
-    }
-  }, []);
+  const [notified, setNotified] = useState(false);
 
   useEffect(() => {
+    // Wait for the lists to actually load before deciding "no list yet",
+    // otherwise an empty-but-still-loading list array spins forever.
+    if (listsLoading) return;
+
     const ideasList = lists.find((l) => l.template === "sex-bucket-ideas" || l.name?.toLowerCase().includes("sex bucket challenge ideas"));
-    if (lists.length === 0) return;
 
     if (!ideasList || ideasList.items.filter((i) => !i.isHeading && !i.done).length < 5) {
       setPhase("no-list");
@@ -53,9 +46,21 @@ const SexBucketGame = () => {
       .map((i) => i.text);
     setAllItems(available);
     setPhase("draw");
-  }, [lists]);
+  }, [lists, listsLoading]);
 
   const drawItems = useCallback(() => {
+    // Notify the partner on the explicit "start" action (first draw) rather than
+    // on mount — this avoids spamming, and works even if the profile loads late.
+    if (!notified && profile?.partner_id) {
+      setNotified(true);
+      notifyPartner({
+        partnerId: profile.partner_id,
+        title: "🔥 Sex Bucket Challenge!",
+        body: `${profile?.username || "Your partner"} started the Sex Bucket Challenge`,
+        route: "/sex-bucket-game",
+      });
+    }
+
     const shuffled = [...allItems].sort(() => Math.random() - 0.5);
     const picked = shuffled.slice(0, 5).map((text) => ({ text, locked: false }));
     setDrawn(picked);
@@ -72,7 +77,7 @@ const SexBucketGame = () => {
         setTimeout(() => setPhase("confirm"), 600);
       }
     }, 800);
-  }, [allItems]);
+  }, [allItems, notified, profile]);
 
   const swapItem = (index: number) => {
     if (drawn[index].locked) return;
@@ -136,7 +141,7 @@ const SexBucketGame = () => {
         const idx = drawn.indexOf(item);
         const dateStr = scheduleDates[idx];
         if (!dateStr) continue;
-        const taskDate = new Date(dateStr).toISOString().split("T")[0];
+        const taskDate = localDateKeyFromTimestamp(dateStr);
         await supabase.from("weekly_tasks").insert({
           user_id: user.id,
           text: `🔥 ${item.text}`,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UserList } from "@/components/connect/SharedLists";
@@ -74,6 +74,8 @@ export function useSharedLists() {
   const savedOrder = user ? getListOrder(user.id) : null;
   const [lists, setLists] = useState<UserList[]>(applyOrder(cached || [], savedOrder));
   const [loading, setLoading] = useState(!cached);
+  // Dedupes concurrent inserts of the same logical list (double-click "create").
+  const addInFlight = useRef<Map<string, Promise<string | undefined>>>(new Map());
 
   const fetchLists = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -86,8 +88,13 @@ export function useSharedLists() {
 
     if (!error && data) {
       const INTERNAL_PREFIXES = ["__"];
+      // Exact-match internal storage markers that don't use the "__" prefix.
+      const INTERNAL_NAMES = new Set(["Shared Folders"]);
       const result = data
-        .filter((row: any) => !INTERNAL_PREFIXES.some(p => row.name?.startsWith(p)))
+        .filter((row: any) =>
+          !INTERNAL_PREFIXES.some(p => row.name?.startsWith(p)) &&
+          !INTERNAL_NAMES.has(row.name)
+        )
         .map(dbRowToList);
       const order = getListOrder(user.id);
       const ordered = applyOrder(result, order);
@@ -111,19 +118,34 @@ export function useSharedLists() {
 
   const addList = useCallback(async (list: UserList) => {
     if (!user) return;
-    const { data } = await supabase.from("shared_lists").insert({
-      user_id: user.id,
-      name: list.name,
-      icon: list.icon,
-      template: list.template || null,
-      max_items: list.maxItems || null,
-      items: JSON.parse(JSON.stringify(list.items)),
-      ai_suggestable: list.aiSuggestable || false,
-      score_data: buildScoreDataPayload(list),
-    } as any).select().single();
-    if (data) {
-      setLists((prev) => [dbRowToList(data), ...prev]);
-      return data.id as string;
+    // Guard against two rapid saves inserting duplicate rows for the same list.
+    const key = list.id || `${list.name}:${list.template || ""}`;
+    const pending = addInFlight.current.get(key);
+    if (pending) return pending;
+
+    const promise = (async () => {
+      const { data } = await supabase.from("shared_lists").insert({
+        user_id: user.id,
+        name: list.name,
+        icon: list.icon,
+        template: list.template || null,
+        max_items: list.maxItems || null,
+        items: JSON.parse(JSON.stringify(list.items)),
+        ai_suggestable: list.aiSuggestable || false,
+        score_data: buildScoreDataPayload(list),
+      } as any).select().single();
+      if (data) {
+        setLists((prev) => [dbRowToList(data), ...prev]);
+        return data.id as string;
+      }
+      return undefined;
+    })();
+
+    addInFlight.current.set(key, promise);
+    try {
+      return await promise;
+    } finally {
+      addInFlight.current.delete(key);
     }
   }, [user, profile]);
 
@@ -139,8 +161,10 @@ export function useSharedLists() {
     }
     payload.updated_at = new Date().toISOString();
 
-    await supabase.from("shared_lists").update(payload).eq("id", id);
+    // Apply optimistically first so a slow/failed network write can't drop the
+    // local edit; realtime refetch reconciles afterwards.
     setLists((prev) => prev.map((l) => l.id === id ? { ...l, ...updates } : l));
+    await supabase.from("shared_lists").update(payload).eq("id", id);
   }, [lists]);
 
   const deleteList = useCallback(async (id: string) => {

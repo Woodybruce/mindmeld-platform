@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Send, X, Loader2, Mic, Square, Reply, Plus, Camera, Paperclip, MapPin, BarChart3, CalendarPlus, Smile, Instagram, ExternalLink, Music } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { AnimatePresence, motion } from "framer-motion";
@@ -38,8 +38,18 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  // Stop the mic + timer if the component unmounts mid-recording (e.g. navigating away)
+  useEffect(() => {
+    return () => {
+      clearInterval(timerRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      try { mediaRecorderRef.current?.stop(); } catch { /* already stopped */ }
+    };
+  }, []);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -87,11 +97,13 @@ const ChatInput = ({ onSend, onSendSpecial, onSaveInstagramLink, sending, replyi
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const recorder = new MediaRecorder(stream);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         setRecording(false);
         setRecordingTime(0);

@@ -23,6 +23,15 @@ async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
 const AMAZON_TAG = "woodybruce-21";
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY || "";
 
+// Cap a Map's size (FIFO eviction of the oldest key) to prevent unbounded growth.
+function cappedSet<K, V>(map: Map<K, V>, key: K, value: V, max = 500): void {
+  if (map.size >= max && !map.has(key)) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+  map.set(key, value);
+}
+
 const imageCache = new Map<string, string | null>();
 
 async function searchPexelsImage(query: string): Promise<string | null> {
@@ -36,7 +45,7 @@ async function searchPexelsImage(query: string): Promise<string | null> {
     if (!resp.ok) return null;
     const data = await resp.json();
     const url = data.photos?.[0]?.src?.medium || null;
-    imageCache.set(query, url);
+    cappedSet(imageCache, query, url);
     return url;
   } catch {
     return null;
@@ -83,6 +92,50 @@ async function requireAdmin(req: Request, res: Response): Promise<string | null>
     res.status(500).json({ error: "Failed to verify permissions" });
     return null;
   }
+}
+
+// Requires a valid session; returns the caller's id or null (and sends 401).
+async function requireUser(req: Request, res: Response): Promise<string | null> {
+  const userId = await extractUserId(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return null;
+  }
+  return userId;
+}
+
+// Returns the caller's id if they are `targetUserId` or that user's partner; else null (sends 401/403).
+async function requirePartnerOrSelf(req: Request, res: Response, targetUserId: string): Promise<string | null> {
+  const userId = await requireUser(req, res);
+  if (!userId) return null;
+  if (userId === targetUserId) return userId;
+  try {
+    const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const { data } = await sb.from("profiles").select("partner_id").eq("id", userId).maybeSingle();
+    if (data?.partner_id === targetUserId) return userId;
+  } catch { /* fall through to 403 */ }
+  res.status(403).json({ error: "Not permitted" });
+  return null;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Minimal in-memory fixed-window rate limiter (per key). Good enough for a single instance.
+const rateBuckets = new Map<string, { count: number; reset: number }>();
+function rateLimit(key: string, max: number, windowMs: number): boolean {
+  const now = Date.now();
+  const b = rateBuckets.get(key);
+  if (!b || now > b.reset) {
+    rateBuckets.set(key, { count: 1, reset: now + windowMs });
+    return true;
+  }
+  if (b.count >= max) return false;
+  b.count++;
+  return true;
+}
+function clientIp(req: Request): string {
+  const fwd = (req.headers["x-forwarded-for"] as string) || "";
+  return fwd.split(",")[0].trim() || req.ip || "unknown";
 }
 
 async function callAI(messages: any[], tools?: any[], toolChoice?: any, userId?: string, options?: { model?: string; temperature?: number }) {
@@ -524,10 +577,12 @@ async function ensureStorageBuckets() {
     const { data: buckets } = await admin.storage.listBuckets();
     const existingNames = new Set(buckets?.map((b: any) => b.name) || []);
 
+    // Private buckets — read access is granted via RLS to the owner and their
+    // partner only; clients fetch objects through short-lived signed URLs.
     const required = [
-      { name: "couple-photos", opts: { public: true, allowedMimeTypes: ["image/*"], fileSizeLimit: 10485760 } },
-      { name: "chat-images", opts: { public: true, allowedMimeTypes: ["image/*"], fileSizeLimit: 10485760 } },
-      { name: "voice-notes", opts: { public: true, allowedMimeTypes: ["audio/*"], fileSizeLimit: 10485760 } },
+      { name: "couple-photos", opts: { public: false, allowedMimeTypes: ["image/*"], fileSizeLimit: 10485760 } },
+      { name: "chat-images", opts: { public: false, allowedMimeTypes: ["image/*"], fileSizeLimit: 10485760 } },
+      { name: "voice-notes", opts: { public: false, allowedMimeTypes: ["audio/*"], fileSizeLimit: 10485760 } },
     ];
 
     for (const { name, opts } of required) {
@@ -551,6 +606,47 @@ export async function registerRoutes(app: Express): Promise<void> {
   await initSpotifyTokens();
   ensureStorageBuckets();
 
+  // CORS: allow only the app's own origins. Extra origins can be added via CORS_ALLOWED_ORIGINS (comma-separated).
+  const allowedOrigins = new Set<string>(
+    [
+      ...(process.env.CORS_ALLOWED_ORIGINS?.split(",") || []),
+      ...(process.env.REPLIT_DOMAINS?.split(",").map((d) => `https://${d.trim()}`) || []),
+      ...(process.env.SITE_URL ? [process.env.SITE_URL] : []),
+    ]
+      .map((o) => o.trim())
+      .filter(Boolean)
+  );
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.has(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, x-user-id, x-bucket, x-caption");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+      if (req.method === "OPTIONS") return res.status(204).end();
+    }
+    next();
+  });
+
+  // Rate-limit the (OpenAI/Pexels/GIPHY-backed) generative endpoints to curb cost abuse.
+  const AI_PATH_PREFIXES = [
+    "/api/ai-search",
+    "/api/generate-feed-content",
+    "/api/suggest-",
+    "/api/curated-",
+    "/api/shop/curated",
+    "/api/search-gifs",
+  ];
+  app.use((req, res, next) => {
+    if (AI_PATH_PREFIXES.some((p) => req.path.startsWith(p))) {
+      if (!rateLimit(`ai:${clientIp(req)}`, 40, 60_000)) {
+        return res.status(429).json({ error: "Too many requests, please slow down." });
+      }
+    }
+    next();
+  });
+
   app.get("/api/is-admin", async (req: Request, res: Response) => {
     const userId = await extractUserId(req);
     if (!userId) return res.json({ admin: false });
@@ -572,14 +668,21 @@ export async function registerRoutes(app: Express): Promise<void> {
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: "Supabase not configured" });
 
-    const userId = req.headers["x-user-id"] as string;
-    if (!userId) return res.status(400).json({ error: "Missing user ID" });
+    // Identity comes from the verified session token, never a client-supplied header.
+    const userId = await requireUser(req, res);
+    if (!userId) return;
 
-    const bucket = (req.headers["x-bucket"] as string) || "couple-photos";
+    const ALLOWED_BUCKETS = new Set(["couple-photos", "chat-images"]);
+    const requestedBucket = (req.headers["x-bucket"] as string) || "couple-photos";
+    if (!ALLOWED_BUCKETS.has(requestedBucket)) {
+      return res.status(400).json({ error: "Invalid bucket" });
+    }
+    const bucket = requestedBucket;
     const contentType = req.headers["content-type"] || "image/jpeg";
     const ext = contentType.split("/")[1]?.split("+")[0] || "jpg";
     const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
-    const caption = (req.headers["x-caption"] as string) || "";
+    let caption = "";
+    try { caption = decodeURIComponent((req.headers["x-caption"] as string) || ""); } catch { caption = ""; }
 
     try {
       const admin = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -602,8 +705,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
 
-      const { data: urlData } = admin.storage.from(bucket).getPublicUrl(path);
-      res.json({ success: true, path, publicUrl: urlData.publicUrl });
+      // Buckets are private. Return a long-lived signed URL: chat-image messages
+      // persist the URL, and the message row itself is RLS-protected to the couple.
+      // (couple-photos are re-signed on load from their stored storage_path.)
+      const { data: signed } = await admin.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      res.json({ success: true, path, publicUrl: signed?.signedUrl || null, signedUrl: signed?.signedUrl || null });
     } catch (e: any) {
       console.error("Photo upload error:", e.message);
       res.status(500).json({ error: e.message });
@@ -658,9 +764,12 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Web push subscription registration
   app.post("/api/web-push-subscribe", async (req: Request, res: Response) => {
     try {
-      const { userId, subscription } = req.body;
-      if (!userId || !subscription) {
-        return res.status(400).json({ error: "userId and subscription required" });
+      // Bind the subscription to the authenticated caller, not a body-supplied id.
+      const userId = await requireUser(req, res);
+      if (!userId) return;
+      const { subscription } = req.body;
+      if (!subscription) {
+        return res.status(400).json({ error: "subscription required" });
       }
 
       const supabaseUrl = process.env.SUPABASE_URL!;
@@ -698,6 +807,13 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       if (!recipientUserId || !title) {
         return res.status(400).json({ error: "recipientUserId and title are required" });
+      }
+
+      // Only the recipient or their partner may push to them.
+      const caller = await requirePartnerOrSelf(req, res, recipientUserId);
+      if (!caller) return;
+      if (!rateLimit(`push:${caller}`, 20, 60_000)) {
+        return res.status(429).json({ error: "Too many notifications, please slow down." });
       }
 
       const [{ data: tokens, error: tokenError }, { count: unreadCount }] = await Promise.all([
@@ -896,28 +1012,28 @@ export async function registerRoutes(app: Express): Promise<void> {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ error: "email is required" });
+      }
+
       const redirectTo = process.env.SITE_URL
         ? `${process.env.SITE_URL}/reset-password`
         : "https://mindmeld-platform.lovable.app/reset-password";
 
-      const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-        type: "recovery",
-        email,
-        options: { redirectTo },
-      });
-
-      if (error) {
-        return res.status(400).json({ error: error.message });
-      }
-
+      // Send the reset mail via a single mechanism. Never reveal whether the
+      // address exists — always respond with a generic success (anti-enumeration).
       const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
         redirectTo,
       });
+      if (resetError) {
+        console.error("Password reset error:", resetError.message);
+      }
 
-      res.json({ success: true, resetError: resetError?.message });
+      res.json({ success: true });
     } catch (error: any) {
       console.error("Password reset error:", error);
-      res.status(500).json({ error: error.message });
+      // Still generic to the client.
+      res.json({ success: true });
     }
   });
 
@@ -1077,7 +1193,7 @@ Return ONLY valid JSON with these fields:
       });
       if (!resp.ok) {
         const empty = { ogImage: "", ogTitle: "", ogDescription: "", siteName: "", ts: Date.now() };
-        ogCache.set(url, empty);
+        cappedSet(ogCache, url, empty);
         return res.json(empty);
       }
 
@@ -1105,12 +1221,12 @@ Return ONLY valid JSON with these fields:
         ts: Date.now(),
       };
 
-      ogCache.set(url, result);
+      cappedSet(ogCache, url, result);
       res.json(result);
     } catch (e) {
       console.error("article-metadata error:", e);
       const empty = { ogImage: "", ogTitle: "", ogDescription: "", siteName: "", ts: Date.now() };
-      ogCache.set(url, empty);
+      cappedSet(ogCache, url, empty);
       res.json(empty);
     }
   });
@@ -1169,6 +1285,9 @@ Return ONLY valid JSON with these fields:
       while ((m = tagRx.exec(bodyHtml)) !== null) {
         let block = m[0];
         block = block.replace(/<(?!\/?(?:p|h[1-6]|blockquote|ul|ol|li|strong|em|b|i|br|img)\b)[^>]+>/gi, "");
+        // Strip ALL attributes from kept non-img tags so on*-handlers/style can't survive
+        // (whitelisting the tag name alone previously let `<p onmouseover=...>` through → XSS).
+        block = block.replace(/<(p|h[1-6]|blockquote|ul|ol|li|strong|em|b|i|br)\b[^>]*?(\/?)>/gi, "<$1$2>");
         block = block.replace(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']*?)["'][^>]*\/?>/gi, (_, src, alt) => {
           let imgSrc = src;
           if (imgSrc.startsWith("/")) { try { imgSrc = new URL(imgSrc, url).href; } catch {} }
@@ -1252,7 +1371,7 @@ Return ONLY valid JSON with these fields:
         imageUrl: best.artworkUrl600 || best.artworkUrl100 || "",
         feedUrl: best.feedUrl || "",
       };
-      podcastArtworkCache.set(cacheKey, { url: JSON.stringify(found), ts: Date.now() });
+      cappedSet(podcastArtworkCache, cacheKey, { url: JSON.stringify(found), ts: Date.now() });
       return found;
     } catch {
       return null;
@@ -1270,7 +1389,7 @@ Return ONLY valid JSON with these fields:
         const resp = await fetch(`https://itunes.apple.com/lookup?id=${p.appleId}&entity=podcast`);
         const data = await resp.json() as any;
         const artwork = data.results?.[0]?.artworkUrl600 || data.results?.[0]?.artworkUrl100 || "";
-        if (artwork) podcastArtworkCache.set(p.appleId, { url: artwork, ts: Date.now() });
+        if (artwork) cappedSet(podcastArtworkCache, p.appleId, { url: artwork, ts: Date.now() });
         return { ...p, imageUrl: artwork };
       } catch {
         return p;
@@ -1856,18 +1975,28 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
     }
   });
 
+  // Use the stronger validator (blocks the cloud metadata IP, IPv6 loopback,
+  // link-local/private ranges and non-80/443 ports) for all outbound scraping.
   function isSafeUrl(url: string): boolean {
-    try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
-      const hostname = parsed.hostname.toLowerCase();
-      if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0" ||
-          hostname.startsWith("192.168.") || hostname.startsWith("10.") || hostname.startsWith("172.") ||
-          hostname.endsWith(".local") || hostname.endsWith(".internal")) return false;
-      return true;
-    } catch {
-      return false;
+    return isValidExternalUrl(url);
+  }
+
+  // fetch() that re-validates every redirect hop against isSafeUrl, defeating
+  // redirect-to-internal SSRF (e.g. a 302 to http://169.254.169.254/...).
+  async function safeFetch(url: string, init: RequestInit = {}, maxRedirects = 4): Promise<Response> {
+    let current = url;
+    for (let i = 0; i <= maxRedirects; i++) {
+      if (!isSafeUrl(current)) throw new Error("Blocked non-public URL");
+      const resp = await fetch(current, { ...init, redirect: "manual" });
+      if (resp.status >= 300 && resp.status < 400) {
+        const loc = resp.headers.get("location");
+        if (!loc) return resp;
+        current = new URL(loc, current).href;
+        continue;
+      }
+      return resp;
     }
+    throw new Error("Too many redirects");
   }
 
   async function verifyImageUrl(url: string): Promise<string | null> {
@@ -1875,11 +2004,11 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
-      const resp = await fetch(url, { method: "HEAD", signal: controller.signal, redirect: "follow" });
+      const resp = await safeFetch(url, { method: "HEAD", signal: controller.signal });
       clearTimeout(timeout);
       const ct = resp.headers.get("content-type") || "";
       if (resp.ok && ct.startsWith("image/")) return url;
-      const getResp = await fetch(url, { method: "GET", signal: AbortSignal.timeout(5000), redirect: "follow" });
+      const getResp = await safeFetch(url, { method: "GET", signal: AbortSignal.timeout(5000) });
       const getCt = getResp.headers.get("content-type") || "";
       if (getResp.ok && getCt.startsWith("image/")) return url;
       return null;
@@ -1893,10 +2022,9 @@ Category must be one of: Date Night, Wellness, Travel, Intimacy, Experiences, Ga
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
-      const resp = await fetch(pageUrl, {
+      const resp = await safeFetch(pageUrl, {
         signal: controller.signal,
         headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
-        redirect: "follow",
       });
       clearTimeout(timeout);
       if (!resp.ok) return null;
@@ -2472,9 +2600,8 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
         .maybeSingle();
 
       if (profileData?.partner_id) {
-        const { data: { users } } = await admin.auth.admin.listUsers();
-        const partner = users?.find((u: any) => u.id === profileData.partner_id);
-        if (partner?.email) partnerEmail = partner.email.toLowerCase();
+        const { data: partnerData } = await admin.auth.admin.getUserById(profileData.partner_id);
+        if (partnerData?.user?.email) partnerEmail = partnerData.user.email.toLowerCase();
       }
 
       const { data: existing } = await admin
@@ -2583,12 +2710,20 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
     if (process.env.SPOTIFY_REDIRECT_URI) {
       return process.env.SPOTIFY_REDIRECT_URI;
     }
+    // Prefer the server-configured domain over attacker-controllable Host/X-Forwarded-Host.
+    const configuredDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
+    if (configuredDomain) {
+      return `https://${configuredDomain}/api/spotify/callback`;
+    }
     const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
     const host = req.headers["x-forwarded-host"] || req.headers.host || req.hostname;
     const origin = `${protocol}://${host}`;
     return `${origin}/api/spotify/callback`;
   }
 
+  // Note: this only starts Spotify's OAuth consent redirect (a browser navigation
+  // that cannot carry a bearer token), so it is intentionally open. The privileged
+  // playlist mutation endpoints below require authentication.
   app.get("/api/spotify/auth", (req: Request, res: Response) => {
     const redirectUri = getSpotifyRedirectUri(req);
     console.log("Spotify auth redirect_uri:", redirectUri);
@@ -2723,6 +2858,8 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
 
   app.post("/api/spotify/playlist/create", async (req: Request, res: Response) => {
     try {
+      const authedUser = await requireUser(req, res);
+      if (!authedUser) return;
       const { name, description } = req.body;
       const accessToken = await getSpotifyAccessToken();
 
@@ -2765,6 +2902,8 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
 
   app.post("/api/spotify/playlist/add", async (req: Request, res: Response) => {
     try {
+      const authedUser = await requireUser(req, res);
+      if (!authedUser) return;
       const { playlistId, trackUri } = req.body;
       if (!playlistId || !trackUri) return res.status(400).json({ error: "playlistId and trackUri required" });
       const accessToken = await getSpotifyAccessToken();
@@ -2787,6 +2926,8 @@ Keep descriptions under 60 chars. Return valid JSON array only.`,
 
   app.post("/api/spotify/playlist/remove", async (req: Request, res: Response) => {
     try {
+      const authedUser = await requireUser(req, res);
+      if (!authedUser) return;
       const { playlistId, trackUri } = req.body;
       if (!playlistId || !trackUri) return res.status(400).json({ error: "playlistId and trackUri required" });
       const accessToken = await getSpotifyAccessToken();
@@ -2897,8 +3038,11 @@ Focus on real, existing content about relationships, dating, couples, love, and 
     }
   });
 
-  app.get("/api/stripe/products", async (_req: Request, res: Response) => {
+  app.get("/api/stripe/products", async (req: Request, res: Response) => {
     try {
+      // Admin-only: product metadata includes wholesale/margin fields.
+      const adminUserId = await requireAdmin(req, res);
+      if (!adminUserId) return;
       const result = await db.execute(
         sql`SELECT 
           p.id as product_id,
@@ -2949,12 +3093,15 @@ Focus on real, existing content about relationships, dating, couples, love, and 
 
   app.post("/api/stripe/checkout", async (req: Request, res: Response) => {
     try {
-      const { priceId, productName, quantity = 1 } = req.body;
+      const { priceId, productName, quantity = 1, size } = req.body;
       if (!priceId || typeof priceId !== "string" || !priceId.startsWith("price_")) {
         return res.status(400).json({ error: "Valid priceId is required" });
       }
       const safeQuantity = Math.max(1, Math.min(10, Number(quantity) || 1));
       const safeName = typeof productName === "string" ? productName.slice(0, 200) : "";
+      const safeSize = typeof size === "string" ? size.slice(0, 40) : "";
+      // Tie the session to the buyer (if signed in) so the session lookup can be authorized.
+      const buyerId = await extractUserId(req);
 
       const stripe = await getUncachableStripeClient();
       const domains = process.env.REPLIT_DOMAINS?.split(',') || [];
@@ -2968,8 +3115,11 @@ Focus on real, existing content about relationships, dating, couples, love, and 
         mode: 'payment',
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/checkout/cancel`,
+        ...(buyerId ? { client_reference_id: buyerId } : {}),
         metadata: {
           productName: safeName,
+          ...(safeSize ? { size: safeSize } : {}),
+          ...(buyerId ? { userId: buyerId } : {}),
         },
       });
 
@@ -2982,9 +3132,18 @@ Focus on real, existing content about relationships, dating, couples, love, and 
 
   app.get("/api/stripe/session/:sessionId", async (req: Request, res: Response) => {
     try {
+      // Require auth and only return a session that belongs to the caller.
+      const userId = await requireUser(req, res);
+      if (!userId) return;
+
       const { sessionId } = req.params;
       const stripe = await getUncachableStripeClient();
       const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      const owner = session.client_reference_id || session.metadata?.userId;
+      if (owner !== userId) {
+        return res.status(403).json({ error: "Not permitted" });
+      }
 
       res.json({
         status: session.payment_status,
@@ -2992,6 +3151,7 @@ Focus on real, existing content about relationships, dating, couples, love, and 
         amountTotal: session.amount_total,
         currency: session.currency,
         productName: session.metadata?.productName,
+        size: session.metadata?.size,
       });
     } catch (e: any) {
       console.error("Stripe session error:", e.message);
