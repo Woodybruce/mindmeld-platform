@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
@@ -7,6 +7,7 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { sql } from "drizzle-orm";
 import { db } from "./db";
 import { getUncachableSpotifyClient, invalidateSpotifyCache, getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, spotifyApiFetch, initSpotifyTokens, getSpotifyAccessToken } from "./spotify";
+import { householdRouter } from "./routes/household";
 
 async function spotifyRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
@@ -54,7 +55,7 @@ function buildAmazonUrl(productName?: string): string {
   return `https://www.amazon.co.uk/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}`;
 }
 
-async function extractUserId(req: Request): Promise<string | undefined> {
+export async function extractUserId(req: Request): Promise<string | undefined> {
   try {
     const auth = req.headers.authorization;
     if (!auth?.startsWith("Bearer ")) return undefined;
@@ -550,6 +551,14 @@ async function ensureStorageBuckets() {
 export async function registerRoutes(app: Express): Promise<void> {
   await initSpotifyTokens();
   ensureStorageBuckets();
+
+  // Phase 1 household routes: resolve the Supabase user only for these paths,
+  // then hand off to the household router (which enforces membership itself).
+  app.use(["/api/household", "/api/dependents"], async (req: Request, _res: Response, next: NextFunction) => {
+    req.userId = await extractUserId(req);
+    next();
+  });
+  app.use("/api", householdRouter(db));
 
   app.get("/api/is-admin", async (req: Request, res: Response) => {
     const userId = await extractUserId(req);
