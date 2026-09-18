@@ -169,4 +169,35 @@ describe('schools routes', () => {
     expect((await request(a).patch('/api/schools/not-a-uuid').send({ name: 'x' })).status).toBe(400);
     expect((await request(a).get('/api/schools/not-a-uuid/events')).status).toBe(400);
   });
+
+  it('accepts a dependent with an own school, rejects foreign and nonexistent schoolIds with 400 invalid_school', async () => {
+    const db = await createTestDb();
+    const a1 = app(db, 'u1');
+    await request(a1).post('/api/household').send({ name: 'Bruce' });
+    const own = await request(a1).post('/api/schools').send({ name: "St Mary's" });
+
+    // (b) own school → 201
+    const dep = await request(a1).post('/api/dependents').send({ name: 'Coco', schoolId: own.body.id });
+    expect(dep.status).toBe(201);
+    expect(dep.body.schoolId).toBe(own.body.id);
+
+    // (a) foreign school → 400 invalid_school (POST)
+    const a2 = app(db, 'u2');
+    await request(a2).post('/api/household').send({ name: 'Other' });
+    const foreign = await request(a2).post('/api/schools').send({ name: 'Theirs' });
+    const badPost = await request(a1).post('/api/dependents').send({ name: 'Teo', schoolId: foreign.body.id });
+    expect(badPost.status).toBe(400);
+    expect(badPost.body.error).toBe('invalid_school');
+
+    // (c) nonexistent schoolId → 400 invalid_school (PATCH)
+    const missing = '00000000-0000-0000-0000-000000000000';
+    const badPatch = await request(a1).patch(`/api/dependents/${dep.body.id}`).send({ schoolId: missing });
+    expect(badPatch.status).toBe(400);
+    expect(badPatch.body.error).toBe('invalid_school');
+
+    // Patching to a foreign school is rejected the same way.
+    const badPatchForeign = await request(a1).patch(`/api/dependents/${dep.body.id}`).send({ schoolId: foreign.body.id });
+    expect(badPatchForeign.status).toBe(400);
+    expect(badPatchForeign.body.error).toBe('invalid_school');
+  });
 });

@@ -14,6 +14,7 @@ import {
   uuidParam,
 } from '../../shared/validation/household';
 import { requireHousehold } from '../middleware/household';
+import { schoolBelongsToHousehold } from '../lib/ownership';
 import type { Database } from '../db';
 
 export function householdRouter(db: Database): Router {
@@ -80,6 +81,12 @@ export function householdRouter(db: Database): Router {
   router.post('/dependents', guard, async (req, res) => {
     const parsed = createDependentBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'invalid_body', issues: parsed.error.issues });
+    if (
+      parsed.data.schoolId !== undefined &&
+      !(await schoolBelongsToHousehold(db, parsed.data.schoolId, req.householdId!))
+    ) {
+      return res.status(400).json({ error: 'invalid_school' });
+    }
     const [created] = await db
       .insert(dependents)
       .values(Object.assign({}, parsed.data, { householdId: req.householdId! }))
@@ -94,6 +101,12 @@ export function householdRouter(db: Database): Router {
     if (!parsed.success) return res.status(400).json({ error: 'invalid_body', issues: parsed.error.issues });
     if (Object.keys(parsed.data).length === 0) {
       return res.status(400).json({ error: 'empty_patch' });
+    }
+    if (
+      parsed.data.schoolId !== undefined &&
+      !(await schoolBelongsToHousehold(db, parsed.data.schoolId, req.householdId!))
+    ) {
+      return res.status(400).json({ error: 'invalid_school' });
     }
     const [updated] = await db
       .update(dependents)
