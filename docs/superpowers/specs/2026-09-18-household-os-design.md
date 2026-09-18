@@ -69,6 +69,15 @@ Existing couples tables (messages, photos, games, bucket lists, mood check-ins, 
 
 The butler has tools to create/update: tasks, list items, calendar events, school records, school events, holiday checklists, and butler_memory entries. Structured tool calls are validated server-side (zod) before any write. The pattern proven in Study-Buddy-AI (LLM emits structured payload → server validates → DB write) is the reference, upgraded to native tool-calling.
 
+### Diary access
+
+The butler has **full read AND write access to the household diary** — this is a hard requirement, not a side effect:
+
+- **Read**: the butler always knows what is already scheduled (household events plus Outlook-synced events) before suggesting or creating anything, and can answer "what are we doing this weekend?"
+- **Write**: it creates, moves, and updates diary events directly — from chat requests, parsed emails (PA inbox), school records, and holiday checklists
+- **Clash detection**: before adding an event it checks for conflicts and flags them in chat ("That clashes with Coco's football at 4pm — add anyway?")
+- Every butler-created event is attributed (`source: butler`) so it can be reviewed and undone
+
 ### Proactive engine
 
 A server-side scheduler (cron) continuously scans tasks, school events, and holiday checklists, then acts:
