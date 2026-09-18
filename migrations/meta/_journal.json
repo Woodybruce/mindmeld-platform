@@ -22,6 +22,13 @@
       "when": 1789752869363,
       "tag": "0002_unknown_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789753916827,
+      "tag": "0003_smiling_trish_tilby",
+      "breakpoints": true
     }
   ]
 }
