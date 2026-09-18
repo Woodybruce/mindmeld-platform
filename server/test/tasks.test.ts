@@ -102,4 +102,50 @@ describe('tasks routes', () => {
     expect((await request(a1).delete(`/api/tasks/${t.body.id}`)).status).toBe(204);
     expect((await request(a1).get('/api/tasks')).body).toHaveLength(0);
   });
+
+  it('rejects a foreign dependentId on create with 400 invalid_dependent', async () => {
+    const db = await createTestDb();
+    const a1 = createApp(db, 'u1');
+    await request(a1).post('/api/household').send({ name: 'Bruce' });
+
+    const a2 = createApp(db, 'u2');
+    await request(a2).post('/api/household').send({ name: 'Other' });
+    const foreignDep = await request(a2).post('/api/dependents').send({ name: 'NotMine' });
+
+    const bad = await request(a1)
+      .post('/api/tasks')
+      .send({ title: 'x', dependentId: foreignDep.body.id });
+    expect(bad.status).toBe(400);
+    expect(bad.body.error).toBe('invalid_dependent');
+  });
+
+  it('accepts own dependentId on create with 201', async () => {
+    const db = await createTestDb();
+    const a = createApp(db, 'u1');
+    await request(a).post('/api/household').send({ name: 'Bruce' });
+    const dep = await request(a).post('/api/dependents').send({ name: 'Coco' });
+
+    const t = await request(a)
+      .post('/api/tasks')
+      .send({ title: 'Pick up Coco', dependentId: dep.body.id });
+    expect(t.status).toBe(201);
+    expect(t.body.dependentId).toBe(dep.body.id);
+  });
+
+  it('rejects a foreign dependentId on patch with 400 invalid_dependent', async () => {
+    const db = await createTestDb();
+    const a1 = createApp(db, 'u1');
+    await request(a1).post('/api/household').send({ name: 'Bruce' });
+    const t = await request(a1).post('/api/tasks').send({ title: 'Mine' });
+
+    const a2 = createApp(db, 'u2');
+    await request(a2).post('/api/household').send({ name: 'Other' });
+    const foreignDep = await request(a2).post('/api/dependents').send({ name: 'NotMine' });
+
+    const bad = await request(a1)
+      .patch(`/api/tasks/${t.body.id}`)
+      .send({ dependentId: foreignDep.body.id });
+    expect(bad.status).toBe(400);
+    expect(bad.body.error).toBe('invalid_dependent');
+  });
 });

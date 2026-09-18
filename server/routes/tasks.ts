@@ -5,6 +5,7 @@ import { tasks } from '../../shared/schema/index';
 import { insertTaskSchema, patchTaskSchema } from '../../shared/validation/tasks';
 import { uuidParam } from '../../shared/validation/household';
 import { requireHousehold } from '../middleware/household';
+import { dependentBelongsToHousehold } from '../lib/ownership';
 import type { Database } from '../db';
 
 export function tasksRouter(db: Database): Router {
@@ -22,6 +23,12 @@ export function tasksRouter(db: Database): Router {
   router.post('/tasks', guard, async (req, res) => {
     const parsed = insertTaskSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'invalid_body', issues: parsed.error.issues });
+    if (
+      parsed.data.dependentId !== undefined &&
+      !(await dependentBelongsToHousehold(db, parsed.data.dependentId, req.householdId!))
+    ) {
+      return res.status(400).json({ error: 'invalid_dependent' });
+    }
     const [created] = await db
       .insert(tasks)
       .values(Object.assign({}, parsed.data, { householdId: req.householdId! }))
@@ -36,6 +43,12 @@ export function tasksRouter(db: Database): Router {
     if (!parsed.success) return res.status(400).json({ error: 'invalid_body', issues: parsed.error.issues });
     if (Object.keys(parsed.data).length === 0) {
       return res.status(400).json({ error: 'empty_patch' });
+    }
+    if (
+      parsed.data.dependentId !== undefined &&
+      !(await dependentBelongsToHousehold(db, parsed.data.dependentId, req.householdId!))
+    ) {
+      return res.status(400).json({ error: 'invalid_dependent' });
     }
     const [updated] = await db
       .update(tasks)

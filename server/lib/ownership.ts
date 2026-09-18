@@ -1,0 +1,19 @@
+import { and, eq } from 'drizzle-orm';
+// Explicit `/index`: bare `../../shared/schema` resolves to the legacy shared/schema.ts file.
+import { dependents } from '../../shared/schema/index';
+import type { Database } from '../db';
+
+// Ownership checks for FK fields that must stay within the caller's household.
+// Routers use these before writes to stop cross-household references (e.g. a
+// task in household A pointing at household B's dependent).
+export async function dependentBelongsToHousehold(
+  db: Database,
+  dependentId: string,
+  householdId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: dependents.id })
+    .from(dependents)
+    .where(and(eq(dependents.id, dependentId), eq(dependents.householdId, householdId)));
+  return row !== undefined;
+}
