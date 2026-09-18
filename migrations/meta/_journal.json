@@ -15,6 +15,13 @@
       "when": 1789751430248,
       "tag": "0001_household_members_unique_user",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789752869363,
+      "tag": "0002_unknown_spot",
+      "breakpoints": true
     }
   ]
 }

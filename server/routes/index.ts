@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import { extractUserId } from '../middleware/auth';
 import { householdRouter } from './household';
+import { tasksRouter } from './tasks';
 import type { Database } from '../db';
 
 // New (Phase 1+) API routers live under this stack: it owns the auth
@@ -17,6 +18,7 @@ export function newApiRouter(db: Database): Router {
   });
 
   router.use(householdRouter(db));
+  router.use(tasksRouter(db));
 
   return router;
 }
