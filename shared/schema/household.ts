@@ -1,5 +1,8 @@
 import { pgTable, uuid, text, date, timestamp } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
+// Circular import (schools.ts imports household.ts); safe because the
+// reference below is a lazy callback resolved after module evaluation.
+import { schools } from './schools';
 
 export const MAX_HOUSEHOLD_MEMBERS = 2;
 
@@ -24,7 +27,7 @@ export const dependents = pgTable('dependents', {
   name: text('name').notNull(),
   dateOfBirth: date('date_of_birth'),
   yearGroup: text('year_group'),
-  schoolId: uuid('school_id'),             // FK wired in Task 7
+  schoolId: uuid('school_id').references(() => schools.id),
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
