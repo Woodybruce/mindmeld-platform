@@ -97,6 +97,13 @@ Quiet hours and per-member notification preferences are configurable; reminders 
 - Every processed email posts a summary card into the household chat with links to what was created.
 - Supersedes the legacy `inbound-calendar` edge function, which is retired.
 
+### WhatsApp channel
+
+- The butler has its own **WhatsApp number** (dedicated virtual number via WhatsApp Business Cloud API or Twilio), saved as a contact by both partners.
+- Members can message it like any contact: requests, questions, forwarded emails/PDFs — all enter the same butler pipeline as chat and email.
+- **24-hour rule** (Meta policy): free-form replies allowed within 24h of the member's last message; outside that window, proactive messages (morning briefing, deadline nudges) must use pre-approved message templates. In-app push remains the primary proactive channel; WhatsApp proactive nudges use approved templates.
+- Butler replies state what it did ("Added: Parents' evening, Thu 6pm") with a link into the app.
+
 ### Memory
 
 Butler learns household facts over time, stores them in `butler_memory`, and applies them to suggestions. Members can review and delete memories in Settings.
@@ -136,6 +143,7 @@ Study-Buddy-AI contains **no** school-search or application-tracking features �
 | Resend | Outbound transactional email (briefings, digests) **and Inbound** (pa@ inbox → butler webhook); free tier covers household volume |
 | Apple Push / FCM (existing) | Mobile push — already wired |
 | Google Places API | School lookup, address autocomplete, holiday planning |
+| WhatsApp Business (Cloud API or Twilio) + virtual number | Butler WhatsApp channel; ~£1–2/month number rental, messages near-free at household volume |
 | Supabase (existing) | Auth + Realtime only |
 | Stripe (existing) | Shop — unchanged |
 
