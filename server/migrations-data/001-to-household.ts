@@ -16,12 +16,22 @@ import {
 } from '../../shared/schema/index';
 import type { Database } from '../db';
 
+export interface SkippedRows {
+  count: number;
+  ids: string[];
+}
+
 export interface MigrationSummary {
   households: number;
   tasks: number;
   lists: number;
   listItems: number;
   events: number;
+  skipped: {
+    weeklyTasks: SkippedRows;
+    sharedLists: SkippedRows;
+    calendarEvents: SkippedRows;
+  };
 }
 
 type LegacyProfile = typeof profiles.$inferSelect;
@@ -57,7 +67,18 @@ async function alreadyMigrated(tx: Transaction, prefix: string, table: 'tasks' |
 
 export async function migrateToHousehold(db: Database): Promise<MigrationSummary> {
   return db.transaction(async (tx) => {
-    const summary: MigrationSummary = { households: 0, tasks: 0, lists: 0, listItems: 0, events: 0 };
+    const summary: MigrationSummary = {
+      households: 0,
+      tasks: 0,
+      lists: 0,
+      listItems: 0,
+      events: 0,
+      skipped: {
+        weeklyTasks: { count: 0, ids: [] },
+        sharedLists: { count: 0, ids: [] },
+        calendarEvents: { count: 0, ids: [] },
+      },
+    };
 
     // Users already placed in a household make the whole migration resumable.
     const existingMembers = await tx.select().from(householdMembers);
@@ -66,40 +87,73 @@ export async function migrateToHousehold(db: Database): Promise<MigrationSummary
     const allProfiles = await tx.select().from(profiles);
     const profileById = new Map(allProfiles.map((p) => [p.id, p]));
 
-    // Group profiles into households: mutual or one-sided partner links share
-    // one household; solo users (no partner, or dangling partner id) get their own.
-    const seen = new Set<string>();
-    const groups: LegacyProfile[][] = [];
+    // Group profiles into households by connected components (union-find) over
+    // partner links treated as undirected edges: a one-sided link A->B must keep
+    // A and B together regardless of scan order. Solo users (no partner, or a
+    // dangling partner id) stay single-member components.
+    const parent = new Map<string, string>(allProfiles.map((p) => [p.id, p.id]));
+    const find = (id: string): string => {
+      let root = id;
+      while (parent.get(root) !== root) root = parent.get(root)!;
+      // path compression
+      let cur = id;
+      while (parent.get(cur) !== cur) {
+        const next = parent.get(cur)!;
+        parent.set(cur, root);
+        cur = next;
+      }
+      return root;
+    };
     for (const profile of allProfiles) {
-      if (seen.has(profile.id)) continue;
-      const partner = profile.partnerId ? profileById.get(profile.partnerId) : undefined;
-      if (partner && !seen.has(partner.id)) {
-        seen.add(profile.id);
-        seen.add(partner.id);
-        groups.push([profile, partner]);
-      } else {
-        seen.add(profile.id);
-        groups.push([profile]);
+      if (profile.partnerId && profileById.has(profile.partnerId)) {
+        parent.set(find(profile.id), find(profile.partnerId));
       }
     }
+    const groupByRoot = new Map<string, LegacyProfile[]>();
+    for (const profile of allProfiles) {
+      const root = find(profile.id);
+      const group = groupByRoot.get(root);
+      if (group) group.push(profile);
+      else groupByRoot.set(root, [profile]);
+    }
+    const groups = [...groupByRoot.values()];
 
     for (const group of groups) {
-      let householdId = householdByUserId.get(group[0].id);
+      // Any group member may already be placed in a household (e.g. signed up
+      // via the API before the migration ran). Reuse that household instead of
+      // creating a new one; if placed members map to different households,
+      // prefer the one already containing more group members (ties: first found).
+      let householdId: string | undefined;
+      const placedCounts = new Map<string, number>();
+      for (const member of group) {
+        const existing = householdByUserId.get(member.id);
+        if (existing) placedCounts.set(existing, (placedCounts.get(existing) ?? 0) + 1);
+      }
+      let bestCount = 0;
+      for (const [candidate, count] of placedCounts) {
+        if (count > bestCount) {
+          bestCount = count;
+          householdId = candidate;
+        }
+      }
       if (!householdId) {
         const names = group.map((p) => p.username ?? 'Member');
         const name = names.join(' & ');
         const [household] = await tx.insert(households).values({ name }).returning();
         householdId = household.id;
+        // Every new household gets its shared butler channel at creation time.
+        await tx.insert(channels).values({ householdId: household.id, type: 'household' });
+        summary.households += 1;
+      }
+      const unplaced = group.filter((p) => !householdByUserId.has(p.id));
+      if (unplaced.length > 0) {
         await tx.insert(householdMembers).values(
-          group.map((p) => ({
-            householdId: household.id,
+          unplaced.map((p) => ({
+            householdId: householdId!,
             userId: p.id,
             displayName: p.username ?? 'Member',
           })),
         );
-        // Every household gets its shared butler channel at creation time.
-        await tx.insert(channels).values({ householdId: household.id, type: 'household' });
-        summary.households += 1;
       }
       for (const member of group) householdByUserId.set(member.id, householdId);
     }
@@ -110,7 +164,12 @@ export async function migrateToHousehold(db: Database): Promise<MigrationSummary
       const marker = `weekly_tasks:${legacy.id}`;
       if (migratedTasks.has(marker)) continue;
       const householdId = householdByUserId.get(legacy.userId);
-      if (!householdId) continue; // orphan: owner has no profile/household
+      if (!householdId) {
+        // orphan: owner has no profile/household
+        summary.skipped.weeklyTasks.count += 1;
+        summary.skipped.weeklyTasks.ids.push(legacy.id);
+        continue;
+      }
       await tx.insert(tasks).values({
         householdId,
         title: legacy.text,
@@ -130,7 +189,11 @@ export async function migrateToHousehold(db: Database): Promise<MigrationSummary
       const marker = `shared_lists:${legacy.id}`;
       if (migratedLists.has(marker)) continue;
       const householdId = householdByUserId.get(legacy.userId);
-      if (!householdId) continue;
+      if (!householdId) {
+        summary.skipped.sharedLists.count += 1;
+        summary.skipped.sharedLists.ids.push(legacy.id);
+        continue;
+      }
       const [list] = await tx
         .insert(lists)
         .values({
@@ -161,7 +224,11 @@ export async function migrateToHousehold(db: Database): Promise<MigrationSummary
       const marker = `calendar_events:${legacy.id}`;
       if (migratedEvents.has(marker)) continue;
       const householdId = householdByUserId.get(legacy.userId);
-      if (!householdId) continue;
+      if (!householdId) {
+        summary.skipped.calendarEvents.count += 1;
+        summary.skipped.calendarEvents.ids.push(legacy.id);
+        continue;
+      }
       await tx.insert(events).values({
         householdId,
         title: legacy.subject,
@@ -193,6 +260,11 @@ if (invokedDirectly) {
   try {
     const summary = await migrateToHousehold(db as unknown as Database);
     console.log('migration complete:', summary);
+    for (const [table, skipped] of Object.entries(summary.skipped)) {
+      if (skipped.count > 0) {
+        console.warn(`skipped ${skipped.count} orphan ${table} row(s): ${skipped.ids.join(', ')}`);
+      }
+    }
   } finally {
     await pool.end();
   }

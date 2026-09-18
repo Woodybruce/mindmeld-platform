@@ -155,6 +155,12 @@ async function seedLegacy(db: TestDb) {
 }
 
 describe('migrateToHousehold', () => {
+  const noSkips = {
+    weeklyTasks: { count: 0, ids: [] },
+    sharedLists: { count: 0, ids: [] },
+    calendarEvents: { count: 0, ids: [] },
+  };
+
   it('migrates couples, solo users and their data into households', async () => {
     const db = await createTestDb();
     await createLegacyTables(db);
@@ -250,7 +256,7 @@ describe('migrateToHousehold', () => {
 
     await migrateToHousehold(db);
     const second = await migrateToHousehold(db);
-    expect(second).toEqual({ households: 0, tasks: 0, lists: 0, listItems: 0, events: 0 });
+    expect(second).toEqual({ households: 0, tasks: 0, lists: 0, listItems: 0, events: 0, skipped: noSkips });
 
     expect(await db.select().from(households)).toHaveLength(3);
     expect(await db.select().from(householdMembers)).toHaveLength(4);
@@ -271,9 +277,100 @@ describe('migrateToHousehold', () => {
     await db.delete(tasks).where(eq(tasks.migratedFrom, `weekly_tasks:${seeded.wt1.id}`));
 
     const summary = await migrateToHousehold(db);
-    expect(summary).toEqual({ households: 0, tasks: 1, lists: 0, listItems: 0, events: 0 });
+    expect(summary).toEqual({ households: 0, tasks: 1, lists: 0, listItems: 0, events: 0, skipped: noSkips });
     const all = await db.select().from(tasks);
     expect(all).toHaveLength(4);
     expect(all.filter((t) => t.title === 'Buy milk')).toHaveLength(1);
+  });
+
+  it('keeps one-sided partner links together regardless of scan order', async () => {
+    const db = await createTestDb();
+    await createLegacyTables(db);
+    // The pointed-at partner's row is inserted FIRST: a naive first-seen scan
+    // would hit Bob (partner_id null) and give him a solo household before
+    // ever seeing Alice's one-sided link back to him.
+    await db.insert(profiles).values([
+      { id: BOB, username: 'Bob', partnerId: null },
+      { id: ALICE, username: 'Alice', partnerId: BOB },
+    ]);
+
+    const summary = await migrateToHousehold(db);
+
+    expect(summary.households).toBe(1);
+    expect(await db.select().from(households)).toHaveLength(1);
+    const members = await db.select().from(householdMembers);
+    expect(members).toHaveLength(2);
+    expect(members.map((m) => m.userId).sort()).toEqual([ALICE, BOB].sort());
+    expect(members[0].householdId).toBe(members[1].householdId);
+  });
+
+  it('joins a pre-placed member’s existing household instead of crashing', async () => {
+    const db = await createTestDb();
+    await createLegacyTables(db);
+    await db.insert(profiles).values([
+      { id: ALICE, username: 'Alice', partnerId: BOB },
+      { id: BOB, username: 'Bob', partnerId: ALICE },
+    ]);
+    // Bob signed up via POST /api/household before the migration ran.
+    const [existing] = await db.insert(households).values({ name: 'Existing' }).returning();
+    await db
+      .insert(householdMembers)
+      .values({ householdId: existing.id, userId: BOB, displayName: 'Bob' });
+    await db
+      .insert(weeklyTasks)
+      .values({ userId: ALICE, text: 'Buy milk', done: false, scheduledDate: '2026-09-20', source: 'manual' });
+
+    const summary = await migrateToHousehold(db);
+
+    // No new household is created for the couple; Alice joins Bob's existing one.
+    expect(summary.households).toBe(0);
+    expect(summary.tasks).toBe(1);
+    const members = await db.select().from(householdMembers);
+    expect(members).toHaveLength(2);
+    expect(members.every((m) => m.householdId === existing.id)).toBe(true);
+    const migratedTasks = await db.select().from(tasks);
+    expect(migratedTasks).toHaveLength(1);
+    expect(migratedTasks[0].householdId).toBe(existing.id);
+    // Channels are only created alongside households the migration itself creates.
+    expect(await db.select().from(channels)).toHaveLength(0);
+  });
+
+  it('reports orphan rows in the skipped summary instead of dropping them silently', async () => {
+    const db = await createTestDb();
+    await createLegacyTables(db);
+    await db.insert(profiles).values([{ id: ALICE, username: 'Alice', partnerId: null }]);
+    await db
+      .insert(weeklyTasks)
+      .values({ userId: ALICE, text: 'Kept task', done: false, scheduledDate: '2026-09-20', source: 'manual' });
+    // GONE has no profiles row: these legacy rows are orphans.
+    const [orphanTask] = await db
+      .insert(weeklyTasks)
+      .values({ userId: GONE, text: 'Orphan task', done: false, scheduledDate: '2026-09-20', source: 'manual' })
+      .returning();
+    const [orphanList] = await db
+      .insert(sharedLists)
+      .values({ userId: GONE, name: 'Orphan list', items: [] })
+      .returning();
+    const [orphanEvent] = await db
+      .insert(calendarEvents)
+      .values({
+        userId: GONE,
+        subject: 'Orphan event',
+        startTime: new Date('2026-10-01T09:00:00Z'),
+        endTime: new Date('2026-10-01T10:00:00Z'),
+      })
+      .returning();
+
+    const summary = await migrateToHousehold(db);
+
+    expect(summary.tasks).toBe(1);
+    expect(summary.lists).toBe(0);
+    expect(summary.events).toBe(0);
+    expect(summary.skipped.weeklyTasks).toEqual({ count: 1, ids: [orphanTask.id] });
+    expect(summary.skipped.sharedLists).toEqual({ count: 1, ids: [orphanList.id] });
+    expect(summary.skipped.calendarEvents).toEqual({ count: 1, ids: [orphanEvent.id] });
+    expect(await db.select().from(tasks)).toHaveLength(1);
+    expect(await db.select().from(lists)).toHaveLength(0);
+    expect(await db.select().from(events)).toHaveLength(0);
   });
 });
