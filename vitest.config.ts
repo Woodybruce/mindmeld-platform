@@ -23,6 +23,10 @@ export default defineConfig({
           name: "server",
           environment: "node",
           include: ["server/**/*.test.ts"],
+          // PGlite spins up a fresh in-memory Postgres and replays every
+          // migration in the first test of each file; under parallel load the
+          // 5s default is not enough.
+          testTimeout: 20000,
         },
       },
     ],

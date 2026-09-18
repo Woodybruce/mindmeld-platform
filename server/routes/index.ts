@@ -6,6 +6,7 @@ import { tasksRouter } from './tasks';
 import { listsRouter } from './lists';
 import { eventsRouter } from './events';
 import { schoolsRouter } from './schools';
+import { holidaysRouter } from './holidays';
 import type { Database } from '../db';
 
 // New (Phase 1+) API routers live under this stack: it owns the auth
@@ -25,6 +26,7 @@ export function newApiRouter(db: Database): Router {
   router.use(listsRouter(db));
   router.use(eventsRouter(db));
   router.use(schoolsRouter(db));
+  router.use(holidaysRouter(db));
 
   return router;
 }

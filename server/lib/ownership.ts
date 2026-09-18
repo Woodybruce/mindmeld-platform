@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 // Explicit `/index`: bare `../../shared/schema` resolves to the legacy shared/schema.ts file.
-import { dependents, lists, schools } from '../../shared/schema/index';
+import { dependents, lists, schools, holidays } from '../../shared/schema/index';
 import type { Database } from '../db';
 
 // Ownership checks for FK fields that must stay within the caller's household.
@@ -39,5 +39,17 @@ export async function schoolBelongsToHousehold(
     .select({ id: schools.id })
     .from(schools)
     .where(and(eq(schools.id, schoolId), eq(schools.householdId, householdId)));
+  return row !== undefined;
+}
+
+export async function holidayBelongsToHousehold(
+  db: Database,
+  holidayId: string,
+  householdId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: holidays.id })
+    .from(holidays)
+    .where(and(eq(holidays.id, holidayId), eq(holidays.householdId, householdId)));
   return row !== undefined;
 }
