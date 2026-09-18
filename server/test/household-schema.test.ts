@@ -19,4 +19,14 @@ describe('household schema', () => {
   it('rejects dependent with empty name', () => {
     expect(insertDependentSchema.safeParse({ householdId: 'x', name: '' }).success).toBe(false);
   });
+
+  it('enforces unique household_members.user_id', async () => {
+    const db = await createTestDb();
+    const [h1] = await db.insert(households).values({ name: 'A' }).returning();
+    const [h2] = await db.insert(households).values({ name: 'B' }).returning();
+    await db.insert(householdMembers).values({ householdId: h1.id, userId: 'u1', displayName: 'Alex' });
+    await expect(
+      db.insert(householdMembers).values({ householdId: h2.id, userId: 'u1', displayName: 'Alex' })
+    ).rejects.toThrow();
+  });
 });

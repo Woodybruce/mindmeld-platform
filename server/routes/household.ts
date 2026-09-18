@@ -1,7 +1,5 @@
 import { Router } from 'express';
 import { and, eq } from 'drizzle-orm';
-// drizzle-zod 0.8 emits zod/v4 schemas; all zod usage here must come from zod/v4.
-import { z } from 'zod/v4';
 // Explicit `/index`: bare `../../shared/schema` resolves to the legacy shared/schema.ts file.
 import {
   dependents,
@@ -9,33 +7,14 @@ import {
   householdMembers,
   MAX_HOUSEHOLD_MEMBERS,
 } from '../../shared/schema/index';
+import {
+  createDependentBody,
+  patchDependentBody,
+  postHouseholdBody,
+  uuidParam,
+} from '../../shared/validation/household';
 import { requireHousehold } from '../middleware/household';
 import type { Database } from '../db';
-
-// NOTE: this repo compiles with strictNullChecks off, under which drizzle-zod's
-// BuildSchema conditional types collapse to Record<string, never> at the type
-// level — so request bodies are validated with explicit zod v4 schemas that
-// mirror insertDependentSchema / insertHouseholdSchema from shared/schema.
-const createHouseholdBody = z.object({
-  name: z.string().min(1),
-  displayName: z.string().min(1).optional(),
-});
-const joinHouseholdBody = z.object({
-  householdId: z.uuid(),
-  displayName: z.string().min(1).optional(),
-});
-const postHouseholdBody = z.union([joinHouseholdBody, createHouseholdBody]);
-
-const createDependentBody = z.object({
-  name: z.string().min(1),
-  dateOfBirth: z.iso.date().optional(),
-  yearGroup: z.string().optional(),
-  schoolId: z.uuid().optional(),
-  notes: z.string().optional(),
-});
-const patchDependentBody = createDependentBody.partial();
-
-const uuidParam = z.uuid();
 
 export function householdRouter(db: Database): Router {
   const router = Router();
@@ -44,6 +23,14 @@ export function householdRouter(db: Database): Router {
   router.post('/household', async (req, res) => {
     const userId = req.userId;
     if (!userId) return res.status(401).json({ error: 'unauthenticated' });
+
+    // One household per user (also enforced by a unique constraint on
+    // household_members.user_id as the race-safe backstop).
+    const [existing] = await db
+      .select()
+      .from(householdMembers)
+      .where(eq(householdMembers.userId, userId));
+    if (existing) return res.status(409).json({ error: 'already_in_household' });
 
     const parsed = postHouseholdBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'invalid_body', issues: parsed.error.issues });

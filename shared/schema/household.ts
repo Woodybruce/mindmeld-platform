@@ -12,7 +12,7 @@ export const households = pgTable('households', {
 export const householdMembers = pgTable('household_members', {
   id: uuid('id').defaultRandom().primaryKey(),
   householdId: uuid('household_id').references(() => households.id).notNull(),
-  userId: text('user_id').notNull(),        // Supabase auth user id
+  userId: text('user_id').notNull().unique(), // Supabase auth user id; one household per user
   displayName: text('display_name').notNull(),
   role: text('role').default('adult').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

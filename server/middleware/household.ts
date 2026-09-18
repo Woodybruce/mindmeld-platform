@@ -6,7 +6,6 @@ import type { Database } from '../db';
 
 declare module 'express-serve-static-core' {
   interface Request {
-    userId?: string;
     householdId?: string;
   }
 }

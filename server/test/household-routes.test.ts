@@ -3,6 +3,7 @@ import request from 'supertest';
 import express, { type Express } from 'express';
 import { createTestDb, type TestDb } from './db';
 import { householdRouter } from '../routes/household';
+import { newApiRouter } from '../routes/index';
 
 function createApp(db: TestDb, userId?: string): Express {
   const a = express();
@@ -120,12 +121,53 @@ describe('household routes', () => {
 
   it('does not let one household see another household’s dependents', async () => {
     const db = await createTestDb();
-    const a1 = createApp(db, 'u1');    await request(a1).post('/api/household').send({ name: 'Bruce' });
+    const a1 = createApp(db, 'u1');
+    await request(a1).post('/api/household').send({ name: 'Bruce' });
     await request(a1).post('/api/dependents').send({ name: 'Coco' });
 
     const a2 = createApp(db, 'u2');
     await request(a2).post('/api/household').send({ name: 'Other' });
     const list = await request(a2).get('/api/dependents');
     expect(list.body).toHaveLength(0);
+  });
+
+  it('returns 409 when re-joining a household you already belong to', async () => {
+    const db = await createTestDb();
+    const a = createApp(db, 'u1');
+    const created = await request(a).post('/api/household').send({ name: 'Bruce' });
+    const again = await request(a).post('/api/household').send({ householdId: created.body.id });
+    expect(again.status).toBe(409);
+    expect(again.body.error).toBe('already_in_household');
+  });
+
+  it('returns 409 when joining a different household while already a member', async () => {
+    const db = await createTestDb();
+    const a1 = createApp(db, 'u1');
+    await request(a1).post('/api/household').send({ name: 'Bruce' });
+    const a2 = createApp(db, 'u2');
+    const other = await request(a2).post('/api/household').send({ name: 'Other' });
+    const join = await request(a2).post('/api/household').send({ householdId: other.body.id });
+    expect(join.status).toBe(409);
+    expect(join.body.error).toBe('already_in_household');
+  });
+
+  it('returns 409 when creating a household while already a member', async () => {
+    const db = await createTestDb();
+    const a = createApp(db, 'u1');
+    await request(a).post('/api/household').send({ name: 'Bruce' });
+    const second = await request(a).post('/api/household').send({ name: 'Second' });
+    expect(second.status).toBe(409);
+    expect(second.body.error).toBe('already_in_household');
+  });
+});
+
+describe('newApiRouter', () => {
+  it('applies real auth: unauthenticated request gets 401 without network access', async () => {
+    const db = await createTestDb();
+    const a = express();
+    a.use(express.json());
+    a.use('/api', newApiRouter(db));
+    expect((await request(a).get('/api/dependents')).status).toBe(401);
+    expect((await request(a).post('/api/household').send({ name: 'Bruce' })).status).toBe(401);
   });
 });
