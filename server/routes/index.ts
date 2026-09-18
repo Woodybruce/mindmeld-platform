@@ -7,6 +7,8 @@ import { listsRouter } from './lists';
 import { eventsRouter } from './events';
 import { schoolsRouter } from './schools';
 import { holidaysRouter } from './holidays';
+import { butlerRouter } from './butler';
+import { channelsRouter } from './channels';
 import type { Database } from '../db';
 
 // New (Phase 1+) API routers live under this stack: it owns the auth
@@ -27,6 +29,8 @@ export function newApiRouter(db: Database): Router {
   router.use(eventsRouter(db));
   router.use(schoolsRouter(db));
   router.use(holidaysRouter(db));
+  router.use(butlerRouter(db));
+  router.use(channelsRouter(db));
 
   return router;
 }

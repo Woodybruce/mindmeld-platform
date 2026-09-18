@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
+import { eq } from 'drizzle-orm';
 import { createTestDb, type TestDb } from './db';
 import { householdRouter } from '../routes/household';
 import { newApiRouter } from '../routes/index';
+// Explicit `/index`: bare `../../shared/schema` resolves to the legacy shared/schema.ts file.
+import { channels } from '../../shared/schema/index';
 
 function createApp(db: TestDb, userId?: string): Express {
   const a = express();
@@ -49,6 +52,25 @@ describe('household routes', () => {
     expect(dep.body.householdId).toBe(created.body.id);
     const list = await request(a).get('/api/dependents');
     expect(list.body).toHaveLength(1);
+  });
+
+  it('creates a household-type channel when a household is created, but not when joining one', async () => {
+    const db = await createTestDb();
+    const a1 = createApp(db, 'u1');
+    const created = await request(a1).post('/api/household').send({ name: 'Bruce' });
+    expect(created.status).toBe(201);
+
+    let rows = await db.select().from(channels).where(eq(channels.householdId, created.body.id));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].type).toBe('household');
+
+    const a2 = createApp(db, 'u2');
+    const joined = await request(a2).post('/api/household').send({ householdId: created.body.id });
+    expect(joined.status).toBe(200);
+
+    // Joining does not create a second channel.
+    rows = await db.select().from(channels).where(eq(channels.householdId, created.body.id));
+    expect(rows).toHaveLength(1);
   });
 
   it('rejects empty dependent name', async () => {

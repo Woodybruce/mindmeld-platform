@@ -5,6 +5,7 @@ import {
   dependents,
   households,
   householdMembers,
+  channels,
   MAX_HOUSEHOLD_MEMBERS,
 } from '../../shared/schema/index';
 import {
@@ -58,6 +59,8 @@ export function householdRouter(db: Database): Router {
     await db
       .insert(householdMembers)
       .values({ householdId: household.id, userId, displayName: displayName ?? name });
+    // Every household gets its shared butler channel at creation time.
+    await db.insert(channels).values({ householdId: household.id, type: 'household' });
     return res.status(201).json(household);
   });
 

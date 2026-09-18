@@ -4,3 +4,5 @@ export * from './lists';
 export * from './events';
 export * from './schools';
 export * from './holidays';
+export * from './butler';
+export * from './channels';
