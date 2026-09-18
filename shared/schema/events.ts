@@ -14,5 +14,7 @@ export const events = pgTable('events', {
   dependentId: uuid('dependent_id').references(() => dependents.id),
   source: eventSourceEnum('source').default('manual').notNull(),
   externalId: text('external_id'), // Outlook id for dedupe on sync
+  // Legacy data-migration marker, e.g. 'calendar_events:<legacy id>'; null for native rows.
+  migratedFrom: text('migrated_from'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

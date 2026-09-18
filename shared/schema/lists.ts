@@ -9,6 +9,8 @@ export const lists = pgTable('lists', {
   name: text('name').notNull(),
   type: listTypeEnum('type').default('generic').notNull(),
   aiSuggestable: boolean('ai_suggestable').default(true).notNull(),
+  // Legacy data-migration marker, e.g. 'shared_lists:<legacy id>'; null for native rows.
+  migratedFrom: text('migrated_from'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

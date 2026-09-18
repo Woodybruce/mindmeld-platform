@@ -18,5 +18,7 @@ export const tasks = pgTable('tasks', {
   source: taskSourceEnum('source').default('manual').notNull(),
   status: taskStatusEnum('status').default('todo').notNull(),
   attachments: jsonb('attachments').$type<unknown[]>(),
+  // Legacy data-migration marker, e.g. 'weekly_tasks:<legacy id>'; null for native rows.
+  migratedFrom: text('migrated_from'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
