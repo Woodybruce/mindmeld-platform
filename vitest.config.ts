@@ -28,6 +28,9 @@ export default defineConfig({
           // 5s default is not enough.
           testTimeout: 20000,
         },
+        resolve: {
+          alias: { "@shared": path.resolve(__dirname, "./shared") },
+        },
       },
     ],
   },
