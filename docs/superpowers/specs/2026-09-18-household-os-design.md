@@ -80,6 +80,14 @@ A server-side scheduler (cron) continuously scans tasks, school events, and holi
 
 Quiet hours and per-member notification preferences are configurable; reminders never fire during quiet hours except explicit user-set alarms.
 
+### Email intake (PA inbox)
+
+- Dedicated inbound address on the product domain (`pa@<domain>`), received via Resend Inbound (MX → webhook to `POST /api/butler/inbound-email`).
+- Users forward school newsletters, booking confirmations, bills, appointment letters; the butler parses them (LLM) into diary events, tasks, school records, and amounts/deadlines.
+- Attachments (PDF letters etc.) are stored and text-extracted so the butler can read them.
+- Every processed email posts a summary card into the household chat with links to what was created.
+- Supersedes the legacy `inbound-calendar` edge function, which is retired.
+
 ### Memory
 
 Butler learns household facts over time, stores them in `butler_memory`, and applies them to suggestions. Members can review and delete memories in Settings.
@@ -116,7 +124,7 @@ Study-Buddy-AI contains **no** school-search or application-tracking features �
 |---|---|
 | OpenAI API (GPT-4o class + realtime) | Butler reasoning, tool-calling, content suggestions |
 | Anthropic API (optional) | A/B against OpenAI for butler quality; pick the winner |
-| Resend (or SES) | Transactional email: briefing emails, magic links, school deadline digests |
+| Resend | Outbound transactional email (briefings, digests) **and Inbound** (pa@ inbox → butler webhook); free tier covers household volume |
 | Apple Push / FCM (existing) | Mobile push — already wired |
 | Google Places API | School lookup, address autocomplete, holiday planning |
 | Supabase (existing) | Auth + Realtime only |
