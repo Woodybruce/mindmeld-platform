@@ -4,6 +4,7 @@ import { extractUserId } from '../middleware/auth';
 import { householdRouter } from './household';
 import { tasksRouter } from './tasks';
 import { listsRouter } from './lists';
+import { eventsRouter } from './events';
 import type { Database } from '../db';
 
 // New (Phase 1+) API routers live under this stack: it owns the auth
@@ -21,6 +22,7 @@ export function newApiRouter(db: Database): Router {
   router.use(householdRouter(db));
   router.use(tasksRouter(db));
   router.use(listsRouter(db));
+  router.use(eventsRouter(db));
 
   return router;
 }
