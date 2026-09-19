@@ -10,6 +10,7 @@ import { SpotifyPlayerProvider } from "@/contexts/SpotifyPlayerContext";
 import PersistentSpotifyPlayer from "@/components/PersistentSpotifyPlayer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
+import HomePage from "./pages/HomePage";
 import Us from "./pages/Us";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
@@ -18,6 +19,8 @@ import NotFound from "./pages/NotFound";
 import VibeOverlay from "./components/VibeOverlay";
 import OfflineBanner from "./components/OfflineBanner";
 
+const TasksPage = lazy(() => import("./pages/TasksPage"));
+const DiaryPage = lazy(() => import("./pages/DiaryPage"));
 const Profile = lazy(() => import("./pages/Profile"));
 const KissChasePage = lazy(() => import("./pages/KissChase"));
 const QuizPlay = lazy(() => import("./pages/QuizPlay"));
@@ -72,7 +75,10 @@ const App = () => (
               <ErrorBoundary fallbackTitle="Something went wrong">
               <Suspense fallback={<PageLoader />}>
               <Routes>
-              <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+              <Route path="/" element={<AuthGuard><HomePage /></AuthGuard>} />
+              <Route path="/feed" element={<AuthGuard><Index /></AuthGuard>} />
+              <Route path="/tasks" element={<AuthGuard><TasksPage /></AuthGuard>} />
+              <Route path="/diary" element={<AuthGuard><DiaryPage /></AuthGuard>} />
               <Route path="/us" element={<AuthGuard><Us /></AuthGuard>} />
               <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
               <Route path="/chat" element={<AuthGuard><Chat /></AuthGuard>} />
