@@ -157,7 +157,27 @@ describe('butler proposals API', () => {
     expect((await request(a).post(`/api/butler/proposals/${id}/accept`)).status).toBe(200);
     const again = await request(a).post(`/api/butler/proposals/${id}/accept`);
     expect(again.status).toBe(409);
+    expect(again.body.error).toBe('already_resolved');
+    // Applied row counts are unchanged after the second accept.
     expect(await db.select().from(tasks)).toHaveLength(1);
+    expect(await db.select().from(events)).toHaveLength(1);
+    expect(await db.select().from(butlerMemory)).toHaveLength(1);
+  });
+
+  it('serializes concurrent accepts: exactly one applies, the other gets 409', async () => {
+    const a = createApp(db, 'u1');
+    const id = await seedProposal(db, householdId);
+    const [r1, r2] = await Promise.all([
+      request(a).post(`/api/butler/proposals/${id}/accept`),
+      request(a).post(`/api/butler/proposals/${id}/accept`),
+    ]);
+    expect([r1.status, r2.status].sort()).toEqual([200, 409]);
+    // Claim-first: the loser never applies, so no rows are double-inserted.
+    expect(await db.select().from(tasks)).toHaveLength(1);
+    expect(await db.select().from(events)).toHaveLength(1);
+    expect(await db.select().from(butlerMemory)).toHaveLength(1);
+    const [proposal] = await db.select().from(butlerProposals).where(eq(butlerProposals.id, id));
+    expect(proposal.status).toBe('accepted');
   });
 
   it('dismiss marks the proposal dismissed and blocks later accept/dismiss', async () => {

@@ -1,4 +1,3 @@
-import { and, eq } from 'drizzle-orm';
 // Explicit `/index`: bare `../../shared/schema` resolves to the legacy shared/schema.ts file.
 import { butlerMemory, events, tasks } from '../../shared/schema/index';
 import type { ButlerAction } from '../../shared/validation/proposals';
@@ -44,29 +43,18 @@ export async function applyActions(
         counts.events += 1;
         break;
       }
-      case 'remember': {
-        const where = and(
-          eq(butlerMemory.householdId, householdId),
-          eq(butlerMemory.key, action.key),
-        );
-        const [existing] = await db.select({ id: butlerMemory.id }).from(butlerMemory).where(where);
-        if (existing) {
-          await db.update(butlerMemory).set({ value: action.value }).where(eq(butlerMemory.id, existing.id));
-        } else {
-          // butler_memory_household_key_unique is the race-safe backstop for a
-          // concurrent insert of the same key.
-          await db
-            .insert(butlerMemory)
-            .values({ householdId, key: action.key, value: action.value, provenance: 'email' })
-            .catch(async (err: unknown) => {
-              const cause = String((err as { cause?: unknown }).cause ?? err);
-              if (!/butler_memory_household_key_unique|duplicate key/.test(cause)) throw err;
-              await db.update(butlerMemory).set({ value: action.value }).where(where);
-            });
-        }
+      case 'remember':
+        // One row per (householdId, key), enforced by
+        // butler_memory_household_key_unique; conflicts upsert in place.
+        await db
+          .insert(butlerMemory)
+          .values({ householdId, key: action.key, value: action.value, provenance: 'email' })
+          .onConflictDoUpdate({
+            target: [butlerMemory.householdId, butlerMemory.key],
+            set: { value: action.value, provenance: 'email' },
+          });
         counts.memories += 1;
         break;
-      }
     }
   }
   return counts;
