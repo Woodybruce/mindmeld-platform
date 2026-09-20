@@ -56,7 +56,7 @@ function londonOffsetMs(at: Date): number {
 }
 
 // Today's date and UTC bounds of the London day containing `now`.
-function londonToday(now = new Date()): { date: string; start: Date; end: Date } {
+export function londonToday(now = new Date()): { date: string; start: Date; end: Date } {
   const p = londonParts(now);
   const date = `${p.year}-${p.month}-${p.day}`;
   const midnightUtc = Date.UTC(+p.year, +p.month - 1, +p.day);
@@ -65,7 +65,16 @@ function londonToday(now = new Date()): { date: string; start: Date; end: Date }
   return { date, start, end };
 }
 
-function londonTime(at: Date): string {
+// London wall-clock date and minutes since midnight at `now`.
+export function londonClock(now = new Date()): { date: string; minutesSinceMidnight: number } {
+  const p = londonParts(now);
+  return {
+    date: `${p.year}-${p.month}-${p.day}`,
+    minutesSinceMidnight: +p.hour * 60 + +p.minute,
+  };
+}
+
+export function londonTime(at: Date): string {
   return new Intl.DateTimeFormat('en-GB', {
     timeZone: LONDON,
     hour: '2-digit',

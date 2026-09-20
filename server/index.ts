@@ -5,6 +5,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
+import { db } from "./db";
+import { startButlerScheduler } from "./lib/butler-scheduler";
 
 process.on('uncaughtException', (err) => {
   if (err.message?.includes('terminating connection due to administrator command')) {
@@ -132,6 +134,10 @@ async function initStripe() {
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
+
+  const stopButlerScheduler = startButlerScheduler(db);
+  process.on("SIGTERM", stopButlerScheduler);
+  process.on("SIGINT", stopButlerScheduler);
 
   initStripe().then(() => {
     setTimeout(() => {
