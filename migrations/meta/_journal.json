@@ -71,6 +71,13 @@
       "when": 1789921253020,
       "tag": "0009_clear_garia",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789923047670,
+      "tag": "0010_colossal_scarecrow",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "channels_one_household_channel" ON "channels" USING btree ("household_id") WHERE "channels"."type" = 'household';

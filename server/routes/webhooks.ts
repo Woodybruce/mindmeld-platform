@@ -26,8 +26,14 @@ async function householdChannelId(db: Database, householdId: string): Promise<st
     .from(channels)
     .where(and(eq(channels.householdId, householdId), eq(channels.type, 'household')));
   if (existing) return existing.id;
-  const [created] = await db.insert(channels).values({ householdId, type: 'household' }).returning();
-  return created.id;
+  // Race-safe against concurrent Resend deliveries: the partial unique index
+  // channels_one_household_channel lets at most one of the inserts win.
+  await db.insert(channels).values({ householdId, type: 'household' }).onConflictDoNothing();
+  const [channel] = await db
+    .select()
+    .from(channels)
+    .where(and(eq(channels.householdId, householdId), eq(channels.type, 'household')));
+  return channel.id;
 }
 
 async function postButlerMessage(db: Database, householdId: string, body: string): Promise<void> {

@@ -178,4 +178,53 @@ describe('POST /api/webhooks/resend', () => {
     expect(res.body).toEqual({ error: 'butler_not_configured' });
     expect(await db.select().from(butlerProposals)).toHaveLength(0);
   });
+
+  it('creates exactly one household channel under concurrent deliveries', async () => {
+    const a = app(db);
+    const [r1, r2] = await Promise.all(
+      ['em_a', 'em_b'].map((id) => {
+        const body = receivedEvent(id);
+        return post(a, body, signedHeaders(body));
+      }),
+    );
+    expect(r1.status).toBe(200);
+    expect(r2.status).toBe(200);
+
+    const chans = await db
+      .select()
+      .from(channels)
+      .where(eq(channels.householdId, householdId));
+    const householdChannels = chans.filter((c) => c.type === 'household');
+    expect(householdChannels).toHaveLength(1);
+
+    // Both butler messages land in that single channel.
+    const messages = await db
+      .select()
+      .from(channelMessages)
+      .where(eq(channelMessages.channelId, householdChannels[0].id));
+    expect(messages).toHaveLength(2);
+    expect(messages.every((m) => m.senderUserId === null)).toBe(true);
+  });
+
+  it('enforces one household channel per household at the database level', async () => {
+    // The partial unique index is the backstop for the webhook's
+    // select-then-insert under concurrent Resend retries.
+    await db.insert(channels).values({ householdId, type: 'household' });
+    const dup = await db
+      .insert(channels)
+      .values({ householdId, type: 'household' })
+      .then(() => null)
+      .catch((err: unknown) => err);
+    // drizzle wraps the driver error; the unique violation is on the cause.
+    expect(dup).toBeTruthy();
+    expect(String((dup as { cause?: unknown }).cause)).toMatch(
+      /channels_one_household_channel|duplicate key/,
+    );
+
+    // 'dm' channels are intentionally unconstrained.
+    await db.insert(channels).values({ householdId, type: 'dm' });
+    await db.insert(channels).values({ householdId, type: 'dm' });
+    const all = await db.select().from(channels).where(eq(channels.householdId, householdId));
+    expect(all).toHaveLength(3);
+  });
 });
