@@ -47,6 +47,10 @@ app.post(
   }
 );
 
+// Svix signs the raw request bytes, so the Resend webhook must see the Buffer
+// body — mount express.raw for this path before express.json(), like Stripe.
+app.use('/api/webhooks', express.raw({ type: 'application/json' }));
+
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: false, limit: "5mb" }));
 
