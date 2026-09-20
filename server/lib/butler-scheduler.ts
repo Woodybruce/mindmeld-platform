@@ -128,9 +128,12 @@ export async function runSchedulerTick(db: Database, now = new Date()): Promise<
 export function startButlerScheduler(db: Database, opts: SchedulerOptions = {}): () => void {
   const intervalMs = opts.intervalMs ?? 60_000;
   const now = opts.now ?? (() => new Date());
-  void runSchedulerTick(db, now());
-  const handle = setInterval(() => {
-    void runSchedulerTick(db, now());
-  }, intervalMs);
+  const tick = () => {
+    runSchedulerTick(db, now()).catch((err: unknown) =>
+      console.error('butler scheduler tick failed', err),
+    );
+  };
+  tick();
+  const handle = setInterval(tick, intervalMs);
   return () => clearInterval(handle);
 }

@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { createTestDb, type TestDb } from './db';
 import { runSchedulerTick } from '../lib/butler-scheduler';
+import { postButlerMessage } from '../lib/butler-message';
 import {
   butlerProposals,
   channelMessages,
@@ -11,6 +12,12 @@ import {
   households,
   tasks,
 } from '../../shared/schema/index';
+
+// Passthrough by default; the isolation test overrides per household.
+vi.mock('../lib/butler-message', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../lib/butler-message')>();
+  return { ...original, postButlerMessage: vi.fn(original.postButlerMessage) };
+});
 
 // 2026-09-20 is BST (UTC+1): 07:00:30 UTC = 08:00:30 London, inside the
 // 08:00–08:02 briefing window.
@@ -128,5 +135,36 @@ describe('runSchedulerTick', () => {
     expect(bodiesA).toHaveLength(1);
     expect(bodiesB).toHaveLength(1);
     expect(bodiesA[0]).toContain('Morning');
+  });
+
+  it('isolates a failing household: the other still gets its briefing and nothing escapes', async () => {
+    const bad = await seedHousehold(db, 'Bad');
+    const good = await seedHousehold(db, 'Good');
+
+    const mockedPost = vi.mocked(postButlerMessage);
+    const original = mockedPost.getMockImplementation()!;
+    mockedPost.mockImplementation(async (d, householdId, body) => {
+      if (householdId === bad) throw new Error('db blip');
+      return original(d, householdId, body);
+    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let tickThrew = true;
+    let errored = false;
+    try {
+      await runSchedulerTick(db, BRIEFING_NOW);
+      tickThrew = false;
+      errored = errorSpy.mock.calls.length > 0;
+    } finally {
+      mockedPost.mockImplementation(original);
+      errorSpy.mockRestore();
+    }
+
+    expect(tickThrew).toBe(false);
+    expect(errored).toBe(true);
+
+    expect(await butlerBodies(db, bad)).toHaveLength(0);
+    const goodBodies = await butlerBodies(db, good);
+    expect(goodBodies).toHaveLength(1);
+    expect(goodBodies[0]).toContain('Morning');
   });
 });
