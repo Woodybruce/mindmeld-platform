@@ -6,6 +6,7 @@ import { insertChannelMessageSchema } from '../../shared/validation/butler';
 import { uuidParam } from '../../shared/validation/household';
 import { requireHousehold } from '../middleware/household';
 import { channelBelongsToHousehold } from '../lib/ownership';
+import { isButlerAddressed, respondToButler } from '../lib/butler-chat';
 import type { Database } from '../db';
 
 export function channelsRouter(db: Database): Router {
@@ -88,6 +89,15 @@ export function channelsRouter(db: Database): Router {
         imageUrl: parsed.data.imageUrl,
       })
       .returning();
+    // Fire-and-forget: the reply (if the butler is addressed) appears on the
+    // client's next poll; respondToButler never throws.
+    if (senderUserId !== null && isButlerAddressed(parsed.data.body)) {
+      const householdId = req.householdId!;
+      const userText = parsed.data.body;
+      setImmediate(() => {
+        void respondToButler(db, householdId, userText);
+      });
+    }
     return res.status(201).json(created);
   });
 
