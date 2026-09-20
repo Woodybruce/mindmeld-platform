@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, timestamp, jsonb, uniqueIndex, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { households } from './household';
 
@@ -23,5 +23,9 @@ export const channelMessages = pgTable('channel_messages', {
   channelId: uuid('channel_id').references(() => channels.id).notNull(),
   senderUserId: text('sender_user_id'), // null = the butler
   body: text('body').notNull(),
+  replyToId: uuid('reply_to_id').references((): AnyPgColumn => channelMessages.id),
+  messageType: text('message_type').default('text').notNull(),
+  imageUrl: text('image_url'),
+  readBy: jsonb('read_by').$type<string[]>().default([]).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
