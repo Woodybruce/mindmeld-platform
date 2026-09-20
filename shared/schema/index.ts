@@ -6,3 +6,4 @@ export * from './schools';
 export * from './holidays';
 export * from './butler';
 export * from './channels';
+export * from './proposals';
