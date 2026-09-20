@@ -12,8 +12,12 @@ export const insertButlerMemorySchema = z.object({
 });
 
 // senderUserId null (or omitted) = a butler message; a non-null sender must
-// match the authenticated user (enforced in the route, not here).
+// match the authenticated user (enforced in the route, not here). The
+// messageType/imageUrl cross-field rules are enforced in the route.
 export const insertChannelMessageSchema = z.object({
   senderUserId: z.string().min(1).nullable().optional(),
   body: z.string().min(1),
+  replyToId: z.uuid().optional(),
+  messageType: z.enum(['text', 'image']).optional(),
+  imageUrl: z.url().optional(),
 });

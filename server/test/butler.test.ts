@@ -28,7 +28,7 @@ describe('butler memory + channels routes', () => {
     expect(mem.status).toBe(201);
     // household channel auto-created with household
     const channels = await request(a).get('/api/channels');
-    const householdChannel = channels.body.find((c: { type: string }) => c.type === 'household');
+    const householdChannel = channels.body.channels.find((c: { type: string }) => c.type === 'household');
     expect(householdChannel).toBeTruthy();
     const msg = await request(a).post(`/api/channels/${householdChannel.id}/messages`)
       .send({ senderUserId: null, body: 'Morning briefing: 2 tasks today.' });
@@ -86,7 +86,7 @@ describe('butler memory + channels routes', () => {
     expect((await request(a).post('/api/butler/memory').send({ key: 'k' })).status).toBe(400);
 
     const channels = await request(a).get('/api/channels');
-    const channelId = channels.body[0].id;
+    const channelId = channels.body.channels[0].id;
     expect((await request(a).post(`/api/channels/${channelId}/messages`).send({})).status).toBe(400);
     expect((await request(a).post(`/api/channels/${channelId}/messages`).send({ body: '' })).status).toBe(400);
   });
@@ -96,7 +96,7 @@ describe('butler memory + channels routes', () => {
     const a = app(db, 'u1');
     await request(a).post('/api/household').send({ name: 'Bruce' });
     const channels = await request(a).get('/api/channels');
-    const channelId = channels.body[0].id;
+    const channelId = channels.body.channels[0].id;
 
     const forged = await request(a).post(`/api/channels/${channelId}/messages`)
       .send({ senderUserId: 'u2', body: 'I am not u2' });
@@ -116,7 +116,7 @@ describe('butler memory + channels routes', () => {
     const a1 = app(db, 'u1');
     await request(a1).post('/api/household').send({ name: 'Bruce' });
     const channels = await request(a1).get('/api/channels');
-    const channelId = channels.body[0].id;
+    const channelId = channels.body.channels[0].id;
 
     const a2 = app(db, 'u2');
     await request(a2).post('/api/household').send({ name: 'Other' });
@@ -126,8 +126,8 @@ describe('butler memory + channels routes', () => {
 
     // The other household sees only its own channel.
     const own = await request(a2).get('/api/channels');
-    expect(own.body).toHaveLength(1);
-    expect(own.body[0].id).not.toBe(channelId);
+    expect(own.body.channels).toHaveLength(1);
+    expect(own.body.channels[0].id).not.toBe(channelId);
 
     expect((await request(a1).get('/api/channels/not-a-uuid/messages')).status).toBe(400);
     expect((await request(a1).post('/api/channels/not-a-uuid/messages')
@@ -147,9 +147,9 @@ describe('butler memory + channels routes', () => {
     // Both members see the same single auto-created household channel.
     const c1 = await request(a1).get('/api/channels');
     const c2 = await request(a2).get('/api/channels');
-    expect(c1.body).toHaveLength(1);
-    expect(c1.body[0].type).toBe('household');
-    expect(c2.body).toEqual(c1.body);
+    expect(c1.body.channels).toHaveLength(1);
+    expect(c1.body.channels[0].type).toBe('household');
+    expect(c2.body.channels).toEqual(c1.body.channels);
   });
 
   it('rejects unauthenticated requests with 401 and no-household with 403', async () => {

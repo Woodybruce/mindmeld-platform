@@ -5,8 +5,18 @@ import { butlerProposals } from '../../shared/schema/index';
 import { proposalPayloadSchema, proposalStatusSchema } from '../../shared/validation/proposals';
 import { uuidParam } from '../../shared/validation/household';
 import { requireHousehold } from '../middleware/household';
-import { applyActions } from '../lib/butler-apply';
+import { applyActions, type ApplyCounts } from '../lib/butler-apply';
+import { postButlerMessage } from '../lib/butler-message';
 import type { Database } from '../db';
+
+function acceptConfirmationBody(counts: ApplyCounts): string {
+  const parts: string[] = [];
+  if (counts.tasks > 0) parts.push(`${counts.tasks} task${counts.tasks === 1 ? '' : 's'}`);
+  if (counts.events > 0) parts.push(`${counts.events} event${counts.events === 1 ? '' : 's'}`);
+  if (counts.memories > 0) parts.push(`${counts.memories} ${counts.memories === 1 ? 'memory' : 'memories'}`);
+  if (parts.length === 0) return 'Done — accepted, nothing new to add. ✅';
+  return `Done — added ${parts.join(', ')}. ✅`;
+}
 
 export function proposalsRouter(db: Database): Router {
   const router = Router();
@@ -72,6 +82,15 @@ export function proposalsRouter(db: Database): Router {
       if (!existing) return res.status(404).json({ error: 'not_found' });
       return res.status(409).json({ error: 'already_resolved' });
     }
+    // Fire-and-forget butler confirmation in the household channel; it must
+    // never delay or break the accept response.
+    const householdId = req.householdId!;
+    const counts = result.applied;
+    setImmediate(() => {
+      postButlerMessage(db, householdId, acceptConfirmationBody(counts)).catch((err: unknown) =>
+        console.error('butler accept confirmation failed', err),
+      );
+    });
     return res.json({ proposal: result.claimed, applied: result.applied });
   });
 
