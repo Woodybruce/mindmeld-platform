@@ -3,14 +3,35 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
-    environment: "jsdom",
-    globals: true,
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
-  },
-  resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    projects: [
+      {
+        plugins: [react()],
+        test: {
+          name: "client",
+          environment: "jsdom",
+          globals: true,
+          setupFiles: ["./src/test/setup.ts"],
+          include: ["src/**/*.{test,spec}.{ts,tsx}"],
+        },
+        resolve: {
+          alias: { "@": path.resolve(__dirname, "./src") },
+        },
+      },
+      {
+        test: {
+          name: "server",
+          environment: "node",
+          include: ["server/**/*.test.ts"],
+          // PGlite spins up a fresh in-memory Postgres and replays every
+          // migration in the first test of each file; under parallel load the
+          // 5s default is not enough.
+          testTimeout: 20000,
+        },
+        resolve: {
+          alias: { "@shared": path.resolve(__dirname, "./shared") },
+        },
+      },
+    ],
   },
 });

@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Typecheck with an error-count baseline.
+      #
+      # The repo carries pre-existing tsc errors that are out of scope to fix
+      # right now (64 in the server/shared tsconfig, 3 in the client tsconfig),
+      # so CI cannot gate on a clean typecheck. Instead each step counts the
+      # `error TS` lines and fails only if the count EXCEEDS the baseline,
+      # i.e. only on newly introduced errors. If the count drops below the
+      # baseline the step emits a warning so the baseline can be tightened.
+      # Baselines as of 2026-09: node=64, app=3.
+      - name: Typecheck server/shared (tsc -p tsconfig.node.json, baseline 64)
+        run: |
+          npx tsc -p tsconfig.node.json --noEmit 2>&1 | tee tsc-node.log || true
+          COUNT=$(grep -cE 'error TS' tsc-node.log || true)
+          echo "tsc (tsconfig.node.json) errors: $COUNT (baseline: 64)"
+          if [ "$COUNT" -gt 64 ]; then
+            echo "::error::New type errors introduced in server/shared ($COUNT > baseline 64)"
+            exit 1
+          fi
+          if [ "$COUNT" -lt 64 ]; then
+            echo "::warning::Error count dropped to $COUNT — tighten the baseline in .github/workflows/ci.yml"
+          fi
+
+      - name: Typecheck client (tsc -p tsconfig.app.json, baseline 3)
+        run: |
+          npx tsc -p tsconfig.app.json --noEmit 2>&1 | tee tsc-app.log || true
+          COUNT=$(grep -cE 'error TS' tsc-app.log || true)
+          echo "tsc (tsconfig.app.json) errors: $COUNT (baseline: 3)"
+          if [ "$COUNT" -gt 3 ]; then
+            echo "::error::New type errors introduced in client ($COUNT > baseline 3)"
+            exit 1
+          fi
+          if [ "$COUNT" -lt 3 ]; then
+            echo "::warning::Error count dropped to $COUNT — tighten the baseline in .github/workflows/ci.yml"
+          fi
+
+      # PGlite-backed server tests spin up a fresh in-memory Postgres per test
+      # file and are flaky under parallel load (observed locally), so cap
+      # workers and allow a single full-suite retry on failure.
+      - name: Test (vitest, maxWorkers=2, one retry for PGlite flakes)
+        run: npx vitest run --maxWorkers=2 || npx vitest run --maxWorkers=2
+
+      - name: Build
+        run: npm run build

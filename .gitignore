@@ -28,8 +28,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Drizzle
-migrations
+# Drizzle migrations are tracked (drizzle.config.ts out: ./migrations)
 
 # Build artifacts
 *.cjs
+
+.worktrees/
+.superpowers/

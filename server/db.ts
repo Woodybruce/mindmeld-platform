@@ -1,6 +1,11 @@
 import { drizzle } from "drizzle-orm/node-postgres";
+import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import pg from "pg";
 import * as schema from "@shared/schema";
+
+// Driver-agnostic drizzle database type: satisfied by both the production
+// node-postgres db below and the PGlite db used in tests.
+export type Database = PgDatabase<PgQueryResultHKT, Record<string, unknown>>;
 
 const { Pool } = pg;
 
