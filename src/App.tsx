@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import HomePage from "./pages/HomePage";
 import Us from "./pages/Us";
 import Chat from "./pages/Chat";
+import ChatPage from "./pages/ChatPage";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
@@ -81,7 +82,8 @@ const App = () => (
               <Route path="/diary" element={<AuthGuard><DiaryPage /></AuthGuard>} />
               <Route path="/us" element={<AuthGuard><Us /></AuthGuard>} />
               <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-              <Route path="/chat" element={<AuthGuard><Chat /></AuthGuard>} />
+              <Route path="/chat" element={<AuthGuard><ChatPage /></AuthGuard>} />
+              <Route path="/chat-legacy" element={<AuthGuard><Chat /></AuthGuard>} />
               <Route path="/kiss-chase" element={<AuthGuard><KissChasePage /></AuthGuard>} />
               <Route path="/quiz/:quizId" element={<AuthGuard><QuizPlay /></AuthGuard>} />
               <Route path="/checklist-quiz/:quizId" element={<AuthGuard><ChecklistQuizPlay /></AuthGuard>} />
