@@ -3,6 +3,7 @@ import { format, startOfDay, addDays } from "date-fns";
 import { CalendarDays, ListChecks } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import AppHeader from "@/components/AppHeader";
+import ButlerInboxCard from "@/components/ButlerInboxCard";
 import { fetchEvents, fetchTasks } from "@/lib/household";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -30,6 +31,8 @@ const HomePage = () => {
       <AppHeader subtitle="Your day at a glance" />
 
       <div className="px-4 py-4 space-y-6">
+        <ButlerInboxCard />
+
         <section aria-labelledby="home-diary-heading">
           <div className="flex items-center gap-2 mb-3">
             <CalendarDays className="w-4 h-4 text-primary" />

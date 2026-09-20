@@ -8,6 +8,7 @@ import { registerChatRoutes } from "./routes/legacy/chat";
 import { registerAiRoutes } from "./routes/legacy/ai";
 import { registerCalendarRoutes } from "./routes/legacy/calendar";
 import { registerShopRoutes } from "./routes/legacy/shop";
+import { webhooksRouter } from "./routes/webhooks";
 
 // extractUserId moved to ./middleware/auth (Phase 1 router stack owns auth);
 // re-exported here to keep the existing import contract.
@@ -52,6 +53,10 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Phase 1+ API router stack: owns its own auth middleware and mounts the
   // household (and future) routers. Legacy routes below are unaffected.
   app.use("/api", newApiRouter(db));
+
+  // Unauthenticated but svix-signed; raw body is set up in server/index.ts
+  // before express.json().
+  app.use("/api/webhooks", webhooksRouter(db));
 
   // Legacy route modules (pre-Phase-1 endpoints). Paths and per-route
   // auth behavior are unchanged; each module registers the exact handlers
