@@ -45,20 +45,26 @@ export function proposalsRouter(db: Database): Router {
     if (proposal.status !== 'pending') return res.status(409).json({ error: 'already_resolved' });
     const parsed = proposalPayloadSchema.safeParse(proposal.payload);
     if (!parsed.success) return res.status(409).json({ error: 'invalid_payload' });
-    // Conditional claim: the status='pending' guard makes concurrent accepts
-    // safe — exactly one wins the claim and applies the actions.
-    const [claimed] = await db
-      .update(butlerProposals)
-      .set({ status: 'accepted', resolvedAt: new Date() })
-      .where(
-        and(
-          eq(butlerProposals.id, id.data),
-          eq(butlerProposals.householdId, req.householdId!),
-          eq(butlerProposals.status, 'pending'),
-        ),
-      )
-      .returning();
-    if (!claimed) {
+    // Claim + apply in one transaction: a mid-apply failure rolls back the
+    // claim, leaving the proposal pending and retryable. The status='pending'
+    // guard keeps concurrent accepts safe — exactly one wins the claim.
+    const result = await db.transaction(async (tx) => {
+      const [claimed] = await tx
+        .update(butlerProposals)
+        .set({ status: 'accepted', resolvedAt: new Date() })
+        .where(
+          and(
+            eq(butlerProposals.id, id.data),
+            eq(butlerProposals.householdId, req.householdId!),
+            eq(butlerProposals.status, 'pending'),
+          ),
+        )
+        .returning();
+      if (!claimed) return null;
+      const applied = await applyActions(tx, req.householdId!, parsed.data.actions);
+      return { claimed, applied };
+    });
+    if (!result) {
       const [existing] = await db
         .select({ id: butlerProposals.id })
         .from(butlerProposals)
@@ -66,8 +72,7 @@ export function proposalsRouter(db: Database): Router {
       if (!existing) return res.status(404).json({ error: 'not_found' });
       return res.status(409).json({ error: 'already_resolved' });
     }
-    const applied = await applyActions(db, req.householdId!, parsed.data.actions);
-    return res.json({ proposal: claimed, applied });
+    return res.json({ proposal: result.claimed, applied: result.applied });
   });
 
   router.post('/butler/proposals/:id/dismiss', guard, async (req, res) => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
 import { and, eq } from 'drizzle-orm';
@@ -13,6 +13,18 @@ import {
   tasks,
 } from '../../shared/schema/index';
 import type { ProposalPayload } from '../../shared/validation/proposals';
+
+// One test forces applyActions to throw mid-accept; the flag defaults off so
+// every other test in this file uses the real implementation.
+const applyControl = vi.hoisted(() => ({ fail: false }));
+vi.mock('../lib/butler-apply', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../lib/butler-apply')>();
+  return {
+    ...original,
+    applyActions: (...args: Parameters<typeof original.applyActions>) =>
+      applyControl.fail ? Promise.reject(new Error('apply exploded')) : original.applyActions(...args),
+  };
+});
 
 const PAYLOAD: ProposalPayload = {
   summary: 'School trip payment due Friday',
@@ -224,6 +236,33 @@ describe('butler proposals API', () => {
     expect(await db.select().from(tasks)).toHaveLength(0);
     expect(await db.select().from(events)).toHaveLength(0);
     expect(await db.select().from(butlerMemory)).toHaveLength(0);
+  });
+
+  it('rolls back the claim when apply fails: 500, proposal stays pending, zero partial rows', async () => {
+    const a = createApp(db, 'u1');
+    const id = await seedProposal(db, householdId);
+    applyControl.fail = true;
+    let res: request.Response;
+    try {
+      res = await request(a).post(`/api/butler/proposals/${id}/accept`);
+    } finally {
+      applyControl.fail = false;
+    }
+    expect(res!.status).toBe(500);
+
+    // The claim was rolled back with the failed apply, so the proposal is
+    // retryable and nothing was partially applied.
+    const [proposal] = await db.select().from(butlerProposals).where(eq(butlerProposals.id, id));
+    expect(proposal.status).toBe('pending');
+    expect(proposal.resolvedAt).toBeNull();
+    expect(await db.select().from(tasks)).toHaveLength(0);
+    expect(await db.select().from(events)).toHaveLength(0);
+    expect(await db.select().from(butlerMemory)).toHaveLength(0);
+
+    // And a retry succeeds.
+    const retry = await request(a).post(`/api/butler/proposals/${id}/accept`);
+    expect(retry.status).toBe(200);
+    expect(retry.body.applied).toEqual({ tasks: 1, events: 1, memories: 1 });
   });
 
   it('returns 400 for a non-uuid proposal id', async () => {

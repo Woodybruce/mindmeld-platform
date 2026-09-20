@@ -3,6 +3,9 @@ import { butlerMemory, events, tasks } from '../../shared/schema/index';
 import type { ButlerAction } from '../../shared/validation/proposals';
 import type { Database } from '../db';
 
+// Drizzle transaction handle (same pattern as server/migrations-data/001-to-household.ts).
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+
 export interface ApplyCounts {
   tasks: number;
   events: number;
@@ -10,7 +13,7 @@ export interface ApplyCounts {
 }
 
 export async function applyActions(
-  db: Database,
+  db: Database | Tx,
   householdId: string,
   actions: ButlerAction[],
 ): Promise<ApplyCounts> {
