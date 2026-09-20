@@ -35,8 +35,18 @@ export function proposalsRouter(db: Database): Router {
   router.post('/butler/proposals/:id/accept', guard, async (req, res) => {
     const id = uuidParam.safeParse(req.params.id);
     if (!id.success) return res.status(400).json({ error: 'invalid_id' });
-    // Claim-first: the status='pending' guard in the UPDATE makes concurrent
-    // accepts safe — exactly one wins the claim and applies the actions.
+    // Validate before mutating: the payload is immutable, so parsing it before
+    // the claim is race-safe, and an unparseable payload never gets claimed.
+    const [proposal] = await db
+      .select()
+      .from(butlerProposals)
+      .where(and(eq(butlerProposals.id, id.data), eq(butlerProposals.householdId, req.householdId!)));
+    if (!proposal) return res.status(404).json({ error: 'not_found' });
+    if (proposal.status !== 'pending') return res.status(409).json({ error: 'already_resolved' });
+    const parsed = proposalPayloadSchema.safeParse(proposal.payload);
+    if (!parsed.success) return res.status(409).json({ error: 'invalid_payload' });
+    // Conditional claim: the status='pending' guard makes concurrent accepts
+    // safe — exactly one wins the claim and applies the actions.
     const [claimed] = await db
       .update(butlerProposals)
       .set({ status: 'accepted', resolvedAt: new Date() })
@@ -56,8 +66,6 @@ export function proposalsRouter(db: Database): Router {
       if (!existing) return res.status(404).json({ error: 'not_found' });
       return res.status(409).json({ error: 'already_resolved' });
     }
-    const parsed = proposalPayloadSchema.safeParse(claimed.payload);
-    if (!parsed.success) return res.status(409).json({ error: 'invalid_payload' });
     const applied = await applyActions(db, req.householdId!, parsed.data.actions);
     return res.json({ proposal: claimed, applied });
   });

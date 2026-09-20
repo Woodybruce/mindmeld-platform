@@ -51,7 +51,7 @@ export async function applyActions(
           .values({ householdId, key: action.key, value: action.value, provenance: 'email' })
           .onConflictDoUpdate({
             target: [butlerMemory.householdId, butlerMemory.key],
-            set: { value: action.value, provenance: 'email' },
+            set: { value: action.value },
           });
         counts.memories += 1;
         break;

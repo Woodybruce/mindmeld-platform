@@ -207,6 +207,25 @@ describe('butler proposals API', () => {
     expect(proposal.status).toBe('pending');
   });
 
+  it('returns 409 invalid_payload without mutating the proposal', async () => {
+    const a = createApp(db, 'u1');
+    const id = await seedProposal(db, householdId, {
+      payload: { summary: 'broken', actions: [{ type: 'explode' }] },
+    });
+
+    const res = await request(a).post(`/api/butler/proposals/${id}/accept`);
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('invalid_payload');
+
+    // Nothing claimed, nothing applied: the row is still pending and unresolved.
+    const [proposal] = await db.select().from(butlerProposals).where(eq(butlerProposals.id, id));
+    expect(proposal.status).toBe('pending');
+    expect(proposal.resolvedAt).toBeNull();
+    expect(await db.select().from(tasks)).toHaveLength(0);
+    expect(await db.select().from(events)).toHaveLength(0);
+    expect(await db.select().from(butlerMemory)).toHaveLength(0);
+  });
+
   it('returns 400 for a non-uuid proposal id', async () => {
     const a = createApp(db, 'u1');
     expect((await request(a).post('/api/butler/proposals/not-a-uuid/accept')).status).toBe(400);
