@@ -1,12 +1,13 @@
-import { Home, Heart, MessageCircle, ListChecks, CalendarDays } from "lucide-react";
+import { Home, Heart, MessageCircle, Users } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
+// Tasks and Diary left the tab bar in Phase 6 — both pages still work and are
+// linked from the Family page.
 const tabs = [
   { id: "home", label: "Today", icon: Home, path: "/" },
   { id: "chat", label: "Chat", icon: MessageCircle, path: "/chat" },
-  { id: "tasks", label: "Tasks", icon: ListChecks, path: "/tasks" },
-  { id: "diary", label: "Diary", icon: CalendarDays, path: "/diary" },
+  { id: "family", label: "Family", icon: Users, path: "/family" },
   { id: "us", label: "Us", icon: Heart, path: "/us" },
 ];
 
