@@ -19,6 +19,14 @@ import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 import VibeOverlay from "./components/VibeOverlay";
 import OfflineBanner from "./components/OfflineBanner";
+import { usePushNotifications } from "./hooks/usePushNotifications";
+
+// Registers web/native push for the signed-in user from any page (previously
+// only mounted on /feed).
+const PushRegistration = () => {
+  usePushNotifications();
+  return null;
+};
 
 const TasksPage = lazy(() => import("./pages/TasksPage"));
 const DiaryPage = lazy(() => import("./pages/DiaryPage"));
@@ -70,6 +78,7 @@ const App = () => (
           <Sonner />
           <VibeOverlay />
           <OfflineBanner />
+          <PushRegistration />
           <SpotifyPlayerProvider>
             <BrowserRouter>
               <PersistentSpotifyPlayer />

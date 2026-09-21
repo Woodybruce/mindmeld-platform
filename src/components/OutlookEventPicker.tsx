@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface OutlookEvent {
+  id?: string | null;
   subject: string;
   start_time: string;
   end_time: string;

@@ -1,9 +1,13 @@
 import type { Express, Request, Response } from "express";
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
+import { db as defaultDb, type Database } from "../../db";
+import { bridgeOutlookEvents, householdIdForUser } from "../../lib/outlook-bridge";
 
 // Legacy calendar routes: Microsoft/Outlook OAuth + sync and inbound
-// ICS forwarding. Moved verbatim from server/routes.ts (Task 10).
+// ICS forwarding. Moved verbatim from server/routes.ts (Task 10). Both write
+// paths also bridge into the butler-era `events` table (deduped by
+// external_id) so the butler can see the family calendar.
 
 function parseIcs(icsText: string) {
   const events: Array<{
@@ -12,6 +16,7 @@ function parseIcs(icsText: string) {
     end: string;
     isAllDay: boolean;
     location?: string;
+    uid?: string;
   }> = [];
 
   const blocks = icsText.split("BEGIN:VEVENT");
@@ -29,6 +34,7 @@ function parseIcs(icsText: string) {
     const dtstart = getField("DTSTART") || "";
     const dtend = getField("DTEND") || dtstart;
     const location = getField("LOCATION");
+    const uid = getField("UID");
 
     const parseIcsDate = (val: string): string => {
       const parts = val.split(":");
@@ -63,6 +69,7 @@ function parseIcs(icsText: string) {
       end: parseIcsDate(dtend),
       isAllDay,
       location: location || undefined,
+      uid: uid || undefined,
     });
   }
 
@@ -84,7 +91,7 @@ async function refreshMicrosoftToken(refreshToken: string) {
   return res.json();
 }
 
-export function registerCalendarRoutes(app: Express): void {
+export function registerCalendarRoutes(app: Express, db: Database = defaultDb): void {
   // 15. GET /api/microsoft-auth-url
   app.get("/api/microsoft-auth-url", (req: Request, res: Response) => {
     try {
@@ -281,6 +288,26 @@ export function registerCalendarRoutes(app: Express): void {
           }
         }
 
+        // Butler-era bridge: mirror into the household events table, deduped
+        // by external_id. Bridging must never fail the legacy import.
+        try {
+          const householdId = await householdIdForUser(db, user.id);
+          if (householdId) {
+            await bridgeOutlookEvents(
+              db,
+              householdId,
+              (body.events as Array<{ id?: string; subject?: string; start_time: string; end_time: string }>).map((e) => ({
+                externalId: e.id ?? null,
+                title: (e.subject || "Untitled").trim(),
+                startsAt: new Date(e.start_time),
+                endsAt: new Date(e.end_time),
+              })),
+            );
+          }
+        } catch (bridgeErr) {
+          console.error("Outlook→events bridge failed:", bridgeErr);
+        }
+
         return res.json({ success: true, count: insertedCount });
       }
 
@@ -288,7 +315,7 @@ export function registerCalendarRoutes(app: Express): void {
       const future = new Date(now.getTime() + 183 * 24 * 60 * 60 * 1000);
 
       const graphRes = await fetch(
-        `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${now.toISOString()}&endDateTime=${future.toISOString()}&$top=200&$orderby=start/dateTime&$select=subject,start,end,isAllDay,location,attendees`,
+        `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${now.toISOString()}&endDateTime=${future.toISOString()}&$top=200&$orderby=start/dateTime&$select=id,subject,start,end,isAllDay,location,attendees`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
@@ -333,6 +360,7 @@ export function registerCalendarRoutes(app: Express): void {
         const alreadyImported = existingSet.has(normalizeKey(e.subject || "Untitled", startTime, isAllDay));
 
         return {
+          id: e.id || null,
           subject: (e.subject || "Untitled").trim(),
           start_time: startTime,
           end_time: endTime,
@@ -405,6 +433,26 @@ export function registerCalendarRoutes(app: Express): void {
 
       const { error } = await adminClient.from("calendar_events").insert(rows);
       if (error) throw error;
+
+      // Butler-era bridge: mirror into the household events table, keyed by
+      // the ICS UID (falling back to a stable hash when absent).
+      try {
+        const householdId = await householdIdForUser(db, userId);
+        if (householdId) {
+          await bridgeOutlookEvents(
+            db,
+            householdId,
+            events.map((e) => ({
+              externalId: e.uid ?? null,
+              title: e.subject,
+              startsAt: new Date(e.start),
+              endsAt: new Date(e.end),
+            })),
+          );
+        }
+      } catch (bridgeErr) {
+        console.error("Inbound→events bridge failed:", bridgeErr);
+      }
 
       res.json({ success: true, count: events.length });
     } catch (err: any) {
