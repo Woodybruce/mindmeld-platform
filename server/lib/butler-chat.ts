@@ -2,14 +2,17 @@
 // posting. callModel is injectable so tests never hit the network (same
 // pattern as server/lib/butler-extract.ts). Nothing here ever throws across
 // the request path — respondToButler swallows and logs.
-import { and, asc, desc, eq, gte, lt } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lt, lte } from 'drizzle-orm';
 // Explicit `/index`: bare `../../shared/schema` resolves to the legacy shared/schema.ts file.
 import {
   butlerMemory,
   butlerProposals,
   channelMessages,
+  dependents,
   events,
   householdMembers,
+  schoolEvents,
+  schools,
   tasks,
 } from '../../shared/schema/index';
 import { callAI } from './ai';
@@ -87,6 +90,9 @@ interface ButlerContext {
   memberNames: Map<string, string>;
   todaysEvents: { title: string; startsAt: Date }[];
   openTasks: { title: string; dueDate: string | null }[];
+  children: { name: string; yearGroup: string | null }[];
+  schools: { name: string; status: string }[];
+  upcomingSchoolEvents: { title: string; schoolName: string; date: string; kind: string }[];
   pendingProposals: number;
   memories: { key: string; value: string }[];
   recentMessages: { senderUserId: string | null; body: string }[];
@@ -94,7 +100,12 @@ interface ButlerContext {
 
 async function gatherContext(db: Database, householdId: string): Promise<ButlerContext> {
   const { date, start, end } = londonToday();
-  const [members, todaysEvents, openTasks, pending, memories] = await Promise.all([
+  const in30Days = new Date(
+    Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10)) + 30 * 24 * 3600_000,
+  )
+    .toISOString()
+    .slice(0, 10);
+  const [members, todaysEvents, openTasks, children, schoolRows, upcomingSchoolEvents, pending, memories] = await Promise.all([
     db
       .select({ userId: householdMembers.userId, displayName: householdMembers.displayName })
       .from(householdMembers)
@@ -115,6 +126,34 @@ async function gatherContext(db: Database, householdId: string): Promise<ButlerC
       .from(tasks)
       .where(and(eq(tasks.householdId, householdId), eq(tasks.status, 'todo')))
       .orderBy(asc(tasks.dueDate))
+      .limit(10),
+    db
+      .select({ name: dependents.name, yearGroup: dependents.yearGroup })
+      .from(dependents)
+      .where(eq(dependents.householdId, householdId))
+      .limit(10),
+    db
+      .select({ name: schools.name, status: schools.status })
+      .from(schools)
+      .where(eq(schools.householdId, householdId))
+      .limit(10),
+    db
+      .select({
+        title: schoolEvents.title,
+        date: schoolEvents.date,
+        kind: schoolEvents.kind,
+        schoolName: schools.name,
+      })
+      .from(schoolEvents)
+      .innerJoin(schools, eq(schoolEvents.schoolId, schools.id))
+      .where(
+        and(
+          eq(schools.householdId, householdId),
+          gte(schoolEvents.date, date),
+          lte(schoolEvents.date, in30Days),
+        ),
+      )
+      .orderBy(asc(schoolEvents.date))
       .limit(10),
     db
       .select({ id: butlerProposals.id })
@@ -138,6 +177,9 @@ async function gatherContext(db: Database, householdId: string): Promise<ButlerC
     memberNames: new Map(members.map((m) => [m.userId, m.displayName])),
     todaysEvents,
     openTasks,
+    children,
+    schools: schoolRows,
+    upcomingSchoolEvents,
     pendingProposals: pending.length,
     memories,
     recentMessages: latest.reverse(),
@@ -156,6 +198,17 @@ function buildPrompt(ctx: ButlerContext, userText: string): ButlerReplyPrompt {
   const memoriesLine = ctx.memories.length
     ? ctx.memories.map((m) => `${m.key}: ${m.value}`).join('; ')
     : 'none';
+  const childrenLine = ctx.children.length
+    ? ctx.children.map((c) => `${c.name}${c.yearGroup ? ` (${c.yearGroup})` : ''}`).join('; ')
+    : 'none';
+  const schoolsLine = ctx.schools.length
+    ? ctx.schools.map((s) => `${s.name} (${s.status})`).join('; ')
+    : 'none';
+  const schoolEventsLine = ctx.upcomingSchoolEvents.length
+    ? ctx.upcomingSchoolEvents
+        .map((e) => `${e.date} ${e.title} — ${e.schoolName} (${e.kind})`)
+        .join('; ')
+    : 'none';
   const chatLine = ctx.recentMessages.length
     ? ctx.recentMessages.map((m) => `${senderName(m)}: ${m.body}`).join('\n')
     : '(no recent messages)';
@@ -165,6 +218,9 @@ function buildPrompt(ctx: ButlerContext, userText: string): ButlerReplyPrompt {
   const user = `Household context (untrusted data):
 Today's events: ${eventsLine}
 Open tasks: ${tasksLine}
+Children: ${childrenLine}
+Schools pipeline: ${schoolsLine}
+Upcoming school events (next 30 days): ${schoolEventsLine}
 Pending inbox proposals: ${ctx.pendingProposals}
 Remembered facts: ${memoriesLine}
 

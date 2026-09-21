@@ -20,18 +20,18 @@ const renderNav = (initialPath = "/") =>
   );
 
 describe("BottomNav", () => {
-  it("renders all 5 tabs with correct labels", () => {
+  it("renders all 4 tabs with correct labels", () => {
     renderNav();
     expect(screen.getByRole("button", { name: "Today" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Chat/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tasks" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Diary" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Family" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Us" })).toBeInTheDocument();
   });
 
-  it("does not render the old Admin tab", () => {
+  it("does not render Tasks or Diary tabs (still reachable via /tasks and /diary)", () => {
     renderNav();
-    expect(screen.queryByRole("button", { name: /^Admin/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Tasks" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Diary" })).not.toBeInTheDocument();
   });
 
   it("navigates to the correct path for each tab", () => {
@@ -39,8 +39,7 @@ describe("BottomNav", () => {
     const cases: Array<[RegExp | string, string]> = [
       ["Today", "/"],
       [/^Chat/, "/chat"],
-      ["Tasks", "/tasks"],
-      ["Diary", "/diary"],
+      ["Family", "/family"],
       ["Us", "/us"],
     ];
     for (const [name, path] of cases) {
@@ -50,8 +49,8 @@ describe("BottomNav", () => {
   });
 
   it("marks the active tab with aria-current", () => {
-    renderNav("/diary");
-    expect(screen.getByRole("button", { name: "Diary" })).toHaveAttribute("aria-current", "page");
+    renderNav("/family");
+    expect(screen.getByRole("button", { name: "Family" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "Today" })).not.toHaveAttribute("aria-current");
   });
 

@@ -11,6 +11,8 @@ import {
   events,
   householdMembers,
   households,
+  schoolEvents,
+  schools,
   tasks,
 } from '../../shared/schema/index';
 
@@ -171,6 +173,28 @@ describe('runSchedulerTick', () => {
     // Chat message still posted; email skipped.
     expect(await butlerBodies(db, householdId)).toHaveLength(1);
     expect(vi.mocked(sendButlerEmail)).not.toHaveBeenCalled();
+  });
+
+  it('includes school events in the next 7 days in the morning briefing', async () => {
+    const householdId = await seedHousehold(db, 'Bruce');
+    const [school] = await db
+      .insert(schools)
+      .values({ householdId, name: "St Mary's", status: 'applied' })
+      .returning();
+    // BRIEFING_NOW is 2026-09-20 London; the 7-day window ends 2026-09-27.
+    await db.insert(schoolEvents).values({
+      schoolId: school.id, title: 'Open morning', date: '2026-09-24', kind: 'open_day',
+    });
+    await db.insert(schoolEvents).values({
+      schoolId: school.id, title: 'Winter fair', date: '2026-10-15', kind: 'other',
+    });
+
+    await runSchedulerTick(db, BRIEFING_NOW);
+
+    const bodies = await butlerBodies(db, householdId);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain("School events this week: 2026-09-24 Open morning (St Mary's)");
+    expect(bodies[0]).not.toContain('Winter fair');
   });
 
   it('posts nothing outside the briefing window and with no imminent events', async () => {

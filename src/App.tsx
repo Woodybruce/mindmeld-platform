@@ -30,6 +30,7 @@ const PushRegistration = () => {
 
 const TasksPage = lazy(() => import("./pages/TasksPage"));
 const DiaryPage = lazy(() => import("./pages/DiaryPage"));
+const FamilyPage = lazy(() => import("./pages/FamilyPage"));
 const Profile = lazy(() => import("./pages/Profile"));
 const KissChasePage = lazy(() => import("./pages/KissChase"));
 const QuizPlay = lazy(() => import("./pages/QuizPlay"));
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/feed" element={<AuthGuard><Index /></AuthGuard>} />
               <Route path="/tasks" element={<AuthGuard><TasksPage /></AuthGuard>} />
               <Route path="/diary" element={<AuthGuard><DiaryPage /></AuthGuard>} />
+              <Route path="/family" element={<AuthGuard><FamilyPage /></AuthGuard>} />
               <Route path="/us" element={<AuthGuard><Us /></AuthGuard>} />
               <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
               <Route path="/chat" element={<AuthGuard><ChatPage /></AuthGuard>} />

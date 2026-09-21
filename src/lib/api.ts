@@ -26,6 +26,10 @@ export async function apiInvoke<T = any>(
     }
 
     const response = await fetch(url, fetchOptions);
+    // 204 No Content (DELETE endpoints) has no body to parse.
+    if (response.status === 204) {
+      return { data: null, error: null };
+    }
     const data = await response.json();
 
     if (!response.ok) {
