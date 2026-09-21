@@ -5,8 +5,10 @@ import { butlerProposals } from '../../shared/schema/index';
 import { proposalPayloadSchema, proposalStatusSchema } from '../../shared/validation/proposals';
 import { uuidParam } from '../../shared/validation/household';
 import { requireHousehold } from '../middleware/household';
-import { applyActions, type ApplyCounts } from '../lib/butler-apply';
+import { applyActions, eventTiming, type ApplyCounts } from '../lib/butler-apply';
 import { postButlerMessage } from '../lib/butler-message';
+import { londonClock, londonTime } from '../lib/butler-chat';
+import { butlerNotifyEmails, sendButlerEmail } from '../lib/outbound-email';
 import type { Database } from '../db';
 
 function acceptConfirmationBody(counts: ApplyCounts): string {
@@ -82,14 +84,39 @@ export function proposalsRouter(db: Database): Router {
       if (!existing) return res.status(404).json({ error: 'not_found' });
       return res.status(409).json({ error: 'already_resolved' });
     }
-    // Fire-and-forget butler confirmation in the household channel; it must
-    // never delay or break the accept response.
+    // Fire-and-forget butler confirmation in the household channel, plus a
+    // diary-invite email per accepted event; neither may delay or break the
+    // accept response.
     const householdId = req.householdId!;
     const counts = result.applied;
+    const actions = parsed.data.actions;
     setImmediate(() => {
       postButlerMessage(db, householdId, acceptConfirmationBody(counts)).catch((err: unknown) =>
         console.error('butler accept confirmation failed', err),
       );
+      const eventActions = actions.filter((a) => a.type === 'create_event');
+      if (eventActions.length > 0) {
+        const recipients = butlerNotifyEmails();
+        if (recipients.length === 0) return;
+        for (const action of eventActions) {
+          if (action.type !== 'create_event') continue;
+          const { startsAt, endsAt } = eventTiming(action);
+          const date = londonClock(startsAt).date;
+          const where = action.location ? ` at ${action.location}` : '';
+          sendButlerEmail({
+            to: recipients,
+            subject: `📅 ${action.title} — ${date}`,
+            text: `Hello! I've pencilled in "${action.title}" for ${date} at ${londonTime(startsAt)}${where}. The diary invite is attached — accept it to add it to your calendar.\n\n— Butler`,
+            icsEvent: {
+              title: action.title,
+              startsAt,
+              endsAt,
+              location: action.location,
+              attendees: recipients,
+            },
+          }).catch((err: unknown) => console.error('butler diary invite failed', err));
+        }
+      }
     });
     return res.json({ proposal: result.claimed, applied: result.applied });
   });

@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { createTestDb, type TestDb } from './db';
 import { runSchedulerTick } from '../lib/butler-scheduler';
 import { postButlerMessage } from '../lib/butler-message';
+import { sendButlerEmail } from '../lib/outbound-email';
 import {
   butlerProposals,
   channelMessages,
@@ -17,6 +18,13 @@ import {
 vi.mock('../lib/butler-message', async (importOriginal) => {
   const original = await importOriginal<typeof import('../lib/butler-message')>();
   return { ...original, postButlerMessage: vi.fn(original.postButlerMessage) };
+});
+
+// Outbound email is mocked: no network. butlerNotifyEmails stays real
+// (env-driven), so reminder-email tests set BUTLER_NOTIFY_EMAILS themselves.
+vi.mock('../lib/outbound-email', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../lib/outbound-email')>();
+  return { ...original, sendButlerEmail: vi.fn(async () => true) };
 });
 
 // 2026-09-20 is BST (UTC+1): 07:00:30 UTC = 08:00:30 London, inside the
@@ -45,6 +53,11 @@ describe('runSchedulerTick', () => {
 
   beforeEach(async () => {
     db = await createTestDb();
+    vi.mocked(sendButlerEmail).mockClear();
+  });
+
+  afterEach(() => {
+    delete process.env.BUTLER_NOTIFY_EMAILS;
   });
 
   it('posts the morning briefing once (deduped) with events, tasks and proposal nudge', async () => {
@@ -108,6 +121,56 @@ describe('runSchedulerTick', () => {
 
     await runSchedulerTick(db, new Date(MIDDAY_NOW.getTime() + 60_000));
     expect(await butlerBodies(db, householdId)).toHaveLength(1);
+  });
+
+  it('sends a reminder email alongside the chat message, deduped by the same claim', async () => {
+    process.env.BUTLER_NOTIFY_EMAILS = 'mum@example.com, dad@example.com';
+    const householdId = await seedHousehold(db, 'Bruce');
+    await db.insert(events).values({
+      householdId,
+      title: 'Parents evening',
+      startsAt: new Date(MIDDAY_NOW.getTime() + 15 * 60_000), // 13:15 London
+      endsAt: new Date(MIDDAY_NOW.getTime() + 45 * 60_000),
+      category: 'school',
+    });
+
+    await runSchedulerTick(db, MIDDAY_NOW);
+
+    // Chat message posted…
+    const bodies = await butlerBodies(db, householdId);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('Parents evening');
+
+    // …and exactly one reminder email to both recipients (no ICS).
+    const send = vi.mocked(sendButlerEmail);
+    expect(send).toHaveBeenCalledTimes(1);
+    const [opts] = send.mock.calls[0];
+    expect(opts.to).toEqual(['mum@example.com', 'dad@example.com']);
+    expect(opts.subject).toBe('⏰ Starting soon: Parents evening (13:15)');
+    expect(opts.text).toContain('Parents evening');
+    expect(opts.icsEvent).toBeUndefined();
+
+    // Second tick: the claim key is already taken, so neither fires again.
+    await runSchedulerTick(db, new Date(MIDDAY_NOW.getTime() + 60_000));
+    expect(await butlerBodies(db, householdId)).toHaveLength(1);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends no reminder email when BUTLER_NOTIFY_EMAILS is unset', async () => {
+    const householdId = await seedHousehold(db, 'Bruce');
+    await db.insert(events).values({
+      householdId,
+      title: 'Parents evening',
+      startsAt: new Date(MIDDAY_NOW.getTime() + 15 * 60_000),
+      endsAt: new Date(MIDDAY_NOW.getTime() + 45 * 60_000),
+      category: 'school',
+    });
+
+    await runSchedulerTick(db, MIDDAY_NOW);
+
+    // Chat message still posted; email skipped.
+    expect(await butlerBodies(db, householdId)).toHaveLength(1);
+    expect(vi.mocked(sendButlerEmail)).not.toHaveBeenCalled();
   });
 
   it('posts nothing outside the briefing window and with no imminent events', async () => {
