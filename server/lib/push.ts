@@ -30,7 +30,10 @@ export interface PushResult {
 
 export interface PushDeps {
   supabase?: SupabaseClient;
-  sendWebNotification?: (subscription: any, payload: string) => Promise<unknown>;
+  sendWebNotification?: (
+    subscription: Parameters<typeof webpush.sendNotification>[0],
+    payload: string,
+  ) => Promise<unknown>;
   fetchFn?: typeof fetch;
 }
 
@@ -162,9 +165,10 @@ export async function sendPushToUser(
                 JSON.stringify({ title: payload.title, body: payload.body, data }),
               );
               result.sent++;
-            } catch (err: any) {
+            } catch (err) {
               result.failed++;
-              if (err.statusCode === 410 || err.statusCode === 404) {
+              const statusCode = (err as { statusCode?: number }).statusCode;
+              if (statusCode === 410 || statusCode === 404) {
                 await supabase.from('device_tokens').delete().eq('token', token);
                 result.cleaned++;
               }
@@ -202,11 +206,13 @@ export async function sendPushToUser(
                 }),
               });
 
-              const fcmResult = await fcmRes.json();
+              const fcmResult = (await fcmRes.json()) as {
+                error?: { details?: { errorCode?: string }[] };
+              };
 
               if (
                 fcmResult.error?.details?.some(
-                  (d: any) => d.errorCode === 'UNREGISTERED' || d.errorCode === 'NOT_FOUND',
+                  (d) => d.errorCode === 'UNREGISTERED' || d.errorCode === 'NOT_FOUND',
                 )
               ) {
                 await supabase.from('device_tokens').delete().eq('token', token);

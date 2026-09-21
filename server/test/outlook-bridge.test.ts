@@ -4,6 +4,7 @@ import express, { type Express } from 'express';
 import { eq } from 'drizzle-orm';
 import { createTestDb, type TestDb } from './db';
 import { bridgeOutlookEvents, outlookExternalId } from '../lib/outlook-bridge';
+import type { Database } from '../db';
 import { events, householdMembers, households } from '../../shared/schema/index';
 
 // server/db.ts (imported by the calendar routes) throws at import time
@@ -16,7 +17,28 @@ process.env.SUPABASE_SERVICE_ROLE_KEY ||= 'service';
 
 const USER_ID = 'user-1';
 
-let adminImpl: any;
+interface ChainResult {
+  data: unknown;
+  error: null;
+}
+
+// Chainable fake for the supabase-js query builder, resolving per table.
+interface FakeChain extends PromiseLike<ChainResult> {
+  select(): FakeChain;
+  eq(): FakeChain;
+  update(): FakeChain;
+  delete(): FakeChain;
+  insert(row: unknown): Promise<{ error: null }>;
+  maybeSingle(): Promise<ChainResult>;
+  single(): Promise<ChainResult>;
+}
+
+interface FakeAdmin {
+  from(table: string): FakeChain;
+  auth: { admin: { listUsers(): Promise<{ data: { users: unknown[] } }> } };
+}
+
+let adminImpl: FakeAdmin;
 const userClient = {
   auth: {
     getUser: async () => ({ data: { user: { id: USER_ID } }, error: null }),
@@ -24,38 +46,38 @@ const userClient = {
 };
 
 vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn((_url: string, _key: string, options?: any) =>
+  createClient: vi.fn((_url: string, _key: string, options?: { global?: unknown }) =>
     options?.global ? userClient : adminImpl,
   ),
 }));
 
-// Chainable fake for the supabase-js query builder, resolving per table.
-function chain(resolveWith: any): any {
-  const c: any = {
+function chain(resolveWith: ChainResult): FakeChain {
+  const c: FakeChain = {
     select: () => c,
     eq: () => c,
     update: () => c,
     delete: () => c,
+    insert: () => Promise.resolve({ error: null }),
     maybeSingle: () => Promise.resolve(resolveWith),
     single: () => Promise.resolve(resolveWith),
-    then: (onF: any, onR: any) => Promise.resolve(resolveWith).then(onF, onR),
+    then: (onF, onR) => Promise.resolve(resolveWith).then(onF, onR),
   };
   return c;
 }
 
 function makeAdmin(opts: {
-  tokenRow?: any;
-  profileRow?: any;
-  existingCalendarEvents?: any[];
-  onInsert?: (row: any) => void;
-}) {
+  tokenRow?: unknown;
+  profileRow?: unknown;
+  existingCalendarEvents?: unknown[];
+  onInsert?: (row: unknown) => void;
+}): FakeAdmin {
   return {
-    from(table: string): any {
+    from(table: string): FakeChain {
       if (table === 'microsoft_tokens') return chain({ data: opts.tokenRow ?? null, error: null });
       if (table === 'profiles') return chain({ data: opts.profileRow ?? null, error: null });
       if (table === 'calendar_events') {
         const c = chain({ data: opts.existingCalendarEvents ?? [], error: null });
-        c.insert = (row: any) => {
+        c.insert = (row: unknown) => {
           opts.onInsert?.(row);
           return Promise.resolve({ error: null });
         };
@@ -135,24 +157,22 @@ describe('Outlook routes → events bridge', () => {
   let db: TestDb;
   let app: Express;
   let householdId: string;
+  let registerCalendarRoutes: typeof import('../routes/legacy/calendar').registerCalendarRoutes;
 
   beforeAll(async () => {
-    const { registerCalendarRoutes } = await import('../routes/legacy/calendar');
-    registerCalendarRoutesRef = registerCalendarRoutes;
+    ({ registerCalendarRoutes } = await import('../routes/legacy/calendar'));
   });
-
-  let registerCalendarRoutesRef: typeof import('../routes/legacy/calendar').registerCalendarRoutes;
 
   beforeEach(async () => {
     db = await createTestDb();
     app = express();
     app.use(express.json());
-    registerCalendarRoutesRef(app, db as any);
+    registerCalendarRoutes(app, db as unknown as Database);
     householdId = await seedHousehold(db);
   });
 
   it('import mode writes legacy rows AND bridges into events with external_id dedupe', async () => {
-    const legacyInserts: any[] = [];
+    const legacyInserts: unknown[] = [];
     adminImpl = makeAdmin({ tokenRow: TOKEN_ROW, onInsert: (r) => legacyInserts.push(r) });
 
     const payload = {
@@ -206,7 +226,7 @@ describe('Outlook routes → events bridge', () => {
   });
 
   it('inbound ICS forwarding bridges into events keyed by UID', async () => {
-    const legacyInserts: any[] = [];
+    const legacyInserts: unknown[] = [];
     adminImpl = makeAdmin({ profileRow: { id: USER_ID }, onInsert: (r) => legacyInserts.push(r) });
 
     const ics = [

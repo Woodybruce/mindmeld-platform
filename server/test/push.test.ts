@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createTestDb, type TestDb } from './db';
-import { sendPushToUser, sendPushToHouseholdWith } from '../lib/push';
+import { sendPushToUser, sendPushToHouseholdWith, type PushPayload } from '../lib/push';
 import { postButlerMessage } from '../lib/butler-message';
+import type { Database } from '../db';
 import { householdMembers, households } from '../../shared/schema/index';
 
 // web-push is mocked: no VAPID key validation, no network.
@@ -27,7 +29,7 @@ function fakeSupabase(tokens: { token: string; platform: string }[]) {
       }),
     }),
   };
-  return { client: client as any, deletedTokens };
+  return { client: client as unknown as SupabaseClient, deletedTokens };
 }
 
 const ENV_KEYS = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'FCM_SERVICE_ACCOUNT'];
@@ -80,10 +82,10 @@ describe('sendPushToUser', () => {
       { token: JSON.stringify({ endpoint: 'https://push.example/dead' }), platform: 'web' },
     ];
     const { client, deletedTokens } = fakeSupabase(tokens);
-    const sendWeb = vi.fn(async (_sub: any, payload: string) => {
+    const sendWeb = vi.fn(async (sub: { endpoint: string }, payload: string) => {
       if (JSON.parse(payload).data.route !== '/chat') throw new Error('missing route');
-      if (_sub.endpoint.includes('dead')) {
-        const err: any = new Error('gone');
+      if (sub.endpoint.includes('dead')) {
+        const err = new Error('gone') as Error & { statusCode: number };
         err.statusCode = 410;
         throw err;
       }
@@ -108,27 +110,27 @@ describe('sendPushToUser', () => {
     ];
     const { client, deletedTokens } = fakeSupabase(tokens);
 
-    const fetchFn = vi.fn(async (url: any, init?: any) => {
+    const fetchFn = vi.fn(async (url: string | URL, init?: RequestInit) => {
       const u = String(url);
       if (u === 'https://oauth.example/token') {
-        return { json: async () => ({ access_token: 'oauth-tok' }) } as any;
+        return { json: async () => ({ access_token: 'oauth-tok' }) } as unknown as Response;
       }
       expect(u).toBe('https://fcm.googleapis.com/v1/projects/demo-project/messages:send');
-      expect(init.headers.Authorization).toBe('Bearer oauth-tok');
-      const body = JSON.parse(init.body);
+      expect((init!.headers as Record<string, string>).Authorization).toBe('Bearer oauth-tok');
+      const body = JSON.parse(init!.body as string);
       expect(body.message.notification.title).toBe('Butler');
       if (body.message.token === 'fcm-dead') {
         return {
           json: async () => ({ error: { details: [{ errorCode: 'UNREGISTERED' }] } }),
-        } as any;
+        } as unknown as Response;
       }
-      return { json: async () => ({ name: 'messages/1' }) } as any;
+      return { json: async () => ({ name: 'messages/1' }) } as unknown as Response;
     });
 
     const res = await sendPushToUser(
       'u1',
       { title: 'Butler', body: 'Reminder', route: '/chat' },
-      { supabase: client, fetchFn: fetchFn as any },
+      { supabase: client, fetchFn: fetchFn as unknown as typeof fetch },
     );
 
     expect(res).toMatchObject({ sent: 1, failed: 1, cleaned: 1 });
@@ -175,7 +177,7 @@ describe('postButlerMessage push trigger', () => {
 
   it('inserts the message then pushes the household (fire-and-forget)', async () => {
     const [h] = await db.insert(households).values({ name: 'Bruce' }).returning();
-    const push = vi.fn(async () => {});
+    const push = vi.fn(async (_db: Database, _hh: string, _payload: PushPayload) => {});
 
     const longBody = 'x'.repeat(200);
     await postButlerMessage(db, h.id, longBody, push);
@@ -183,7 +185,7 @@ describe('postButlerMessage push trigger', () => {
     await new Promise((resolve) => setImmediate(resolve));
 
     expect(push).toHaveBeenCalledTimes(1);
-    const [pushDb, householdId, payload] = push.mock.calls[0] as any[];
+    const [pushDb, householdId, payload] = push.mock.calls[0];
     expect(pushDb).toBe(db);
     expect(householdId).toBe(h.id);
     expect(payload.title).toBe('Butler');

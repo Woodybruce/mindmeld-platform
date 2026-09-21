@@ -296,7 +296,7 @@ export function registerCalendarRoutes(app: Express, db: Database = defaultDb): 
             await bridgeOutlookEvents(
               db,
               householdId,
-              body.events.map((e: any) => ({
+              (body.events as Array<{ id?: string; subject?: string; start_time: string; end_time: string }>).map((e) => ({
                 externalId: e.id ?? null,
                 title: (e.subject || "Untitled").trim(),
                 startsAt: new Date(e.start_time),
