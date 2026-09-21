@@ -52,8 +52,10 @@ function app(db: TestDb, d: WebhookDeps = deps()): Express {
   return a;
 }
 
-function receivedEvent(emailId = 'em_123'): Buffer {
-  return Buffer.from(JSON.stringify({ type: 'email.received', data: { email_id: emailId } }), 'utf8');
+function receivedEvent(emailId = 'em_123', to?: string[]): Buffer {
+  const data: Record<string, unknown> = { email_id: emailId };
+  if (to) data.to = to;
+  return Buffer.from(JSON.stringify({ type: 'email.received', data }), 'utf8');
 }
 
 function post(a: Express, body: Buffer, headers: Record<string, string> = {}) {
@@ -81,6 +83,7 @@ describe('POST /api/webhooks/resend', () => {
   afterEach(() => {
     delete process.env.RESEND_WEBHOOK_SECRET;
     delete process.env.BUTLER_HOUSEHOLD_ID;
+    delete process.env.INBOUND_EMAIL_DOMAIN;
   });
 
   it('rejects unsigned and badly-signed requests with 401', async () => {
@@ -167,6 +170,45 @@ describe('POST /api/webhooks/resend', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ignored: true });
     expect(await db.select().from(butlerProposals)).toHaveLength(0);
+  });
+
+  it('ignores email.received addressed only to a foreign domain (shared Resend account)', async () => {
+    let fetched = false;
+    const a = app(db, deps({
+      fetchReceivedEmail: async () => {
+        fetched = true;
+        return EMAIL;
+      },
+    }));
+    const body = receivedEvent('em_foreign', ['someone@chatbgp.app']);
+    const res = await post(a, body, signedHeaders(body));
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ignored: true });
+
+    // Nothing fetched, no proposal, no channel/message created.
+    expect(fetched).toBe(false);
+    expect(await db.select().from(butlerProposals)).toHaveLength(0);
+    expect(await db.select().from(channelMessages)).toHaveLength(0);
+    expect(await db.select().from(channels)).toHaveLength(0);
+  });
+
+  it('processes email.received addressed to the inbound domain (case-insensitive, mixed recipients)', async () => {
+    process.env.INBOUND_EMAIL_DOMAIN = 'Bruces.App';
+    const a = app(db);
+    const body = receivedEvent('em_ours', ['someone@chatbgp.app', 'PA@BRUCES.APP']);
+    const res = await post(a, body, signedHeaders(body));
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ received: true });
+
+    const proposals = await db
+      .select()
+      .from(butlerProposals)
+      .where(eq(butlerProposals.householdId, householdId));
+    expect(proposals).toHaveLength(1);
+    expect(proposals[0].status).toBe('pending');
+
+    const messages = await db.select().from(channelMessages);
+    expect(messages).toHaveLength(1);
   });
 
   it('returns 503 butler_not_configured when BUTLER_HOUSEHOLD_ID is unset', async () => {

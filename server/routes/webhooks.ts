@@ -18,6 +18,26 @@ function header(req: Request, name: string): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+// The Resend account is shared across projects and fires every inbound email
+// to this webhook regardless of recipient domain, so anything not addressed to
+// our own domain is ignored before any fetch or DB write.
+function inboundDomain(): string {
+  return (process.env.INBOUND_EMAIL_DOMAIN ?? 'bruces.app').toLowerCase();
+}
+
+function recipients(event: { data?: { to?: unknown } }): string[] {
+  const to = event.data?.to;
+  if (!Array.isArray(to)) return [];
+  return to.filter((a): a is string => typeof a === 'string');
+}
+
+function addressedToUs(event: { data?: { to?: unknown } }): boolean {
+  const list = recipients(event);
+  if (list.length === 0) return true;
+  const suffix = `@${inboundDomain()}`;
+  return list.some((a) => a.toLowerCase().endsWith(suffix));
+}
+
 export function webhooksRouter(
   db: Database,
   deps: WebhookDeps = { fetchReceivedEmail, extractActions },
@@ -43,7 +63,7 @@ export function webhooksRouter(
       );
     if (!verified) return res.status(401).json({ error: 'invalid_signature' });
 
-    let event: { type?: string; data?: { email_id?: string } };
+    let event: { type?: string; data?: { email_id?: string; to?: unknown } };
     try {
       event = JSON.parse(raw.toString('utf8'));
     } catch {
@@ -51,6 +71,8 @@ export function webhooksRouter(
     }
 
     if (event.type !== 'email.received') return res.status(200).json({ ignored: true });
+
+    if (!addressedToUs(event)) return res.status(200).json({ ignored: true });
 
     const householdId = process.env.BUTLER_HOUSEHOLD_ID;
     if (!householdId) return res.status(503).json({ error: 'butler_not_configured' });
