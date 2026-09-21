@@ -3,12 +3,14 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import FamilyPage from "./FamilyPage";
 import {
+  createRenewal,
   createSchool,
   fetchDependents,
+  fetchRenewals,
   fetchSchoolEvents,
   fetchSchools,
 } from "@/lib/family";
-import type { Dependent, School, SchoolEvent } from "@/lib/family";
+import type { Dependent, Renewal, School, SchoolEvent } from "@/lib/family";
 
 vi.mock("@/lib/family", () => ({
   fetchDependents: vi.fn(),
@@ -21,6 +23,10 @@ vi.mock("@/lib/family", () => ({
   deleteSchool: vi.fn(),
   fetchSchoolEvents: vi.fn(),
   createSchoolEvent: vi.fn(),
+  fetchRenewals: vi.fn(),
+  createRenewal: vi.fn(),
+  updateRenewal: vi.fn(),
+  deleteRenewal: vi.fn(),
 }));
 
 vi.mock("@/hooks/useUnreadMessages", () => ({
@@ -35,6 +41,8 @@ const mockedFetchDependents = vi.mocked(fetchDependents);
 const mockedFetchSchools = vi.mocked(fetchSchools);
 const mockedFetchSchoolEvents = vi.mocked(fetchSchoolEvents);
 const mockedCreateSchool = vi.mocked(createSchool);
+const mockedFetchRenewals = vi.mocked(fetchRenewals);
+const mockedCreateRenewal = vi.mocked(createRenewal);
 
 const makeDependent = (overrides: Partial<Dependent>): Dependent => ({
   id: "dep-1",
@@ -72,6 +80,24 @@ const makeEvent = (overrides: Partial<SchoolEvent>): SchoolEvent => ({
   ...overrides,
 });
 
+const makeRenewal = (overrides: Partial<Renewal>): Renewal => ({
+  id: "ren-1",
+  householdId: "hh-1",
+  label: "Woody's passport",
+  category: "passport",
+  renewalDate: "2027-01-28",
+  dependentId: null,
+  memberUserId: null,
+  remindBeforeDays: 30,
+  notes: null,
+  source: "manual",
+  createdAt: "2026-09-18T10:00:00.000Z",
+  ...overrides,
+});
+
+const isoDaysFromNow = (days: number): string =>
+  new Date(Date.now() + days * 24 * 3600_000).toISOString().slice(0, 10);
+
 const renderPage = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -91,6 +117,7 @@ describe("FamilyPage", () => {
     mockedFetchDependents.mockResolvedValue([]);
     mockedFetchSchools.mockResolvedValue([]);
     mockedFetchSchoolEvents.mockResolvedValue([]);
+    mockedFetchRenewals.mockResolvedValue([]);
   });
 
   it("renders children with year group and age", async () => {
@@ -155,5 +182,47 @@ describe("FamilyPage", () => {
 
     expect((await screen.findByRole("link", { name: /Tasks/ })).getAttribute("href")).toBe("/tasks");
     expect(screen.getByRole("link", { name: /Diary/ }).getAttribute("href")).toBe("/diary");
+  });
+
+  it("renders renewals with category emoji and days-left badge", async () => {
+    mockedFetchRenewals.mockResolvedValue([
+      makeRenewal({ id: "r1", label: "Woody's passport", renewalDate: isoDaysFromNow(10) }),
+      makeRenewal({ id: "r2", label: "Car MOT", category: "mot", renewalDate: isoDaysFromNow(45) }),
+    ]);
+
+    renderPage();
+
+    expect(await screen.findByText("Woody's passport")).toBeInTheDocument();
+    expect(screen.getByText("Car MOT")).toBeInTheDocument();
+    expect(screen.getByText("10 days left")).toBeInTheDocument();
+    expect(screen.getByText("45 days left")).toBeInTheDocument();
+    expect(screen.getByText("🛂")).toBeInTheDocument();
+    expect(screen.getByText("🚗")).toBeInTheDocument();
+  });
+
+  it("adds a renewal via the form", async () => {
+    mockedCreateRenewal.mockResolvedValue(makeRenewal({ id: "r3", label: "Home insurance" }));
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /Add renewal/ }));
+    fireEvent.change(screen.getByLabelText("Renewal label"), {
+      target: { value: "Home insurance" },
+    });
+    fireEvent.change(screen.getByLabelText("Renewal date"), {
+      target: { value: "2027-02-01" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add renewal" }));
+
+    await waitFor(() =>
+      expect(mockedCreateRenewal).toHaveBeenCalledWith(
+        expect.objectContaining({
+          label: "Home insurance",
+          category: "other",
+          renewalDate: "2027-02-01",
+          remindBeforeDays: 30,
+        })
+      )
+    );
   });
 });

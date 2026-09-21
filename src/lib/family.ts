@@ -65,6 +65,40 @@ export interface SchoolInput {
   notes?: string;
 }
 
+export type RenewalCategory =
+  | "passport"
+  | "driving_licence"
+  | "mot"
+  | "insurance"
+  | "tax"
+  | "subscription"
+  | "membership"
+  | "other";
+
+export interface Renewal {
+  id: string;
+  householdId: string;
+  label: string;
+  category: RenewalCategory;
+  renewalDate: string;
+  dependentId: string | null;
+  memberUserId: string | null;
+  remindBeforeDays: number;
+  notes: string | null;
+  source: "manual" | "butler";
+  createdAt: string;
+}
+
+export interface RenewalInput {
+  label: string;
+  category?: RenewalCategory;
+  renewalDate: string;
+  dependentId?: string;
+  memberUserId?: string;
+  remindBeforeDays?: number;
+  notes?: string;
+}
+
 export interface SchoolEventInput {
   title: string;
   date: string;
@@ -146,4 +180,33 @@ export async function createSchoolEvent(
   });
   if (error) throw error;
   return data;
+}
+
+export async function fetchRenewals(): Promise<Renewal[]> {
+  const { data, error } = await apiInvoke<Renewal[]>("renewals");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createRenewal(input: RenewalInput): Promise<Renewal | null> {
+  const { data, error } = await apiInvoke<Renewal>("renewals", { body: input });
+  if (error) throw error;
+  return data;
+}
+
+export async function updateRenewal(
+  id: string,
+  patch: Partial<RenewalInput>
+): Promise<Renewal | null> {
+  const { data, error } = await apiInvoke<Renewal>(`renewals/${id}`, {
+    method: "PATCH",
+    body: patch,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteRenewal(id: string): Promise<void> {
+  const { error } = await apiInvoke(`renewals/${id}`, { method: "DELETE" });
+  if (error) throw error;
 }
