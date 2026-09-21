@@ -20,19 +20,23 @@ export async function callAI(messages: any[], tools?: any[], toolChoice?: any, u
   const temperature = options?.temperature ?? 0.8;
 
   const url = process.env.AI_GATEWAY_URL || "https://api.openai.com/v1/chat/completions";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      messages: finalMessages,
-      ...(tools ? { tools, tool_choice: toolChoice } : {}),
-      temperature,
-    }),
-  });
+  const body: Record<string, unknown> = {
+    model,
+    messages: finalMessages,
+    ...(tools ? { tools, tool_choice: toolChoice } : {}),
+    temperature,
+  };
+
+  let response = await postChatCompletion(url, apiKey, body);
+  if (response.status === 400) {
+    const text = await response.text();
+    if (!text.toLowerCase().includes("temperature")) {
+      throw new Error(`AI API error [${response.status}]: ${text}`);
+    }
+    const retryBody = { ...body };
+    delete retryBody.temperature;
+    response = await postChatCompletion(url, apiKey, retryBody);
+  }
 
   if (!response.ok) {
     const text = await response.text();
@@ -42,6 +46,17 @@ export async function callAI(messages: any[], tools?: any[], toolChoice?: any, u
   }
 
   return response.json();
+}
+
+function postChatCompletion(url: string, apiKey: string, body: Record<string, unknown>): Promise<Response> {
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 }
 
 const userContextCache = new Map<string, { context: string; ts: number }>();
