@@ -10,6 +10,7 @@ import {
   butlerProposals,
   events,
   households,
+  renewals,
   schoolEvents,
   schools,
   tasks,
@@ -156,12 +157,89 @@ async function remindHousehold(db: Database, householdId: string, now: Date): Pr
   }
 }
 
+// Milestones (in days before the renewal date) that always nudge, alongside
+// each renewal's own remindBeforeDays threshold.
+const RENEWAL_MILESTONE_DAYS = [7, 1];
+
+function formatRenewalDate(isoDate: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${isoDate}T00:00:00Z`));
+}
+
+// Admin autopilot: one butler message (and at the remindBeforeDays crossing,
+// one task) per renewal per milestone. Gated to the morning-briefing window
+// so push notifications land at a civilised hour; dedupe keys make each
+// crossing fire exactly once even across missed windows.
+async function nudgeRenewals(db: Database, householdId: string, now: Date): Promise<void> {
+  const { date, minutesSinceMidnight } = londonClock(now);
+  if (minutesSinceMidnight < BRIEFING_START_MIN || minutesSinceMidnight > BRIEFING_END_MIN) return;
+
+  const rows = await db.select().from(renewals).where(eq(renewals.householdId, householdId));
+  const todayUtc = Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10));
+  for (const r of rows) {
+    const daysLeft = Math.round((Date.parse(`${r.renewalDate}T00:00:00Z`) - todayUtc) / 86_400_000);
+    if (daysLeft < 0) continue;
+    const milestones = Array.from(new Set([r.remindBeforeDays, ...RENEWAL_MILESTONE_DAYS]))
+      .filter((t) => t > 0)
+      .sort((a, b) => a - b);
+    // Current stage: the most urgent milestone already reached.
+    const stage = milestones.find((t) => daysLeft <= t);
+    if (stage === undefined) continue;
+    if (!(await claimKey(db, householdId, `renewal-nudge:${r.id}:${stage}`))) continue;
+
+    // Milestones further out than the stage are already in the past: claim
+    // them silently so they never fire their own message. If the
+    // remindBeforeDays crossing is among them (renewal added late), it still
+    // gets its one task.
+    let taskCreated = false;
+    for (const t of milestones.filter((m) => m > stage)) {
+      if (await claimKey(db, householdId, `renewal-nudge:${r.id}:${t}`) && t === r.remindBeforeDays) {
+        await createRenewalTask(db, householdId, r);
+        taskCreated = true;
+      }
+    }
+    if (stage === r.remindBeforeDays) {
+      await createRenewalTask(db, householdId, r);
+      taskCreated = true;
+    }
+
+    const when =
+      daysLeft === 0 ? 'today' : daysLeft === 1 ? 'tomorrow' : `in ${daysLeft} days`;
+    const suffix = taskCreated ? " I've added a task to renew it." : '';
+    await postButlerMessage(
+      db,
+      householdId,
+      `📋 Heads up: ${r.label} expires ${when} (${formatRenewalDate(r.renewalDate)}).${suffix}`,
+    );
+  }
+}
+
+async function createRenewalTask(
+  db: Database,
+  householdId: string,
+  r: typeof renewals.$inferSelect,
+): Promise<void> {
+  await db.insert(tasks).values({
+    householdId,
+    title: `Renew ${r.label}`,
+    dueDate: r.renewalDate,
+    source: 'butler',
+    dependentId: r.dependentId ?? undefined,
+    assigneeUserId: r.memberUserId ?? undefined,
+  });
+}
+
 export async function runSchedulerTick(db: Database, now = new Date()): Promise<void> {
   const all = await db.select({ id: households.id }).from(households);
   for (const h of all) {
     try {
       await briefHousehold(db, h.id, now);
       await remindHousehold(db, h.id, now);
+      await nudgeRenewals(db, h.id, now);
     } catch (err) {
       console.error(`butler scheduler tick failed for household ${h.id}`, err);
     }

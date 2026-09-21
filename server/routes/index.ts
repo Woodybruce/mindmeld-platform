@@ -6,6 +6,7 @@ import { tasksRouter } from './tasks';
 import { listsRouter } from './lists';
 import { eventsRouter } from './events';
 import { schoolsRouter } from './schools';
+import { renewalsRouter } from './renewals';
 import { holidaysRouter } from './holidays';
 import { butlerRouter } from './butler';
 import { channelsRouter } from './channels';
@@ -29,6 +30,7 @@ export function newApiRouter(db: Database): Router {
   router.use(listsRouter(db));
   router.use(eventsRouter(db));
   router.use(schoolsRouter(db));
+  router.use(renewalsRouter(db));
   router.use(holidaysRouter(db));
   router.use(butlerRouter(db));
   router.use(channelsRouter(db));

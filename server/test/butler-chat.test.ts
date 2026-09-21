@@ -9,6 +9,7 @@ import { proposalsRouter } from '../routes/proposals';
 import {
   generateButlerReply,
   isButlerAddressed,
+  londonToday,
   respondToButler,
   type ButlerReplyPrompt,
 } from '../lib/butler-chat';
@@ -21,6 +22,7 @@ import {
   events,
   householdMembers,
   households,
+  renewals,
   schoolEvents,
   schools,
   tasks,
@@ -177,6 +179,36 @@ describe('generateButlerReply', () => {
     expect(captured!.user).toContain(`Open morning — St Mary's (open_day)`);
     // Beyond the 30-day window.
     expect(captured!.user).not.toContain('Far away fair');
+  });
+
+  it('grounds the prompt in upcoming renewals (next 60 days)', async () => {
+    const dayMs = 24 * 3600_000;
+    const in20Days = new Date(Date.now() + 20 * dayMs).toISOString().slice(0, 10);
+    const in90Days = new Date(Date.now() + 90 * dayMs).toISOString().slice(0, 10);
+
+    await db.insert(renewals).values({
+      householdId, label: "Woody's passport", category: 'passport', renewalDate: in20Days,
+    });
+    await db.insert(renewals).values({
+      householdId, label: 'Far future gym', renewalDate: in90Days,
+    });
+
+    let captured: ButlerReplyPrompt | undefined;
+    await generateButlerReply(db, householdId, 'butler any renewals coming up?', async (prompt) => {
+      captured = prompt;
+      return 'Passport soon.';
+    });
+
+    // Days-until is measured from the London date, like gatherContext.
+    const daysUntil = Math.round(
+      (Date.parse(`${in20Days}T00:00:00Z`) - Date.parse(`${londonToday().date}T00:00:00Z`)) / dayMs,
+    );
+    expect(captured).toBeDefined();
+    expect(captured!.user).toContain(
+      `Upcoming renewals (next 60 days): ${in20Days} Woody's passport (in ${daysUntil} days)`,
+    );
+    // Beyond the 60-day window.
+    expect(captured!.user).not.toContain('Far future gym');
   });
 
   it('returns null when OPENAI_API_KEY is not configured', async () => {

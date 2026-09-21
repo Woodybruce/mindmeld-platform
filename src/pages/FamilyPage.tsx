@@ -6,6 +6,7 @@ import {
   Baby,
   CalendarDays,
   ChevronDown,
+  ClipboardList,
   GraduationCap,
   ListChecks,
   Pencil,
@@ -16,19 +17,26 @@ import AppShell from "@/components/layout/AppShell";
 import AppHeader from "@/components/AppHeader";
 import {
   createDependent,
+  createRenewal,
   createSchool,
   createSchoolEvent,
   deleteDependent,
+  deleteRenewal,
   deleteSchool,
   fetchDependents,
+  fetchRenewals,
   fetchSchoolEvents,
   fetchSchools,
   updateDependent,
+  updateRenewal,
   updateSchool,
 } from "@/lib/family";
 import type {
   Dependent,
   DependentInput,
+  Renewal,
+  RenewalCategory,
+  RenewalInput,
   School,
   SchoolEventKind,
   SchoolInput,
@@ -73,6 +81,47 @@ const KIND_LABELS: Record<SchoolEventKind, string> = {
   other: "Other",
 };
 
+const RENEWAL_CATEGORY_EMOJIS: Record<RenewalCategory, string> = {
+  passport: "🛂",
+  driving_licence: "🪪",
+  mot: "🚗",
+  insurance: "🛡️",
+  tax: "💷",
+  subscription: "🔄",
+  membership: "🎟️",
+  other: "📋",
+};
+
+const RENEWAL_CATEGORY_LABELS: Record<RenewalCategory, string> = {
+  passport: "Passport",
+  driving_licence: "Driving licence",
+  mot: "MOT",
+  insurance: "Insurance",
+  tax: "Tax",
+  subscription: "Subscription",
+  membership: "Membership",
+  other: "Other",
+};
+
+function daysUntilDate(date: string): number {
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((Date.parse(`${date}T00:00:00Z`) - todayUtc) / 86_400_000);
+}
+
+function daysLeftText(days: number): string {
+  if (days < 0) return "overdue";
+  if (days === 0) return "today";
+  if (days === 1) return "1 day left";
+  return `${days} days left`;
+}
+
+function daysLeftStyle(days: number): string {
+  if (days < 7) return "bg-rose-500/15 text-rose-600 dark:text-rose-400";
+  if (days < 30) return "bg-amber-500/15 text-amber-600 dark:text-amber-400";
+  return "bg-secondary text-muted-foreground";
+}
+
 const inputClass =
   "flex-1 min-w-0 bg-secondary/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 ring-primary/30";
 
@@ -83,6 +132,10 @@ function ageFromDob(dob: string): number {
   const monthDiff = now.getMonth() - birth.getMonth();
   if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) age -= 1;
   return age;
+}
+
+function dependentName(id: string | null, dependents: Dependent[]): string | null {
+  return id ? (dependents.find((d) => d.id === id)?.name ?? null) : null;
 }
 
 interface DependentFormProps {
@@ -236,6 +289,124 @@ const SchoolForm = ({ initial, onSubmit, onCancel, pending }: SchoolFormProps) =
   );
 };
 
+interface RenewalFormProps {
+  initial?: Renewal;
+  dependents: Dependent[];
+  onSubmit: (input: RenewalInput) => void;
+  onCancel: () => void;
+  pending: boolean;
+}
+
+const RenewalForm = ({ initial, dependents, onSubmit, onCancel, pending }: RenewalFormProps) => {
+  const [label, setLabel] = useState(initial?.label ?? "");
+  const [category, setCategory] = useState<RenewalCategory>(initial?.category ?? "other");
+  const [renewalDate, setRenewalDate] = useState(initial?.renewalDate ?? "");
+  const [dependentId, setDependentId] = useState(initial?.dependentId ?? "");
+  const [remindBeforeDays, setRemindBeforeDays] = useState(
+    String(initial?.remindBeforeDays ?? 30)
+  );
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+
+  return (
+    <form
+      className="rounded-2xl bg-card border border-border px-4 py-3 space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!label.trim() || !renewalDate) return;
+        const days = Number.parseInt(remindBeforeDays, 10);
+        onSubmit({
+          label: label.trim(),
+          category,
+          renewalDate,
+          ...(dependentId ? { dependentId } : {}),
+          ...(Number.isFinite(days) && days >= 0 ? { remindBeforeDays: days } : {}),
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
+        });
+      }}
+    >
+      <input
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder="e.g. Woody's passport"
+        aria-label="Renewal label"
+        className={inputClass + " w-full"}
+      />
+      <div className="flex gap-2">
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value as RenewalCategory)}
+          aria-label="Renewal category"
+          className={inputClass}
+        >
+          {(Object.keys(RENEWAL_CATEGORY_LABELS) as RenewalCategory[]).map((c) => (
+            <option key={c} value={c}>
+              {RENEWAL_CATEGORY_EMOJIS[c]} {RENEWAL_CATEGORY_LABELS[c]}
+            </option>
+          ))}
+        </select>
+        <input
+          type="date"
+          value={renewalDate}
+          onChange={(e) => setRenewalDate(e.target.value)}
+          aria-label="Renewal date"
+          className={inputClass}
+        />
+      </div>
+      <div className="flex gap-2">
+        {dependents.length > 0 && (
+          <select
+            value={dependentId}
+            onChange={(e) => setDependentId(e.target.value)}
+            aria-label="Renewal child"
+            className={inputClass}
+          >
+            <option value="">Whole family</option>
+            {dependents.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        )}
+        <input
+          type="number"
+          min={0}
+          max={365}
+          value={remindBeforeDays}
+          onChange={(e) => setRemindBeforeDays(e.target.value)}
+          aria-label="Remind days before"
+          placeholder="Remind days before"
+          className={inputClass}
+        />
+      </div>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes (optional)"
+        aria-label="Renewal notes"
+        rows={2}
+        className={inputClass + " w-full resize-none"}
+      />
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-sm text-muted-foreground px-3 py-1.5"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={!label.trim() || !renewalDate || pending}
+          className="text-sm font-medium bg-primary text-primary-foreground rounded-xl px-4 py-1.5 disabled:opacity-40"
+        >
+          {initial ? "Save" : "Add renewal"}
+        </button>
+      </div>
+    </form>
+  );
+};
+
 interface SchoolCardProps {
   school: School;
   dependents: Dependent[];
@@ -325,8 +496,6 @@ const SchoolCard = ({ school, dependents }: SchoolCardProps) => {
   }
 
   const events = eventsQuery.data ?? [];
-  const dependentName = (id: string | null) =>
-    id ? (dependents.find((d) => d.id === id)?.name ?? null) : null;
 
   return (
     <div className="rounded-2xl bg-card border border-border px-4 py-3">
@@ -423,8 +592,8 @@ const SchoolCard = ({ school, dependents }: SchoolCardProps) => {
                     </span>
                     <span className="text-foreground truncate">
                       {ev.title}
-                      {dependentName(ev.dependentId) && (
-                        <span className="text-muted-foreground"> · {dependentName(ev.dependentId)}</span>
+                      {dependentName(ev.dependentId, dependents) && (
+                        <span className="text-muted-foreground"> · {dependentName(ev.dependentId, dependents)}</span>
                       )}
                     </span>
                   </li>
@@ -532,6 +701,8 @@ const FamilyPage = () => {
   const [showChildForm, setShowChildForm] = useState(false);
   const [editingChildId, setEditingChildId] = useState<string | null>(null);
   const [showSchoolForm, setShowSchoolForm] = useState(false);
+  const [showRenewalForm, setShowRenewalForm] = useState(false);
+  const [editingRenewalId, setEditingRenewalId] = useState<string | null>(null);
 
   const dependentsQuery = useQuery({
     queryKey: ["family", "dependents"],
@@ -541,6 +712,11 @@ const FamilyPage = () => {
   const schoolsQuery = useQuery({
     queryKey: ["family", "schools"],
     queryFn: fetchSchools,
+  });
+
+  const renewalsQuery = useQuery({
+    queryKey: ["family", "renewals"],
+    queryFn: fetchRenewals,
   });
 
   const invalidateDependents = () => {
@@ -589,8 +765,43 @@ const FamilyPage = () => {
     },
   });
 
+  const invalidateRenewals = () => {
+    queryClient.invalidateQueries({ queryKey: ["family", "renewals"] });
+  };
+
+  const addRenewalMutation = useMutation({
+    mutationFn: createRenewal,
+    onSuccess: () => {
+      setShowRenewalForm(false);
+      invalidateRenewals();
+    },
+    onError: (err) => {
+      toast({ title: "Couldn't add renewal", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const editRenewalMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: RenewalInput }) => updateRenewal(id, input),
+    onSuccess: () => {
+      setEditingRenewalId(null);
+      invalidateRenewals();
+    },
+    onError: (err) => {
+      toast({ title: "Couldn't save renewal", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteRenewalMutation = useMutation({
+    mutationFn: deleteRenewal,
+    onSuccess: invalidateRenewals,
+    onError: (err) => {
+      toast({ title: "Couldn't delete renewal", description: err.message, variant: "destructive" });
+    },
+  });
+
   const dependents = dependentsQuery.data ?? [];
   const schools = schoolsQuery.data ?? [];
+  const renewals = renewalsQuery.data ?? [];
   const schoolsByStatus = STATUS_ORDER.map((status) => ({
     status,
     schools: schools.filter((s) => s.status === status),
@@ -731,6 +942,102 @@ const FamilyPage = () => {
                 className="flex items-center gap-1.5 text-xs font-medium text-primary"
               >
                 <Plus className="w-3.5 h-3.5" /> Add school
+              </button>
+            )}
+          </div>
+        </section>
+
+        <section aria-labelledby="family-renewals-heading">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardList className="w-4 h-4 text-primary" />
+            <h2
+              id="family-renewals-heading"
+              className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+            >
+              Renewals & admin
+            </h2>
+          </div>
+          {renewalsQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : renewalsQuery.isError ? (
+            <p className="text-sm text-muted-foreground">Couldn't load renewals.</p>
+          ) : renewals.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No renewals yet — add passports, MOTs, insurance and the butler will nudge you.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {renewals.map((renewal) => {
+                const days = daysUntilDate(renewal.renewalDate);
+                return editingRenewalId === renewal.id ? (
+                  <li key={renewal.id}>
+                    <RenewalForm
+                      initial={renewal}
+                      dependents={dependents}
+                      pending={editRenewalMutation.isPending}
+                      onSubmit={(input) => editRenewalMutation.mutate({ id: renewal.id, input })}
+                      onCancel={() => setEditingRenewalId(null)}
+                    />
+                  </li>
+                ) : (
+                  <li
+                    key={renewal.id}
+                    className="rounded-2xl bg-card border border-border px-4 py-3 flex items-center gap-3"
+                  >
+                    <span className="text-lg shrink-0" aria-hidden="true">
+                      {RENEWAL_CATEGORY_EMOJIS[renewal.category]}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{renewal.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(new Date(`${renewal.renewalDate}T00:00:00`), "d MMM yyyy")}
+                        {dependentName(renewal.dependentId, dependents)
+                          ? ` · ${dependentName(renewal.dependentId, dependents)}`
+                          : ""}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-[13px] font-semibold rounded-full px-2 py-0.5 whitespace-nowrap shrink-0 ${daysLeftStyle(days)}`}
+                    >
+                      {daysLeftText(days)}
+                    </span>
+                    <button
+                      onClick={() => setEditingRenewalId(renewal.id)}
+                      aria-label={`Edit ${renewal.label}`}
+                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete ${renewal.label}?`)) {
+                          deleteRenewalMutation.mutate(renewal.id);
+                        }
+                      }}
+                      aria-label={`Delete ${renewal.label}`}
+                      className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="mt-2">
+            {showRenewalForm ? (
+              <RenewalForm
+                dependents={dependents}
+                pending={addRenewalMutation.isPending}
+                onSubmit={(input) => addRenewalMutation.mutate(input)}
+                onCancel={() => setShowRenewalForm(false)}
+              />
+            ) : (
+              <button
+                onClick={() => setShowRenewalForm(true)}
+                className="flex items-center gap-1.5 text-xs font-medium text-primary"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add renewal
               </button>
             )}
           </div>
