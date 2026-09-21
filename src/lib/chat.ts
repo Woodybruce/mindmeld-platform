@@ -55,6 +55,17 @@ export async function markChannelRead(channelId: string): Promise<void> {
   if (error) throw error;
 }
 
+// Latest butler-authored message (senderUserId null) in the household
+// channel — the morning briefing / reminder shown on the Today page.
+export async function fetchLatestButlerMessage(): Promise<ChatMessage | null> {
+  const { channels } = await fetchChannels();
+  const household = channels.find((c) => c.type === "household");
+  if (!household) return null;
+  const messages = await fetchMessages(household.id);
+  const butlerMessages = messages.filter((m) => m.senderUserId === null);
+  return butlerMessages[butlerMessages.length - 1] ?? null;
+}
+
 export async function uploadChatImage(userId: string, file: File): Promise<string> {
   const resp = await fetch("/api/upload-photo", {
     method: "POST",
