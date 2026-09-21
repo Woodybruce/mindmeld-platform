@@ -5,7 +5,15 @@
 // household is isolated in its own try/catch.
 import { and, asc, eq, gt, gte, inArray, lt, lte } from 'drizzle-orm';
 // Explicit `/index`: bare `../../shared/schema` resolves to the legacy shared/schema.ts file.
-import { butlerMemory, butlerProposals, events, households, tasks } from '../../shared/schema/index';
+import {
+  butlerMemory,
+  butlerProposals,
+  events,
+  households,
+  schoolEvents,
+  schools,
+  tasks,
+} from '../../shared/schema/index';
 import { londonClock, londonTime, londonToday } from './butler-chat';
 import { postButlerMessage } from './butler-message';
 import { butlerNotifyEmails, sendButlerEmail } from './outbound-email';
@@ -35,6 +43,7 @@ function briefingBody(
   todaysEvents: { title: string; startsAt: Date }[],
   dueToday: string[],
   dueTomorrow: string[],
+  schoolEventsWeek: { title: string; date: string; schoolName: string }[],
   pendingProposals: number,
 ): string {
   const lines = [`Morning ☀️`];
@@ -44,6 +53,13 @@ function briefingBody(
   }
   if (dueToday.length > 0) lines.push(`Due today: ${dueToday.join('; ')}`);
   if (dueTomorrow.length > 0) lines.push(`Due tomorrow: ${dueTomorrow.join('; ')}`);
+  if (schoolEventsWeek.length > 0) {
+    lines.push(
+      `School events this week: ${schoolEventsWeek
+        .map((e) => `${e.date} ${e.title} (${e.schoolName})`)
+        .join('; ')}`,
+    );
+  }
   if (pendingProposals > 0) {
     lines.push(`${pendingProposals} proposal${pendingProposals === 1 ? '' : 's'} waiting in the Butler inbox.`);
   }
@@ -57,10 +73,11 @@ async function briefHousehold(db: Database, householdId: string, now: Date): Pro
   if (!(await claimKey(db, householdId, `scheduler:briefing:${date}`))) return;
 
   const { start, end } = londonToday(now);
-  const tomorrow = new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10)) + 24 * 3600_000)
-    .toISOString()
-    .slice(0, 10);
-  const [todaysEvents, dueRows, pending] = await Promise.all([
+  const dayMs = 24 * 3600_000;
+  const dateUtc = Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10));
+  const tomorrow = new Date(dateUtc + dayMs).toISOString().slice(0, 10);
+  const in7Days = new Date(dateUtc + 7 * dayMs).toISOString().slice(0, 10);
+  const [todaysEvents, dueRows, schoolEventsWeek, pending] = await Promise.all([
     db
       .select({ title: events.title, startsAt: events.startsAt })
       .from(events)
@@ -78,6 +95,19 @@ async function briefHousehold(db: Database, householdId: string, now: Date): Pro
       )
       .orderBy(asc(tasks.dueDate)),
     db
+      .select({ title: schoolEvents.title, date: schoolEvents.date, schoolName: schools.name })
+      .from(schoolEvents)
+      .innerJoin(schools, eq(schoolEvents.schoolId, schools.id))
+      .where(
+        and(
+          eq(schools.householdId, householdId),
+          gte(schoolEvents.date, date),
+          lte(schoolEvents.date, in7Days),
+        ),
+      )
+      .orderBy(asc(schoolEvents.date))
+      .limit(10),
+    db
       .select({ id: butlerProposals.id })
       .from(butlerProposals)
       .where(and(eq(butlerProposals.householdId, householdId), eq(butlerProposals.status, 'pending'))),
@@ -90,6 +120,7 @@ async function briefHousehold(db: Database, householdId: string, now: Date): Pro
       todaysEvents,
       dueRows.filter((t) => t.dueDate === date).map((t) => t.title),
       dueRows.filter((t) => t.dueDate === tomorrow).map((t) => t.title),
+      schoolEventsWeek,
       pending.length,
     ),
   );

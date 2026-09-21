@@ -17,9 +17,12 @@ import {
   butlerProposals,
   channelMessages,
   channels,
+  dependents,
   events,
   householdMembers,
   households,
+  schoolEvents,
+  schools,
   tasks,
 } from '../../shared/schema/index';
 import type { ProposalPayload } from '../../shared/validation/proposals';
@@ -133,6 +136,47 @@ describe('generateButlerReply', () => {
     expect(captured!.user).toContain('tesco_day');
     expect(captured!.user).toContain('butler what is on today?');
     expect(captured!.user).toContain('1'); // pending proposals count
+  });
+
+  it('grounds the prompt in children, schools pipeline and upcoming school events', async () => {
+    const dayMs = 24 * 3600_000;
+    const in10Days = new Date(Date.now() + 10 * dayMs).toISOString().slice(0, 10);
+    const in40Days = new Date(Date.now() + 40 * dayMs).toISOString().slice(0, 10);
+
+    const [child] = await db
+      .insert(dependents)
+      .values({ householdId, name: 'Rufus', yearGroup: 'Year 2' })
+      .returning();
+    const [school] = await db
+      .insert(schools)
+      .values({ householdId, name: "St Mary's", status: 'shortlisted' })
+      .returning();
+    await db.insert(schoolEvents).values({
+      schoolId: school.id,
+      dependentId: child.id,
+      title: 'Open morning',
+      date: in10Days,
+      kind: 'open_day',
+    });
+    await db.insert(schoolEvents).values({
+      schoolId: school.id,
+      title: 'Far away fair',
+      date: in40Days,
+      kind: 'other',
+    });
+
+    let captured: ButlerReplyPrompt | undefined;
+    await generateButlerReply(db, householdId, 'butler how are the school applications?', async (prompt) => {
+      captured = prompt;
+      return 'Shortlisted at St Mary\'s.';
+    });
+
+    expect(captured).toBeDefined();
+    expect(captured!.user).toContain('Rufus (Year 2)');
+    expect(captured!.user).toContain("St Mary's (shortlisted)");
+    expect(captured!.user).toContain(`Open morning — St Mary's (open_day)`);
+    // Beyond the 30-day window.
+    expect(captured!.user).not.toContain('Far away fair');
   });
 
   it('returns null when OPENAI_API_KEY is not configured', async () => {
