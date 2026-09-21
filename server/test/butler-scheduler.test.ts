@@ -11,6 +11,7 @@ import {
   events,
   householdMembers,
   households,
+  renewals,
   schoolEvents,
   schools,
   tasks,
@@ -195,6 +196,65 @@ describe('runSchedulerTick', () => {
     expect(bodies).toHaveLength(1);
     expect(bodies[0]).toContain("School events this week: 2026-09-24 Open morning (St Mary's)");
     expect(bodies[0]).not.toContain('Winter fair');
+  });
+
+  it('crossing the remindBeforeDays threshold posts one nudge and creates one butler task (deduped)', async () => {
+    const householdId = await seedHousehold(db, 'Bruce');
+    // BRIEFING_NOW is 2026-09-20 London: exactly 30 days before 2026-10-20.
+    await db.insert(renewals).values({
+      householdId, label: "Woody's passport", category: 'passport',
+      renewalDate: '2026-10-20', remindBeforeDays: 30,
+    });
+
+    await runSchedulerTick(db, BRIEFING_NOW);
+
+    const bodies = await butlerBodies(db, householdId);
+    const nudges = bodies.filter((b) => b.includes('Heads up'));
+    expect(nudges).toHaveLength(1);
+    expect(nudges[0]).toContain("Woody's passport expires in 30 days (20 Oct 2026)");
+    expect(nudges[0]).toContain("I've added a task");
+
+    const taskRows = await db.select().from(tasks).where(eq(tasks.householdId, householdId));
+    expect(taskRows).toHaveLength(1);
+    expect(taskRows[0].title).toBe("Renew Woody's passport");
+    expect(taskRows[0].dueDate).toBe('2026-10-20');
+    expect(taskRows[0].source).toBe('butler');
+
+    // Second tick in the same window: no duplicate nudge, no duplicate task.
+    await runSchedulerTick(db, new Date('2026-09-20T07:01:30.000Z'));
+    const bodiesAfter = await butlerBodies(db, householdId);
+    expect(bodiesAfter.filter((b) => b.includes('Heads up'))).toHaveLength(1);
+    expect(await db.select().from(tasks).where(eq(tasks.householdId, householdId))).toHaveLength(1);
+  });
+
+  it('nudges at the 7-day and 1-day milestones, catching up on late renewals', async () => {
+    const householdId = await seedHousehold(db, 'Bruce');
+    // First seen 7 days out with a 30-day threshold: 7-day message, and the
+    // missed 30-day crossing still creates its task.
+    await db.insert(renewals).values({
+      householdId, label: 'Car MOT', category: 'mot', renewalDate: '2026-09-27',
+    });
+    // 5 days out but remindBeforeDays=1: milestone-only nudge, no task.
+    await db.insert(renewals).values({
+      householdId, label: 'Gym membership', category: 'membership',
+      renewalDate: '2026-09-25', remindBeforeDays: 1,
+    });
+    // 90 days out: beyond every milestone, untouched.
+    await db.insert(renewals).values({
+      householdId, label: 'Home insurance', category: 'insurance', renewalDate: '2026-12-19',
+    });
+
+    await runSchedulerTick(db, BRIEFING_NOW);
+
+    const bodies = await butlerBodies(db, householdId);
+    const nudges = bodies.filter((b) => b.includes('Heads up'));
+    expect(nudges).toHaveLength(2);
+    expect(nudges.some((b) => b.includes('Car MOT expires in 7 days (27 Sept 2026)'))).toBe(true);
+    expect(nudges.some((b) => b.includes('Gym membership expires in 5 days (25 Sept 2026)'))).toBe(true);
+    expect(nudges.some((b) => b.includes('Home insurance'))).toBe(false);
+
+    const taskRows = await db.select().from(tasks).where(eq(tasks.householdId, householdId));
+    expect(taskRows.map((t) => t.title)).toEqual(['Renew Car MOT']);
   });
 
   it('posts nothing outside the briefing window and with no imminent events', async () => {
