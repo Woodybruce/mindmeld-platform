@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
 import { and, eq } from 'drizzle-orm';
@@ -12,6 +12,7 @@ import {
   households,
   tasks,
 } from '../../shared/schema/index';
+import { sendButlerEmail } from '../lib/outbound-email';
 import type { ProposalPayload } from '../../shared/validation/proposals';
 
 // One test forces applyActions to throw mid-accept; the flag defaults off so
@@ -24,6 +25,13 @@ vi.mock('../lib/butler-apply', async (importOriginal) => {
     applyActions: (...args: Parameters<typeof original.applyActions>) =>
       applyControl.fail ? Promise.reject(new Error('apply exploded')) : original.applyActions(...args),
   };
+});
+
+// Outbound email is mocked: no network, and the diary-invite sends are
+// asserted via this spy. butlerNotifyEmails stays real (env-driven).
+vi.mock('../lib/outbound-email', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../lib/outbound-email')>();
+  return { ...original, sendButlerEmail: vi.fn(async () => true) };
 });
 
 const PAYLOAD: ProposalPayload = {
@@ -71,6 +79,11 @@ describe('butler proposals API', () => {
   beforeEach(async () => {
     db = await createTestDb();
     householdId = await seedHousehold(db, 'Bruce', 'u1');
+    vi.mocked(sendButlerEmail).mockClear();
+  });
+
+  afterEach(() => {
+    delete process.env.BUTLER_NOTIFY_EMAILS;
   });
 
   it('rejects unauthenticated requests with 401', async () => {
@@ -142,6 +155,53 @@ describe('butler proposals API', () => {
     const [proposal] = await db.select().from(butlerProposals).where(eq(butlerProposals.id, id));
     expect(proposal.status).toBe('accepted');
     expect(proposal.resolvedAt).toBeTruthy();
+  });
+
+  it('sends a diary invite email per accepted event action (fire-and-forget)', async () => {
+    process.env.BUTLER_NOTIFY_EMAILS = 'mum@example.com, dad@example.com';
+    const a = createApp(db, 'u1');
+    const id = await seedProposal(db, householdId);
+
+    const res = await request(a).post(`/api/butler/proposals/${id}/accept`);
+    expect(res.status).toBe(200);
+
+    // The invite is fire-and-forget inside a setImmediate; flush it.
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const send = vi.mocked(sendButlerEmail);
+    expect(send).toHaveBeenCalledTimes(1);
+    const [opts] = send.mock.calls[0];
+    expect(opts.to).toEqual(['mum@example.com', 'dad@example.com']);
+    expect(opts.subject).toBe('📅 Science Museum trip — 2026-09-26');
+    expect(opts.text).toContain('Science Museum trip');
+    expect(opts.icsEvent).toEqual({
+      title: 'Science Museum trip',
+      startsAt: new Date('2026-09-26T09:00:00Z'),
+      endsAt: new Date('2026-09-26T10:00:00Z'),
+      location: undefined,
+      attendees: ['mum@example.com', 'dad@example.com'],
+    });
+  });
+
+  it('sends no email when the accepted proposal has no event actions', async () => {
+    process.env.BUTLER_NOTIFY_EMAILS = 'mum@example.com';
+    const a = createApp(db, 'u1');
+    const id = await seedProposal(db, householdId, {
+      payload: { summary: 'task only', actions: [{ type: 'create_task', title: 'Pay £20' }] },
+    });
+
+    expect((await request(a).post(`/api/butler/proposals/${id}/accept`)).status).toBe(200);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(vi.mocked(sendButlerEmail)).not.toHaveBeenCalled();
+  });
+
+  it('sends no email when BUTLER_NOTIFY_EMAILS is unset', async () => {
+    const a = createApp(db, 'u1');
+    const id = await seedProposal(db, householdId);
+
+    expect((await request(a).post(`/api/butler/proposals/${id}/accept`)).status).toBe(200);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(vi.mocked(sendButlerEmail)).not.toHaveBeenCalled();
   });
 
   it('remember upserts by (householdId, key) instead of duplicating', async () => {

@@ -8,6 +8,7 @@ import { and, asc, eq, gt, gte, inArray, lt, lte } from 'drizzle-orm';
 import { butlerMemory, butlerProposals, events, households, tasks } from '../../shared/schema/index';
 import { londonClock, londonTime, londonToday } from './butler-chat';
 import { postButlerMessage } from './butler-message';
+import { butlerNotifyEmails, sendButlerEmail } from './outbound-email';
 import type { Database } from '../db';
 
 export interface SchedulerOptions {
@@ -96,7 +97,7 @@ async function briefHousehold(db: Database, householdId: string, now: Date): Pro
 
 async function remindHousehold(db: Database, householdId: string, now: Date): Promise<void> {
   const upcoming = await db
-    .select({ id: events.id, title: events.title })
+    .select({ id: events.id, title: events.title, startsAt: events.startsAt })
     .from(events)
     .where(
       and(
@@ -107,8 +108,19 @@ async function remindHousehold(db: Database, householdId: string, now: Date): Pr
     )
     .orderBy(asc(events.startsAt));
   for (const e of upcoming) {
+    // Claim-first covers both notifications: only the winning tick sends the
+    // chat message and the email.
     if (await claimKey(db, householdId, `scheduler:reminder:${e.id}`)) {
       await postButlerMessage(db, householdId, `⏰ '${e.title}' in ~30 min`);
+      const recipients = butlerNotifyEmails();
+      if (recipients.length > 0) {
+        const time = londonTime(e.startsAt);
+        sendButlerEmail({
+          to: recipients,
+          subject: `⏰ Starting soon: ${e.title} (${time})`,
+          text: `Heads up — '${e.title}' starts at ${time} (in about 30 minutes).\n\n— Butler`,
+        }).catch((err: unknown) => console.error('butler reminder email failed', err));
+      }
     }
   }
 }

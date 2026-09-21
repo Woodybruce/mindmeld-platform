@@ -38,6 +38,30 @@ function addressedToUs(event: { data?: { to?: unknown } }): boolean {
   return list.some((a) => a.toLowerCase().endsWith(suffix));
 }
 
+// Extracts the bare address from a `from` value that may be `Name <addr>`.
+function senderAddress(from: string): string {
+  const match = /<([^>]+)>/.exec(from);
+  return (match ? match[1] : from).trim().toLowerCase();
+}
+
+// Trusted senders, from BUTLER_ALLOWED_SENDERS (comma-separated,
+// case-insensitive). Null when unset/empty = allow all (dev/test default).
+function allowedSenders(): Set<string> | null {
+  const list = (process.env.BUTLER_ALLOWED_SENDERS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e.length > 0);
+  return list.length === 0 ? null : new Set(list);
+}
+
+function senderAllowed(event: { data?: { from?: unknown } }): boolean {
+  const allowed = allowedSenders();
+  if (!allowed) return true;
+  const from = event.data?.from;
+  if (typeof from !== 'string' || from.length === 0) return false;
+  return allowed.has(senderAddress(from));
+}
+
 export function webhooksRouter(
   db: Database,
   deps: WebhookDeps = { fetchReceivedEmail, extractActions },
@@ -63,7 +87,7 @@ export function webhooksRouter(
       );
     if (!verified) return res.status(401).json({ error: 'invalid_signature' });
 
-    let event: { type?: string; data?: { email_id?: string; to?: unknown } };
+    let event: { type?: string; data?: { email_id?: string; to?: unknown; from?: unknown } };
     try {
       event = JSON.parse(raw.toString('utf8'));
     } catch {
@@ -73,6 +97,8 @@ export function webhooksRouter(
     if (event.type !== 'email.received') return res.status(200).json({ ignored: true });
 
     if (!addressedToUs(event)) return res.status(200).json({ ignored: true });
+
+    if (!senderAllowed(event)) return res.status(200).json({ ignored: 'sender_not_allowed' });
 
     const householdId = process.env.BUTLER_HOUSEHOLD_ID;
     if (!householdId) return res.status(503).json({ error: 'butler_not_configured' });

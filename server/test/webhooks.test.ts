@@ -52,9 +52,10 @@ function app(db: TestDb, d: WebhookDeps = deps()): Express {
   return a;
 }
 
-function receivedEvent(emailId = 'em_123', to?: string[]): Buffer {
+function receivedEvent(emailId = 'em_123', to?: string[], from?: string): Buffer {
   const data: Record<string, unknown> = { email_id: emailId };
   if (to) data.to = to;
+  if (from) data.from = from;
   return Buffer.from(JSON.stringify({ type: 'email.received', data }), 'utf8');
 }
 
@@ -84,6 +85,7 @@ describe('POST /api/webhooks/resend', () => {
     delete process.env.RESEND_WEBHOOK_SECRET;
     delete process.env.BUTLER_HOUSEHOLD_ID;
     delete process.env.INBOUND_EMAIL_DOMAIN;
+    delete process.env.BUTLER_ALLOWED_SENDERS;
   });
 
   it('rejects unsigned and badly-signed requests with 401', async () => {
@@ -209,6 +211,67 @@ describe('POST /api/webhooks/resend', () => {
 
     const messages = await db.select().from(channelMessages);
     expect(messages).toHaveLength(1);
+  });
+
+  it('processes an allowed sender when BUTLER_ALLOWED_SENDERS is set (Name <addr>, case-insensitive)', async () => {
+    process.env.BUTLER_ALLOWED_SENDERS = 'mum@example.com, Dad@Example.COM';
+    const a = app(db);
+    const body = receivedEvent('em_ok', undefined, 'Dad <dad@example.com>');
+    const res = await post(a, body, signedHeaders(body));
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ received: true });
+
+    const proposals = await db.select().from(butlerProposals);
+    expect(proposals).toHaveLength(1);
+    expect(proposals[0].status).toBe('pending');
+  });
+
+  it('ignores a sender not in BUTLER_ALLOWED_SENDERS: 200, no fetch, nothing created', async () => {
+    process.env.BUTLER_ALLOWED_SENDERS = 'mum@example.com';
+    let fetched = false;
+    const a = app(db, deps({
+      fetchReceivedEmail: async () => {
+        fetched = true;
+        return EMAIL;
+      },
+    }));
+    const body = receivedEvent('em_stranger', undefined, 'Random Person <stranger@spam.example>');
+    const res = await post(a, body, signedHeaders(body));
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ignored: 'sender_not_allowed' });
+
+    expect(fetched).toBe(false);
+    expect(await db.select().from(butlerProposals)).toHaveLength(0);
+    expect(await db.select().from(channelMessages)).toHaveLength(0);
+    expect(await db.select().from(channels)).toHaveLength(0);
+  });
+
+  it('ignores a missing from field when the allowlist is set', async () => {
+    process.env.BUTLER_ALLOWED_SENDERS = 'mum@example.com';
+    const a = app(db);
+    const body = receivedEvent('em_nofrom');
+    const res = await post(a, body, signedHeaders(body));
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ignored: 'sender_not_allowed' });
+    expect(await db.select().from(butlerProposals)).toHaveLength(0);
+  });
+
+  it('allows all senders when BUTLER_ALLOWED_SENDERS is unset or empty', async () => {
+    const a = app(db);
+    for (const [id, from] of [['em_a', 'anyone@anywhere.example'], ['em_b', 'Spam <bot@junk.example>']]) {
+      const body = receivedEvent(id, undefined, from);
+      const res = await post(a, body, signedHeaders(body));
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ received: true });
+    }
+    expect(await db.select().from(butlerProposals)).toHaveLength(2);
+
+    process.env.BUTLER_ALLOWED_SENDERS = '  , ,';
+    const body = receivedEvent('em_c', undefined, 'yet@another.example');
+    const res = await post(a, body, signedHeaders(body));
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ received: true });
+    expect(await db.select().from(butlerProposals)).toHaveLength(3);
   });
 
   it('returns 503 butler_not_configured when BUTLER_HOUSEHOLD_ID is unset', async () => {

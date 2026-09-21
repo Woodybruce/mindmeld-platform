@@ -12,6 +12,16 @@ export interface ApplyCounts {
   memories: number;
 }
 
+export type CreateEventAction = Extract<ButlerAction, { type: 'create_event' }>;
+
+// Single source for event timing: a missing endsAt defaults to one hour.
+// Used both when inserting the event row and when building the diary invite.
+export function eventTiming(action: CreateEventAction): { startsAt: Date; endsAt: Date } {
+  const startsAt = new Date(action.startsAt);
+  const endsAt = action.endsAt ? new Date(action.endsAt) : new Date(startsAt.getTime() + 3600_000);
+  return { startsAt, endsAt };
+}
+
 export async function applyActions(
   db: Database | Tx,
   householdId: string,
@@ -31,10 +41,7 @@ export async function applyActions(
         counts.tasks += 1;
         break;
       case 'create_event': {
-        const startsAt = new Date(action.startsAt);
-        const endsAt = action.endsAt
-          ? new Date(action.endsAt)
-          : new Date(startsAt.getTime() + 3600_000);
+        const { startsAt, endsAt } = eventTiming(action);
         await db.insert(events).values({
           householdId,
           title: action.title,
