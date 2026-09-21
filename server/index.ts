@@ -6,6 +6,8 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 import { db } from "./db";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import path from "path";
 import { startButlerScheduler } from "./lib/butler-scheduler";
 
 process.on('uncaughtException', (err) => {
@@ -120,6 +122,16 @@ async function initStripe() {
 }
 
 (async () => {
+  // Belt-and-braces migrations: Railway's preDeployCommand is not reliably
+  // running drizzle-kit migrate, so apply pending migrations at boot too.
+  // Idempotent via drizzle's __drizzle_migrations bookkeeping.
+  try {
+    await migrate(db, { migrationsFolder: path.resolve(process.cwd(), "migrations") });
+    log("database migrations up to date");
+  } catch (err) {
+    console.error("Migration run failed (continuing boot):", err);
+  }
+
   await registerRoutes(app);
 
   const server = createServer(app);
