@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const tabs = [
-  { id: "home", label: "Home", icon: Home, path: "/" },
+  { id: "home", label: "Today", icon: Home, path: "/" },
   { id: "chat", label: "Chat", icon: MessageCircle, path: "/chat" },
   { id: "tasks", label: "Tasks", icon: ListChecks, path: "/tasks" },
   { id: "diary", label: "Diary", icon: CalendarDays, path: "/diary" },

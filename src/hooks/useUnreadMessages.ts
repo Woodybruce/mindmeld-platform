@@ -1,49 +1,46 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchChannels, fetchMessages } from "@/lib/chat";
 
 function setAppBadge(count: number) {
-  if ("setAppBadge" in navigator) {
-    if (count > 0) {
-      (navigator as any).setAppBadge(count).catch(() => {});
-    } else {
-      (navigator as any).clearAppBadge().catch(() => {});
-    }
+  const nav = navigator as Navigator & {
+    setAppBadge?: (count: number) => Promise<void>;
+    clearAppBadge?: () => Promise<void>;
+  };
+  if (count > 0) {
+    nav.setAppBadge?.(count).catch(() => {});
+  } else {
+    nav.clearAppBadge?.().catch(() => {});
   }
 }
 
+// Unread count for the household channel: messages not sent by the current
+// user (butler messages have senderUserId null and count too) that their
+// read_by list doesn't include. Polls every 30s — cheap enough for a badge.
 export function useUnreadMessages() {
   const { user } = useAuth();
-  const [count, setCount] = useState(0);
+
+  const query = useQuery({
+    queryKey: ["chat", "unread", user?.id],
+    enabled: !!user,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { channels } = await fetchChannels();
+      const household = channels.find((c) => c.type === "household");
+      if (!household) return 0;
+      const messages = await fetchMessages(household.id);
+      return messages.filter(
+        (m) => m.senderUserId !== user!.id && !m.readBy.includes(user!.id),
+      ).length;
+    },
+  });
+
+  const count = query.data ?? 0;
 
   useEffect(() => {
-    if (!user) { setCount(0); setAppBadge(0); return; }
-
-    const fetchCount = async () => {
-      const { count: c } = await supabase
-        .from("messages")
-        .select("*", { count: "exact", head: true })
-        .eq("receiver_id", user.id)
-        .eq("read", false)
-        .neq("message_type", "vibe");
-      const unread = c || 0;
-      setCount(unread);
-      setAppBadge(unread);
-    };
-
-    fetchCount();
-
-    const channel = supabase
-      .channel("unread-messages")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "messages", filter: `receiver_id=eq.${user.id}` },
-        () => fetchCount()
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+    setAppBadge(count);
+  }, [count]);
 
   return count;
 }
