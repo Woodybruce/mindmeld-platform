@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "events_household_external_id" ON "events" USING btree ("household_id","external_id") WHERE "events"."external_id" IS NOT NULL;

@@ -1,4 +1,5 @@
-import { pgTable, pgEnum, uuid, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { households, dependents } from './household';
 
 export const eventCategoryEnum = pgEnum('event_category', ['school', 'holiday', 'household', 'us']);
@@ -17,4 +18,11 @@ export const events = pgTable('events', {
   // Legacy data-migration marker, e.g. 'calendar_events:<legacy id>'; null for native rows.
   migratedFrom: text('migrated_from'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => [
+  // Dedupe for externally-sourced events (Outlook sync / ICS forwarding):
+  // at most one row per (household, external id). Manually-created rows have
+  // null external_id and are unconstrained.
+  uniqueIndex('events_household_external_id')
+    .on(table.householdId, table.externalId)
+    .where(sql`${table.externalId} IS NOT NULL`),
+]);
