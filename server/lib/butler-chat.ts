@@ -11,6 +11,7 @@ import {
   dependents,
   events,
   householdMembers,
+  renewals,
   schoolEvents,
   schools,
   tasks,
@@ -93,6 +94,7 @@ interface ButlerContext {
   children: { name: string; yearGroup: string | null }[];
   schools: { name: string; status: string }[];
   upcomingSchoolEvents: { title: string; schoolName: string; date: string; kind: string }[];
+  upcomingRenewals: { label: string; date: string; daysUntil: number }[];
   pendingProposals: number;
   memories: { key: string; value: string }[];
   recentMessages: { senderUserId: string | null; body: string }[];
@@ -100,12 +102,10 @@ interface ButlerContext {
 
 async function gatherContext(db: Database, householdId: string): Promise<ButlerContext> {
   const { date, start, end } = londonToday();
-  const in30Days = new Date(
-    Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10)) + 30 * 24 * 3600_000,
-  )
-    .toISOString()
-    .slice(0, 10);
-  const [members, todaysEvents, openTasks, children, schoolRows, upcomingSchoolEvents, pending, memories] = await Promise.all([
+  const todayUtc = Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10));
+  const in30Days = new Date(todayUtc + 30 * 24 * 3600_000).toISOString().slice(0, 10);
+  const in60Days = new Date(todayUtc + 60 * 24 * 3600_000).toISOString().slice(0, 10);
+  const [members, todaysEvents, openTasks, children, schoolRows, upcomingSchoolEvents, renewalRows, pending, memories] = await Promise.all([
     db
       .select({ userId: householdMembers.userId, displayName: householdMembers.displayName })
       .from(householdMembers)
@@ -156,6 +156,18 @@ async function gatherContext(db: Database, householdId: string): Promise<ButlerC
       .orderBy(asc(schoolEvents.date))
       .limit(10),
     db
+      .select({ label: renewals.label, date: renewals.renewalDate })
+      .from(renewals)
+      .where(
+        and(
+          eq(renewals.householdId, householdId),
+          gte(renewals.renewalDate, date),
+          lte(renewals.renewalDate, in60Days),
+        ),
+      )
+      .orderBy(asc(renewals.renewalDate))
+      .limit(10),
+    db
       .select({ id: butlerProposals.id })
       .from(butlerProposals)
       .where(and(eq(butlerProposals.householdId, householdId), eq(butlerProposals.status, 'pending'))),
@@ -180,6 +192,11 @@ async function gatherContext(db: Database, householdId: string): Promise<ButlerC
     children,
     schools: schoolRows,
     upcomingSchoolEvents,
+    upcomingRenewals: renewalRows.map((r) => ({
+      label: r.label,
+      date: r.date,
+      daysUntil: Math.round((Date.parse(`${r.date}T00:00:00Z`) - todayUtc) / 86_400_000),
+    })),
     pendingProposals: pending.length,
     memories,
     recentMessages: latest.reverse(),
@@ -209,6 +226,11 @@ function buildPrompt(ctx: ButlerContext, userText: string): ButlerReplyPrompt {
         .map((e) => `${e.date} ${e.title} — ${e.schoolName} (${e.kind})`)
         .join('; ')
     : 'none';
+  const renewalsLine = ctx.upcomingRenewals.length
+    ? ctx.upcomingRenewals
+        .map((r) => `${r.date} ${r.label} (in ${r.daysUntil} days)`)
+        .join('; ')
+    : 'none';
   const chatLine = ctx.recentMessages.length
     ? ctx.recentMessages.map((m) => `${senderName(m)}: ${m.body}`).join('\n')
     : '(no recent messages)';
@@ -221,6 +243,7 @@ Open tasks: ${tasksLine}
 Children: ${childrenLine}
 Schools pipeline: ${schoolsLine}
 Upcoming school events (next 30 days): ${schoolEventsLine}
+Upcoming renewals (next 60 days): ${renewalsLine}
 Pending inbox proposals: ${ctx.pendingProposals}
 Remembered facts: ${memoriesLine}
 
