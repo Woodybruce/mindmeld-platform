@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 // Explicit `/index`: bare `../../shared/schema` resolves to the legacy shared/schema.ts file.
 import { channelMessages, channels } from '../../shared/schema/index';
+import { sendPushToHousehold, type HouseholdPushFn } from './push';
 import type { Database } from '../db';
 
 // Finds (or creates, mirroring household creation) the household's shared
@@ -21,7 +22,19 @@ export async function householdChannelId(db: Database, householdId: string): Pro
   return channel.id;
 }
 
-export async function postButlerMessage(db: Database, householdId: string, body: string): Promise<void> {
+export async function postButlerMessage(
+  db: Database,
+  householdId: string,
+  body: string,
+  push: HouseholdPushFn = sendPushToHousehold,
+): Promise<void> {
   const channelId = await householdChannelId(db, householdId);
   await db.insert(channelMessages).values({ channelId, senderUserId: null, body });
+  // Push is fire-and-forget after the insert: a push failure must never
+  // affect message delivery. Deferred so callers see zero added latency.
+  setImmediate(() => {
+    Promise.resolve(
+      push(db, householdId, { title: 'Butler', body: body.slice(0, 120), route: '/chat' }),
+    ).catch((err: unknown) => console.error('Butler push failed', err));
+  });
 }

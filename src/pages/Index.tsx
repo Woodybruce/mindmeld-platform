@@ -17,7 +17,6 @@ import SpotifyBoard from "@/components/SpotifyBoard";
 import PartnerInviteCard from "@/components/PartnerInviteCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useOutlookAutoSync } from "@/hooks/useOutlookAutoSync";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -53,7 +52,6 @@ const Index = () => {
   const rows = layoutItems(sampleFeedData);
   usePageTitle("Home");
   useWidgetSync();
-  usePushNotifications();
   useOutlookAutoSync();
   const { user, profile } = useAuth();
   const { data: backendFeedItems = [] } = useFeedContent(2);
